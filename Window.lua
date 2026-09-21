@@ -169,13 +169,20 @@ local function FillDetail(entry)
         Block("Taxa de queda", txt)
     end
 
-    local p = entry.progressFrom and entry[entry.progressFrom]
+    -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
+    -- fazia a lista anunciar "100%" numa montaria que ainda depende de sorte.
+    local p = entry.requirementFrom and entry[entry.requirementFrom]
     if p and p.label then
-        Block("O que você já andou", p.label)
+        Block(entry.gated and "Requisito que falta" or "Requisito", p.label)
     end
 
-    if entry.cost and entry.progressFrom ~= "cost" then
+    if entry.cost and entry.requirementFrom ~= "cost" then
         Block("Custo", entry.cost.label)
+    end
+
+    if entry.gated and not entry.deterministic then
+        Block("Atenção", "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria "
+            .. "ainda depende da queda.")
     end
 
     local zone, wp = ZoneLine(entry)
