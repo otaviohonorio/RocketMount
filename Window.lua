@@ -9,6 +9,8 @@ local LIST_W = 450
 local DETAIL_W = WINDOW_W - LIST_W - S.padding * 3
 
 local ROW_STEP = S.rowHeight + S.rowSpacing
+-- O nome da faixa mais longo ("Garantidas — requisito em andamento") a 12pt pede ~220px.
+local TIER_TITLE_WIDTH = 230
 local SECTION_STEP = S.sectionHeight + S.sectionGap
 
 local window, list, detail
@@ -166,7 +168,7 @@ local function FillDetail(entry)
         local fmt = (pct >= 1 and "1 em %d  (%.0f%%)") or (pct >= 0.1 and "1 em %d  (%.1f%%)") or "1 em %d  (%.2f%%)"
         local txt = string.format(fmt, entry.chance, pct)
         if entry.bossName then txt = txt .. "\n" .. entry.bossName end
-        Block("Taxa de queda", txt)
+        Block("Chance", txt)
     end
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
@@ -182,7 +184,7 @@ local function FillDetail(entry)
 
     if entry.gated and not entry.deterministic then
         Block("Atenção", "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria "
-            .. "ainda depende da queda.")
+            .. "ainda depende da sorte.")
     end
 
     local zone, wp = ZoneLine(entry)
@@ -300,11 +302,17 @@ local function AcquireHead(parent, i)
     h = CreateFrame("Frame", nil, parent)
     h:SetSize(LIST_W - 20, S.sectionHeight)
 
+    -- Largura explícita nos dois: sem ela a FontString cresce até onde o texto pedir e
+    -- atravessa a borda da lista — e estes rótulos mudam de tamanho a cada faixa.
     h.title = ns.NewText(h, S.headFontSize, S.gold)
     h.title:SetPoint("BOTTOMLEFT", 0, 2)
+    h.title:SetWidth(TIER_TITLE_WIDTH)
+    h.title:SetWordWrap(false)
 
     h.hint = ns.NewText(h, S.subFontSize, S.dim)
     h.hint:SetPoint("LEFT", h.title, "RIGHT", 8, 0)
+    h.hint:SetWidth(LIST_W - 20 - TIER_TITLE_WIDTH - 8)
+    h.hint:SetWordWrap(false)
 
     h.rule = h:CreateTexture(nil, "ARTWORK")
     h.rule:SetColorTexture(1, 1, 1, 0.08)
@@ -376,7 +384,7 @@ local function Redraw()
         footer = footer .. string.format(" (filtrado de %d)", total)
     end
     if not mcl then
-        footer = footer .. "  |cffcc6666· sem o MCL, não há taxa de queda|r"
+        footer = footer .. "  |cffcc6666· sem o MCL, não há a chance de saque|r"
     elseif not rar then
         footer = footer .. "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
     end

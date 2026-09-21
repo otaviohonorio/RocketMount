@@ -41,7 +41,7 @@ end
 -- por que uma montaria caiu em "sem estimativa".
 commands["debug"] = function()
     local mcl, rar = ns.ProviderStatus()
-    ns.Print("MCL (taxa de queda, coordenada):", mcl and "|cff33ff99lido|r" or "|cffff5555ausente|r")
+    ns.Print("MCL (chance de saque, coordenada):", mcl and "|cff33ff99lido|r" or "|cffff5555ausente|r")
     ns.Print("MountJournalEnhanced (percentual da base):", rar and "|cff33ff99lido|r" or "|cffff5555ausente|r")
 
     local list = ns.GetRanked(true)

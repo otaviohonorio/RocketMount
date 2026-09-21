@@ -50,7 +50,7 @@ end
 --------------------------------------------------------------------------------
 local SOURCE_FALLBACK = {
     [0] = "Desconhecida",
-    [1] = "Queda",
+    [1] = "Saque",
     [2] = "Missão",
     [3] = "Vendedor",
     [4] = "Profissão",

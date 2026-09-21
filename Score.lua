@@ -35,32 +35,39 @@ ns.TIER = {
     UNKNOWN   = 6,
 }
 
+-- Os nomes carregam a divisão que a comunidade de colecionadores realmente usa —
+-- **garantida** contra **na sorte** ("guaranteed" contra "RNG", nos guias em inglês;
+-- "obtenção fácil" contra "sorte" e "camperar", nos guias brasileiros). É a mesma fronteira
+-- que o motor calcula em `Deterministic`, então o rótulo passou a dizer em palavra o que a
+-- regra já fazia em código. A faixa 5 não leva nenhum dos dois nomes: ela mistura os tipos.
 ns.TIER_NAME = {
-    [1] = "Pronto para pegar",
-    [2] = "Quase liberado",
-    [3] = "Requisito em andamento",
-    [4] = "Farm curto",
+    [1] = "Garantidas — é só ir pegar",
+    [2] = "Garantidas — quase liberadas",
+    [3] = "Garantidas — a meio caminho",
+    [4] = "Na sorte — chance boa",
     [5] = "Caminho longo",
     [6] = "Sem estimativa",
 }
 
+-- A dica é curta porque divide a linha com o nome da faixa, que cresceu. Teto prático:
+-- ~36 caracteres. Acima disso ela atravessa a borda da lista (ver TIER_HINT_WIDTH).
 ns.TIER_HINT = {
-    [1] = "é chegar e levar: nada depende de sorte",
-    [2] = "falta pouco do requisito, e depois é só pegar",
-    [3] = "você já tem caminho andado neste personagem",
-    [4] = "liberado, e a queda é de 1 em 100 ou melhor",
-    [5] = "queda pior que 1 em 100, ou requisito ainda no começo",
-    [6] = "nenhum catálogo instalado sabe como medir esta",
+    [1] = "nada aqui depende de sorte",
+    [2] = "falta pouco do requisito",
+    [3] = "caminho já andado neste personagem",
+    [4] = "1 em 100 ou melhor",
+    [5] = "chance ruim, ou requisito no começo",
+    [6] = "não há como medir esta",
 }
 
--- Queda a partir da qual o farm deixa de ser de uma tarde. Não é medição, é o corte
+-- Chance a partir da qual o farm deixa de ser de uma tarde. Não é medição, é o corte
 -- que o jogo consagrou (as quedas "de 1%" são o patamar em que se fala em farmar).
 local SHORT_FARM_CHANCE = 100
 
--- Fonte em que a montaria vem por sorte, e não por cumprir requisito. Queda é óbvia;
+-- Fonte em que a montaria vem por sorte, e não por cumprir requisito. Saque é óbvio;
 -- descoberta é achar por acaso. Nessas duas, requisito cumprido nunca significa pronto.
 local LUCK_SOURCE = {
-    [1] = true,    -- Queda
+    [1] = true,    -- Saque
     [11] = true,   -- Descoberta
 }
 
@@ -144,12 +151,12 @@ function ns.Rank(entry)
         -- Primeiro o que trava, depois a sorte: é nessa ordem que o jogador age.
         e.why = "Falta liberar — " .. (reqLabel or "requisito não cumprido")
         if e.chance then
-            e.why = e.why .. "  ·  depois, queda de 1 em " .. e.chance
+            e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
         end
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
     elseif e.chance then
-        e.why = string.format("Queda de 1 em %d", e.chance)
+        e.why = string.format("Chance de 1 em %d", e.chance)
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
     elseif e.sourceText and e.sourceText ~= "" then
@@ -162,7 +169,7 @@ function ns.Rank(entry)
     return e
 end
 
--- Ordem dentro da faixa: quem tem mais requisito andado, depois a queda mais generosa,
+-- Ordem dentro da faixa: quem tem mais requisito andado, depois a chance mais generosa,
 -- e por fim quantos jogadores já têm — mais comum costuma ser mais fácil na prática.
 --
 -- Havia aqui uma linha pôndo a aquisição determinística na frente. Saiu por dois motivos:

@@ -364,6 +364,30 @@ local okEsconde = pcall(ns.SetMinimapHidden, true)
 check("esconder o botao nao estoura", okEsconde, true)
 ns.SetMinimapHidden(false)
 
+-- Geometria e aritmetica, e da para conferir em disco. O nome da faixa e a dica dividem
+-- a largura da lista; passar do teto nao "quebra", ele corta o texto em silencio.
+--
+-- Conta LETRAS, nao bytes: o `#` do Lua conta bytes, e em UTF-8 o travessao vale 3 e cada
+-- acento vale 2. A primeira versao deste teste reprovou um rotulo de 35 letras por causa
+-- disso, e largura de pixel segue a letra, nao o byte.
+local function letras(s)
+    -- Sem padrao com escape: byte de continuacao UTF-8 fica entre 128 e 191, e
+    -- contar por `string.byte` nao depende de acertar o escape no arquivo.
+    local n = 0
+    for i = 1, #s do
+        local b = s:byte(i)
+        if b < 128 or b > 191 then n = n + 1 end
+    end
+    return n
+end
+
+local TITULO_MAX, DICA_MAX = 36, 36
+for t = 1, 6 do
+    local nome, dica = ns.TIER_NAME[t], ns.TIER_HINT[t]
+    check("nome da faixa " .. t .. " cabe", letras(nome) <= TITULO_MAX, true)
+    check("dica da faixa " .. t .. " cabe", letras(dica) <= DICA_MAX, true)
+end
+
 -- Fumaca da janela: construir e desenhar nao pode estourar.
 local okJanela, erroJanela = pcall(ns.ToggleWindow)
 check("a janela monta e desenha sem erro", okJanela, true)
