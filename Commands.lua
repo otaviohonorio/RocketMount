@@ -26,6 +26,11 @@ commands["top"] = function(rest)
     ns.RefreshWindow()
 end
 
+commands["minimapa"] = function()
+    ns.SetMinimapHidden(not ns.db.minimap.hide)
+    ns.Print(ns.db.minimap.hide and "botão do minimapa escondido." or "botão do minimapa à mostra.")
+end
+
 commands["fontes"] = function()
     ns.db.sources = nil
     ns.Print("filtro de fonte limpo: todas as fontes voltam a aparecer.")
@@ -57,6 +62,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt|r — abre e fecha a lista")
     print("    |cffffff00/rmt top <n>|r — quantas linhas a lista mostra")
     print("    |cffffff00/rmt fontes|r — limpa o filtro de fonte")
+    print("    |cffffff00/rmt minimapa|r — mostra ou esconde o botão do minimapa")
     print("    |cffffff00/rmt config|r — opções")
     print("    |cffffff00/rmt debug|r — o que o addon conseguiu ler")
 end

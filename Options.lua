@@ -45,5 +45,18 @@ function ns.SetupOptions()
             "Desmarque para ver a coleção inteira.")
     end
 
+    do
+        local name = "Mostrar o botão no minimapa"
+        local variable = ADDON .. "Minimap"
+        local setting = Settings.RegisterProxySetting(category, variable,
+            Settings.VarType.Boolean, name, true,
+            function() return not ns.db.minimap.hide end,
+            function(value) ns.SetMinimapHidden(not value) end)
+
+        Settings.CreateCheckbox(category, setting,
+            "O botão abre a lista com um clique e as opções com o botão direito. " ..
+            "A dica dele já mostra a próxima montaria da fila.")
+    end
+
     Settings.RegisterAddOnCategory(category)
 end
