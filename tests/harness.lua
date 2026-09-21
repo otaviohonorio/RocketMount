@@ -71,12 +71,15 @@ _G = _G or getfenv(0)
 
 UIParent = widget("UIParent")
 GameTooltip = widget("GameTooltip")
+Minimap = widget("Minimap")
 UISpecialFrames = {}
 SlashCmdList = {}
 MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 
 function CreateFrame(kind) return widget(kind) end
 function UnitFactionGroup() return "Alliance" end
+function GetCursorPosition() return 0, 0 end
+function IsShiftKeyDown() return false end
 function GetMoney() return 500000 end          -- 50 de ouro
 function GetMoneyString(v) return tostring(v) .. "c" end
 function BreakUpLargeNumbers(v) return tostring(v) end
@@ -191,7 +194,7 @@ LibStub = function() return nil end
 -- Carrega o addon
 --------------------------------------------------------------------------------
 local ns = {}
-local FILES = { "Core.lua", "Skin.lua", "Sources.lua", "Score.lua", "Window.lua", "Options.lua", "Commands.lua" }
+local FILES = { "Core.lua", "Skin.lua", "Sources.lua", "Score.lua", "Window.lua", "Minimap.lua", "Options.lua", "Commands.lua" }
 
 for _, file in ipairs(FILES) do
     local chunk, err = loadfile(file)
@@ -278,6 +281,16 @@ end
 check("e sem ele tudo cai em Sem estimativa", todasSemEstimativa, true)
 MCL_GUIDE = guardado
 ns.Invalidate()
+
+-- O botao do minimapa: criar e passar o mouse nao pode estourar. A dica dele chama o
+-- ranqueamento, entao ela e um caminho de codigo de verdade, nao enfeite.
+local btn = ns.CreateMinimapButton()
+check("o botao do minimapa nasce", btn ~= nil, true)
+local okDica = pcall(function() btn.__scripts.OnEnter(btn) end)
+check("a dica do botao monta sem erro", okDica, true)
+local okEsconde = pcall(ns.SetMinimapHidden, true)
+check("esconder o botao nao estoura", okEsconde, true)
+ns.SetMinimapHidden(false)
 
 -- Fumaca da janela: construir e desenhar nao pode estourar.
 local okJanela, erroJanela = pcall(ns.ToggleWindow)

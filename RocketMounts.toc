@@ -17,5 +17,6 @@ Skin.lua
 Sources.lua
 Score.lua
 Window.lua
+Minimap.lua
 Options.lua
 Commands.lua

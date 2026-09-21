@@ -12,6 +12,7 @@ ns.defaults = {
     -- Fontes ligadas. A chave é o `sourceType` da API (ver ns.SOURCE_NAMES).
     sources = nil,   -- nil = todas
     window = nil,    -- { point, x, y } da última posição
+    minimap = { angle = 200, hide = false },
 }
 
 function ns.Print(...)
@@ -41,6 +42,7 @@ function handlers:ADDON_LOADED(addon)
 end
 
 function handlers:PLAYER_LOGIN()
+    ns.CreateMinimapButton()
     -- O MCL monta o `MCL_GUIDE.mountLookup` em PLAYER_LOGIN + 4s e não avisa ninguém.
     -- Em vez de chutar um atraso maior, a gente espera pelo sinal dele — e desiste
     -- depois de um tempo, porque ele pode simplesmente não estar instalado.
