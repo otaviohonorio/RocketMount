@@ -5,6 +5,20 @@
 -- uma REGRA, e a linha mostra o número que a pôs ali. Se a ordem parecer errada, dá
 -- para discordar do critério olhando a própria lista.
 --
+-- ⚑ A distinção que sustenta tudo, e que a primeira versão não fazia:
+--
+--    REQUISITO ≠ AQUISIÇÃO.
+--
+-- Reputação, moeda e conquista são **requisitos**: eles dizem se você pode *tentar*.
+-- O que entrega a montaria é outra coisa — comprar do vendedor entrega, matar um chefe
+-- com 1 em 100 de chance não entrega. A versão anterior somava os dois e chamava tudo
+-- de progresso, e o Esmaga-ossos Aguanegra aparecia em primeiro com "100%" porque a
+-- reputação estava cumprida — só que ele cai de baú, a 1 em 3. Cem por cento do
+-- requisito, zero por cento da montaria.
+--
+-- Daí a regra dura: **só é "Pronto para pegar" o que a aquisição é determinística.**
+-- Tendo taxa de queda no meio, o requisito no máximo libera o farm; nunca o conclui.
+--
 -- O que este modelo AINDA NÃO considera, e é a maior lacuna conhecida: a trava de
 -- tentativa. Uma queda de 1/100 num chefe com trava semanal e uma de 1/100 num bicho
 -- sem trava nenhuma são separadas por anos, e hoje as duas caem na mesma faixa. Falta
@@ -23,71 +37,99 @@ ns.TIER = {
 
 ns.TIER_NAME = {
     [1] = "Pronto para pegar",
-    [2] = "Quase lá",
-    [3] = "Já comecei",
+    [2] = "Quase liberado",
+    [3] = "Requisito em andamento",
     [4] = "Farm curto",
-    [5] = "Farm longo",
+    [5] = "Caminho longo",
     [6] = "Sem estimativa",
 }
 
 ns.TIER_HINT = {
-    [1] = "você já cumpre o requisito — falta ir buscar",
-    [2] = "três quartos do caminho andados",
-    [3] = "tem progresso guardado neste personagem",
-    [4] = "queda de 1 em 100 ou melhor",
-    [5] = "queda pior que 1 em 100",
-    [6] = "nenhum catálogo instalado sabe a taxa desta",
+    [1] = "é chegar e levar: nada depende de sorte",
+    [2] = "falta pouco do requisito, e depois é só pegar",
+    [3] = "você já tem caminho andado neste personagem",
+    [4] = "liberado, e a queda é de 1 em 100 ou melhor",
+    [5] = "queda pior que 1 em 100, ou requisito ainda no começo",
+    [6] = "nenhum catálogo instalado sabe como medir esta",
 }
 
 -- Queda a partir da qual o farm deixa de ser de uma tarde. Não é medição, é o corte
 -- que o jogo consagrou (as quedas "de 1%" são o patamar em que se fala em farmar).
 local SHORT_FARM_CHANCE = 100
 
--- O melhor progresso já feito neste personagem, entre reputação, custo e conquista,
--- e de onde ele veio. É o que dá valor à lista: o que está quase pronto sobe.
-local function BestProgress(e)
-    local best, from = nil, nil
+-- Fonte em que a montaria vem por sorte, e não por cumprir requisito. Queda é óbvia;
+-- descoberta é achar por acaso. Nessas duas, requisito cumprido nunca significa pronto.
+local LUCK_SOURCE = {
+    [1] = true,    -- Queda
+    [11] = true,   -- Descoberta
+}
+
+-- A aquisição é determinística quando nada nela depende de sorte: comprar do vendedor,
+-- entregar a missão, fechar a conquista. Taxa de queda no registro é prova do contrário.
+local function Deterministic(e)
+    if e.chance and e.chance > 0 then return false end
+    if LUCK_SOURCE[e.sourceType] then return false end
+    return true
+end
+
+-- O requisito que está MAIS ATRASADO, e não o mais adiantado. Quem precisa de reputação
+-- e de 10.000 de moeda não está pronto por ter a reputação — está preso na moeda. A
+-- primeira versão usava o máximo e por isso mostrava sempre o número mais bonito.
+local function Requirement(e)
+    local worst, from = nil, nil
     for _, key in ipairs({ "rep", "cost", "achievement" }) do
         local p = e[key]
         if p and p.pct then
-            if not best or p.pct > best then
-                best, from = p.pct, key
+            if not worst or p.pct < worst then
+                worst, from = p.pct, key
             end
         end
     end
-    return best, from
+    return worst, from
 end
 
 function ns.Rank(entry)
     local e = entry
-    local progress, from = BestProgress(e)
-    e.progress = progress
-    e.progressFrom = from
+    local req, from = Requirement(e)
+    e.requirement = req
+    e.requirementFrom = from
+    e.deterministic = Deterministic(e)
+    e.gated = (req ~= nil and req < 1)
 
-    if progress and progress >= 1 then
-        e.tier = ns.TIER.READY
-    elseif progress and progress >= 0.75 then
-        e.tier = ns.TIER.CLOSE
-    elseif progress and progress >= 0.25 then
-        e.tier = ns.TIER.UNDERWAY
-    elseif e.chance and e.chance > 0 and e.chance <= SHORT_FARM_CHANCE then
-        e.tier = ns.TIER.SHORTFARM
-    elseif e.chance and e.chance > 0 then
+    if e.deterministic then
+        if req == nil then
+            -- Sem taxa de queda e sem requisito mensurável: não há o que afirmar.
+            e.tier = ns.TIER.UNKNOWN
+        elseif req >= 1 then
+            e.tier = ns.TIER.READY
+        elseif req >= 0.75 then
+            e.tier = ns.TIER.CLOSE
+        elseif req > 0 then
+            e.tier = ns.TIER.UNDERWAY
+        else
+            e.tier = ns.TIER.LONGFARM
+        end
+    elseif e.gated then
+        -- Depende de sorte E ainda nem está liberado: é o pior dos dois mundos.
         e.tier = ns.TIER.LONGFARM
-    elseif progress and progress > 0 then
-        e.tier = ns.TIER.UNDERWAY
+    elseif e.chance and e.chance > 0 then
+        e.tier = (e.chance <= SHORT_FARM_CHANCE) and ns.TIER.SHORTFARM or ns.TIER.LONGFARM
     else
         e.tier = ns.TIER.UNKNOWN
     end
 
-    -- O número que justificou a faixa, curto, para a direita da linha.
-    if from == "rep" then
-        e.headline = string.format("%d%%", math.floor((progress or 0) * 100 + 0.5))
-    elseif from == "cost" then
-        e.headline = string.format("%d%%", math.floor((progress or 0) * 100 + 0.5))
-    elseif from == "achievement" then
-        e.headline = string.format("%d%%", math.floor((progress or 0) * 100 + 0.5))
-    elseif e.chance then
+    -- O número da direita. A regra nova: **porcentagem só onde a porcentagem é a
+    -- história inteira**. Onde a sorte decide, o número é a chance, nunca o requisito —
+    -- foi essa mistura que fez um baú de 1 em 3 se anunciar como 100%.
+    if e.deterministic then
+        if e.tier == ns.TIER.READY then
+            e.headline = "pode pegar"
+        elseif req then
+            e.headline = string.format("%d%%", math.floor(req * 100 + 0.5))
+        else
+            e.headline = "—"
+        end
+    elseif e.chance and e.chance > 0 then
         e.headline = "1/" .. e.chance
     elseif e.ownedByPct then
         e.headline = string.format("%.0f%% têm", e.ownedByPct)
@@ -95,31 +137,44 @@ function ns.Rank(entry)
         e.headline = "—"
     end
 
-    -- A frase que explica a posição, para a segunda linha.
-    local why = e[from or ""] and e[from or ""].label or nil
-    if not why then
+    -- A frase que explica a posição.
+    local reqLabel = from and e[from] and e[from].label or nil
+
+    if e.gated and not e.deterministic then
+        -- Primeiro o que trava, depois a sorte: é nessa ordem que o jogador age.
+        e.why = "Falta liberar — " .. (reqLabel or "requisito não cumprido")
         if e.chance then
-            why = string.format("Queda de 1 em %d", e.chance)
-            if e.bossName then why = why .. " · " .. e.bossName end
-        elseif e.sourceText and e.sourceText ~= "" then
-            -- O texto da Blizzard vem com quebra de linha; a linha da lista quer uma só.
-            why = (e.sourceText:gsub("[\r\n]+", " · "))
-        else
-            why = ns.SOURCE_NAMES[e.sourceType]
+            e.why = e.why .. "  ·  depois, queda de 1 em " .. e.chance
         end
+    elseif e.deterministic and reqLabel then
+        e.why = reqLabel
+    elseif e.chance then
+        e.why = string.format("Queda de 1 em %d", e.chance)
+        if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
+        if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
+    elseif e.sourceText and e.sourceText ~= "" then
+        -- O texto da Blizzard vem com quebra de linha; a linha da lista quer uma só.
+        e.why = (e.sourceText:gsub("[\r\n]+", "  ·  "))
+    else
+        e.why = ns.SOURCE_NAMES[e.sourceType]
     end
-    e.why = why
 
     return e
 end
 
--- Chave de ordenação dentro da faixa: quem está mais perto primeiro; empate resolve
--- pela queda, e depois por quantos jogadores já têm (mais comum = mais fácil na prática).
+-- Ordem dentro da faixa: quem tem mais requisito andado, depois a queda mais generosa,
+-- e por fim quantos jogadores já têm — mais comum costuma ser mais fácil na prática.
+--
+-- Havia aqui uma linha pôndo a aquisição determinística na frente. Saiu por dois motivos:
+-- nenhum teste conseguia reprová-la (nas faixas 1 a 4 os itens são todos do mesmo tipo,
+-- então ela nunca decidia nada), e no único lugar onde ela decidiria — o "Caminho longo",
+-- que mistura os dois — ela decidiria errado: reputação do zero para comprar é aposta pior
+-- que uma queda de 1 em 3 já 80% liberada.
 local function Compare(a, b)
     if a.tier ~= b.tier then return a.tier < b.tier end
 
-    local pa, pb = a.progress or -1, b.progress or -1
-    if pa ~= pb then return pa > pb end
+    local ra, rb = a.requirement or -1, b.requirement or -1
+    if ra ~= rb then return ra > rb end
 
     local ca, cb = a.chance or math.huge, b.chance or math.huge
     if ca ~= cb then return ca < cb end

@@ -115,8 +115,30 @@ local function ReputationProgress(rep)
     local ok, data = pcall(C_Reputation.GetFactionDataByID, rep.factionId)
     if not ok or not data or not data.reaction then return nil end
 
-    local targetIdx = STANDING_INDEX[rep.levelName or ""] or 8
     local name = data.name or rep.factionName or "?"
+
+    -- Paragon: a barra que continua depois do Exaltado, e que reinicia a cada baú. Tem
+    -- API própria. Antes disso o nome "Paragon" caía no `or 8` abaixo e virava "Exaltado",
+    -- e quem já estava Exaltado via **100% cumprido** num requisito que nem começou.
+    if rep.levelName == "Paragon" then
+        if C_Reputation.GetFactionParagonInfo then
+            local okP, value, threshold = pcall(C_Reputation.GetFactionParagonInfo, rep.factionId)
+            if okP and value and threshold and threshold > 0 then
+                local into = value % threshold
+                return {
+                    kind = "rep", factionName = name, pct = into / threshold,
+                    label = string.format("%s: %s de %s para o próximo baú",
+                        name, BreakUpLargeNumbers(into), BreakUpLargeNumbers(threshold)),
+                }
+            end
+        end
+        return nil
+    end
+
+    -- Nome de nível que não é patamar de reputação (ex.: "Professional", que é nível de
+    -- profissão). Sem saber medir, o certo é não afirmar progresso nenhum.
+    local targetIdx = STANDING_INDEX[rep.levelName or ""]
+    if not targetIdx then return nil end
 
     if data.reaction >= targetIdx then
         return {

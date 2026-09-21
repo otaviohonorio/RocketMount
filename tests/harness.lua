@@ -135,6 +135,19 @@ local MOUNTS = {
     -- a ordem de progresso dentro da faixa passava no teste sem reprovar nada.
     { 9, 1009, "Quase la com mais rep",   3, false },
     { 10, 1010, "Farm curto mais raro",   1, false },
+    -- O caso relatado em 21/09: reputação CUMPRIDA, mas a montaria cai de baú a 1 em 3.
+    -- Aparecia em primeiro com "100%". Requisito cumprido não é montaria no bolso.
+    { 11, 1011, "Bau com reputacao pronta", 1, false },
+    -- E o inverso: queda cuja reputação ainda NÃO libera a tentativa. É o pior dos dois
+    -- mundos e tem que cair no fim, não no meio dos farms que já dá para tentar.
+    { 12, 1012, "Queda ainda trancada",     1, false },
+    -- Dois requisitos ao mesmo tempo: reputação cumprida e moeda a 30%. Quem manda é o
+    -- que está MAIS ATRASADO. Sem este caso, trocar o mínimo pelo máximo passava batido.
+    { 13, 1013, "Dois requisitos",          3, false },
+    -- Queda cuja FONTE não é "Queda" — baú de paração entra no diário como vendedor. Aqui
+    -- a única prova de que há sorte no meio é a taxa. Sem este caso, ignorar a taxa na
+    -- checagem de determinismo passava batido, que é exatamente o defeito relatado.
+    { 14, 1014, "Bau fora do tipo queda",   3, false },
     { 7, 1007, "Ja coletada",           1, true  },
     { 8, 1008, "Da outra faccao",       1, false, 0 },   -- 0 = Horda
 }
@@ -184,9 +197,18 @@ MCL_GUIDE = {
         [1005] = { chance = 2000, method = "BOSS", lockBossName = "Chefe" },
         [1009] = { rep = { factionId = 9003, factionName = "Faccao mais perto", levelName = "Exalted" } },
         [1010] = { chance = 50, method = "NPC" },
+        [1011] = { chance = 3, method = "USE",
+                   rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
+        [1012] = { chance = 3, method = "USE",
+                   rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
+        [1013] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
+        [1014] = { chance = 3, method = "USE" },
     },
 }
-MCL_GUIDE_CURRENCY_DATA = {}
+MCL_GUIDE_CURRENCY_DATA = {
+    -- 300 no bolso (ver GetCurrencyInfo) de 1000 = 30%.
+    [1013] = { { type = "currency", id = 77, amount = 1000 } },
+}
 
 LibStub = function() return nil end
 
@@ -224,17 +246,17 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as oito que faltam", #ranked, 8)
+check("sobram as doze que faltam", #ranked, 12)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
-check("reputacao a 80% = Quase la",
+check("reputacao a 80% = Quase liberado",
     porNome["Quase la por reputacao"].e.tier, ns.TIER.CLOSE)
-check("conquista a 50% = Ja comecei",
+check("conquista a 50% = Requisito em andamento",
     porNome["Metade da conquista"].e.tier, ns.TIER.UNDERWAY)
 check("queda de 1/100 = Farm curto",
     porNome["Farm curto"].e.tier, ns.TIER.SHORTFARM)
-check("queda de 1/2000 = Farm longo",
+check("queda de 1/2000 = Caminho longo",
     porNome["Farm longo"].e.tier, ns.TIER.LONGFARM)
 check("sem dado nenhum = Sem estimativa",
     porNome["Sem estimativa"].e.tier, ns.TIER.UNKNOWN)
@@ -246,13 +268,61 @@ local ordemEsperada = {
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
     "Metade da conquista",
-    -- Empate de progresso resolve pela queda: 1/50 antes de 1/100.
+    -- Entre dois requisitos, vale o mais atrasado: a moeda a 30%, não a reputação a 100%.
+    "Dois requisitos",
+    -- Dentro do farm, primeiro quem já está liberado (requisito cumprido conta como
+    -- desempate, não como conclusão) e, entre os liberados, a queda mais generosa:
+    -- 1/3 liberado, depois 1/50 e 1/100 sem requisito conhecido.
+    "Bau com reputacao pronta", "Bau fora do tipo queda",
     "Farm curto mais raro", "Farm curto",
-    "Farm longo", "Sem estimativa",
+    -- No fim, os dois tipos de caminho longo. Estar a 80% de liberar uma queda de 1 em 3
+    -- é aposta melhor que uma de 1 em 2000 aberta, e por isso a trancada vem antes.
+    "Queda ainda trancada", "Farm longo",
+    "Sem estimativa",
 }
 for i, nome in ipairs(ordemEsperada) do
     check("posicao " .. i, ranked[i] and ranked[i].name, nome)
 end
+
+-- ⚑ O defeito relatado em 21/09, travado: requisito cumprido com queda no meio NÃO é pronto.
+local bau = porNome["Bau com reputacao pronta"].e
+check("baú com reputacao pronta NAO e 'Pronto para pegar'", bau.tier ~= ns.TIER.READY, true)
+check("baú com reputacao pronta cai em Farm curto", bau.tier, ns.TIER.SHORTFARM)
+check("e o numero da linha e a QUEDA, nao o requisito", bau.headline, "1/3")
+check("o requisito cumprido nao vira 100%", bau.headline ~= "100%", true)
+
+local dois = porNome["Dois requisitos"].e
+check("com dois requisitos vale o mais atrasado", dois.headline, "30%")
+check("e ele nao entra em 'Pronto para pegar'", dois.tier, ns.TIER.UNDERWAY)
+
+local foraDoTipo = porNome["Bau fora do tipo queda"].e
+check("taxa de queda basta para nao ser deterministica", foraDoTipo.deterministic, false)
+check("mesmo a fonte sendo vendedor, ela cai no farm", foraDoTipo.tier, ns.TIER.SHORTFARM)
+check("e mostra a queda, nao 'pode pegar'", foraDoTipo.headline, "1/3")
+
+local trancada = porNome["Queda ainda trancada"].e
+check("queda ainda trancada cai no fim", trancada.tier, ns.TIER.LONGFARM)
+check("e a linha dela diz o que falta liberar",
+    trancada.why:find("Falta liberar") ~= nil, true)
+
+-- Só aquisição determinística pode dizer "pode pegar".
+local prontos = 0
+for _, e in ipairs(ranked) do
+    if e.headline == "pode pegar" then
+        prontos = prontos + 1
+        check("  '" .. e.name .. "' e mesmo deterministica", e.deterministic, true)
+    end
+end
+check("alguma montaria chega a 'pode pegar'", prontos > 0, true)
+
+-- Nenhuma linha pode mostrar porcentagem quando a sorte decide.
+local pctOndeNaoDeve = 0
+for _, e in ipairs(ranked) do
+    if not e.deterministic and e.headline:find("%%") and not e.headline:find("t95xm") then
+        pctOndeNaoDeve = pctOndeNaoDeve + 1
+    end
+end
+check("nenhuma queda se anuncia em porcentagem", pctOndeNaoDeve, 0)
 
 -- A faixa nunca pode ficar fora de ordem, seja qual for a regra que a produziu.
 local crescente = true
@@ -262,24 +332,26 @@ end
 check("as faixas saem em ordem crescente", crescente, true)
 
 -- O numero que a linha mostra tem que ser o que justificou a faixa.
-check("Pronto mostra 100%", porNome["Pronta por reputacao"].e.headline, "100%")
-check("Quase la mostra 80%", porNome["Quase la por reputacao"].e.headline, "80%")
+check("Pronto mostra 'pode pegar', nao 100%", porNome["Pronta por reputacao"].e.headline, "pode pegar")
+check("Quase liberado mostra 80%", porNome["Quase la por reputacao"].e.headline, "80%")
 check("Conquista mostra 50%", porNome["Metade da conquista"].e.headline, "50%")
 check("Farm curto mostra a queda", porNome["Farm curto"].e.headline, "1/100")
 check("Sem estimativa nao inventa numero", porNome["Sem estimativa"].e.headline, "—")
 
 -- Sem catalogo nenhum o addon nao pode quebrar: ele so perde a taxa de queda.
-local guardado = MCL_GUIDE
-MCL_GUIDE = nil
+-- Sem o MCL somem os DOIS globais dele, não só o `MCL_GUIDE`: a tabela de moeda é
+-- separada, e deixar ela de pé fingia uma instalação que não existe.
+local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
+MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 8)
+check("sem o MCL a lista continua de pe", #semMCL, 12)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end
 end
 check("e sem ele tudo cai em Sem estimativa", todasSemEstimativa, true)
-MCL_GUIDE = guardado
+MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = guardado, guardadaMoeda
 ns.Invalidate()
 
 -- O botao do minimapa: criar e passar o mouse nao pode estourar. A dica dele chama o
