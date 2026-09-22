@@ -1,17 +1,17 @@
 -- RocketMounts | Core.lua
--- Namespace do addon: tudo que for compartilhado entre arquivos vai em `ns`.
+-- Addon namespace: everything shared between files lives in `ns`.
 local ADDON, ns = ...
 
 ns.defaults = {
-    -- Quantas linhas a lista mostra. "Por onde começar" não precisa de 400 linhas, e
-    -- construir 400 linhas de frame na abertura custa caro por nada.
+    -- How many rows the list shows. "Where do I start" does not need 400 rows, and
+    -- building 400 frame rows on open costs a lot for nothing.
     topN = 100,
-    -- Montaria que o jogo marca como indisponível para este personagem (facção errada,
-    -- classe errada) só atrapalha uma lista cujo assunto é "o que dá para buscar".
+    -- A mount the game marks as unavailable to this character (wrong faction, wrong
+    -- class) only gets in the way of a list whose subject is "what can I go after".
     hideUnavailable = true,
-    -- Fontes ligadas. A chave é o `sourceType` da API (ver ns.SOURCE_NAMES).
-    sources = nil,   -- nil = todas
-    window = nil,    -- { point, x, y } da última posição
+    -- Enabled sources. The key is the API `sourceType` (see ns.SOURCE_NAMES).
+    sources = nil,   -- nil = all of them
+    window = nil,    -- { point, x, y } of the last position
     minimap = { angle = 200, hide = false },
 }
 
@@ -20,14 +20,14 @@ function ns.Print(...)
 end
 
 --------------------------------------------------------------------------------
--- Eventos: tabela de despacho (O(1)) em vez de cadeia de if/elseif.
+-- Events: a dispatch table (O(1)) instead of an if/elseif chain.
 --------------------------------------------------------------------------------
 local handlers = {}
 
 function handlers:ADDON_LOADED(addon)
     if addon ~= ADDON then return end
 
-    -- SavedVariables só existem a partir daqui.
+    -- SavedVariables only exist from here on.
     RocketMountsDB = RocketMountsDB or {}
     for k, v in pairs(ns.defaults) do
         if RocketMountsDB[k] == nil then
@@ -43,9 +43,9 @@ end
 
 function handlers:PLAYER_LOGIN()
     ns.CreateMinimapButton()
-    -- O MCL monta o `MCL_GUIDE.mountLookup` em PLAYER_LOGIN + 4s e não avisa ninguém.
-    -- Em vez de chutar um atraso maior, a gente espera pelo sinal dele — e desiste
-    -- depois de um tempo, porque ele pode simplesmente não estar instalado.
+    -- MCL builds `MCL_GUIDE.mountLookup` at PLAYER_LOGIN + 4s and tells nobody. Rather
+    -- than guessing a longer delay, we wait for its own ready flag -- and give up after a
+    -- while, because it may simply not be installed.
     ns.WaitForProviders()
 end
 
@@ -67,7 +67,7 @@ end
 
 local frame = CreateFrame("Frame", ADDON .. "EventFrame")
 for event in pairs(handlers) do
-    -- Evento que este cliente não conhece derruba o RegisterEvent inteiro.
+    -- An event this client does not know brings the whole RegisterEvent down.
     pcall(frame.RegisterEvent, frame, event)
 end
 frame:SetScript("OnEvent", function(self, event, ...)
@@ -78,8 +78,8 @@ end)
 ns.frame = frame
 
 --------------------------------------------------------------------------------
--- Cache da lista. Recalcular 400 montarias a cada evento de reputação seria
--- desperdício; a gente só marca como suja e recalcula quando a janela pedir.
+-- List cache. Recomputing 400 mounts on every reputation event would be waste; we only
+-- mark it dirty and recompute when the window asks.
 --------------------------------------------------------------------------------
 local dirty = true
 
@@ -99,7 +99,7 @@ function ns.MarkClean()
 end
 
 --------------------------------------------------------------------------------
--- Espera pelos provedores opcionais (MCL e MountJournalEnhanced).
+-- Waiting for the optional providers (MCL and MountJournalEnhanced).
 --------------------------------------------------------------------------------
 local WAIT_STEP = 1
 local WAIT_GIVEUP = 20

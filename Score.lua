@@ -1,29 +1,29 @@
 -- RocketMounts | Score.lua
--- A ordem. É a única coisa que este addon faz e que os outros não fazem.
+-- The order. It is the one thing this addon does that the others do not.
 --
--- O critério é declarado, não é um número mágico: cada montaria cai numa faixa por
--- uma REGRA, e a linha mostra o número que a pôs ali. Se a ordem parecer errada, dá
--- para discordar do critério olhando a própria lista.
+-- The criterion is stated, not a magic number: every mount lands in a band by a RULE,
+-- and the row shows the number that put it there. If the order looks wrong, you can
+-- disagree with the criterion by looking at the list itself.
 --
--- ⚑ A distinção que sustenta tudo, e que a primeira versão não fazia:
+-- (!) The distinction that holds everything up, and that the first version did not make:
 --
---    REQUISITO ≠ AQUISIÇÃO.
+--    REQUIREMENT != ACQUISITION.
 --
--- Reputação, moeda e conquista são **requisitos**: eles dizem se você pode *tentar*.
--- O que entrega a montaria é outra coisa — comprar do vendedor entrega, matar um chefe
--- com 1 em 100 de chance não entrega. A versão anterior somava os dois e chamava tudo
--- de progresso, e o Esmaga-ossos Aguanegra aparecia em primeiro com "100%" porque a
--- reputação estava cumprida — só que ele cai de baú, a 1 em 3. Cem por cento do
--- requisito, zero por cento da montaria.
+-- Reputation, currency and achievements are **requirements**: they say whether you may
+-- *try*. What delivers the mount is something else -- buying from a vendor delivers,
+-- killing a boss with a 1-in-100 chance does not. The previous version merged the two and
+-- called it all progress, so the Blackwater Bonecrusher showed up first with "100%"
+-- because the reputation was met -- except it drops from a cache, at 1 in 3. A hundred
+-- percent of the requirement, zero percent of the mount.
 --
--- Daí a regra dura: **só é "Pronto para pegar" o que a aquisição é determinística.**
--- Tendo taxa de queda no meio, o requisito no máximo libera o farm; nunca o conclui.
+-- Hence the hard rule: **only a deterministic acquisition can be "ready to grab".** With a
+-- drop chance in the way, the requirement at most unlocks the farm; it never completes it.
 --
--- O que este modelo AINDA NÃO considera, e é a maior lacuna conhecida: a trava de
--- tentativa. Uma queda de 1/100 num chefe com trava semanal e uma de 1/100 num bicho
--- sem trava nenhuma são separadas por anos, e hoje as duas caem na mesma faixa. Falta
--- o dado do período de trava por montaria — a API não dá e nenhum catálogo instalado
--- guarda. Até ter, a linha mostra o método, para o jogador julgar.
+-- What this model still does NOT consider, and it is the largest known gap: attempt
+-- lockouts. A 1/100 drop from a boss on a weekly lockout and a 1/100 drop from a mob with
+-- no lockout at all are years apart, and today both land in the same band. The per-mount
+-- lockout period is missing -- the API does not expose it and no installed catalogue keeps
+-- it. Until it exists, the row shows the method and the player judges.
 local _, ns = ...
 
 ns.TIER = {
@@ -36,11 +36,15 @@ ns.TIER = {
     UNKNOWN   = 7,
 }
 
--- Os nomes carregam a divisão que a comunidade de colecionadores realmente usa —
--- **garantida** contra **na sorte** ("guaranteed" contra "RNG", nos guias em inglês;
--- "obtenção fácil" contra "sorte" e "camperar", nos guias brasileiros). É a mesma fronteira
--- que o motor calcula em `Deterministic`, então o rótulo passou a dizer em palavra o que a
--- regra já fazia em código. A faixa 5 não leva nenhum dos dois nomes: ela mistura os tipos.
+-- The names carry the split the collector community actually uses -- **guaranteed** against
+-- **luck** ("guaranteed" vs "RNG" in the English guides; "obtenção fácil" against "sorte"
+-- and "camperar" in the Brazilian ones). It is the same boundary the engine computes in
+-- `Deterministic`, so the label now says in words what the rule already did in code. Band 6
+-- carries neither name because it mixes both kinds.
+--
+-- (!) These strings are player-facing and are still hardcoded in Brazilian Portuguese. This
+-- addon has no `Locales/` yet, and it needs one -- with English as the key language -- before
+-- it can go on the release pipeline.
 ns.TIER_NAME = {
     [1] = "Garantidas — é só ir pegar",
     [2] = "Confira no vendedor",
@@ -51,8 +55,9 @@ ns.TIER_NAME = {
     [7] = "Sem estimativa",
 }
 
--- A dica é curta porque divide a linha com o nome da faixa, que cresceu. Teto prático:
--- ~36 caracteres. Acima disso ela atravessa a borda da lista (ver TIER_HINT_WIDTH).
+-- The hint is short because it shares a line with the band name, which grew. Practical
+-- ceiling: ~36 characters. Past that it crosses the list border (see the width check in
+-- the harness, which counts LETTERS, not bytes).
 ns.TIER_HINT = {
     [1] = "requisito cumprido e conferido",
     [2] = "o preço você tem; pode haver mais",
@@ -63,43 +68,46 @@ ns.TIER_HINT = {
     [7] = "não há como medir esta",
 }
 
--- Chance a partir da qual o farm deixa de ser de uma tarde. Não é medição, é o corte
--- que o jogo consagrou (as quedas "de 1%" são o patamar em que se fala em farmar).
+-- The chance above which a farm stops being an afternoon's work. Not a measurement: it is
+-- the cut the game itself settled on (a "1% drop" is the tier where people talk of farming).
 local SHORT_FARM_CHANCE = 100
 
--- Fonte em que a montaria vem por sorte, e não por cumprir requisito. Saque é óbvio;
--- descoberta é achar por acaso. Nessas duas, requisito cumprido nunca significa pronto.
+-- Sources where the mount arrives by luck rather than by meeting a requirement. A drop is
+-- obvious; a discovery is finding it by accident. In those two, a met requirement never
+-- means ready.
 local LUCK_SOURCE = {
-    [1] = true,    -- Saque
-    [11] = true,   -- Descoberta
+    [1] = true,    -- Drop
+    [11] = true,   -- Discovery
 }
 
--- A aquisição é determinística quando nada nela depende de sorte: comprar do vendedor,
--- entregar a missão, fechar a conquista. Taxa de queda no registro é prova do contrário.
+-- The acquisition is deterministic when nothing in it depends on luck: buying from the
+-- vendor, handing in the quest, closing the achievement. A drop chance on the record is
+-- proof of the opposite.
 local function Deterministic(e)
     if e.chance and e.chance > 0 then return false end
     if LUCK_SOURCE[e.sourceType] then return false end
     return true
 end
 
--- ⛑ ACESSO NÃO É PREÇO, e confundir os dois foi o defeito relatado em 21/09.
+-- (!) ACCESS IS NOT PRICE, and confusing the two was the defect reported on 21/09.
 --
--- A Fênix Negra apareceu como "é só ir pegar". O catálogo sabe uma coisa só sobre ela: custa
--- 3.000 de ouro. O jogador tem o ouro → requisito cumprido → pronto. Só que ela exige **guilda
--- Exaltada mais a conquista "Guild Glory of the Cataclysm Raider"**, e disso não há uma linha
--- em lugar nenhum do dado que este addon lê.
+-- The Blackwater Bonecrusher opened the list as "just go get it". The catalogue knows exactly
+-- one thing about it: it costs 3,000 gold. The player has the gold -> requirement met ->
+-- ready. Except it requires **Exalted with your guild plus the "Guild Glory of the Cataclysm
+-- Raider" achievement**, and there is not one line about either in the data this addon reads.
 --
--- A lição não é sobre essa montaria: é que **a ausência de requisito conhecido estava sendo
--- lida como ausência de requisito**. E ouro quase nunca é o que trava alguém — o que trava é
--- reputação, conquista, guilda, classificação. Saber só o preço é saber quase nada.
+-- The lesson is not about that mount: it is that **the absence of a known requirement was
+-- being read as the absence of a requirement**. And gold is almost never what blocks anyone
+-- -- what blocks is reputation, achievements, guild, rating. Knowing only the price is
+-- knowing almost nothing.
 --
--- Então os requisitos viraram duas famílias:
+-- So requirements became two families:
 --
---   ACESSO  reputação, renome, conquista — o que decide se você PODE
---   PREÇO   ouro, moeda, item            — o que decide se você PAGA
+--   ACCESS  reputation, renown, achievement -- decides whether you CAN
+--   PRICE   gold, currency, item            -- decides whether you PAY
 --
--- "É só ir pegar" exige um acesso conhecido E cumprido. Sabendo só o preço, a montaria vai
--- para "Confira no vendedor", que promete exatamente o que dá para provar.
+-- "Just go get it" demands a known AND met access requirement. Knowing only the price sends
+-- the mount to "check with the vendor", which promises exactly what can be proven.
 local ACCESS_KEYS = { "rep", "achievement" }
 
 local function Access(e)
@@ -123,34 +131,34 @@ end
 
 function ns.Rank(entry)
     local e = entry
-    local acesso, from = Access(e)
-    local preco = Price(e)
+    local access, from = Access(e)
+    local price = Price(e)
 
-    -- O requisito que a linha mostra é o mais atrasado dos dois: quem tem a reputação mas não
-    -- o ouro está preso no ouro, e vice-versa.
-    local req = acesso
-    if preco and (not req or preco < req) then
-        req, from = preco, "cost"
+    -- The requirement the row shows is the further behind of the two: whoever has the
+    -- reputation but not the gold is stuck on the gold, and the other way round.
+    local req = access
+    if price and (not req or price < req) then
+        req, from = price, "cost"
     end
 
-    e.access = acesso
-    e.price = preco
+    e.access = access
+    e.price = price
     e.requirement = req
     e.requirementFrom = from
     e.deterministic = Deterministic(e)
     e.gated = (req ~= nil and req < 1)
 
     if e.deterministic then
-        if acesso == nil then
-            -- SEM ACESSO CONHECIDO. Não dá para dizer "é só ir pegar": o que se sabe é o preço,
-            -- e preço quase nunca é o que trava.
-            if preco == nil then
+        if access == nil then
+            -- NO KNOWN ACCESS. We cannot say "just go get it": what we know is the price,
+            -- and price is almost never what blocks.
+            if price == nil then
                 e.tier = ns.TIER.UNKNOWN
-            elseif preco >= 1 then
+            elseif price >= 1 then
                 e.tier = ns.TIER.CHECK
-            elseif preco >= 0.75 then
+            elseif price >= 0.75 then
                 e.tier = ns.TIER.CLOSE
-            elseif preco > 0 then
+            elseif price > 0 then
                 e.tier = ns.TIER.UNDERWAY
             else
                 e.tier = ns.TIER.LONGFARM
@@ -165,7 +173,7 @@ function ns.Rank(entry)
             e.tier = ns.TIER.LONGFARM
         end
     elseif e.gated then
-        -- Depende de sorte E ainda nem está liberado: é o pior dos dois mundos.
+        -- Depends on luck AND is not even unlocked yet: the worst of both worlds.
         e.tier = ns.TIER.LONGFARM
     elseif e.chance and e.chance > 0 then
         e.tier = (e.chance <= SHORT_FARM_CHANCE) and ns.TIER.SHORTFARM or ns.TIER.LONGFARM
@@ -173,14 +181,14 @@ function ns.Rank(entry)
         e.tier = ns.TIER.UNKNOWN
     end
 
-    -- O número da direita. A regra nova: **porcentagem só onde a porcentagem é a
-    -- história inteira**. Onde a sorte decide, o número é a chance, nunca o requisito —
-    -- foi essa mistura que fez um baú de 1 em 3 se anunciar como 100%.
+    -- The number on the right. The rule: **a percentage only where the percentage is the
+    -- whole story**. Where luck decides, the number is the chance, never the requirement --
+    -- it was that mix that made a 1-in-3 cache announce itself as 100%.
     if e.deterministic then
         if e.tier == ns.TIER.READY then
             e.headline = "pode pegar"
         elseif e.tier == ns.TIER.CHECK then
-            -- NÃO é "pode pegar" e não é porcentagem: o que se afirma é só que o preço cabe.
+            -- NOT "ready" and not a percentage: all we claim is that the price fits.
             e.headline = "preço ok"
         elseif req then
             e.headline = string.format("%d%%", math.floor(req * 100 + 0.5))
@@ -195,17 +203,17 @@ function ns.Rank(entry)
         e.headline = "—"
     end
 
-    -- A frase que explica a posição.
+    -- The sentence that explains the position.
     local reqLabel = from and e[from] and e[from].label or nil
 
     if e.gated and not e.deterministic then
-        -- Primeiro o que trava, depois a sorte: é nessa ordem que o jogador age.
+        -- First what blocks, then the luck: that is the order in which the player acts.
         e.why = "Falta liberar — " .. (reqLabel or "requisito não cumprido")
         if e.chance then
             e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
         end
     elseif e.tier == ns.TIER.CHECK then
-        -- A frase precisa dizer as DUAS coisas: o que dá para garantir e o que não dá.
+        -- The sentence has to say BOTH things: what can be guaranteed and what cannot.
         e.why = (reqLabel and (reqLabel .. "  ·  ") or "")
             .. "pode haver requisito que eu não leio"
     elseif e.deterministic and reqLabel then
@@ -215,7 +223,7 @@ function ns.Rank(entry)
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
     elseif e.sourceText and e.sourceText ~= "" then
-        -- O texto da Blizzard vem com quebra de linha; a linha da lista quer uma só.
+        -- Blizzard's text comes with line breaks; a list row wants a single line.
         e.why = (e.sourceText:gsub("[\r\n]+", "  ·  "))
     else
         e.why = ns.SOURCE_NAMES[e.sourceType]
@@ -224,14 +232,14 @@ function ns.Rank(entry)
     return e
 end
 
--- Ordem dentro da faixa: quem tem mais requisito andado, depois a chance mais generosa,
--- e por fim quantos jogadores já têm — mais comum costuma ser mais fácil na prática.
+-- Order within a band: more requirement walked first, then the more generous chance, and
+-- finally how many players already own it -- more common tends to be easier in practice.
 --
--- Havia aqui uma linha pôndo a aquisição determinística na frente. Saiu por dois motivos:
--- nenhum teste conseguia reprová-la (nas faixas 1 a 4 os itens são todos do mesmo tipo,
--- então ela nunca decidia nada), e no único lugar onde ela decidiria — o "Caminho longo",
--- que mistura os dois — ela decidiria errado: reputação do zero para comprar é aposta pior
--- que uma queda de 1 em 3 já 80% liberada.
+-- There used to be a line here putting deterministic acquisitions first. It was removed for
+-- two reasons: no test could make it fail (in bands 1 to 5 the items are all of the same
+-- kind, so it never decided anything), and in the one place where it would decide -- the
+-- "long road", which mixes both -- it would decide wrongly: grinding reputation from zero to
+-- buy something is a worse bet than a 1-in-3 drop already 80% unlocked.
 local function Compare(a, b)
     if a.tier ~= b.tier then return a.tier < b.tier end
 
@@ -263,7 +271,7 @@ function ns.GetRanked(force)
     return cache
 end
 
--- A lista já ranqueada, depois do filtro de fonte.
+-- The ranked list, after the source filter.
 function ns.GetFiltered()
     local all = ns.GetRanked()
     local want = ns.db.sources
