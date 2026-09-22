@@ -439,6 +439,11 @@ local function Redraw()
     if #entries ~= total then
         footer = footer .. string.format(" (filtrado de %d)", total)
     end
+    -- BUSCA SEM RESULTADO TEM QUE DIZER ISSO. Lista vazia sem explicação parece addon quebrado,
+    -- e o primeiro palpite de quem vê é que o addon parou — não que o termo não achou nada.
+    if ns.search and ns.search ~= "" and #entries == 0 then
+        footer = string.format("nada encontrado para \"%s\"", ns.search)
+    end
     if not mcl then
         footer = footer .. "  |cffcc6666· sem o MCL, não há a chance de saque|r"
     elseif not rar then
@@ -551,6 +556,35 @@ local function Build()
     sourceBtn:SetPoint("LEFT")
     sourceBtn:SetText("Fontes")
     sourceBtn:SetScript("OnClick", function(self) SourceMenu(self) end)
+
+    -- A CAIXA DE BUSCA, com a arte nativa (`SearchBoxTemplate`): lupa, texto de dica e o "x"
+    -- de limpar já vêm com ela, e o jogador reconhece a forma de outras janelas do jogo.
+    local busca = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
+    busca:SetSize(220, 22)
+    busca:SetPoint("LEFT", sourceBtn, "RIGHT", 8, 0)
+    busca:SetAutoFocus(false)
+    -- `if busca.Instructions then` NÃO BASTA: no simulador do harness qualquer campo
+    -- desconhecido responde uma função, que é verdadeira — e aí o `:SetText` tenta indexar
+    -- função e estoura. Guardar pelo TIPO vale nos dois lados, e no jogo também protege contra
+    -- um template que mude de forma.
+    if type(busca.Instructions) == "table" and busca.Instructions.SetText then
+        busca.Instructions:SetText("nome, chefe, zona, vendedor")
+    end
+
+    -- FILTRA A CADA TECLA, e não só no Enter: a lista respondendo enquanto se digita é o que
+    -- deixa procurar por tentativa — escreve "fyr", vê, corrige.
+    busca:SetScript("OnTextChanged", function(self, byUser)
+        if not byUser then return end
+        ns.search = self:GetText()
+        ns.RefreshWindow()
+    end)
+    busca:SetScript("OnEscapePressed", function(self)
+        self:SetText("")
+        self:ClearFocus()
+        ns.search = ""
+        ns.RefreshWindow()
+    end)
+    window.search = busca
 
     window.footer = ns.NewText(bar, S.subFontSize, S.dim, "RIGHT")
     window.footer:SetPoint("RIGHT")

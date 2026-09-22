@@ -77,6 +77,17 @@ each alt and they appear; `/rmt quem` shows what is on record.
 It is a ledger, not a live reading, and it says so: everything in it was true when that character
 last logged in.
 
+## Searching
+
+The box at the top of the window filters as you type, and it does **not** search the mount name
+only. The mount that drops from Fyrakk is called *Anu'relos, Flame's Guidance* — the word
+"Fyrakk" appears nowhere in its name, so a name-only search would fail on exactly the case that
+makes people reach for a search box.
+
+So it searches everything the addon knows about a mount: name, Blizzard's own source text, the
+boss, the vendor, the zone and the faction. Accents are ignored, and every word you type has to
+match — typing more narrows, which is what typing more is supposed to do.
+
 ## Mounts that left the game
 
 Ended promotions, trading card game mounts, retired achievements. They cannot be obtained by
@@ -103,6 +114,7 @@ the method and leaves the judgement to you. No estimate was invented to fill the
 | `/rmt faccao [minha\|horda\|alianca]` | filters by faction |
 | `/rmt quem` | the characters on record and how many reputations each has |
 | `/rmt sumidas` | shows or hides the mounts that left the game |
+| `/rmt busca <text>` | searches by name, boss, zone or vendor |
 | `/rmt debug [name]` | what the addon managed to read, for everything or for one mount |
 
 ## License
