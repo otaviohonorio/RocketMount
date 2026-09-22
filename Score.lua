@@ -26,13 +26,17 @@
 -- it. Until it exists, the row shows the method and the player judges.
 local _, ns = ...
 
+-- (!) A ORDEM DAS FAIXAS É A PROMESSA DO ADDON, e ela estava errada: "requisito desconhecido"
+-- ficava em SEGUNDO, logo abaixo de "é só ir pegar". Posição é recomendação — pôr "eu não sei"
+-- perto do topo faz a lista recomendar justamente o que ela não consegue avaliar. Agora ela cai
+-- para o fim, ao lado de "sem estimativa", que é onde a falta de informação pertence.
 ns.TIER = {
     READY     = 1,
-    CHECK     = 2,
-    CLOSE     = 3,
-    UNDERWAY  = 4,
-    SHORTFARM = 5,
-    LONGFARM  = 6,
+    CLOSE     = 2,
+    UNDERWAY  = 3,
+    SHORTFARM = 4,
+    LONGFARM  = 5,
+    CHECK     = 6,
     UNKNOWN   = 7,
 }
 
@@ -47,25 +51,28 @@ ns.TIER = {
 -- it can go on the release pipeline.
 ns.TIER_NAME = {
     [1] = "Garantidas — é só ir pegar",
-    [2] = "Requisito desconhecido",
-    [3] = "Garantidas — quase liberadas",
-    [4] = "Garantidas — a meio caminho",
-    [5] = "Na sorte — chance boa",
-    [6] = "Caminho longo",
+    [2] = "Garantidas — quase liberadas",
+    [3] = "Garantidas — a meio caminho",
+    [4] = "Na sorte — chance boa",
+    [5] = "Caminho longo",
+    [6] = "Exige mais que o preço",
     [7] = "Sem estimativa",
 }
 
 -- The hint is short because it shares a line with the band name, which grew. Practical
 -- ceiling: ~36 characters. Past that it crosses the list border (see the width check in
 -- the harness, which counts LETTERS, not bytes).
+-- A dica fala do que a MONTARIA exige, e não do que o addon sabe. A dica da faixa 6 chegou a
+-- ser *"sei o preço; o resto não sei"* e foi reprovada na hora: o jogador não quer saber o que
+-- o addon sabe, quer saber o que falta para ele pegar a montaria.
 ns.TIER_HINT = {
     [1] = "requisito cumprido e conferido",
-    [2] = "sei o preço; o resto não sei",
-    [3] = "falta pouco do requisito",
-    [4] = "caminho já andado",
-    [5] = "1 em 100 ou melhor",
-    [6] = "chance ruim, ou requisito no começo",
-    [7] = "não há como medir esta",
+    [2] = "falta pouco do requisito",
+    [3] = "caminho já andado",
+    [4] = "1 em 100 ou melhor",
+    [5] = "chance ruim, ou requisito longe",
+    [6] = "conquista, reputação ou guilda",
+    [7] = "sem dado para estimar",
 }
 
 -- The chance above which a farm stops being an afternoon's work. Not a measurement: it is
