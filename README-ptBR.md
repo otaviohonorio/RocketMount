@@ -52,6 +52,7 @@ no vendedor", que promete exatamente o que dá para provar.
 | Progresso de reputação e renome | `C_Reputation`, `C_MajorFactions` |
 | Moeda, ouro e item no bolso | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
 | Progresso parcial de conquista | `GetAchievementCriteriaInfo` |
+| **O que o jogo diz que é exigido** | o tooltip do próprio item, via `C_TooltipInfo` |
 | Taxa de queda, coordenada, facção exigida | `MCL_GUIDE` (do addon MCL) |
 | Percentual de jogadores que têm a montaria | `MountsRarity-2.0` (dentro do MountJournalEnhanced) |
 
@@ -94,6 +95,22 @@ Promoções encerradas, montarias de jogo de cartas, conquistas aposentadas. Nin
 então elas ficam fora da lista — numa lista cujo assunto é *por onde começar*, montaria que
 ninguém consegue é a pior linha possível. `/rmt sumidas` (ou a opção) liga, e aí elas aparecem
 por último, em faixa própria e sem estimativa de esforço: não é difícil, é impossível.
+
+## Por que não existe uma base curada aqui
+
+A correção óbvia para "o catálogo não sabe deste requisito" é escrever uma base própria. Não
+escrevemos, e o motivo é o modo de falha: **entrada curada errada erra em silêncio**, para
+sempre, e é o addon falando com confiança de algo que ninguém verificou. O addon inteiro existe
+para não afirmar mais do que consegue provar.
+
+O jogo já sabe. Passe o mouse no item da montaria e o tooltip diz, no seu idioma, *"Requer
+Exaltado com <facção>"* ou *"Requer <conquista>"*. O `C_TooltipInfo` entrega essas mesmas linhas
+como dado, e o addon as lê: cobrem toda montaria que tem item, continuam certas depois do
+próximo patch sem ninguém manter, já vêm traduzidas, e quando elas não dizem nada esse silêncio
+é a verdade — e não um buraco na planilha de alguém.
+
+Os padrões de "Requer ..." são montados a partir das globais do próprio cliente, nunca escritos
+num idioma — um "Requer" cravado quebraria em todo cliente que não é ptBR, em silêncio.
 
 ## Lacuna conhecida
 
