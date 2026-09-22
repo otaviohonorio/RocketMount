@@ -79,6 +79,9 @@ MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 function CreateFrame(kind) return widget(kind) end
 function UnitFactionGroup() return "Alliance" end
 function UnitName() return "Hamfarir" end
+function GetRealmName() return "Azralon" end
+function UnitClass() return "Death Knight", "DEATHKNIGHT" end
+function time() return 1758500000 end
 function GetCursorPosition() return 0, 0 end
 function IsShiftKeyDown() return false end
 function GetMoney() return 500000 end          -- 50 de ouro
@@ -157,6 +160,11 @@ local MOUNTS = {
     -- Vendedor COMUM, so ouro, sem guilda: e este que pertence a faixa de "exige mais que o
     -- preco" -- nao ha requisito conhecido, mas tambem nao ha um bloqueio nomeado.
     { 18, 1018, "So ouro, sem guilda",      3, false },
+    -- Especifica de faccao: ate agora isso so servia para ESCONDER, e esconder nao e informar.
+    { 19, 1019, "So da Alianca",            3, false, 1 },
+    -- E uma so da HORDA: sem ela, o filtro "minha" (Alianca aqui) nao tinha o que excluir, e o
+    -- teste dele passava com a regra desligada.
+    { 20, 1020, "So da Horda",              3, false, 0 },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -225,10 +233,19 @@ MCL_GUIDE = {
         [1017] = { rep = { factionId = 9999, factionName = "Faccao que nunca vi",
                            levelName = "Exalted" } },
         [1018] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
+        [1019] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
+        [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
         [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
                    vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
     },
 }
+-- As faccoes que alguma montaria pede: e desta tabela que o `Roster` tira o que anotar. Sem ela
+-- ele nao anota nada, e todo teste sobre o livro-caixa passa por vazio.
+MCL_GUIDE_REP_DATA = {
+    [1002] = { { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
+    [1017] = { { factionId = 9999, factionName = "Faccao que nunca vi", levelName = "Exalted" } },
+}
+
 MCL_GUIDE_CURRENCY_DATA = {
     -- 300 no bolso (ver GetCurrencyInfo) de 1000 = 30%.
     [1013] = { { type = "currency", id = 77, amount = 1000 } },
@@ -236,6 +253,8 @@ MCL_GUIDE_CURRENCY_DATA = {
     [1015] = { { type = "gold", id = 0, amount = 1000 } },
     [1017] = { { type = "gold", id = 0, amount = 1000 } },
     [1018] = { { type = "gold", id = 0, amount = 1000 } },
+    [1019] = { { type = "gold", id = 0, amount = 1000 } },
+    [1020] = { { type = "gold", id = 0, amount = 1000 } },
     [1016] = { { type = "gold", id = 0, amount = 1000 } },
 }
 
@@ -245,7 +264,17 @@ LibStub = function() return nil end
 -- Carrega o addon
 --------------------------------------------------------------------------------
 local ns = {}
-local FILES = { "Core.lua", "Skin.lua", "Sources.lua", "Score.lua", "Window.lua", "Minimap.lua", "Options.lua", "Commands.lua" }
+-- (!) A LISTA VEM DO `.toc`, e nao cravada aqui. Ela ja esteve cravada, e o preco apareceu na
+-- primeira vez que um arquivo novo entrou no addon: o `Roster.lua` foi para o `.toc`, o jogo
+-- passou a carrega-lo e o harness NAO -- entao o teste rodava contra um addon que nao existe.
+-- Ler o `.toc` faz o simulador carregar exatamente o que o jogo carrega, e na mesma ordem.
+local FILES = {}
+for line in io.lines(ADDON .. ".toc") do
+    line = line:gsub("%s+$", "")
+    if line:match("%.lua$") and not line:match("^#") then
+        FILES[#FILES + 1] = line:gsub("\\", "/")
+    end
+end
 
 for _, file in ipairs(FILES) do
     local chunk, err = loadfile(file)
@@ -275,7 +304,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as dezesseis que faltam", #ranked, 16)
+check("sobram as dezessete que faltam", #ranked, 17)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -310,7 +339,7 @@ local ordemEsperada = {
     -- Requisito conhecido e NAO cumprido (0%) vem antes de requisito que nao da para medir:
     -- saber o que falta vale mais que nao saber nada.
     "Rep que nunca vi", "So sei o preco", "Farm longo",
-    "So ouro, sem guilda",
+    "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
 }
 for i, nome in ipairs(ordemEsperada) do
@@ -427,7 +456,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 16)
+check("sem o MCL a lista continua de pe", #semMCL, 17)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end
@@ -484,5 +513,96 @@ check("a janela monta e desenha sem erro", okJanela, true)
 if not okJanela then print("      " .. tostring(erroJanela)) end
 
 print("")
+--------------------------------------------------------------------------------
+
+-- QUEM TEM A REPUTACAO, E O FILTRO DE FACCAO (22/09)
+--
+-- A API so fala do personagem conectado. A pergunta *"qual personagem meu tem essa reputacao?"*
+-- so tem resposta se alguem anotar o que cada um tinha ao entrar -- e e isso que o `Roster` faz,
+-- em SavedVariables de conta.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- livro-caixa de reputacao e filtro de faccao")
+
+    -- O livro-caixa se escreve com o personagem conectado.
+    ns.Roster.Record()
+    check("o personagem conectado entra no livro-caixa", ns.Roster.Count(), 1)
+
+    -- E NAO responde sobre si mesmo: a pergunta e sobre os OUTROS. Perguntar e receber o proprio
+    -- nome de volta seria pior que nao responder -- o jogador ja sabe em quem esta.
+    check("ele anotou as faccoes que alguma montaria pede",
+        ns.db.chars["Hamfarir-Azralon"].reps[9002] ~= nil, true)
+    -- E NAO responde sobre si mesmo: perguntar "quem tem" e receber o proprio nome de volta
+    -- seria pior que nao responder -- o jogador ja sabe em quem esta.
+    check("  e nao aparece na resposta sobre os OUTROS", #ns.Roster.WhoHas(9002), 0)
+
+    -- Um alt anotado numa sessao anterior. E o caso que motivou tudo: reputacao legada que
+    -- ESTE personagem nao tem, mas outro tem.
+    ns.db.chars["Ottozinho-Azralon"] = {
+        name = "Ottozinho", realm = "Azralon", faction = "Horde", class = "SHAMAN",
+        reps = { [9999] = 8 },      -- Exaltado na faccao que o conectado nunca viu
+    }
+    check("agora sao dois no livro-caixa", ns.Roster.Count(), 2)
+
+    local quem = ns.Roster.WhoHas(9999, 8)
+    check("o livro-caixa acha quem tem a reputacao", #quem, 1)
+    check("  e diz o nome", quem[1] and quem[1].name, "Ottozinho")
+    check("  e o nivel", quem[1] and quem[1].reaction, 8)
+
+    -- E A LINHA DA MONTARIA PASSA A DIZER ISSO, em vez de "nenhuma reputacao neste personagem".
+    ns.Invalidate()
+    local lista = ns.GetRanked(true)
+    local nuncaVi2
+    for _, e in ipairs(lista) do
+        if e.name == "Rep que nunca vi" then nuncaVi2 = e end
+    end
+    check("a montaria aponta o alt que tem", nuncaVi2.rep.outroChar ~= nil, true)
+    check("  nomeando ele", nuncaVi2.rep.label:find("Ottozinho", 1, true) ~= nil, true)
+    -- MAS CONTINUA NAO CUMPRIDA: quem tem e outro personagem, e a montaria e por personagem.
+    check("  e mesmo assim o requisito NAO esta cumprido", nuncaVi2.rep.pct, 0)
+
+    -- O FILTRO DE FACCAO. Com `hideUnavailable` ligado a montaria da outra faccao nem entra na
+    -- lista, entao o filtro so tem o que fazer com ele desligado -- que e justamente o modo de
+    -- quem esta planejando o outro lado.
+    ns.db.hideUnavailable = false
+    ns.Invalidate()
+    ns.db.factionFilter = nil
+    local todas = select(1, ns.GetFiltered())
+    ns.db.factionFilter = "Horde"
+    local soHorda = select(1, ns.GetFiltered())
+    -- (!) OS NUMEROS SAO CONTADOS DA LISTA, e nao supostos. A primeira versao destes checks
+    -- assumia "uma da Horda e uma da Alianca" e errou: a fixture ja tinha outra da Horda de
+    -- antes. Contar o que existe e imune a fixture crescer.
+    local nHorda, nAlianca = 0, 0
+    for _, e in ipairs(todas) do
+        if e.factionOnly == "Horde" then nHorda = nHorda + 1
+        elseif e.factionOnly == "Alliance" then nAlianca = nAlianca + 1 end
+    end
+    check("a fixture tem montaria dos dois lados", nHorda > 0 and nAlianca > 0, true)
+
+    check("o filtro de Horda tira as da Alianca", #soHorda, #todas - nAlianca)
+
+    ns.db.factionFilter = "Alliance"
+    local soAlianca = select(1, ns.GetFiltered())
+    check("e o da Alianca tira as da Horda", #soAlianca, #todas - nHorda)
+
+    -- "minha" segue a faccao do PERSONAGEM (Alianca aqui): exclui as da Horda, e so elas.
+    ns.db.factionFilter = "mine"
+    local minhas = select(1, ns.GetFiltered())
+    check("'minha' exclui as da outra faccao", #minhas, #todas - nHorda)
+    local temHorda = false
+    for _, e in ipairs(minhas) do
+        if e.name == "So da Horda" then temHorda = true end
+    end
+    check("  e a excluida e mesmo a da Horda", temHorda, false)
+
+    ns.db.hideUnavailable = true
+
+    ns.db.factionFilter = nil
+    ns.db.chars["Ottozinho-Azralon"] = nil
+    ns.Invalidate()
+end
+
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))
 os.exit(falhas == 0 and 0 or 1)

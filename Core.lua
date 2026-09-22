@@ -13,6 +13,11 @@ ns.defaults = {
     sources = nil,   -- nil = all of them
     window = nil,    -- { point, x, y } of the last position
     minimap = { angle = 200, hide = false },
+    -- O livro-caixa de reputação por personagem (ver `Roster.lua`). Fica em SavedVariables de
+    -- CONTA de propósito: a pergunta que ele responde é sobre os outros personagens.
+    chars = {},
+    -- Filtro de facção: nil = tudo, "mine" = só o que este personagem pode, "Horde", "Alliance".
+    factionFilter = nil,
 }
 
 function ns.Print(...)
@@ -43,6 +48,8 @@ end
 
 function handlers:PLAYER_LOGIN()
     ns.CreateMinimapButton()
+    -- O livro-caixa se escreve ao entrar, que é quando a API fala deste personagem.
+    if ns.Roster then ns.Roster.Record() end
     -- MCL builds `MCL_GUIDE.mountLookup` at PLAYER_LOGIN + 4s and tells nobody. Rather
     -- than guessing a longer delay, we wait for its own ready flag -- and give up after a
     -- while, because it may simply not be installed.
@@ -58,6 +65,7 @@ function handlers:NEW_MOUNT_ADDED()
 end
 
 function handlers:UPDATE_FACTION()
+    if ns.Roster then ns.Roster.Record() end
     ns.Invalidate()
 end
 

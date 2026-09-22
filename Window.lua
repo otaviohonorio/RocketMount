@@ -173,9 +173,32 @@ local function FillDetail(entry)
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
     -- fazia a lista anunciar "100%" numa montaria que ainda depende de sorte.
+    if entry.factionOnly then
+        -- FACÇÃO É INFORMAÇÃO, e antes ela só servia para esconder a montaria. Quem planeja o
+        -- outro lado precisa saber que ela existe e de quem ela é.
+        Block("Facção", entry.factionOnly == "Horde" and "Só para a Horda" or "Só para a Aliança")
+    end
+
     local p = entry.requirementFrom and entry[entry.requirementFrom]
     if p and p.label then
         Block(entry.gated and "Requisito que falta" or "Requisito", p.label)
+    end
+
+    -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
+    -- escrito quando cada personagem entra. Por isso ela diz "pelo que ficou anotado" — uma
+    -- anotação velha se passando por leitura ao vivo seria pior que anotação nenhuma.
+    if p and p.unreadable and entry.rep and entry.rep.factionId ~= nil and ns.Roster then
+        local quem = ns.Roster.WhoHas(entry.rep.factionId)
+        if #quem > 0 then
+            local linhas = {}
+            for i = 1, math.min(#quem, 5) do
+                local c = quem[i]
+                linhas[#linhas + 1] = string.format("%s — %s", c.name,
+                    _G["FACTION_STANDING_LABEL" .. c.reaction] or "?")
+            end
+            Block("Quem tem, pelo que ficou anotado",
+                table.concat(linhas, string.char(10)))
+        end
     end
 
     -- PREÇO E FALTA SÃO DUAS LINHAS, e não um número grudado no outro: *"mistura o valor que

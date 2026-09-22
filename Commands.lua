@@ -31,6 +31,37 @@ commands["minimapa"] = function()
     ns.Print(ns.db.minimap.hide and "botão do minimapa escondido." or "botão do minimapa à mostra.")
 end
 
+-- `/rmt faccao [minha|horda|alianca]`, sem argumento limpa.
+commands["faccao"] = function(rest)
+    local arg = (rest or ""):lower():gsub("%s", "")
+    local mapa = {
+        minha = "mine", mine = "mine",
+        horda = "Horde", horde = "Horde",
+        alianca = "Alliance", ["aliança"] = "Alliance", alliance = "Alliance",
+    }
+    ns.db.factionFilter = mapa[arg]
+    local nomes = { mine = "só o que este personagem pode",
+                    Horde = "só da Horda", Alliance = "só da Aliança" }
+    ns.Print("facção: " .. (nomes[ns.db.factionFilter] or "todas"))
+    ns.RefreshWindow()
+end
+
+commands["quem"] = function(rest)
+    -- (!) O LIVRO-CAIXA EM UMA LINHA. Sem isto, a única forma de saber se ele tem algo dentro
+    -- é abrir a ficha de uma montaria específica — e um livro-caixa vazio (um personagem só)
+    -- não consegue responder "qual dos meus tem", e precisa dizer isso.
+    local n = ns.Roster and ns.Roster.Count() or 0
+    ns.Print(n .. " personagem(ns) anotado(s). O livro-caixa se escreve quando cada um entra no "
+        .. "jogo — entre com os alts uma vez para eles aparecerem aqui.")
+    if not (ns.db and ns.db.chars) then return end
+    for _, c in pairs(ns.db.chars) do
+        local quantas = 0
+        for _ in pairs(c.reps or {}) do quantas = quantas + 1 end
+        print(string.format("    %s%s  —  %d reputações anotadas",
+            c.name or "?", c.faction and (" (" .. c.faction .. ")") or "", quantas))
+    end
+end
+
 commands["fontes"] = function()
     ns.db.sources = nil
     ns.Print("filtro de fonte limpo: todas as fontes voltam a aparecer.")
@@ -96,6 +127,8 @@ commands["help"] = function()
     print("    |cffffff00/rmt|r — abre e fecha a lista")
     print("    |cffffff00/rmt top <n>|r — quantas linhas a lista mostra")
     print("    |cffffff00/rmt fontes|r — limpa o filtro de fonte")
+    print("    |cffffff00/rmt faccao [minha|horda|alianca]|r — filtra por facção")
+    print("    |cffffff00/rmt quem|r — os personagens anotados e quantas reputações cada um tem")
     print("    |cffffff00/rmt minimapa|r — mostra ou esconde o botão do minimapa")
     print("    |cffffff00/rmt config|r — opções")
     print("    |cffffff00/rmt debug|r — o que o addon conseguiu ler")
