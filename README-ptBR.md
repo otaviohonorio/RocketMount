@@ -79,6 +79,18 @@ está anotado.
 É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
 entrou pela última vez.
 
+## Quando algo na sua frente larga montaria
+
+Mire, passe o mouse, ou deixe o raro gritar quando nasce: um painel pequeno diz qual montaria que
+você não tem pode vir dele — e no chat vem um link que marca onde você estava.
+
+Não é um segundo escaneador de raros. O SilverDragon avisa que há um raro; este avisa que há
+**uma montaria que falta para você**, e qual. Raro cuja montaria você já tem não diz nada. As que
+saíram do jogo também não — isso seria provocação.
+
+Nenhum dado novo foi preciso: o catálogo já guarda qual chefe larga qual montaria, e o addon só
+lê esse índice ao contrário. Desliga com `/rmt aviso` ou pela caixa nas opções.
+
 ## A busca
 
 A caixa no alto da janela filtra enquanto você digita, e ela **não** procura só no nome da
@@ -146,6 +158,8 @@ método e deixa o julgamento com você. Nenhuma estimativa foi inventada para ta
 | `/rmt quem` | os personagens anotados e quantas reputações cada um tem |
 | `/rmt sumidas` | mostra ou esconde as que saíram do jogo |
 | `/rmt busca <texto>` | procura por nome, chefe, zona ou vendedor |
+| `/rmt expansao [nome]` | filtra por expansão |
+| `/rmt aviso` | liga ou desliga o aviso de bicho |
 | `/rmt debug [nome]` | o que o addon conseguiu ler, de tudo ou de uma montaria |
 
 ## Licença

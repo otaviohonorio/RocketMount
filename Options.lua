@@ -61,6 +61,19 @@ function ns.SetupOptions()
     end
 
     do
+        local name = "Avisar quando ver um bicho que larga montaria"
+        local variable = ADDON .. "Sightings"
+        local setting = Settings.RegisterProxySetting(category, variable,
+            Settings.VarType.Boolean, name, true,
+            function() return ns.db.sightings ~= false end,
+            function(value) ns.db.sightings = value end)
+
+        Settings.CreateCheckbox(category, setting,
+            "Aparece ao mirar, passar o mouse ou quando o raro grita — e só para montaria que " ..
+            "você ainda não tem. No chat vem um link para marcar onde você viu.")
+    end
+
+    do
         local name = "Mostrar as que saíram do jogo"
         local variable = ADDON .. "ShowUnobtainable"
         local setting = Settings.RegisterProxySetting(category, variable,

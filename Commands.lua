@@ -59,6 +59,13 @@ commands["busca"] = function(rest)
     ns.Invalidate()
 end
 
+commands["aviso"] = function()
+    ns.db.sightings = not (ns.db.sightings ~= false)
+    ns.Print(ns.db.sightings
+        and "aviso de bicho que larga montaria ligado."
+        or "aviso de bicho que larga montaria desligado.")
+end
+
 commands["sumidas"] = function()
     ns.db.showUnobtainable = not ns.db.showUnobtainable
     ns.Print(ns.db.showUnobtainable
@@ -164,6 +171,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt fontes|r — limpa o filtro de fonte")
     print("    |cffffff00/rmt faccao [minha|horda|alianca]|r — filtra por facção")
     print("    |cffffff00/rmt sumidas|r — mostra ou esconde as que saíram do jogo")
+    print("    |cffffff00/rmt aviso|r — liga/desliga o aviso de bicho que larga montaria")
     print("    |cffffff00/rmt busca <texto>|r — procura por nome, chefe, zona ou vendedor")
     print("    |cffffff00/rmt expansao [nome]|r — filtra por expansão")
     print("    |cffffff00/rmt quem|r — os personagens anotados e quantas reputações cada um tem")
