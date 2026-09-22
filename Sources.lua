@@ -426,7 +426,9 @@ function ns.BuildList()
                     local npc = rec.vendorInfo and rec.vendorInfo.npc or ""
                     e.vendorGuilda = npc:lower():find("guild", 1, true) ~= nil
                     e.blackMarket = rec.blackMarket
-                    e.unobtainable = rec.isUnobtainable
+                    -- Marca do MCL para o que saiu do jogo. Ela existia e não era usada: ver
+                    -- `showUnobtainable` no `Core.lua`.
+                    e.unobtainable = rec.isUnobtainable and true or false
                     e.rep = ReputationProgress(rec.rep)
                     -- DEPOIS da leitura de reputação, e não antes: ela sobrescreve `e.rep`, e
                     -- com a injeção em cima a guarda de guilda era apagada duas linhas depois

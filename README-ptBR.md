@@ -77,6 +77,13 @@ está anotado.
 É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
 entrou pela última vez.
 
+## As que saíram do jogo
+
+Promoções encerradas, montarias de jogo de cartas, conquistas aposentadas. Ninguém mais consegue,
+então elas ficam fora da lista — numa lista cujo assunto é *por onde começar*, montaria que
+ninguém consegue é a pior linha possível. `/rmt sumidas` (ou a opção) liga, e aí elas aparecem
+por último, em faixa própria e sem estimativa de esforço: não é difícil, é impossível.
+
 ## Lacuna conhecida
 
 **A trava de tentativa não é modelada.** Uma queda de 1 em 100 num chefe com trava semanal e uma
@@ -94,6 +101,7 @@ método e deixa o julgamento com você. Nenhuma estimativa foi inventada para ta
 | `/rmt minimapa` | mostra ou esconde o botão do minimapa |
 | `/rmt faccao [minha\|horda\|alianca]` | filtra por facção |
 | `/rmt quem` | os personagens anotados e quantas reputações cada um tem |
+| `/rmt sumidas` | mostra ou esconde as que saíram do jogo |
 | `/rmt debug [nome]` | o que o addon conseguiu ler, de tudo ou de uma montaria |
 
 ## Licença
