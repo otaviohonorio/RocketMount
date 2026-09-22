@@ -589,6 +589,12 @@ function ns.BuildList()
                 -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a
                 -- Fênix Negra abriu: o catálogo não sabe da conquista de guilda, e o tooltip do
                 -- item sabe — em português, e certo depois do próximo patch também.
+                -- A conquista que o JOGO diz que dá esta montaria. Fecha o buraco das 126
+                -- marcadas "SPECIAL" no catálogo, que não tinham requisito nenhum.
+                if ns.Achievements then
+                    e.achievementReward = ns.Achievements.Gate(e.name)
+                end
+
                 if e.itemID and ns.Tooltip then
                     e.tooltipGate = ns.Tooltip.Gate(e.itemID)
                 end

@@ -129,7 +129,7 @@ end
 -- `tooltipGate` entra como acesso: ele é o jogo dizendo "você não pode comprar isto ainda", e
 -- isso é exatamente um requisito de acesso. Vem por último na lista porque é o mais genérico —
 -- quando reputação e conquista já explicam, a frase do tooltip costuma repetir o que elas dizem.
-local ACCESS_KEYS = { "rep", "achievement", "quest", "tooltipGate" }
+local ACCESS_KEYS = { "rep", "achievement", "achievementReward", "quest", "tooltipGate" }
 
 local function Access(e)
     local worst, from = nil, nil
@@ -182,7 +182,8 @@ function ns.Rank(entry)
     -- mas a lista inteira vai junto para a linha e para a ficha. Esconder metade do preço é pior
     -- que mostrar um número grande.
     e.requisitos = {}
-    for _, key in ipairs({ "rep", "achievement", "quest", "tooltipGate", "cost" }) do
+    for _, key in ipairs({ "rep", "achievement", "achievementReward", "quest",
+                          "tooltipGate", "cost" }) do
         local p = e[key]
         if p and p.pct then
             e.requisitos[#e.requisitos + 1] = {

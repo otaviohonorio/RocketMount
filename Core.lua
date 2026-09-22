@@ -140,6 +140,9 @@ function ns.WaitForProviders(elapsed)
     elapsed = elapsed or 0
     if ns.ProvidersReady() or elapsed >= WAIT_GIVEUP then
         ns.Invalidate()
+        -- A varredura de conquistas só começa depois de a lista existir: ela casa o texto de
+        -- recompensa contra as montarias que FALTAM, e antes disso não há contra o que casar.
+        if ns.Achievements then ns.Achievements.Scan() end
         return
     end
     C_Timer.After(WAIT_STEP, function()
