@@ -5,9 +5,9 @@ each one is obtained. For World of Warcraft: Midnight (12.x).
 
 > 🇧🇷 [Leia em português](README-ptBR.md)
 
-⚠️ **Not published yet.** This addon is still in development and its interface is currently
-hardcoded in Brazilian Portuguese. It needs `Locales/` with English as the key language before it
-can go on the release pipeline.
+⚠️ **Not published yet.** This addon is still in development. Everything it writes on screen now
+goes through `Locales/`, with English as the key language and a Brazilian Portuguese translation
+next to it, which was the last thing blocking the release pipeline.
 
 ## Why it exists
 
@@ -74,7 +74,7 @@ name: *"reputation on the account"* or *"only on this character (Name)"*.
 For the character-bound ones, the addon keeps a ledger: every time a character logs in, it writes
 down where that character stands with the factions some mount asks for. A mount you cannot buy
 here then says who can — *"Ottozinho has it (Exalted) — not on this character"*. Log in once on
-each alt and they appear; `/rmt quem` shows what is on record.
+each alt and they appear; `/rmt who` shows what is on record.
 
 It is a ledger, not a live reading, and it says so: everything in it was true when that character
 last logged in.
@@ -89,7 +89,7 @@ you are missing** is there, and which one. A rare whose mount you already have s
 all. Mounts that left the game say nothing either — that would just be taunting.
 
 No new data was needed: the catalogue already records which boss drops which mount, so the addon
-just reads that index backwards. Turn it off with `/rmt aviso` or the checkbox in the options.
+just reads that index backwards. Turn it off with `/rmt warn` or the checkbox in the options.
 
 ## Searching
 
@@ -106,7 +106,7 @@ match — typing more narrows, which is what typing more is supposed to do.
 
 Ended promotions, trading card game mounts, retired achievements. They cannot be obtained by
 anyone any more, so they stay out of the list — in a list whose whole subject is *where do I
-start*, a mount nobody can get is the worst possible row. Turn them on with `/rmt sumidas` or in
+start*, a mount nobody can get is the worst possible row. Turn them on with `/rmt gone` or in
 the options, and they appear last, in their own band, with no effort estimate: it is not hard,
 it is impossible.
 
@@ -154,14 +154,15 @@ the method and leaves the judgement to you. No estimate was invented to fill the
 |---|---|
 | `/rmt` | opens and closes the list |
 | `/rmt top <n>` | how many rows the list shows |
-| `/rmt fontes` | clears the source filter |
-| `/rmt minimapa` | shows or hides the minimap button |
-| `/rmt faccao [minha\|horda\|alianca]` | filters by faction |
-| `/rmt quem` | the characters on record and how many reputations each has |
-| `/rmt sumidas` | shows or hides the mounts that left the game |
-| `/rmt busca <text>` | searches by name, boss, zone or vendor |
-| `/rmt expansao [name]` | filters by expansion |
-| `/rmt aviso` | turns the sighting alert on or off |
+| `/rmt sources` | clears the source filter |
+| `/rmt minimap` | shows or hides the minimap button |
+| `/rmt faction [mine\|horde\|alliance]` | filters by faction |
+| `/rmt who` | the characters on record and how many reputations each has |
+| `/rmt gone` | shows or hides the mounts that left the game |
+| `/rmt search <text>` | searches by name, boss, zone or vendor |
+| `/rmt expansion [name]` | filters by expansion |
+| `/rmt warn` | turns the sighting alert on or off |
+| `/rmt i18n` | checks the labels taken from the game |
 | `/rmt debug [name]` | what the addon managed to read, for everything or for one mount |
 
 ## License

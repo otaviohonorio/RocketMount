@@ -3,6 +3,7 @@
 -- Guarda a posição como ângulo, então continua no lugar em qualquer tamanho de minimapa.
 -- É o mesmo desenho dos outros addons Rocket, de propósito: o jogador aprende um e conhece os três.
 local ADDON, ns = ...
+local L = ns.L
 
 local RADIUS = 80
 local button
@@ -73,16 +74,16 @@ function ns.CreateMinimapButton()
         -- primeira da fila. Sem isso o ícone só ocupa espaço no minimapa.
         local ok, list = pcall(ns.GetRanked)
         if ok and list and #list > 0 then
-            GameTooltip:AddLine(string.format("%d montarias faltando", #list), 0.86, 0.87, 0.90)
+            GameTooltip:AddLine(string.format(L["%d mounts missing"], #list), 0.86, 0.87, 0.90)
             local first = list[1]
             local c = ns.TIER_COLOR[first.tier] or { 1, 0.82, 0 }
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine("Próxima da fila:", 1, 0.82, 0)
+            GameTooltip:AddLine(L["Next in line:"], 1, 0.82, 0)
             GameTooltip:AddLine(first.name, c[1], c[2], c[3])
             GameTooltip:AddLine(first.why or "", 0.55, 0.55, 0.58, true)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Clique para abrir · botão direito para as opções", 0.55, 0.55, 0.58)
+        GameTooltip:AddLine(L["Click to open · right-click for options"], 0.55, 0.55, 0.58)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function() GameTooltip:Hide() end)

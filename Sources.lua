@@ -6,6 +6,7 @@
 -- quanta moeda). Os addons de terceiro entram só com o que a API NÃO dá — a taxa de
 -- drop e a coordenada. Sem eles o addon continua funcionando com menos informação.
 local _, ns = ...
+local L = ns.L
 
 --------------------------------------------------------------------------------
 -- Provedores opcionais
@@ -49,18 +50,18 @@ end
 -- para o caso de uma delas não existir neste cliente.
 --------------------------------------------------------------------------------
 local SOURCE_FALLBACK = {
-    [0] = "Desconhecida",
-    [1] = "Saque",
-    [2] = "Missão",
-    [3] = "Vendedor",
-    [4] = "Profissão",
-    [5] = "Batalha de mascotes",
-    [6] = "Conquista",
-    [7] = "Evento mundial",
-    [8] = "Promoção",
-    [9] = "Jogo de cartas",
-    [10] = "Loja",
-    [11] = "Descoberta",
+    [0] = L["Unknown"],
+    [1] = L["Drop"],
+    [2] = L["Quest"],
+    [3] = L["Vendor"],
+    [4] = L["Profession"],
+    [5] = L["Pet Battle"],
+    [6] = L["Achievement"],
+    [7] = L["World Event"],
+    [8] = L["Promotion"],
+    [9] = L["Trading Card Game"],
+    [10] = L["Shop"],
+    [11] = L["Discovery"],
 }
 
 ns.SOURCE_NAMES = setmetatable({}, {
@@ -112,9 +113,9 @@ end
 local function ScopeLabel(factionId)
     local escopo = ReputationScope(factionId)
     if escopo == "conta" then
-        return "reputação da conta"
+        return L["account-wide reputation"]
     elseif escopo == "personagem" then
-        return "só deste personagem (" .. (UnitName("player") or "?") .. ")"
+        return string.format(L["this character only (%s)"], UnitName("player") or "?")
     end
     return nil
 end
@@ -148,8 +149,8 @@ local function ReputationProgress(rep)
         kind = "rep", factionName = nome, pct = 0, unreadable = true,
         outroChar = outro,
         label = outro
-            and string.format("%s: %s — este personagem não tem", nome, outro)
-            or string.format("%s: nenhuma reputação com esta facção neste personagem", nome),
+            and string.format(L["%s: %s — this character does not have it"], nome, outro)
+            or string.format(L["%s: no reputation with this faction on this character"], nome),
     }
 
     -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
@@ -163,9 +164,9 @@ local function ReputationProgress(rep)
             -- Y; passado o Y, ela vira charada. Cumprido se diz cumprido.
             local texto
             if have >= need then
-                texto = string.format("%s: renome %d alcançado (você está em %d)", nome, need, have)
+                texto = string.format(L["%s: renown %d reached (you are at %d)"], nome, need, have)
             else
-                texto = string.format("%s: renome %d de %d", nome, have, need)
+                texto = string.format(L["%s: renown %d of %d"], nome, have, need)
             end
             local escopo = ScopeLabel(rep.factionId)
             return {
@@ -194,7 +195,7 @@ local function ReputationProgress(rep)
                 return {
                     kind = "rep", factionName = name, pct = into / threshold,
                     scope = ReputationScope(rep.factionId),
-                    label = string.format("%s: %s de %s para o próximo baú",
+                    label = string.format(L["%s: %s of %s to the next cache"],
                         name, BreakUpLargeNumbers(into), BreakUpLargeNumbers(threshold)),
                 }
             end
@@ -208,7 +209,7 @@ local function ReputationProgress(rep)
         -- profissão). Não dá para medir, e por isso mesmo NÃO está cumprido.
         return {
             kind = "rep", factionName = name, pct = 0, unreadable = true,
-            label = string.format("%s: exige %s, que eu não sei medir", name, rep.levelName or "?"),
+            label = string.format(L["%s: asks for %s, which I cannot measure"], name, rep.levelName or "?"),
         }
     end
 
@@ -216,8 +217,8 @@ local function ReputationProgress(rep)
         return {
             kind = "rep", factionName = name, pct = 1,
             scope = ReputationScope(rep.factionId),
-            label = string.format("%s: já está %s%s", name,
-                _G["FACTION_STANDING_LABEL" .. targetIdx] or "no nível",
+            label = string.format(L["%s: already %s%s"], name,
+                _G["FACTION_STANDING_LABEL" .. targetIdx] or L["at the standing"],
                 ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
         }
     end
@@ -230,9 +231,9 @@ local function ReputationProgress(rep)
             kind = "rep", factionName = name, pct = pct,
             have = standing, need = total,
             scope = ReputationScope(rep.factionId),
-            label = string.format("%s: %s de %s para %s%s",
+            label = string.format(L["%s: %s of %s to %s%s"],
                 name, BreakUpLargeNumbers(standing), BreakUpLargeNumbers(total),
-                _G["FACTION_STANDING_LABEL" .. targetIdx] or "o nível",
+                _G["FACTION_STANDING_LABEL" .. targetIdx] or L["the standing"],
                 ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
         }
     end
@@ -289,7 +290,7 @@ local function CostProgress(spellID, itemID)
             if ok then
                 have = n or 0
                 local iname = (C_Item.GetItemNameByID and C_Item.GetItemNameByID(c.id))
-                    or ("item " .. c.id)
+                    or string.format(L["item %d"], c.id)
                 preco = string.format("%d x %s", need, iname)
                 if have < need then
                     falta = string.format("%d x %s", need - have, iname)
@@ -315,7 +316,8 @@ local function CostProgress(spellID, itemID)
         gap = falta,
         -- A frase completa, para a ficha: o preço primeiro, a falta depois, e nunca os dois
         -- números grudados um no outro.
-        label = falta and (preco .. "  ·  faltam " .. falta) or (preco .. "  ·  você tem"),
+        label = falta and string.format(L["%s  ·  %s missing"], preco, falta)
+            or string.format(L["%s  ·  you have it"], preco),
     }
 end
 
@@ -372,16 +374,16 @@ local function QuestProgress(mountID)
     if feita then
         return {
             kind = "quest", pct = 1, questID = questID, titulo = titulo, onde = onde,
-            label = string.format("Missão \"%s\": concluída", titulo or "?"),
+            label = string.format(L['Quest "%s": completed'], titulo or "?"),
         }
     end
 
     -- FEITA EM OUTRO PERSONAGEM é informação, e não requisito cumprido: a montaria é deste.
-    local extra = naConta and "  —  já feita em outro personagem" or ""
+    local extra = naConta and L["  —  already done on another character"] or ""
     return {
         kind = "quest", pct = 0, questID = questID, titulo = titulo, onde = onde,
         naConta = naConta,
-        label = string.format("Missão \"%s\": não concluída%s%s", titulo or "?",
+        label = string.format(L['Quest "%s": not completed%s%s'], titulo or "?",
             onde and ("  ·  " .. onde) or "", extra),
     }
 end
@@ -394,7 +396,7 @@ local function AchievementProgress(achID)
     local ok, _, name, _, completed = pcall(GetAchievementInfo, achID)
     if not ok or not name then return nil end
     if completed then
-        return { pct = 1, label = string.format("Conquista concluída: %s", name) }
+        return { pct = 1, label = string.format(L["Achievement completed: %s"], name) }
     end
 
     local num = GetAchievementNumCriteria and GetAchievementNumCriteria(achID) or 0
@@ -406,7 +408,7 @@ local function AchievementProgress(achID)
         end
         return {
             pct = done / num,
-            label = string.format("%s: %d de %d", name, done, num),
+            label = string.format(L["%s: %d of %d"], name, done, num),
         }
     end
 
@@ -576,8 +578,7 @@ function ns.BuildList()
                     if e.vendorGuilda and not e.rep then
                         e.rep = {
                             kind = "guild", pct = 0, unreadable = true,
-                            label = "Vendedor de guilda: exige guilda Exaltada e, na maioria, "
-                                .. "uma conquista DE GUILDA",
+                            label = L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"],
                         }
                     end
                     e.achievement = AchievementProgress(rec.achievementId)

@@ -1,0 +1,266 @@
+-- RocketMounts | Locales/ptBR.lua
+-- Sobrescreve o que o enUS.lua deixou. Uma chave ausente aqui NÃO é um buraco: ela cai no
+-- rótulo do jogo (quando `FROM_GAME` cobre) ou na própria chave, que já é o texto em inglês.
+--
+-- Regra do projeto para este arquivo: português correto, sem gíria. Jargão do próprio jogo
+-- fica (renome, exaltado, raro) porque é o vocabulário que o jogador já usa.
+local ADDON, ns = ...
+
+if GetLocale() ~= "ptBR" then return end
+
+local L = ns.L
+
+--------------------------------------------------------------------------------
+-- As faixas da lista
+--------------------------------------------------------------------------------
+-- O nome da faixa cabe em ~36 letras (`TIER_TITLE_WIDTH` no `Window.lua` reserva 230px a
+-- 12pt). Passou disso, atravessa a borda da lista -- e o harness conta LETRAS, não bytes,
+-- justamente por causa do acento.
+L["Guaranteed — just go get it"]  = "Garantidas — é só ir pegar"
+L["Guaranteed — nearly unlocked"] = "Garantidas — quase liberadas"
+L["Guaranteed — halfway there"]   = "Garantidas — a meio caminho"
+L["Down to luck — good odds"]     = "Na sorte — chance boa"
+L["Long road"]                    = "Caminho longo"
+L["Asks for more than the price"] = "Exige mais que o preço"
+L["No estimate"]                  = "Sem estimativa"
+L["Cannot be obtained any more"]  = "Não dá mais para conseguir"
+
+L["requirement met and checked"]        = "requisito cumprido e conferido"
+L["a little left on the requirement"]   = "falta pouco do requisito"
+L["road already walked"]                = "caminho já andado"
+L["1 in 100 or better"]                 = "1 em 100 ou melhor"
+L["bad odds, or a distant requirement"] = "chance ruim, ou requisito longe"
+L["achievement, reputation or guild"]   = "conquista, reputação ou guilda"
+L["no data to estimate from"]           = "sem dado para estimar"
+L["left the game"]                      = "saiu do jogo"
+
+--------------------------------------------------------------------------------
+-- O número da direita e a frase que explica a posição
+--------------------------------------------------------------------------------
+L["ready to grab"] = "pode pegar"
+L["%.0f%% own it"] = "%.0f%% têm"
+
+L["Not unlocked yet — %s"] = "Falta liberar — %s"
+L["requirement not met"]   = "requisito não cumprido"
+L[" (and %d more)"]        = " (e mais %d)"
+L["  ·  then, a 1 in %d chance"] = "  ·  depois, chance de 1 em %d"
+L["  ·  guild vendor: asks for reputation and an achievement OF THE GUILD, which I cannot read"] =
+    "  ·  vendedor de guilda: exige reputação e conquista DA GUILDA, que eu não leio"
+L["  ·  there may be a requirement I cannot read"] =
+    "  ·  pode haver requisito que eu não leio"
+L["  ·  %s missing"] = "  ·  faltam %s"
+L["  ·  and %d more requirement(s)"] = "  ·  e mais %d requisito(s)"
+L["Chance of 1 in %d"] = "Chance de 1 em %d"
+
+--------------------------------------------------------------------------------
+-- Nome das fontes (plano B: o jogo traduz `BATTLE_PET_SOURCE_<n>` sozinho)
+--------------------------------------------------------------------------------
+L["Unknown"]           = "Desconhecida"
+L["Drop"]              = "Saque"
+L["Quest"]             = "Missão"
+L["Vendor"]            = "Vendedor"
+L["Profession"]        = "Profissão"
+L["Pet Battle"]        = "Batalha de mascotes"
+L["Achievement"]       = "Conquista"
+L["World Event"]       = "Evento mundial"
+L["Promotion"]         = "Promoção"
+L["Trading Card Game"] = "Jogo de cartas"
+L["Shop"]              = "Loja"
+L["Discovery"]         = "Descoberta"
+
+--------------------------------------------------------------------------------
+-- Reputação, missão e conquista
+--------------------------------------------------------------------------------
+L["account-wide reputation"]  = "reputação da conta"
+L["this character only (%s)"] = "só deste personagem (%s)"
+L["%s: %s — this character does not have it"] = "%s: %s — este personagem não tem"
+L["%s: no reputation with this faction on this character"] =
+    "%s: nenhuma reputação com esta facção neste personagem"
+
+-- "renome 25 de 5" NÃO É FRASE: a forma "X de Y" só funciona enquanto X caminha para Y.
+-- Cumprido se diz cumprido. (Pergunta do usuário: "eu tenho 25 e precisa de 5?")
+L["%s: renown %d reached (you are at %d)"]   = "%s: renome %d alcançado (você está em %d)"
+L["%s: renown %d of %d"]                     = "%s: renome %d de %d"
+L["%s: %s of %s to the next cache"]          = "%s: %s de %s para o próximo baú"
+L["%s: asks for %s, which I cannot measure"] = "%s: exige %s, que eu não sei medir"
+L["%s: already %s%s"]      = "%s: já está %s%s"
+L["at the standing"]       = "no nível"
+L["%s: %s of %s to %s%s"]  = "%s: %s de %s para %s%s"
+L["the standing"]          = "o nível"
+
+L["%s  ·  %s missing"]  = "%s  ·  faltam %s"
+L["%s  ·  you have it"] = "%s  ·  você tem"
+L["item %d"]            = "item %d"
+
+L['Quest "%s": completed']                  = 'Missão "%s": concluída'
+L["  —  already done on another character"] = "  —  já feita em outro personagem"
+L['Quest "%s": not completed%s%s']          = 'Missão "%s": não concluída%s%s'
+L["Achievement completed: %s"]              = "Conquista concluída: %s"
+L["%s: %d of %d"]                           = "%s: %d de %d"
+L['Achievement "%s": not completed']        = 'Conquista "%s": não concluída'
+
+L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] =
+    "Vendedor de guilda: exige guilda Exaltada e, na maioria, uma conquista DE GUILDA"
+
+--------------------------------------------------------------------------------
+-- Quem tem a reputação (o livro-caixa)
+--------------------------------------------------------------------------------
+L["%s has it (%s)"]             = "%s tem (%s)"
+L["%s has it (%s) and %d more"] = "%s tem (%s) e mais %d"
+
+--------------------------------------------------------------------------------
+-- A janela
+--------------------------------------------------------------------------------
+-- "Todas" e não "Tudo": o rótulo vem do jogo (`ALL`), mas aqui ele concorda com "fontes", que
+-- é feminino plural. Esta linha é exatamente a precedência que o enUS.lua descreve -- a nossa
+-- escolha ganha da palavra do jogo.
+L["All"] = "Todas"
+
+L["Rocket Mounts — where to start"] = "Rocket Mounts — por onde começar"
+L["Sources"] = "Fontes"
+L["name, boss, zone, vendor"] = "nome, chefe, zona, vendedor"
+L["Set map pin"] = "Marcar no mapa"
+L["Pick a mount in the list to see how it is obtained."] =
+    "Escolha uma montaria na lista para ver como ela se pega."
+
+L["How to get it"] = "Como pega"
+L["Chance"]        = "Chance"
+L["Expansion"]     = "Expansão"
+L["Faction"]       = "Facção"
+L["Horde only"]    = "Só para a Horda"
+L["Alliance only"] = "Só para a Aliança"
+
+L["Requirements — %d of %d missing"]    = "Requisitos — faltam %d de %d"
+L["Requirements — all met"]             = "Requisitos — todos cumpridos"
+L["Who has it, from what was recorded"] = "Quem tem, pelo que ficou anotado"
+
+L["Heads up"] = "Atenção"
+L["The requirement above only UNLOCKS the attempt. Once met, the mount still depends on luck."] =
+    "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria ainda depende da sorte."
+
+L["Why check"] = "Por que conferir"
+L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read, because no installed catalogue says which achievement belongs to which mount. The price shown in the requirements is only part of what it costs."] =
+    "Vendedor de guilda. Estas exigem reputação com a sua guilda E uma conquista DA GUILDA — e é "
+    .. "a conquista que eu não consigo ler, porque nenhum catálogo instalado diz qual conquista "
+    .. "pertence a qual montaria. O preço que aparece nos requisitos é só uma parte do que ela "
+    .. "custa."
+L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."] =
+    "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase nunca é o que "
+    .. "trava. Pode haver conquista, nível de guilda ou classificação no caminho, e isso eu não "
+    .. "leio."
+L[" Not even the catalogue knows which vendor this one has."] =
+    " Nem o catálogo sabe qual é o vendedor exato desta."
+
+L["Where"]                    = "Onde"
+L["How many players own it"]  = "Quantos jogadores têm"
+L["%.1f%% of the playerbase"] = "%.1f%% da base"
+L["Also shows up at"]         = "Também aparece"
+L["Black Market"]             = "Mercado Negro"
+
+L["arrow pointed at %s."] = "seta apontada para %s."
+L["the mount"]            = "a montaria"
+
+L["%d mounts missing"]      = "%d montarias faltando"
+L["Next in line:"]          = "Próxima da fila:"
+L["Click to open · right-click for options"] = "Clique para abrir · botão direito para as opções"
+L[" (filtered from %d)"]    = " (filtrado de %d)"
+L['nothing found for "%s"'] = 'nada encontrado para "%s"'
+L["  |cffcc6666· without MCL, there is no drop chance|r"] =
+    "  |cffcc6666· sem o MCL, não há a chance de saque|r"
+L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"] =
+    "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
+L["this client has no new menu; use /rmt sources."] =
+    "este cliente não tem o menu novo; use /rmt fontes."
+
+--------------------------------------------------------------------------------
+-- O aviso de bicho que larga montaria
+--------------------------------------------------------------------------------
+L["and %d more"]                        = "e mais %d"
+L["mark where I saw it"]                = "marcar onde vi"
+L["arrow pointed at where you saw it."] = "seta apontada para onde você viu."
+L["this map does not accept pins."]     = "este mapa não aceita marcação."
+L["|cffffff00%s|r can drop: %s%s"]      = "|cffffff00%s|r pode largar: %s%s"
+
+--------------------------------------------------------------------------------
+-- O painel de opções
+--------------------------------------------------------------------------------
+L["Hide what this character cannot get"] = "Esconder o que este personagem não pode pegar"
+L["A mount from the other faction or another class leaves the list. Uncheck to see the whole collection."] =
+    "Montaria de outra facção ou de outra classe sai da lista. Desmarque para ver a coleção "
+    .. "inteira."
+
+L["Show the minimap button"] = "Mostrar o botão no minimapa"
+L["The button opens the list with a click and the options with a right-click. Its tooltip already shows the next mount in line."] =
+    "O botão abre a lista com um clique e as opções com o botão direito. A dica dele já mostra a "
+    .. "próxima montaria da fila."
+
+L["Warn when you see something that drops a mount"] =
+    "Avisar quando ver um bicho que larga montaria"
+L["Shows up on target, mouseover or when the rare yells — and only for a mount you do not have yet. A link comes in chat to mark where you saw it."] =
+    "Aparece ao mirar, passar o mouse ou quando o raro grita — e só para montaria que você ainda "
+    .. "não tem. No chat vem um link para marcar onde você viu."
+
+L["Show the ones that left the game"] = "Mostrar as que saíram do jogo"
+L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =
+    "Promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. Elas não podem "
+    .. "mais ser conseguidas, então ficam fora da lista por padrão."
+
+--------------------------------------------------------------------------------
+-- Os comandos
+--------------------------------------------------------------------------------
+L["the options panel has not registered yet."] = "o painel de opções ainda não registrou."
+L["the list shows every missing mount — the row cap was removed in 0.10.0."] =
+    "a lista mostra todas as montarias que faltam — o limite de linhas saiu na 0.10.0."
+L["minimap button hidden."] = "botão do minimapa escondido."
+L["minimap button shown."]  = "botão do minimapa à mostra."
+
+L["expansion: all."] = "expansão: todas."
+L["expansion: %s"]   = "expansão: %s"
+L["expansion not recognized. These exist:"] = "expansão não reconhecida. As que existem:"
+
+L["search cleared."]     = "busca limpa."
+L['searching for "%s".'] = 'buscando por "%s".'
+
+L["mount sighting alert on."]  = "aviso de bicho que larga montaria ligado."
+L["mount sighting alert off."] = "aviso de bicho que larga montaria desligado."
+
+L["also showing the ones that left the game."] = "mostrando também as que saíram do jogo."
+L["hiding the ones that left the game."]       = "escondendo as que saíram do jogo."
+
+L["only what this character can get"] = "só o que este personagem pode"
+L["all"]         = "todas"
+L["faction: %s"] = "facção: %s"
+
+L["%d character(s) recorded. The ledger is written as each one logs in — log in with your alts once so they show up here."] =
+    "%d personagem(ns) anotado(s). O livro-caixa se escreve quando cada um entra no jogo — entre "
+    .. "com os alts uma vez para eles aparecerem aqui."
+L["    %s%s  —  %d reputation(s) recorded"] = "    %s%s  —  %d reputações anotadas"
+
+L["source filter cleared: every source is back."] =
+    "filtro de fonte limpo: todas as fontes voltam a aparecer."
+
+L['no missing mount has "%s" in its name.'] = 'nenhuma montaria que falta tem "%s" no nome.'
+L["MCL (drop chance, coordinates):"] = "MCL (chance de saque, coordenada):"
+L["MountJournalEnhanced (share of the playerbase):"] = "MountJournalEnhanced (percentual da base):"
+L["|cff33ff99read|r"]    = "|cff33ff99lido|r"
+L["|cffff5555missing|r"] = "|cffff5555ausente|r"
+L["%d mounts missing on this character:"] = "%d montarias faltando neste personagem:"
+
+L["locale %s, %d game label(s):"]          = "idioma %s, %d rótulo(s) do jogo:"
+L["%d game label(s) are not usable here."] = "%d rótulo(s) do jogo não servem aqui."
+
+L["commands:"] = "comandos:"
+L["opens and closes the list"]                  = "abre e fecha a lista"
+L["clears the source filter"]                   = "limpa o filtro de fonte"
+L["filters by faction"]                         = "filtra por facção"
+L["shows or hides the ones that left the game"] = "mostra ou esconde as que saíram do jogo"
+L["turns the mount sighting alert on or off"]   = "liga e desliga o aviso de bicho que larga montaria"
+L["searches by name, boss, zone or vendor"]     = "procura por nome, chefe, zona ou vendedor"
+L["filters by expansion"]                       = "filtra por expansão"
+L["the characters recorded and how many reputations each one has"] =
+    "os personagens anotados e quantas reputações cada um tem"
+L["shows or hides the minimap button"]     = "mostra ou esconde o botão do minimapa"
+L["options"]                               = "opções"
+L["checks the labels taken from the game"] = "confere os rótulos que vêm do jogo"
+L["what the addon managed to read"]        = "o que o addon conseguiu ler"
+L["everything it knows about one mount"]   = "tudo que ele sabe de uma montaria"

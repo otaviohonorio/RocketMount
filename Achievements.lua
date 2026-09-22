@@ -17,6 +17,7 @@
 -- The alternative was writing those 126 links into a file by hand from a website. Same answer as
 -- always: a hand-written entry is wrong silently, and this one cannot be.
 local _, ns = ...
+local L = ns.L
 
 local Achievements = {}
 ns.Achievements = Achievements
@@ -113,6 +114,6 @@ function Achievements.Gate(mountName)
 
     return {
         kind = "achievementReward", pct = 0, achID = ach.id,
-        label = string.format("Conquista \"%s\": não concluída", nome or ach.nome or "?"),
+        label = string.format(L['Achievement "%s": not completed'], nome or ach.nome or "?"),
     }
 end

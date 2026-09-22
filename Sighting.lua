@@ -14,6 +14,7 @@
 -- whose mount you already collected says nothing at all -- that is the whole point of it living
 -- in this addon and not being a second rare scanner.
 local ADDON, ns = ...
+local L = ns.L
 
 local Sighting = {}
 ns.Sighting = Sighting
@@ -132,7 +133,7 @@ local function Show(nome, entradas)
         linhas[#linhas + 1] = entradas[i].name
     end
     if #entradas > 3 then
-        linhas[#linhas + 1] = string.format("e mais %d", #entradas - 3)
+        linhas[#linhas + 1] = string.format(L["and %d more"], #entradas - 3)
     end
     frame.what:SetText(table.concat(linhas, "\n"))
     frame:SetHeight(math.max(64, 28 + 14 * #linhas))
@@ -173,7 +174,7 @@ local function ChatLink(nome)
     if not mapID then return nil end
 
     return string.format("|cff71d5ff|H%s:%d:%d:%d|h[%s]|h|r",
-        LINK_PREFIX, mapID, x, y, "marcar onde vi")
+        LINK_PREFIX, mapID, x, y, L["mark where I saw it"])
 end
 
 function Sighting.HandleLink(link)
@@ -186,9 +187,9 @@ function Sighting.HandleLink(link)
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
-        ns.Print("seta apontada para onde você viu.")
+        ns.Print(L["arrow pointed at where you saw it."])
     else
-        ns.Print("este mapa não aceita marcação.")
+        ns.Print(L["this map does not accept pins."])
     end
     return true
 end
@@ -213,7 +214,7 @@ local function Announce(nome)
     local nomes = {}
     for i = 1, math.min(#entradas, 3) do nomes[#nomes + 1] = entradas[i].name end
     local link = ChatLink(nome)
-    ns.Print(string.format("|cffffff00%s|r pode largar: %s%s", nome,
+    ns.Print(string.format(L["|cffffff00%s|r can drop: %s%s"], nome,
         table.concat(nomes, ", "), link and ("  " .. link) or ""))
 end
 

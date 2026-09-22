@@ -5,9 +5,9 @@ explicando como cada uma se pega. Para World of Warcraft: Midnight (12.x).
 
 > 🇺🇸 [Read in English](README.md) — o inglês é a versão de referência deste documento.
 
-⚠️ **Ainda não publicado.** O addon está em desenvolvimento e a interface dele está escrita
-direto em português. Precisa de `Locales/` com o inglês como idioma-chave antes de entrar na
-esteira de publicação.
+⚠️ **Ainda não publicado.** O addon está em desenvolvimento. Tudo que ele escreve na tela agora
+passa por `Locales/`, com o inglês como idioma-chave e a tradução para o português ao lado — que
+era o que faltava para ele entrar na esteira de publicação.
 
 ## Por que existe
 
@@ -73,7 +73,7 @@ ou *"só deste personagem (Nome)"*.
 Para as que são por personagem, o addon mantém um livro-caixa: toda vez que um personagem entra
 no jogo, ele anota onde aquele personagem está com as facções que alguma montaria pede. Aí uma
 montaria que você não pode comprar aqui diz quem pode — *"Ottozinho tem (Exaltado) — este
-personagem não tem"*. Entre uma vez com cada alt para eles aparecerem; `/rmt quem` mostra o que
+personagem não tem"*. Entre uma vez com cada alt para eles aparecerem; `/rmt who` mostra o que
 está anotado.
 
 É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
@@ -89,7 +89,7 @@ Não é um segundo escaneador de raros. O SilverDragon avisa que há um raro; es
 saíram do jogo também não — isso seria provocação.
 
 Nenhum dado novo foi preciso: o catálogo já guarda qual chefe larga qual montaria, e o addon só
-lê esse índice ao contrário. Desliga com `/rmt aviso` ou pela caixa nas opções.
+lê esse índice ao contrário. Desliga com `/rmt warn` ou pela caixa nas opções.
 
 ## A busca
 
@@ -106,7 +106,7 @@ bater — digitar mais estreita, que é o que digitar mais deveria fazer.
 
 Promoções encerradas, montarias de jogo de cartas, conquistas aposentadas. Ninguém mais consegue,
 então elas ficam fora da lista — numa lista cujo assunto é *por onde começar*, montaria que
-ninguém consegue é a pior linha possível. `/rmt sumidas` (ou a opção) liga, e aí elas aparecem
+ninguém consegue é a pior linha possível. `/rmt gone` (ou a opção) liga, e aí elas aparecem
 por último, em faixa própria e sem estimativa de esforço: não é difícil, é impossível.
 
 ## Por que não existe uma base curada aqui
@@ -152,14 +152,15 @@ método e deixa o julgamento com você. Nenhuma estimativa foi inventada para ta
 |---|---|
 | `/rmt` | abre e fecha a lista |
 | `/rmt top <n>` | quantas linhas a lista mostra |
-| `/rmt fontes` | limpa o filtro de fonte |
-| `/rmt minimapa` | mostra ou esconde o botão do minimapa |
-| `/rmt faccao [minha\|horda\|alianca]` | filtra por facção |
-| `/rmt quem` | os personagens anotados e quantas reputações cada um tem |
-| `/rmt sumidas` | mostra ou esconde as que saíram do jogo |
-| `/rmt busca <texto>` | procura por nome, chefe, zona ou vendedor |
-| `/rmt expansao [nome]` | filtra por expansão |
-| `/rmt aviso` | liga ou desliga o aviso de bicho |
+| `/rmt sources` | limpa o filtro de fonte |
+| `/rmt minimap` | mostra ou esconde o botão do minimapa |
+| `/rmt faction [mine\|horde\|alliance]` | filtra por facção |
+| `/rmt who` | os personagens anotados e quantas reputações cada um tem |
+| `/rmt gone` | mostra ou esconde as que saíram do jogo |
+| `/rmt search <texto>` | procura por nome, chefe, zona ou vendedor |
+| `/rmt expansion [nome]` | filtra por expansão |
+| `/rmt warn` | liga ou desliga o aviso de bicho |
+| `/rmt i18n` | confere os rótulos que vêm do jogo |
 | `/rmt debug [nome]` | o que o addon conseguiu ler, de tudo ou de uma montaria |
 
 ## Licença

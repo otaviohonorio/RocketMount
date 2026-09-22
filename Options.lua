@@ -2,6 +2,7 @@
 -- Um lugar só para configurar: Opções > AddOns. A Settings API já traz a métrica de
 -- formulário da Blizzard de graça — nenhum SetPoint aqui.
 local ADDON, ns = ...
+local L = ns.L
 
 function ns.SetupOptions()
     if ns.category then return end
@@ -32,7 +33,7 @@ function ns.SetupOptions()
     ]]
 
     do
-        local name = "Esconder o que este personagem não pode pegar"
+        local name = L["Hide what this character cannot get"]
         local variable = ADDON .. "HideUnavailable"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -43,12 +44,11 @@ function ns.SetupOptions()
             end)
 
         Settings.CreateCheckbox(category, setting,
-            "Montaria de outra facção ou de outra classe sai da lista. " ..
-            "Desmarque para ver a coleção inteira.")
+            L["A mount from the other faction or another class leaves the list. Uncheck to see the whole collection."])
     end
 
     do
-        local name = "Mostrar o botão no minimapa"
+        local name = L["Show the minimap button"]
         local variable = ADDON .. "Minimap"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -56,12 +56,11 @@ function ns.SetupOptions()
             function(value) ns.SetMinimapHidden(not value) end)
 
         Settings.CreateCheckbox(category, setting,
-            "O botão abre a lista com um clique e as opções com o botão direito. " ..
-            "A dica dele já mostra a próxima montaria da fila.")
+            L["The button opens the list with a click and the options with a right-click. Its tooltip already shows the next mount in line."])
     end
 
     do
-        local name = "Avisar quando ver um bicho que larga montaria"
+        local name = L["Warn when you see something that drops a mount"]
         local variable = ADDON .. "Sightings"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -69,12 +68,11 @@ function ns.SetupOptions()
             function(value) ns.db.sightings = value end)
 
         Settings.CreateCheckbox(category, setting,
-            "Aparece ao mirar, passar o mouse ou quando o raro grita — e só para montaria que " ..
-            "você ainda não tem. No chat vem um link para marcar onde você viu.")
+            L["Shows up on target, mouseover or when the rare yells — and only for a mount you do not have yet. A link comes in chat to mark where you saw it."])
     end
 
     do
-        local name = "Mostrar as que saíram do jogo"
+        local name = L["Show the ones that left the game"]
         local variable = ADDON .. "ShowUnobtainable"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, false,
@@ -85,8 +83,7 @@ function ns.SetupOptions()
             end)
 
         Settings.CreateCheckbox(category, setting,
-            "Promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. " ..
-            "Elas não podem mais ser conseguidas, então ficam fora da lista por padrão.")
+            L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."])
     end
 
     Settings.RegisterAddOnCategory(category)
