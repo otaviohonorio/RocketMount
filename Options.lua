@@ -9,6 +9,7 @@ function ns.SetupOptions()
     local category = Settings.RegisterVerticalLayoutCategory("Rocket Mounts")
     ns.category = category
 
+    --[[ O deslizador de tamanho da lista saiu na 0.10.0 junto com o teto de linhas.
     do
         local name = "Tamanho da lista"
         local variable = ADDON .. "TopN"
@@ -28,6 +29,7 @@ function ns.SetupOptions()
             "Quantas montarias a lista mostra. O começo da lista é o que interessa: " ..
             "as primeiras já são as mais fáceis.")
     end
+    ]]
 
     do
         local name = "Esconder o que este personagem não pode pegar"

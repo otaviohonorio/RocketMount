@@ -179,9 +179,22 @@ local function FillDetail(entry)
         Block("Facção", entry.factionOnly == "Horde" and "Só para a Horda" or "Só para a Aliança")
     end
 
+    -- (!) A FICHA LISTA TODOS OS REQUISITOS, um por linha, com o estado de cada um.
+    --
+    -- Ela ja mostrou so o mais atrasado, e o usuario bateu de frente com o resultado disso:
+    -- *"falta cristal de ressonancia mas que tambem falta reputacao"*. Uma montaria com dois
+    -- requisitos que anuncia so um deles manda o jogador para a metade do caminho.
     local p = entry.requirementFrom and entry[entry.requirementFrom]
-    if p and p.label then
-        Block(entry.gated and "Requisito que falta" or "Requisito", p.label)
+    if entry.requisitos and #entry.requisitos > 0 then
+        local linhas = {}
+        for _, r in ipairs(entry.requisitos) do
+            linhas[#linhas + 1] = (r.cumprido and "|cff55dd66+|r  " or "|cffff5a52x|r  ")
+                .. (r.label or "?")
+        end
+        Block(entry.faltando > 0
+            and string.format("Requisitos — faltam %d de %d", entry.faltando, #entry.requisitos)
+            or "Requisitos — todos cumpridos",
+            table.concat(linhas, string.char(10)))
     end
 
     -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
@@ -379,9 +392,20 @@ end
 -- Desenho da lista
 --------------------------------------------------------------------------------
 
+-- (!) O TETO DE 100 LINHAS SAIU (0.10.0), e ele era a causa de *"tá faltando MUITA montaria
+-- nessa lista, não tem as das expansões recentes"*.
+--
+-- A lista é ordenada por esforço, e montaria de expansão nova está quase sempre LONGE — pouca
+-- reputação acumulada, conquista no começo. Ou seja: o corte em 100 recortava exatamente a parte
+-- que o jogador mais queria conferir, e o rodapé dizendo "mostrando as 100 primeiras de 412" não
+-- competia com a impressão de que a montaria simplesmente não estava lá.
+--
+-- O teto existia por desempenho: montar 400 linhas de frame na abertura custa caro. A resposta
+-- certa não era cortar a lista, era **não montar o que não está à vista** — que é o que o
+-- `ScrollBox` da Blizzard faz, e o que o RocketSwap já usa.
 local function Redraw()
     local entries, total = ns.GetFiltered()
-    local limit = math.min(#entries, ns.db.topN or 100)
+    local limit = #entries
 
     for _, r in ipairs(rowPool) do r:Hide(); r.entry = nil end
     for _, h in ipairs(headPool) do h:Hide() end
@@ -430,12 +454,7 @@ local function Redraw()
     -- o jogador não tem como saber disso olhando a tela — foi o segundo defeito relatado em
     -- 21/09: *"qual char tem essa reputação?"*. O nome fica à vista o tempo todo, e cada linha
     -- de reputação diz se o progresso é da conta ou só deste personagem.
-    local footer
-    if limit < #entries then
-        footer = string.format("Mostrando as %d primeiras de %d que faltam", limit, #entries)
-    else
-        footer = string.format("%d montarias faltando", #entries)
-    end
+    local footer = string.format("%d montarias faltando", #entries)
     if #entries ~= total then
         footer = footer .. string.format(" (filtrado de %d)", total)
     end
