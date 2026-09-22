@@ -149,6 +149,14 @@ local MOUNTS = {
     -- a única prova de que há sorte no meio é a taxa. Sem este caso, ignorar a taxa na
     -- checagem de determinismo passava batido, que é exatamente o defeito relatado.
     { 14, 1014, "Bau fora do tipo queda",   3, false },
+    -- (!) O DEFEITO DE 22/09: o catalogo diz que ha requisito de reputacao, mas a API nao
+    -- responde por essa faccao -- e ela nao responde justamente quando o personagem NUNCA a
+    -- encontrou, que e o caso em que a montaria esta mais longe. A versao anterior lia esse
+    -- silencio como "nao ha requisito" e mandava a montaria para perto do topo.
+    { 17, 1017, "Rep que nunca vi",        3, false },
+    -- Vendedor COMUM, so ouro, sem guilda: e este que pertence a faixa de "exige mais que o
+    -- preco" -- nao ha requisito conhecido, mas tambem nao ha um bloqueio nomeado.
+    { 18, 1018, "So ouro, sem guilda",      3, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -214,6 +222,9 @@ MCL_GUIDE = {
         [1013] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
         [1014] = { chance = 3, method = "USE" },
         [1015] = { vendorInfo = { npc = "Guild Vendors", zone = "" } },
+        [1017] = { rep = { factionId = 9999, factionName = "Faccao que nunca vi",
+                           levelName = "Exalted" } },
+        [1018] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
                    vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
     },
@@ -223,6 +234,8 @@ MCL_GUIDE_CURRENCY_DATA = {
     [1013] = { { type = "currency", id = 77, amount = 1000 } },
     -- Preco que o jogador cobre de sobra, nos dois casos.
     [1015] = { { type = "gold", id = 0, amount = 1000 } },
+    [1017] = { { type = "gold", id = 0, amount = 1000 } },
+    [1018] = { { type = "gold", id = 0, amount = 1000 } },
     [1016] = { { type = "gold", id = 0, amount = 1000 } },
 }
 
@@ -262,7 +275,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as catorze que faltam", #ranked, 14)
+check("sobram as dezesseis que faltam", #ranked, 16)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -280,23 +293,24 @@ check("sem dado nenhum = Sem estimativa",
 -- A ordem é o produto. Trava ela inteira, não uma posição isolada: uma regra nova que
 -- desloque duas montarias de lugar tem que reprovar aqui.
 local ordemEsperada = {
-    -- As duas que valem "e so ir pegar": acesso conhecido E cumprido. Empate resolve pelo nome.
+    -- As duas que valem "e so ir pegar": acesso conhecido E cumprido.
     "Preco e acesso conhecido", "Pronta por reputacao",
-    -- E logo abaixo, separada delas, a que so tem preco conhecido. Ela NAO promete.
-    "So sei o preco",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
-    "Metade da conquista",
-    -- Entre dois requisitos, vale o mais atrasado: a moeda a 30%, não a reputação a 100%.
-    "Dois requisitos",
-    -- Dentro do farm, primeiro quem já está liberado (requisito cumprido conta como
-    -- desempate, não como conclusão) e, entre os liberados, a queda mais generosa:
-    -- 1/3 liberado, depois 1/50 e 1/100 sem requisito conhecido.
+    "Metade da conquista", "Dois requisitos",
+    -- No farm, primeiro quem ja esta liberado e, entre os liberados, a chance mais generosa.
     "Bau com reputacao pronta", "Bau fora do tipo queda",
     "Farm curto mais raro", "Farm curto",
-    -- No fim, os dois tipos de caminho longo. Estar a 80% de liberar uma queda de 1 em 3
-    -- é aposta melhor que uma de 1 em 2000 aberta, e por isso a trancada vem antes.
-    "Queda ainda trancada", "Farm longo",
+    "Queda ainda trancada",
+    -- (!) E SO ENTAO a de preco-so. Ela ja esteve em TERCEIRO, logo abaixo de "e so ir pegar",
+    -- e isso fazia a lista recomendar justamente o que ela nao consegue avaliar. Posicao e
+    -- recomendacao: "eu nao sei" pertence ao fim, ao lado de "sem estimativa".
+    -- A reputacao que a API nao le entra como NAO cumprida (0%), e nao como ausente: por isso
+    -- ela cai aqui embaixo, e nao la em cima junto das que dao para comprar.
+    -- Requisito conhecido e NAO cumprido (0%) vem antes de requisito que nao da para medir:
+    -- saber o que falta vale mais que nao saber nada.
+    "Rep que nunca vi", "So sei o preco", "Farm longo",
+    "So ouro, sem guilda",
     "Sem estimativa",
 }
 for i, nome in ipairs(ordemEsperada) do
@@ -306,20 +320,28 @@ end
 -- ⚑ O DEFEITO DA FENIX NEGRA (relatado em 21/09): "so sei o preco" nao e "pode pegar".
 local soPreco = porNome["So sei o preco"].e
 check("so com preco NAO e 'e so ir pegar'", soPreco.tier ~= ns.TIER.READY, true)
-check("so com preco cai em 'Confira no vendedor'", soPreco.tier, ns.TIER.CHECK)
+-- (!) A F958NIX NEGRA e de vendedor de GUILDA, e isso e um bloqueio NOMEADO, nao uma
+-- duvida: pesquisado na wiki em 22/09, todas exigem guilda Exaltada e a maioria uma conquista
+-- DE GUILDA. Entao ela nao fica na faixa de "requisito desconhecido" -- ela cai no caminho longo.
+check("vendedor de guilda cai no caminho longo", soPreco.tier, ns.TIER.LONGFARM)
 -- (!) O NUMERO DA DIREITA E O PRECO, e nao um veredito. "preco ok" foi reprovado pelo usuario
 -- em 22/09: parecia um "pode ir" com outro nome, que e exatamente o que esta faixa existe para
 -- NAO dizer. Preco e informacao; quem le decide.
-check("o numero da direita e o preco", soPreco.headline, soPreco.cost.price)
-check("  e nao um veredito", soPreco.headline:find("ok", 1, true), nil)
+local soOuro = porNome["So ouro, sem guilda"].e
+check("vendedor comum sem requisito conhecido fica em 'exige mais que o preco'",
+    soOuro.tier, ns.TIER.CHECK)
+check("o numero da direita e o preco", soOuro.headline, soOuro.cost.price)
+check("  e nao um veredito", soOuro.headline:find("ok", 1, true), nil)
 check("a linha avisa que pode haver mais",
-    soPreco.why:find("que eu n") ~= nil, true)
+    soOuro.why:find("que eu n") ~= nil, true)
 -- E QUANDO O VENDEDOR E DE GUILDA, a ressalva deixa de ser generica e ganha nome: toda montaria
 -- de vendedor de guilda exige reputacao com a guilda mais uma conquista DE GUILDA.
 check("vendedor de guilda e reconhecido", soPreco.vendorGuilda, true)
 check("  e a linha nomeia o bloqueio",
     soPreco.why:find("guilda", 1, true) ~= nil, true)
 check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true)
+check("e a faixa de preco-so fica NO FIM, nao perto do topo",
+    ns.TIER.CHECK > ns.TIER.LONGFARM, true)
 
 local comAcesso = porNome["Preco e acesso conhecido"].e
 check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
@@ -352,7 +374,7 @@ check("a falta diz quanto FALTA", dois.cost.gap:find("700", 1, true) ~= nil, tru
 check("  e preco e falta sao campos separados", dois.cost.price ~= dois.cost.gap, true)
 
 -- E quem ja pode pagar nao tem falta nenhuma: o campo some, em vez de escrever "faltam 0".
-check("quem pode pagar nao tem falta", soPreco.cost.gap, nil)
+check("quem pode pagar nao tem falta", soOuro.cost.gap, nil)
 check("e ele nao entra em 'Pronto para pegar'", dois.tier, ns.TIER.UNDERWAY)
 
 local foraDoTipo = porNome["Bau fora do tipo queda"].e
@@ -405,7 +427,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 14)
+check("sem o MCL a lista continua de pe", #semMCL, 16)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

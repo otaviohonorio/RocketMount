@@ -60,11 +60,11 @@ ns.Skin = {
 -- The band is the meaning; the colour follows it, and now there is one per band.
 ns.TIER_COLOR = {
     { 0.30, 0.85, 0.40 },   -- 1 guaranteed, just go get it   green
-    { 0.55, 0.85, 0.60 },   -- 2 check with the vendor        pale green: nearly the same
-    { 0.45, 0.78, 0.95 },   -- 3 guaranteed, nearly unlocked  blue
-    { 0.94, 0.80, 0.25 },   -- 4 guaranteed, halfway          yellow
-    { 0.95, 0.60, 0.25 },   -- 5 luck, good odds              orange
-    { 0.85, 0.35, 0.35 },   -- 6 long road                    red
+    { 0.45, 0.78, 0.95 },   -- 2 guaranteed, nearly unlocked  blue
+    { 0.94, 0.80, 0.25 },   -- 3 guaranteed, halfway          yellow
+    { 0.95, 0.60, 0.25 },   -- 4 luck, good odds              orange
+    { 0.85, 0.35, 0.35 },   -- 5 long road                    red
+    { 0.62, 0.55, 0.70 },   -- 6 costs more than the price    muted violet: a caveat, not a rank
     { 0.55, 0.55, 0.58 },   -- 7 no estimate                  grey: absence, not severity
 }
 

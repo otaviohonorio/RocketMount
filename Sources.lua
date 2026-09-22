@@ -119,8 +119,28 @@ local function ScopeLabel(factionId)
     return nil
 end
 
+---(!) A REQUIREMENT WE CANNOT READ IS AN UNMET REQUIREMENT, NOT AN ABSENT ONE.
+---
+---This function used to return `nil` on six different paths -- faction unknown to the API,
+---standing name we do not map, renown info missing. And the caller read `nil` as "this mount has
+---no reputation gate", which is the opposite of the truth: the catalogue had just told us there
+---IS one.
+---
+---The player caught it: *"os outros e reputacao que nenhum personagem meu tem e ta ali como se
+---desse para comprar"*. Exactly right, and the mechanism is precise -- `GetFactionDataByID`
+---returns nothing for a faction this character has never encountered, which is the very case
+---where the mount is furthest away. The less we knew, the closer to the top it went.
+---
+---So it never returns nil once the catalogue says there is a requirement. Unreadable becomes
+---`pct = 0` plus `unreadable`, and the label says why.
 local function ReputationProgress(rep)
     if not rep or not rep.factionId then return nil end
+
+    local nome = rep.factionName or "?"
+    local desconhecida = {
+        kind = "rep", factionName = nome, pct = 0, unreadable = true,
+        label = string.format("%s: nenhuma reputação com esta facção neste personagem", nome),
+    }
 
     -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
     if rep.renown and C_MajorFactions and C_MajorFactions.GetMajorFactionRenownInfo then
@@ -129,28 +149,24 @@ local function ReputationProgress(rep)
             local need = rep.level or 1
             local have = info.renownLevel
             return {
-                kind = "renown",
-                factionName = rep.factionName,
-                have = have,
-                need = need,
+                kind = "rep", factionName = nome,
+                have = have, need = need,
                 pct = math.min(1, have / math.max(1, need)),
                 scope = ReputationScope(rep.factionId),
-                label = string.format("%s: renome %d de %d%s", rep.factionName or "?", have, need,
+                label = string.format("%s: renome %d de %d%s", nome, have, need,
                     ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
             }
         end
-        return nil
+        return desconhecida
     end
 
-    if not (C_Reputation and C_Reputation.GetFactionDataByID) then return nil end
+    if not (C_Reputation and C_Reputation.GetFactionDataByID) then return desconhecida end
     local ok, data = pcall(C_Reputation.GetFactionDataByID, rep.factionId)
-    if not ok or not data or not data.reaction then return nil end
+    if not ok or not data or not data.reaction then return desconhecida end
 
-    local name = data.name or rep.factionName or "?"
+    local name = data.name or nome
 
-    -- Paragon: a barra que continua depois do Exaltado, e que reinicia a cada baú. Tem
-    -- API própria. Antes disso o nome "Paragon" caía no `or 8` abaixo e virava "Exaltado",
-    -- e quem já estava Exaltado via **100% cumprido** num requisito que nem começou.
+    -- Paragon: a barra que continua depois do Exaltado, e que reinicia a cada baú.
     if rep.levelName == "Paragon" then
         if C_Reputation.GetFactionParagonInfo then
             local okP, value, threshold = pcall(C_Reputation.GetFactionParagonInfo, rep.factionId)
@@ -158,18 +174,24 @@ local function ReputationProgress(rep)
                 local into = value % threshold
                 return {
                     kind = "rep", factionName = name, pct = into / threshold,
+                    scope = ReputationScope(rep.factionId),
                     label = string.format("%s: %s de %s para o próximo baú",
                         name, BreakUpLargeNumbers(into), BreakUpLargeNumbers(threshold)),
                 }
             end
         end
-        return nil
+        return desconhecida
     end
 
-    -- Nome de nível que não é patamar de reputação (ex.: "Professional", que é nível de
-    -- profissão). Sem saber medir, o certo é não afirmar progresso nenhum.
     local targetIdx = STANDING_INDEX[rep.levelName or ""]
-    if not targetIdx then return nil end
+    if not targetIdx then
+        -- Nível que não é patamar de reputação (ex.: "Professional", que é perícia de
+        -- profissão). Não dá para medir, e por isso mesmo NÃO está cumprido.
+        return {
+            kind = "rep", factionName = name, pct = 0, unreadable = true,
+            label = string.format("%s: exige %s, que eu não sei medir", name, rep.levelName or "?"),
+        }
+    end
 
     if data.reaction >= targetIdx then
         return {
@@ -184,7 +206,6 @@ local function ReputationProgress(rep)
     local total = STANDING_TOTAL[targetIdx]
     local standing = data.currentStanding or 0
     if total and standing >= 0 then
-        -- Facção clássica: dá para dizer a fração exata do caminho.
         local pct = math.min(1, standing / total)
         return {
             kind = "rep", factionName = name, pct = pct,
@@ -197,17 +218,15 @@ local function ReputationProgress(rep)
         }
     end
 
-    -- Amizade e afins: sem a tabela de totais, o que dá para afirmar é o degrau.
     local pct = (data.reaction - 1) / math.max(1, targetIdx - 1)
     return {
         kind = "rep", factionName = name, pct = math.max(0, math.min(1, pct)),
-        label = string.format("%s: %s", name, data.reaction and (_G["FACTION_STANDING_LABEL" .. data.reaction] or "") or ""),
+        scope = ReputationScope(rep.factionId),
+        label = string.format("%s: %s", name,
+            _G["FACTION_STANDING_LABEL" .. data.reaction] or ""),
     }
 end
 
---------------------------------------------------------------------------------
--- Custo (ouro, moeda, item)
---------------------------------------------------------------------------------
 ---What it costs, and whether you can pay -- as TWO separate facts.
 ---
 ---(!) They used to be one string, and the player called it out: *"a linha onde aparece valores
@@ -379,11 +398,33 @@ function ns.BuildList()
                     -- GUILDA — e a conquista de guilda é justamente o que este addon não lê,
                     -- porque nenhum catálogo instalado diz QUAL conquista é de qual montaria.
                     -- Dizer isso é muito melhor que a ressalva genérica.
+                    -- (!) VENDEDOR DE GUILDA É REQUISITO NÃO CUMPRIDO, e não "desconhecido".
+                    --
+                    -- Pesquisado (wiki oficial, 22/09): **toda** montaria de vendedor de guilda
+                    -- exige reputação Exaltada com a guilda, e boa parte exige também uma
+                    -- conquista DE GUILDA — a Fênix Negra pede a *Guild Glory of the Cataclysm
+                    -- Raider*. Isso não é "pode haver requisito": é requisito certo, só que o
+                    -- addon não consegue medir (nenhum catálogo instalado associa a conquista de
+                    -- guilda à montaria, e a reputação de guilda depende da guilda atual).
+                    --
+                    -- Então ela entra como acesso a 0%, exatamente como a reputação que não dá
+                    -- para ler: não dá para afirmar que está cumprido, então não está.
                     local npc = rec.vendorInfo and rec.vendorInfo.npc or ""
                     e.vendorGuilda = npc:lower():find("guild", 1, true) ~= nil
                     e.blackMarket = rec.blackMarket
                     e.unobtainable = rec.isUnobtainable
                     e.rep = ReputationProgress(rec.rep)
+                    -- DEPOIS da leitura de reputação, e não antes: ela sobrescreve `e.rep`, e
+                    -- com a injeção em cima a guarda de guilda era apagada duas linhas depois
+                    -- de ser escrita. O teste de ordem denunciou — a montaria continuava na
+                    -- faixa de preço-só mesmo com o código do bloqueio no lugar.
+                    if e.vendorGuilda and not e.rep then
+                        e.rep = {
+                            kind = "guild", pct = 0, unreadable = true,
+                            label = "Vendedor de guilda: exige guilda Exaltada e, na maioria, "
+                                .. "uma conquista DE GUILDA",
+                        }
+                    end
                     e.achievement = AchievementProgress(rec.achievementId)
                 end
 
