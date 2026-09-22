@@ -90,6 +90,35 @@ local STANDING_TOTAL = {
     [8] = 42000,   -- Exaltado
 }
 
+---De QUEM é a reputação que estamos lendo.
+---
+---⛑ Relato do usuário, 21/09: *"eu não sei qual char meu tem a reputação e se tem, por que tá
+---escrito que posso pegar, mas qual char tem essa reputação?"*. Ele está certo e a pergunta não
+---tinha resposta na tela: o addon lê a reputação do personagem **conectado**, e nunca dizia isso.
+---Desde o War Within parte das facções virou reputação de **Brigada** (vale para a conta inteira)
+---e parte continua por personagem — e a diferença muda completamente o que o jogador tem que
+---fazer. `C_Reputation.IsAccountWideReputation` (11.0+) responde qual é qual.
+local function ReputationScope(factionId)
+    if C_Reputation and C_Reputation.IsAccountWideReputation then
+        local ok, conta = pcall(C_Reputation.IsAccountWideReputation, factionId)
+        if ok and conta then return "conta" end
+        if ok then return "personagem" end
+    end
+    return nil    -- cliente sem a função: não afirmamos nada
+end
+
+---A frase que diz de quem é aquele progresso. Sem ela "Exaltado" não informa nada: o jogador
+---não sabe se é dele, deste personagem, ou de um alt que ele nem lembra.
+local function ScopeLabel(factionId)
+    local escopo = ReputationScope(factionId)
+    if escopo == "conta" then
+        return "reputação da conta"
+    elseif escopo == "personagem" then
+        return "só deste personagem (" .. (UnitName("player") or "?") .. ")"
+    end
+    return nil
+end
+
 local function ReputationProgress(rep)
     if not rep or not rep.factionId then return nil end
 
@@ -105,7 +134,9 @@ local function ReputationProgress(rep)
                 have = have,
                 need = need,
                 pct = math.min(1, have / math.max(1, need)),
-                label = string.format("Renome %d de %d", have, need),
+                scope = ReputationScope(rep.factionId),
+                label = string.format("%s: renome %d de %d%s", rep.factionName or "?", have, need,
+                    ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
             }
         end
         return nil
@@ -143,7 +174,10 @@ local function ReputationProgress(rep)
     if data.reaction >= targetIdx then
         return {
             kind = "rep", factionName = name, pct = 1,
-            label = string.format("%s: já está %s", name, _G["FACTION_STANDING_LABEL" .. targetIdx] or "no nível"),
+            scope = ReputationScope(rep.factionId),
+            label = string.format("%s: já está %s%s", name,
+                _G["FACTION_STANDING_LABEL" .. targetIdx] or "no nível",
+                ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
         }
     end
 
@@ -155,9 +189,11 @@ local function ReputationProgress(rep)
         return {
             kind = "rep", factionName = name, pct = pct,
             have = standing, need = total,
-            label = string.format("%s: %s de %s para %s",
+            scope = ReputationScope(rep.factionId),
+            label = string.format("%s: %s de %s para %s%s",
                 name, BreakUpLargeNumbers(standing), BreakUpLargeNumbers(total),
-                _G["FACTION_STANDING_LABEL" .. targetIdx] or "o nível"),
+                _G["FACTION_STANDING_LABEL" .. targetIdx] or "o nível",
+                ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
         }
     end
 
@@ -295,6 +331,11 @@ function ns.BuildList()
                     e.coords = rec.coords
                     e.bossName = rec.lockBossName
                     e.vendor = rec.vendorInfo
+                    -- ⛑ VENDEDOR SEM COORDENADA é sinal de que nem o catálogo sabe qual é: a
+                    -- Fênix Negra vem como `{ npc = "Guild Vendors", zone = "" }`. Onde o
+                    -- catálogo é vago, o addon não pode ser categórico.
+                    e.vendorVago = rec.vendorInfo ~= nil
+                        and not (rec.vendorInfo.m and rec.vendorInfo.x)
                     e.blackMarket = rec.blackMarket
                     e.unobtainable = rec.isUnobtainable
                     e.rep = ReputationProgress(rec.rep)

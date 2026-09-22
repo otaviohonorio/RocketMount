@@ -78,6 +78,7 @@ MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 
 function CreateFrame(kind) return widget(kind) end
 function UnitFactionGroup() return "Alliance" end
+function UnitName() return "Hamfarir" end
 function GetCursorPosition() return 0, 0 end
 function IsShiftKeyDown() return false end
 function GetMoney() return 500000 end          -- 50 de ouro
@@ -148,6 +149,12 @@ local MOUNTS = {
     -- a única prova de que há sorte no meio é a taxa. Sem este caso, ignorar a taxa na
     -- checagem de determinismo passava batido, que é exatamente o defeito relatado.
     { 14, 1014, "Bau fora do tipo queda",   3, false },
+    -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
+    -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
+    -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
+    { 15, 1015, "So sei o preco",           3, false },
+    -- E o contraste: mesma fonte, mesmo preco, mas com acesso CONHECIDO e cumprido.
+    { 16, 1016, "Preco e acesso conhecido", 3, false },
     { 7, 1007, "Ja coletada",           1, true  },
     { 8, 1008, "Da outra faccao",       1, false, 0 },   -- 0 = Horda
 }
@@ -174,6 +181,9 @@ C_MountJournal = {
 
 -- Reputação: 1001 já está Exaltado; 1002 está a 80% do caminho.
 C_Reputation = {
+    -- 9001 e 9003 valem para a conta; 9002 e so deste personagem. A diferenca muda o que o
+    -- jogador tem que fazer, e era justamente ela que a tela nao dizia.
+    IsAccountWideReputation = function(fid) return fid == 9001 or fid == 9003 end,
     GetFactionDataByID = function(fid)
         if fid == 9001 then
             return { name = "Faccao pronta", reaction = 8, currentStanding = 42000 }
@@ -203,11 +213,17 @@ MCL_GUIDE = {
                    rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
         [1013] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
         [1014] = { chance = 3, method = "USE" },
+        [1015] = { vendorInfo = { npc = "Guild Vendors", zone = "" } },
+        [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
+                   vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
     },
 }
 MCL_GUIDE_CURRENCY_DATA = {
     -- 300 no bolso (ver GetCurrencyInfo) de 1000 = 30%.
     [1013] = { { type = "currency", id = 77, amount = 1000 } },
+    -- Preco que o jogador cobre de sobra, nos dois casos.
+    [1015] = { { type = "gold", id = 0, amount = 1000 } },
+    [1016] = { { type = "gold", id = 0, amount = 1000 } },
 }
 
 LibStub = function() return nil end
@@ -246,7 +262,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as doze que faltam", #ranked, 12)
+check("sobram as catorze que faltam", #ranked, 14)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -264,7 +280,10 @@ check("sem dado nenhum = Sem estimativa",
 -- A ordem é o produto. Trava ela inteira, não uma posição isolada: uma regra nova que
 -- desloque duas montarias de lugar tem que reprovar aqui.
 local ordemEsperada = {
-    "Pronta por reputacao",
+    -- As duas que valem "e so ir pegar": acesso conhecido E cumprido. Empate resolve pelo nome.
+    "Preco e acesso conhecido", "Pronta por reputacao",
+    -- E logo abaixo, separada delas, a que so tem preco conhecido. Ela NAO promete.
+    "So sei o preco",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
     "Metade da conquista",
@@ -283,6 +302,27 @@ local ordemEsperada = {
 for i, nome in ipairs(ordemEsperada) do
     check("posicao " .. i, ranked[i] and ranked[i].name, nome)
 end
+
+-- ⚑ O DEFEITO DA FENIX NEGRA (relatado em 21/09): "so sei o preco" nao e "pode pegar".
+local soPreco = porNome["So sei o preco"].e
+check("so com preco NAO e 'e so ir pegar'", soPreco.tier ~= ns.TIER.READY, true)
+check("so com preco cai em 'Confira no vendedor'", soPreco.tier, ns.TIER.CHECK)
+check("e o numero da direita nao promete", soPreco.headline, "preço ok")
+check("a linha avisa que pode haver mais",
+    soPreco.why:find("que eu n") ~= nil, true)
+check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true)
+
+local comAcesso = porNome["Preco e acesso conhecido"].e
+check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
+check("e ele diz 'pode pegar'", comAcesso.headline, "pode pegar")
+check("vendedor com coordenada nao e vago", comAcesso.vendorVago, false)
+
+-- ⚑ DE QUEM E A REPUTACAO (relatado em 21/09: "qual char tem essa reputacao?")
+check("reputacao de conta se identifica como tal",
+    comAcesso.rep.label:find("da conta") ~= nil, true)
+local doChar = porNome["Quase la por reputacao"].e
+check("reputacao de personagem diz o NOME do personagem",
+    doChar.rep.label:find("Hamfarir") ~= nil, true)
 
 -- ⚑ O defeito relatado em 21/09, travado: requisito cumprido com queda no meio NÃO é pronto.
 local bau = porNome["Bau com reputacao pronta"].e
@@ -345,7 +385,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 12)
+check("sem o MCL a lista continua de pe", #semMCL, 14)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end
@@ -382,7 +422,7 @@ local function letras(s)
 end
 
 local TITULO_MAX, DICA_MAX = 36, 36
-for t = 1, 6 do
+for t = 1, 7 do
     local nome, dica = ns.TIER_NAME[t], ns.TIER_HINT[t]
     check("nome da faixa " .. t .. " cabe", letras(nome) <= TITULO_MAX, true)
     check("dica da faixa " .. t .. " cabe", letras(dica) <= DICA_MAX, true)
