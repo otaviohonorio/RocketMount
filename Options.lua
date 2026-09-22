@@ -58,5 +58,21 @@ function ns.SetupOptions()
             "A dica dele já mostra a próxima montaria da fila.")
     end
 
+    do
+        local name = "Mostrar as que saíram do jogo"
+        local variable = ADDON .. "ShowUnobtainable"
+        local setting = Settings.RegisterProxySetting(category, variable,
+            Settings.VarType.Boolean, name, false,
+            function() return ns.db.showUnobtainable end,
+            function(value)
+                ns.db.showUnobtainable = value
+                ns.Invalidate()
+            end)
+
+        Settings.CreateCheckbox(category, setting,
+            "Promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. " ..
+            "Elas não podem mais ser conseguidas, então ficam fora da lista por padrão.")
+    end
+
     Settings.RegisterAddOnCategory(category)
 end

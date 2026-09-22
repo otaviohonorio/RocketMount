@@ -66,6 +66,7 @@ ns.TIER_COLOR = {
     { 0.85, 0.35, 0.35 },   -- 5 long road                    red
     { 0.62, 0.55, 0.70 },   -- 6 costs more than the price    muted violet: a caveat, not a rank
     { 0.55, 0.55, 0.58 },   -- 7 no estimate                  grey: absence, not severity
+    { 0.40, 0.40, 0.42 },   -- 8 gone from the game           darker grey: not a rank at all
 }
 
 function ns.ApplyHeaderArt(texture)

@@ -38,6 +38,8 @@ ns.TIER = {
     LONGFARM  = 5,
     CHECK     = 6,
     UNKNOWN   = 7,
+    -- Depois de tudo, e só quando o jogador pede para ver: não é difícil, é impossível.
+    GONE      = 8,
 }
 
 -- The names carry the split the collector community actually uses -- **guaranteed** against
@@ -57,6 +59,7 @@ ns.TIER_NAME = {
     [5] = "Caminho longo",
     [6] = "Exige mais que o preço",
     [7] = "Sem estimativa",
+    [8] = "Não dá mais para conseguir",
 }
 
 -- The hint is short because it shares a line with the band name, which grew. Practical
@@ -73,6 +76,7 @@ ns.TIER_HINT = {
     [5] = "chance ruim, ou requisito longe",
     [6] = "conquista, reputação ou guilda",
     [7] = "sem dado para estimar",
+    [8] = "saiu do jogo",
 }
 
 -- The chance above which a farm stops being an afternoon's work. Not a measurement: it is
@@ -138,6 +142,16 @@ end
 
 function ns.Rank(entry)
     local e = entry
+
+    -- SAIU DO JOGO: nenhuma das regras abaixo se aplica. Ranquear esforço de uma montaria que
+    -- ninguém mais consegue seria responder a pergunta errada com preciso.
+    if e.unobtainable then
+        e.tier = ns.TIER.GONE
+        e.headline = "—"
+        e.why = (e.sourceText and e.sourceText ~= "" and (e.sourceText:gsub("%s+", " ")))
+            or ns.SOURCE_NAMES[e.sourceType]
+        return e
+    end
     local access, from = Access(e)
     local price = Price(e)
 
@@ -316,12 +330,13 @@ function ns.GetFiltered()
     local all = ns.GetRanked()
     local want = ns.db.sources
     local modo = ns.db.factionFilter
-    if not want and not modo then return all, #all end
 
     local out = {}
     for i = 1, #all do
         local e = all[i]
-        if (not want or want[e.sourceType]) and PassaFaccao(e, modo) then
+        if (not want or want[e.sourceType])
+            and PassaFaccao(e, modo)
+            and (ns.db.showUnobtainable or not e.unobtainable) then
             out[#out + 1] = e
         end
     end

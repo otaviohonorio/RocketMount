@@ -165,6 +165,10 @@ local MOUNTS = {
     -- E uma so da HORDA: sem ela, o filtro "minha" (Alianca aqui) nao tinha o que excluir, e o
     -- teste dele passava com a regra desligada.
     { 20, 1020, "So da Horda",              3, false, 0 },
+    -- (!) SAIU DO JOGO: promocao encerrada, card game, conquista aposentada. O addon lia a marca
+    -- do MCL desde a primeira versao e nunca a usava -- elas eram ranqueadas junto com as que da
+    -- para pegar, numa lista cujo assunto e "por onde comecar".
+    { 21, 1021, "Saiu do jogo",             8, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -235,6 +239,7 @@ MCL_GUIDE = {
         [1018] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1019] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
+        [1021] = { isUnobtainable = true, chance = 100 },
         [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
                    vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
     },
@@ -304,7 +309,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as dezessete que faltam", #ranked, 17)
+check("sobram as dezoito que faltam", #ranked, 18)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -341,6 +346,8 @@ local ordemEsperada = {
     "Rep que nunca vi", "So sei o preco", "Farm longo",
     "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
+    -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
+    "Saiu do jogo",
 }
 for i, nome in ipairs(ordemEsperada) do
     check("posicao " .. i, ranked[i] and ranked[i].name, nome)
@@ -376,6 +383,40 @@ local comAcesso = porNome["Preco e acesso conhecido"].e
 check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
 check("e ele diz 'pode pegar'", comAcesso.headline, "pode pegar")
 check("vendedor com coordenada nao e vago", comAcesso.vendorVago, false)
+
+-- (!) REQUISITO QUE NAO DA PARA LER E REQUISITO NAO CUMPRIDO (defeito de 22/09).
+--
+-- `GetFactionDataByID` nao responde por uma faccao que o personagem NUNCA encontrou -- que e
+-- exatamente o caso em que a montaria esta mais longe. Ler esse silencio como "nao ha requisito"
+-- fazia a montaria subir para perto do topo: quanto menos o addon sabia, melhor ela parecia.
+local nuncaVi = porNome["Rep que nunca vi"].e
+check("reputacao ilegivel NAO vira 'nada a cumprir'", nuncaVi.access, 0)
+check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true)
+check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
+check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
+
+-- (!) MONTARIA QUE SAIU DO JOGO NAO ENTRA NA LISTA (defeito de 22/09). O addon lia a marca do
+-- MCL desde a primeira versao e NUNCA a usava: promocao encerrada e card game eram ranqueados
+-- junto com o que da para pegar, numa lista cujo assunto e "por onde comecar".
+local sumida = porNome["Saiu do jogo"].e
+check("o ranqueamento a marca como sumida", sumida.tier, ns.TIER.GONE)
+check("  e nao inventa numero para ela", sumida.headline, "—")
+-- Ela tem chance de 1/100, que a poria em "farm curto" se a marca fosse ignorada: este check
+-- existe para provar que a marca MANDA MAIS que a chance.
+check("  mesmo com chance boa, a marca manda mais", sumida.tier ~= ns.TIER.SHORTFARM, true)
+
+ns.db.showUnobtainable = false
+local function TemSumida()
+    for _, e in ipairs((ns.GetFiltered())) do
+        if e.name == "Saiu do jogo" then return true end
+    end
+    return false
+end
+check("por padrao ela fica FORA da lista", TemSumida(), false)
+ns.db.showUnobtainable = true
+check("  e aparece quando o jogador pede", TemSumida(), true)
+ns.db.showUnobtainable = false
+
 
 -- ⚑ DE QUEM E A REPUTACAO (relatado em 21/09: "qual char tem essa reputacao?")
 check("reputacao de conta se identifica como tal",
@@ -456,7 +497,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 17)
+check("sem o MCL a lista continua de pe", #semMCL, 18)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

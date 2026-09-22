@@ -32,6 +32,16 @@ commands["minimapa"] = function()
 end
 
 -- `/rmt faccao [minha|horda|alianca]`, sem argumento limpa.
+-- Liga e desliga as que saíram do jogo. Existe porque o catálogo do MCL as conhece, e quem
+-- coleciona costuma querer VER o que perdeu — só não no meio da lista de "por onde começar".
+commands["sumidas"] = function()
+    ns.db.showUnobtainable = not ns.db.showUnobtainable
+    ns.Print(ns.db.showUnobtainable
+        and "mostrando também as que saíram do jogo."
+        or "escondendo as que saíram do jogo.")
+    ns.Invalidate()
+end
+
 commands["faccao"] = function(rest)
     local arg = (rest or ""):lower():gsub("%s", "")
     local mapa = {
@@ -128,6 +138,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt top <n>|r — quantas linhas a lista mostra")
     print("    |cffffff00/rmt fontes|r — limpa o filtro de fonte")
     print("    |cffffff00/rmt faccao [minha|horda|alianca]|r — filtra por facção")
+    print("    |cffffff00/rmt sumidas|r — mostra ou esconde as que saíram do jogo")
     print("    |cffffff00/rmt quem|r — os personagens anotados e quantas reputações cada um tem")
     print("    |cffffff00/rmt minimapa|r — mostra ou esconde o botão do minimapa")
     print("    |cffffff00/rmt config|r — opções")

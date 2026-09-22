@@ -77,6 +77,14 @@ each alt and they appear; `/rmt quem` shows what is on record.
 It is a ledger, not a live reading, and it says so: everything in it was true when that character
 last logged in.
 
+## Mounts that left the game
+
+Ended promotions, trading card game mounts, retired achievements. They cannot be obtained by
+anyone any more, so they stay out of the list — in a list whose whole subject is *where do I
+start*, a mount nobody can get is the worst possible row. Turn them on with `/rmt sumidas` or in
+the options, and they appear last, in their own band, with no effort estimate: it is not hard,
+it is impossible.
+
 ## Known gap
 
 **Attempt lockouts are not modelled.** A 1-in-100 drop from a boss on a weekly lockout and a
@@ -94,6 +102,7 @@ the method and leaves the judgement to you. No estimate was invented to fill the
 | `/rmt minimapa` | shows or hides the minimap button |
 | `/rmt faccao [minha\|horda\|alianca]` | filters by faction |
 | `/rmt quem` | the characters on record and how many reputations each has |
+| `/rmt sumidas` | shows or hides the mounts that left the game |
 | `/rmt debug [name]` | what the addon managed to read, for everything or for one mount |
 
 ## License

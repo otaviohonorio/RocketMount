@@ -9,6 +9,16 @@ ns.defaults = {
     -- A mount the game marks as unavailable to this character (wrong faction, wrong
     -- class) only gets in the way of a list whose subject is "what can I go after".
     hideUnavailable = true,
+    -- (!) MONTARIA QUE SAIU DO JOGO FICA DE FORA POR PADRÃO (0.8.0).
+    --
+    -- O addon lia a marca `isUnobtainable` do MCL desde a primeira versão e **nunca a usava**:
+    -- promoções encerradas, montarias de card game e conquistas aposentadas entravam na lista e
+    -- eram ranqueadas junto com as que dá para pegar. Numa lista cujo assunto é "por onde
+    -- começar", montaria que ninguém mais consegue é a pior linha possível.
+    --
+    -- O MCL esconde essas por padrão (`MCL_SETTINGS.unobtainable = false`) e deixa ligar; aqui
+    -- é igual, e aí quem quer ver o catálogo completo vê.
+    showUnobtainable = false,
     -- Enabled sources. The key is the API `sourceType` (see ns.SOURCE_NAMES).
     sources = nil,   -- nil = all of them
     window = nil,    -- { point, x, y } of the last position
