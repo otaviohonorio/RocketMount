@@ -421,6 +421,14 @@ local function letras(s)
     return n
 end
 
+-- TODA faixa precisa de nome, dica e COR. A cor ficou de fora quando a faixa "Confira no
+-- vendedor" entrou em segundo lugar: as seis cores existentes escorregaram um degrau, a
+-- gravidade saiu invertida (farm curto vermelho, caminho longo cinza) e a setima faixa ficou
+-- sem cor nenhuma. Ninguem percebe isso lendo codigo; um teste percebe.
+for t = 1, 7 do
+    check("faixa " .. t .. " tem cor propria", ns.TIER_COLOR[t] ~= nil, true)
+end
+
 local TITULO_MAX, DICA_MAX = 36, 36
 for t = 1, 7 do
     local nome, dica = ns.TIER_NAME[t], ns.TIER_HINT[t]

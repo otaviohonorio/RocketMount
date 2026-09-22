@@ -1,6 +1,6 @@
 -- RocketMounts | Skin.lua
--- Fonte única de verdade da aparência. Painel novo que copia valor da janela
--- diverge na terceira mudança; toda tela deste addon lê daqui.
+-- Single source of truth for the look. A new panel that copies values from the window
+-- diverges on the third change; every screen in this addon reads from here.
 local _, ns = ...
 
 local FONT = "Fonts\\FRIZQT__.TTF"
@@ -8,31 +8,31 @@ local FONT = "Fonts\\FRIZQT__.TTF"
 ns.Skin = {
     font = FONT,
 
-    -- Escada tipográfica do jogo (Fonts.xml): 20 / 16 / 14 / 12 / 10.
+    -- The game's type scale (Fonts.xml): 20 / 16 / 14 / 12 / 10.
     titleFontSize = 14,
     rowFontSize   = 12,
     subFontSize   = 10,
     headFontSize  = 12,
 
-    -- Ritmo de LINHA DE DADOS (medidor nativo): 25 de tinta + 4 de respiro = 29.
-    -- Não é o ritmo de formulário (26 + 9 = 35) — este aqui é lista, não campo.
-    -- A tinta sobe de 25 para 36 porque a linha daqui tem DUAS: o nome e o motivo de
-    -- ela estar nessa posição. 12pt + 10pt + respiro não cabem em 25. O respiro de 4
-    -- entre linhas fica como está — é ele que dá o ritmo, não a altura da tinta.
+    -- DATA ROW rhythm (native meter): 25 of ink + 4 of breathing room = 29. This is not
+    -- the form rhythm (26 + 9 = 35) -- this is a list, not a field.
+    -- The ink goes from 25 to 36 because a row here has TWO lines: the name and the reason
+    -- it sits in that position. 12pt + 10pt + spacing does not fit in 25. The 4 between
+    -- rows stays as it is -- that is what sets the rhythm, not the height of the ink.
     rowHeight  = 36,
     rowSpacing = 4,
 
-    -- Bloco de cabeçalho de seção da Blizzard: 45px com o título a y=-16, o que
-    -- deixa 25 de branco acima. Aqui a seção é mais leve (é lista, não formulário),
-    -- mas a razão se mantém: o vão de seção tem que ser >= 2x o vão de linha.
+    -- Blizzard's section header block: 45px with the title at y=-16, which leaves 25 of
+    -- white above. The section here is lighter (it is a list, not a form), but the ratio
+    -- holds: the section gap must be >= 2x the row gap.
     sectionHeight = 22,
     sectionGap    = 12,
 
-    -- Margens do conteúdo (Blizzard_SettingsList.lua:44-45).
+    -- Content margins (Blizzard_SettingsList.lua:44-45).
     padding     = 10,
     leftMargin  = 12,
 
-    -- Painel de leitura pede fundo: sem ele o texto disputa com o cenário.
+    -- A reading panel needs a background: without one the text competes with the scenery.
     panelAlpha = 0.92,
     rowBackground     = { 1, 1, 1, 0.045 },
     rowBackgroundHl   = { 1, 1, 1, 0.12 },
@@ -44,20 +44,28 @@ ns.Skin = {
     dim   = { 0.55, 0.55, 0.58 },
 
     headerAtlas = "ui-damagemeters-header-bar",
-    -- Recorte que a skin Midnight do Details usa para tirar o padding transparente.
+    -- The crop Details' Midnight skin uses to strip the transparent padding.
     headerCrop  = { 0.045, 0.965, 4 / 60, 56 / 60 },
     headerHeight = 32,
 }
 
--- Cor de cada faixa de esforço. Não é cor de classe e não disputa com ela:
--- verde/azul/amarelo/laranja/cinza é o vocabulário de dificuldade, não de identidade.
+-- Colour per effort band. Not a class colour and it does not compete with one:
+-- green/blue/yellow/orange/grey is the vocabulary of difficulty, not of identity.
+--
+-- (!) There were SIX colours here for seven bands, and they had drifted a step: when the
+-- "check with the vendor" band was inserted in second place, every colour below it kept its
+-- old position and took on a meaning that was not its own. The visible result was inverted
+-- severity -- "short farm" came out red while "long road", which is worse, came out grey --
+-- and the seventh band had no colour at all, falling back to whatever each caller chose.
+-- The band is the meaning; the colour follows it, and now there is one per band.
 ns.TIER_COLOR = {
-    { 0.30, 0.85, 0.40 },   -- 1 pronto
-    { 0.45, 0.78, 0.95 },   -- 2 quase lá
-    { 0.94, 0.80, 0.25 },   -- 3 em andamento
-    { 0.95, 0.60, 0.25 },   -- 4 farm curto
-    { 0.85, 0.35, 0.35 },   -- 5 farm longo
-    { 0.55, 0.55, 0.58 },   -- 6 sem estimativa
+    { 0.30, 0.85, 0.40 },   -- 1 guaranteed, just go get it   green
+    { 0.55, 0.85, 0.60 },   -- 2 check with the vendor        pale green: nearly the same
+    { 0.45, 0.78, 0.95 },   -- 3 guaranteed, nearly unlocked  blue
+    { 0.94, 0.80, 0.25 },   -- 4 guaranteed, halfway          yellow
+    { 0.95, 0.60, 0.25 },   -- 5 luck, good odds              orange
+    { 0.85, 0.35, 0.35 },   -- 6 long road                    red
+    { 0.55, 0.55, 0.58 },   -- 7 no estimate                  grey: absence, not severity
 }
 
 function ns.ApplyHeaderArt(texture)
@@ -75,13 +83,13 @@ function ns.ApplyHeaderArt(texture)
         return true
     end
 
-    -- `SetAtlas` falha em silêncio; o fallback é explícito de propósito.
+    -- `SetAtlas` fails silently; the fallback is explicit on purpose.
     texture:SetColorTexture(0.13, 0.11, 0.07, 0.95)
     return false
 end
 
--- FontString sem template nasce sem fonte, e o SetText responde
--- "Font not set" — que costuma aparecer como "cliquei e não abriu".
+-- A FontString created without a template has no font, and SetText answers
+-- "Font not set" -- which usually reaches the player as "I clicked and nothing opened".
 function ns.NewText(parent, size, color, justify)
     local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     fs:SetFont(ns.Skin.font, size or ns.Skin.rowFontSize, "")
