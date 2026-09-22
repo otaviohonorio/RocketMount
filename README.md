@@ -63,6 +63,20 @@ Everything about **your** progress comes from the API, which is exact and always
 reputation line says whether the progress is account-wide or belongs only to the character you
 are logged in on, by name.
 
+## Which of your characters has it
+
+Reputation is read from the character you are logged in on — that is all the API will answer.
+Some reputations are account-wide since The War Within, and the row says which kind it is, by
+name: *"reputation on the account"* or *"only on this character (Name)"*.
+
+For the character-bound ones, the addon keeps a ledger: every time a character logs in, it writes
+down where that character stands with the factions some mount asks for. A mount you cannot buy
+here then says who can — *"Ottozinho has it (Exalted) — not on this character"*. Log in once on
+each alt and they appear; `/rmt quem` shows what is on record.
+
+It is a ledger, not a live reading, and it says so: everything in it was true when that character
+last logged in.
+
 ## Known gap
 
 **Attempt lockouts are not modelled.** A 1-in-100 drop from a boss on a weekly lockout and a
@@ -78,7 +92,9 @@ the method and leaves the judgement to you. No estimate was invented to fill the
 | `/rmt top <n>` | how many rows the list shows |
 | `/rmt fontes` | clears the source filter |
 | `/rmt minimapa` | shows or hides the minimap button |
-| `/rmt debug` | what the addon managed to read |
+| `/rmt faccao [minha\|horda\|alianca]` | filters by faction |
+| `/rmt quem` | the characters on record and how many reputations each has |
+| `/rmt debug [name]` | what the addon managed to read, for everything or for one mount |
 
 ## License
 

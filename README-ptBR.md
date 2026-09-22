@@ -62,6 +62,21 @@ existe e é bem mantido — ele entra com o ranqueamento.
 Tudo sobre o **seu** progresso vem da API, que é exata e sempre atual. Cada linha de reputação
 diz se o progresso vale para a conta ou só para o personagem conectado, pelo nome.
 
+## Qual dos seus personagens tem
+
+Reputação é lida do personagem conectado — é tudo o que a API responde. Parte das facções virou
+reputação de conta no War Within, e a linha diz de qual tipo é, pelo nome: *"reputação da conta"*
+ou *"só deste personagem (Nome)"*.
+
+Para as que são por personagem, o addon mantém um livro-caixa: toda vez que um personagem entra
+no jogo, ele anota onde aquele personagem está com as facções que alguma montaria pede. Aí uma
+montaria que você não pode comprar aqui diz quem pode — *"Ottozinho tem (Exaltado) — este
+personagem não tem"*. Entre uma vez com cada alt para eles aparecerem; `/rmt quem` mostra o que
+está anotado.
+
+É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
+entrou pela última vez.
+
 ## Lacuna conhecida
 
 **A trava de tentativa não é modelada.** Uma queda de 1 em 100 num chefe com trava semanal e uma
@@ -77,7 +92,9 @@ método e deixa o julgamento com você. Nenhuma estimativa foi inventada para ta
 | `/rmt top <n>` | quantas linhas a lista mostra |
 | `/rmt fontes` | limpa o filtro de fonte |
 | `/rmt minimapa` | mostra ou esconde o botão do minimapa |
-| `/rmt debug` | o que o addon conseguiu ler |
+| `/rmt faccao [minha\|horda\|alianca]` | filtra por facção |
+| `/rmt quem` | os personagens anotados e quantas reputações cada um tem |
+| `/rmt debug [nome]` | o que o addon conseguiu ler, de tudo ou de uma montaria |
 
 ## Licença
 

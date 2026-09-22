@@ -295,15 +295,34 @@ function ns.GetRanked(force)
 end
 
 -- The ranked list, after the source filter.
+---A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
+local function MyFaction()
+    return UnitFactionGroup and UnitFactionGroup("player") or nil
+end
+
+---A montaria passa no filtro de facção?
+---
+---Quatro modos, e o padrão (`nil`) mostra tudo. `"mine"` é o útil no dia a dia — some o que este
+---personagem não pode usar — e os dois nomes servem para quem está planejando o outro lado.
+local function PassaFaccao(e, modo)
+    if not modo then return true end
+    if not e.factionOnly then return true end       -- serve para os dois lados
+    if modo == "mine" then return e.factionOnly == MyFaction() end
+    return e.factionOnly == modo
+end
+
+-- A lista já ranqueada, depois dos filtros.
 function ns.GetFiltered()
     local all = ns.GetRanked()
     local want = ns.db.sources
-    if not want then return all, #all end
+    local modo = ns.db.factionFilter
+    if not want and not modo then return all, #all end
 
     local out = {}
     for i = 1, #all do
-        if want[all[i].sourceType] then
-            out[#out + 1] = all[i]
+        local e = all[i]
+        if (not want or want[e.sourceType]) and PassaFaccao(e, modo) then
+            out[#out + 1] = e
         end
     end
     return out, #all

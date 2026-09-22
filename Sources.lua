@@ -137,9 +137,19 @@ local function ReputationProgress(rep)
     if not rep or not rep.factionId then return nil end
 
     local nome = rep.factionName or "?"
+    local alvo = STANDING_INDEX[rep.levelName or ""]
+
+    -- (!) ANTES DE DIZER "ninguém tem", PERGUNTA AO LIVRO-CAIXA. A API só fala do personagem
+    -- conectado, mas o `Roster` anotou o que cada um tinha ao entrar — e a pergunta do usuário
+    -- era exatamente essa: *"consegue mostrar qual personagem tem a reputação, caso seja
+    -- legada?"*. Reputação de Brigada não precisa disto; a legada, sim.
+    local outro = ns.Roster and ns.Roster.Line(rep.factionId, alvo) or nil
     local desconhecida = {
         kind = "rep", factionName = nome, pct = 0, unreadable = true,
-        label = string.format("%s: nenhuma reputação com esta facção neste personagem", nome),
+        outroChar = outro,
+        label = outro
+            and string.format("%s: %s — este personagem não tem", nome, outro)
+            or string.format("%s: nenhuma reputação com esta facção neste personagem", nome),
     }
 
     -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
@@ -366,6 +376,10 @@ function ns.BuildList()
                     isFactionSpecific = isFactionSpecific,
                     faction = faction,
                     playable = playable,
+                    -- "Horde" / "Alliance" / nil. Vira rótulo e vira filtro: até aqui a facção
+                    -- só servia para ESCONDER a montaria, e esconder não é informar.
+                    factionOnly = isFactionSpecific and faction ~= nil
+                        and ((faction == 0) and "Horde" or "Alliance") or nil,
                 }
 
                 -- O texto que a Blizzard escreve explicando de onde a montaria vem,
