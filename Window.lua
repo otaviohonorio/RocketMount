@@ -173,6 +173,12 @@ local function FillDetail(entry)
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
     -- fazia a lista anunciar "100%" numa montaria que ainda depende de sorte.
+    -- A EXPANSÃO, no alto da ficha: é a primeira coisa que situa a montaria, e sem ela o
+    -- jogador lê "Vendedor em Valdrakken" sem saber de que época aquilo é.
+    if entry.expansionName then
+        Block("Expansão", entry.expansionName)
+    end
+
     if entry.factionOnly then
         -- FACÇÃO É INFORMAÇÃO, e antes ela só servia para esconder a montaria. Quem planeja o
         -- outro lado precisa saber que ela existe e de quem ela é.

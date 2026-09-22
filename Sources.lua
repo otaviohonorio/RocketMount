@@ -320,6 +320,73 @@ local function CostProgress(spellID, itemID)
 end
 
 --------------------------------------------------------------------------------
+-- Missão
+--------------------------------------------------------------------------------
+---A missão que entrega a montaria já foi feita?
+---
+---(!) O CATÁLOGO TINHA ISTO E EU NÃO LIA. `MCL_GUIDE_QUEST_DATA` guarda missão, id, quem entrega
+---e onde, para 83 montarias — e o addon ignorava a tabela inteira. Pergunta do usuário:
+---*"Grande Grifo, se falta missão, não dá para ir pegar, correto?"*. Correto, e até agora a tela
+---não dizia nem que havia missão.
+---
+---⚠️ O QUE ESTA FUNÇÃO **NÃO** RESPONDE, e o usuário perguntou direto: se a missão está
+---**disponível**. O jogo não expõe o grafo de pré-requisito de missão para addon — dá para saber
+---se você CONCLUIU uma missão, nunca se você PODE pegá-la. (Conferência: dos addons instalados,
+---67 usam `IsQuestFlaggedCompleted` e **nenhum** usa API de pré-requisito, porque não existe; os
+---que mostram cadeia de missão, como o Zygor, embarcam base própria.)
+---
+---Então aqui se diz o que dá para provar: feita, ou não feita. "Não feita" já responde a pergunta
+---que importa — tem coisa no caminho — sem fingir saber quantos passos faltam.
+local function QuestProgress(mountID)
+    local data = _G.MCL_GUIDE_QUEST_DATA
+    if not data or not mountID then return nil end
+    local q = data[mountID]
+    if type(q) ~= "table" then return nil end
+
+    local questID = q.questId
+    -- O nome vem do jogo quando ele já carregou a missão; senão fica o do catálogo, que é o
+    -- nome em inglês. Pedir o carregamento aqui faz o próximo desenho já achar traduzido.
+    local titulo = q.quest
+    if questID and C_QuestLog then
+        if C_QuestLog.RequestLoadQuestByID then pcall(C_QuestLog.RequestLoadQuestByID, questID) end
+        if C_QuestLog.GetTitleForQuestID then
+            local ok, t = pcall(C_QuestLog.GetTitleForQuestID, questID)
+            if ok and type(t) == "string" and t ~= "" then titulo = t end
+        end
+    end
+
+    local feita, naConta = false, false
+    if questID and C_QuestLog then
+        if C_QuestLog.IsQuestFlaggedCompleted then
+            local ok, v = pcall(C_QuestLog.IsQuestFlaggedCompleted, questID)
+            feita = ok and v or false
+        end
+        if C_QuestLog.IsQuestFlaggedCompletedOnAccount then
+            local ok, v = pcall(C_QuestLog.IsQuestFlaggedCompletedOnAccount, questID)
+            naConta = ok and v or false
+        end
+    end
+
+    local onde = q.npc and (q.npc .. (q.zone and (" — " .. q.zone) or "")) or q.zone
+
+    if feita then
+        return {
+            kind = "quest", pct = 1, questID = questID, titulo = titulo, onde = onde,
+            label = string.format("Missão \"%s\": concluída", titulo or "?"),
+        }
+    end
+
+    -- FEITA EM OUTRO PERSONAGEM é informação, e não requisito cumprido: a montaria é deste.
+    local extra = naConta and "  —  já feita em outro personagem" or ""
+    return {
+        kind = "quest", pct = 0, questID = questID, titulo = titulo, onde = onde,
+        naConta = naConta,
+        label = string.format("Missão \"%s\": não concluída%s%s", titulo or "?",
+            onde and ("  ·  " .. onde) or "", extra),
+    }
+end
+
+--------------------------------------------------------------------------------
 -- Conquista
 --------------------------------------------------------------------------------
 local function AchievementProgress(achID)
@@ -514,6 +581,7 @@ function ns.BuildList()
                         }
                     end
                     e.achievement = AchievementProgress(rec.achievementId)
+                    e.quest = QuestProgress(mountID)
                 end
 
                 e.cost = CostProgress(spellID, e.itemID)
