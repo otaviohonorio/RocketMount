@@ -15,15 +15,10 @@ commands["config"] = function()
     end
 end
 
-commands["top"] = function(rest)
-    local n = tonumber(rest)
-    if not n or n < 10 or n > 400 then
-        ns.Print("uso: /rmt top <10 a 400>. Agora está em " .. tostring(ns.db.topN) .. ".")
-        return
-    end
-    ns.db.topN = math.floor(n)
-    ns.Print("a lista passa a mostrar as " .. ns.db.topN .. " primeiras.")
-    ns.RefreshWindow()
+-- `/rmt top` saiu junto com o teto de linhas: a lista mostra tudo agora. O comando fica aqui
+-- só para dizer isso a quem o tinha no dedo, em vez de responder "comando desconhecido".
+commands["top"] = function()
+    ns.Print("a lista mostra todas as montarias que faltam — o limite de linhas saiu na 0.10.0.")
 end
 
 commands["minimapa"] = function()
@@ -34,6 +29,26 @@ end
 -- `/rmt faccao [minha|horda|alianca]`, sem argumento limpa.
 -- Liga e desliga as que saíram do jogo. Existe porque o catálogo do MCL as conhece, e quem
 -- coleciona costuma querer VER o que perdeu — só não no meio da lista de "por onde começar".
+commands["expansao"] = function(rest)
+    local arg = (ns.Fold and ns.Fold(rest or "") or (rest or ""):lower()):gsub("^%s+", ""):gsub("%s+$", "")
+    if arg == "" then
+        ns.db.expansionFilter = nil
+        ns.Print("expansão: todas.")
+        ns.Invalidate()
+        return
+    end
+    for _, r in ipairs(ns.Expansion.RANGES) do
+        if ns.Fold(r.name):find(arg, 1, true) then
+            ns.db.expansionFilter = r.id
+            ns.Print("expansão: " .. r.name)
+            ns.Invalidate()
+            return
+        end
+    end
+    ns.Print("expansão não reconhecida. As que existem:")
+    for _, r in ipairs(ns.Expansion.Menu()) do print("    " .. r.name) end
+end
+
 commands["busca"] = function(rest)
     ns.search = (rest or ""):gsub("^%s+", ""):gsub("%s+$", "")
     if ns.search == "" then
@@ -150,6 +165,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt faccao [minha|horda|alianca]|r — filtra por facção")
     print("    |cffffff00/rmt sumidas|r — mostra ou esconde as que saíram do jogo")
     print("    |cffffff00/rmt busca <texto>|r — procura por nome, chefe, zona ou vendedor")
+    print("    |cffffff00/rmt expansao [nome]|r — filtra por expansão")
     print("    |cffffff00/rmt quem|r — os personagens anotados e quantas reputações cada um tem")
     print("    |cffffff00/rmt minimapa|r — mostra ou esconde o botão do minimapa")
     print("    |cffffff00/rmt config|r — opções")

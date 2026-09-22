@@ -158,13 +158,22 @@ local function ReputationProgress(rep)
         if ok and info and info.renownLevel then
             local need = rep.level or 1
             local have = info.renownLevel
+            -- (!) "renome 25 de 5" NÃO É FRASE. O usuário leu e perguntou: *"eu tenho 25 e precisa
+            -- de 5? isso que entendi?"*. A forma "X de Y" só faz sentido enquanto X caminha para
+            -- Y; passado o Y, ela vira charada. Cumprido se diz cumprido.
+            local texto
+            if have >= need then
+                texto = string.format("%s: renome %d alcançado (você está em %d)", nome, need, have)
+            else
+                texto = string.format("%s: renome %d de %d", nome, have, need)
+            end
+            local escopo = ScopeLabel(rep.factionId)
             return {
                 kind = "rep", factionName = nome,
                 have = have, need = need,
                 pct = math.min(1, have / math.max(1, need)),
                 scope = ReputationScope(rep.factionId),
-                label = string.format("%s: renome %d de %d%s", nome, have, need,
-                    ScopeLabel(rep.factionId) and ("  —  " .. ScopeLabel(rep.factionId)) or ""),
+                label = texto .. (escopo and ("  —  " .. escopo) or ""),
             }
         end
         return desconhecida
@@ -375,6 +384,8 @@ local function Haystack(e)
         e.rep and e.rep.factionName,
         e.vendor and e.vendor.npc, e.vendor and e.vendor.zone,
         ns.SOURCE_NAMES[e.sourceType],
+        -- A expansão entra na busca: quem digita "midnight" ou "legion" acha por ela.
+        e.expansionName,
     }
     -- A zona das coordenadas também entra: quem lembra "Aberrus" e não o nome do chefe acha.
     if e.coords and C_Map and C_Map.GetMapInfo then
@@ -507,6 +518,7 @@ function ns.BuildList()
 
                 e.cost = CostProgress(spellID, e.itemID)
                 -- Montado uma vez por varredura, e não a cada tecla digitada.
+                e.expansion, e.expansionName = ns.Expansion and ns.Expansion.Of(mountID)
                 e.busca = Haystack(e)
 
                 if rarity and rarity.GetRarityByID then

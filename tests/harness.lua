@@ -169,6 +169,16 @@ local MOUNTS = {
     -- do MCL desde a primeira versao e nunca a usava -- elas eram ranqueadas junto com as que da
     -- para pegar, numa lista cujo assunto e "por onde comecar".
     { 21, 1021, "Saiu do jogo",             8, false },
+    -- (!) O CASO DO PORTADOR DA TRILHA-PRADO (relatado em 22/09). Ele pede renome 5 com os
+    -- Centauros Maruuk -- que o jogador tem de sobra (25) -- e depois cai a 1 em 20 do bau da
+    -- Cacada Grandiosa. Aparecia ACIMA de uma de 1 em 3, porque a regra antiga ordenava por
+    -- requisito, e "cumprido" ganhava de "desconhecido". Requisito cumprido nao e progresso rumo
+    -- a montaria: ele so abre a porta.
+    { 22, 1022, "Renome cumprido, 1 em 20", 1, false },
+    -- (!) DOIS REQUISITOS FALTANDO AO MESMO TEMPO (relatado em 22/09): *"falta cristal de
+    -- ressonancia mas que tambem falta reputacao"*. A tela mostrava so o mais atrasado, entao
+    -- quem lia ia farmar a moeda e descobria a reputacao no vendedor.
+    { 23, 1023, "Moeda E reputacao",        3, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -214,7 +224,13 @@ C_Reputation = {
         end
     end,
 }
-C_MajorFactions = { GetMajorFactionRenownInfo = function() return nil end }
+C_MajorFactions = {
+    -- O jogador esta em renome 25 na faccao 9001: bem acima do 5 que a montaria pede.
+    GetMajorFactionRenownInfo = function(fid)
+        if fid == 9001 then return { renownLevel = 25 } end
+        return nil
+    end,
+}
 
 -- O catálogo do MCL, com só o que o addon lê dele.
 MCL_GUIDE = {
@@ -240,6 +256,9 @@ MCL_GUIDE = {
         [1019] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
         [1021] = { isUnobtainable = true, chance = 100 },
+        [1023] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
+        [1022] = { chance = 20, method = "Grand Hunt",
+                   rep = { factionId = 9001, factionName = "Maruuk", renown = true, level = 5 } },
         [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
                    vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
     },
@@ -258,6 +277,9 @@ MCL_GUIDE_CURRENCY_DATA = {
     [1015] = { { type = "gold", id = 0, amount = 1000 } },
     [1017] = { { type = "gold", id = 0, amount = 1000 } },
     [1018] = { { type = "gold", id = 0, amount = 1000 } },
+    -- 300 no bolso de 1000: 30%. A reputacao dessa esta em 80%, entao a moeda e a mais atrasada
+    -- -- e era so ela que aparecia.
+    [1023] = { { type = "currency", id = 77, amount = 1000 } },
     [1019] = { { type = "gold", id = 0, amount = 1000 } },
     [1020] = { { type = "gold", id = 0, amount = 1000 } },
     [1016] = { { type = "gold", id = 0, amount = 1000 } },
@@ -309,7 +331,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as dezoito que faltam", #ranked, 18)
+check("sobram as vinte que faltam", #ranked, 20)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -331,9 +353,12 @@ local ordemEsperada = {
     "Preco e acesso conhecido", "Pronta por reputacao",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
-    "Metade da conquista", "Dois requisitos",
+    "Metade da conquista", "Dois requisitos", "Moeda E reputacao",
     -- No farm, primeiro quem ja esta liberado e, entre os liberados, a chance mais generosa.
     "Bau com reputacao pronta", "Bau fora do tipo queda",
+    -- A de 1 em 20 com renome CUMPRIDO fica ABAIXO das de 1 em 3 sem requisito conhecido:
+    -- requisito cumprido abre a porta, nao anda o caminho.
+    "Renome cumprido, 1 em 20",
     "Farm curto mais raro", "Farm curto",
     "Queda ainda trancada",
     -- (!) E SO ENTAO a de preco-so. Ela ja esteve em TERCEIRO, logo abaixo de "e so ir pegar",
@@ -394,6 +419,19 @@ check("reputacao ilegivel NAO vira 'nada a cumprir'", nuncaVi.access, 0)
 check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true)
 check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
 check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
+
+-- (!) DOIS REQUISITOS FALTANDO: OS DOIS APARECEM (defeito de 22/09).
+local dois2 = porNome["Moeda E reputacao"].e
+check("o addon guarda os dois requisitos", #dois2.requisitos, 2)
+check("  e conta quantos faltam", dois2.faltando, 2)
+check("  a linha avisa que ha mais de um", dois2.why:find("e mais 1") ~= nil, true)
+-- O `min` continua decidindo a FAIXA -- o mais atrasado e que diz o quanto falta --, mas nao
+-- e mais ele sozinho que a tela mostra.
+check("  e a faixa ainda sai do mais atrasado", dois2.requirement, 0.3)
+
+-- E quando esta tudo cumprido, a ficha diz isso em vez de listar faltas que nao existem.
+local prontaTudo = porNome["Preco e acesso conhecido"].e
+check("com tudo cumprido, nada falta", prontaTudo.faltando, 0)
 
 -- (!) MONTARIA QUE SAIU DO JOGO NAO ENTRA NA LISTA (defeito de 22/09). O addon lia a marca do
 -- MCL desde a primeira versao e NUNCA a usava: promocao encerrada e card game eram ranqueados
@@ -497,7 +535,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 18)
+check("sem o MCL a lista continua de pe", #semMCL, 20)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

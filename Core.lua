@@ -3,9 +3,11 @@
 local ADDON, ns = ...
 
 ns.defaults = {
-    -- How many rows the list shows. "Where do I start" does not need 400 rows, and
-    -- building 400 frame rows on open costs a lot for nothing.
-    topN = 100,
+    -- (!) `topN` WAS REMOVED in 0.10.0. It capped the list at 100 rows "because building 400
+    -- frames on open is expensive", and the price was the player finding no recent-expansion
+    -- mount at all: those sit at the far end of a list ordered by effort, which is exactly the
+    -- part the cap removed. The right answer was not to draw what is off screen, not to hide
+    -- what exists.
     -- A mount the game marks as unavailable to this character (wrong faction, wrong
     -- class) only gets in the way of a list whose subject is "what can I go after".
     hideUnavailable = true,
@@ -31,6 +33,8 @@ ns.defaults = {
     chars = {},
     -- Filtro de facção: nil = tudo, "mine" = só o que este personagem pode, "Horde", "Alliance".
     factionFilter = nil,
+    -- Filtro de expansão: nil = todas, ou o índice de `ns.Expansion.RANGES`.
+    expansionFilter = nil,
 }
 
 function ns.Print(...)

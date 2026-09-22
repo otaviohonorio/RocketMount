@@ -162,6 +162,32 @@ function ns.Rank(entry)
         req, from = price, "cost"
     end
 
+    -- (!) TODOS OS REQUISITOS, e não só o pior (defeito de 22/09).
+    --
+    -- Relato: *"falta cristal de ressonância mas que também falta reputação"*. A tela mostrava
+    -- um dos dois — o mais atrasado — e calava sobre o outro. Quem lê "faltam 2.000 cristais"
+    -- vai farmar cristal, chega no vendedor e descobre a reputação lá.
+    --
+    -- O `min` continua decidindo a FAIXA (o requisito mais atrasado é que diz o quanto falta),
+    -- mas a lista inteira vai junto para a linha e para a ficha. Esconder metade do preço é pior
+    -- que mostrar um número grande.
+    e.requisitos = {}
+    for _, key in ipairs({ "rep", "achievement", "cost" }) do
+        local p = e[key]
+        if p and p.pct then
+            e.requisitos[#e.requisitos + 1] = {
+                key = key, pct = p.pct, label = p.label, cumprido = p.pct >= 1,
+            }
+        end
+    end
+    table.sort(e.requisitos, function(x, y) return x.pct < y.pct end)
+
+    -- Quantos ainda faltam, que é o que a linha precisa dizer em uma palavra.
+    e.faltando = 0
+    for _, r in ipairs(e.requisitos) do
+        if not r.cumprido then e.faltando = e.faltando + 1 end
+    end
+
     e.access = access
     e.price = price
     e.requirement = req
@@ -232,6 +258,9 @@ function ns.Rank(entry)
     if e.gated and not e.deterministic then
         -- First what blocks, then the luck: that is the order in which the player acts.
         e.why = "Falta liberar — " .. (reqLabel or "requisito não cumprido")
+        if e.faltando > 1 then
+            e.why = e.why .. string.format(" (e mais %d)", e.faltando - 1)
+        end
         if e.chance then
             e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
         end
@@ -255,6 +284,11 @@ function ns.Rank(entry)
         end
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
+        -- E DIZ QUE HÁ MAIS, quando há. A linha não cabe os dois, mas cabe o aviso de que o
+        -- outro existe — e a ficha lista todos.
+        if e.faltando > 1 then
+            e.why = e.why .. string.format("  ·  e mais %d requisito(s)", e.faltando - 1)
+        end
     elseif e.chance then
         e.why = string.format("Chance de 1 em %d", e.chance)
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
@@ -279,6 +313,25 @@ end
 -- buy something is a worse bet than a 1-in-3 drop already 80% unlocked.
 local function Compare(a, b)
     if a.tier ~= b.tier then return a.tier < b.tier end
+
+    -- (!) ONDE A SORTE DECIDE, A CHANCE MANDA — e não o requisito (defeito de 22/09).
+    --
+    -- Relato: *"Portador da Trilha-prado é 5%, tá acima de um que é 33%"*. Estava mesmo. Ele
+    -- pede renome 5 com os Centauros Maruuk (o jogador tem 25, então cumprido) e depois cai a
+    -- 1 em 20 do baú da Caçada Grandiosa. O outro cai a 1 em 3 e não tem requisito conhecido.
+    --
+    -- A regra antiga ordenava por requisito primeiro, e como "cumprido" (1) ganha de
+    -- "desconhecido" (-1), a de 1 em 20 subia na frente da de 1 em 3. Mas **requisito cumprido
+    -- não é progresso rumo à montaria** — ele só abre a porta. Entre duas que dependem de sorte,
+    -- o que separa uma da outra é a chance, e nada mais.
+    --
+    -- O requisito continua mandando onde ele DECIDE alguma coisa: nas faixas determinísticas,
+    -- onde ele é o próprio caminho, e na classificação de faixa (gated vai para o fim).
+    local sorte = not a.deterministic and not b.deterministic
+    if sorte then
+        local ca, cb = a.chance or math.huge, b.chance or math.huge
+        if ca ~= cb then return ca < cb end
+    end
 
     local ra, rb = a.requirement or -1, b.requirement or -1
     if ra ~= rb then return ra > rb end
@@ -322,6 +375,11 @@ local function PassaBusca(e, termos)
     return true
 end
 
+local function PassaExpansao(e, alvo)
+    if alvo == nil then return true end
+    return e.expansion == alvo
+end
+
 ---A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
 local function MyFaction()
     return UnitFactionGroup and UnitFactionGroup("player") or nil
@@ -360,7 +418,8 @@ function ns.GetFiltered()
         if (not want or want[e.sourceType])
             and PassaFaccao(e, modo)
             and (ns.db.showUnobtainable or not e.unobtainable)
-            and PassaBusca(e, termos) then
+            and PassaBusca(e, termos)
+            and PassaExpansao(e, ns.db.expansionFilter) then
             out[#out + 1] = e
         end
     end
