@@ -79,6 +79,18 @@ each alt and they appear; `/rmt quem` shows what is on record.
 It is a ledger, not a live reading, and it says so: everything in it was true when that character
 last logged in.
 
+## When something in front of you drops a mount
+
+Target it, mouse over it, or let it yell when it spawns, and a small panel says which mount you
+are missing can come from it — with a link in chat that marks where you were standing.
+
+It is not a second rare scanner. SilverDragon tells you a rare is there; this tells you **a mount
+you are missing** is there, and which one. A rare whose mount you already have says nothing at
+all. Mounts that left the game say nothing either — that would just be taunting.
+
+No new data was needed: the catalogue already records which boss drops which mount, so the addon
+just reads that index backwards. Turn it off with `/rmt aviso` or the checkbox in the options.
+
 ## Searching
 
 The box at the top of the window filters as you type, and it does **not** search the mount name
@@ -148,6 +160,8 @@ the method and leaves the judgement to you. No estimate was invented to fill the
 | `/rmt quem` | the characters on record and how many reputations each has |
 | `/rmt sumidas` | shows or hides the mounts that left the game |
 | `/rmt busca <text>` | searches by name, boss, zone or vendor |
+| `/rmt expansao [name]` | filters by expansion |
+| `/rmt aviso` | turns the sighting alert on or off |
 | `/rmt debug [name]` | what the addon managed to read, for everything or for one mount |
 
 ## License

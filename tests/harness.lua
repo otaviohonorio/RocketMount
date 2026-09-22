@@ -316,7 +316,7 @@ MCL_GUIDE = {
         [1018] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1019] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
-        [1021] = { isUnobtainable = true, chance = 100 },
+        [1021] = { isUnobtainable = true, chance = 100, lockBossName = "Chefe sumido" },
         [1023] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
         [1025] = {}, [1026] = {},
         [1024] = { itemId = 7015, vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
@@ -842,6 +842,57 @@ do
     ns.search = ""
     check("busca vazia nao filtra nada", #select(1, ns.GetFiltered()), todas)
     ns.search = nil
+end
+
+
+--------------------------------------------------------------------------------
+-- AVISO DE BICHO QUE LARGA MONTARIA (22/09)
+--
+-- (!) NENHUM DADO NOVO FOI PRECISO: o catalogo ja guarda o nome do chefe de cada montaria
+-- (`lockBossName`) e o nome nos pins do mapa. Invertendo -- nome -> montarias -- o addon
+-- reconhece o bicho no instante em que ele aparece.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- aviso de bicho que larga montaria")
+
+    ns.db.showUnobtainable = false
+    ns.Sighting.Rebuild()
+
+    local avisos = {}
+    local realShow = ns.Print
+    ns.Print = function(...) avisos[#avisos + 1] = table.concat({ ... }, " ") end
+
+    -- "Bicho" e o chefe da montaria "Farm curto" na fixture.
+    ns.Sighting.Announce("Bicho")
+    check("avisa quando ve o bicho certo", #avisos, 1)
+    check("  e diz qual montaria", avisos[1]:find("Farm curto", 1, true) ~= nil, true)
+
+    -- (!) UMA VEZ, E NAO A CADA PLACA DE NOME. Um raro parado na frente dispara o evento toda
+    -- vez que a placa aparece e some -- e aviso repetido vira aviso ignorado.
+    ns.Sighting.Announce("Bicho")
+    check("nao repete o mesmo bicho", #avisos, 1)
+
+    -- (!) MONTARIA QUE SAIU DO JOGO NAO GERA AVISO. A fixture "Saiu do jogo" tem chance de
+    -- 1/100 e chefe proprio; avisar sobre ela seria provocacao -- ninguem mais consegue pega-la.
+    ns.Sighting.Announce("Chefe sumido")
+    check("bicho de montaria sumida nao avisa", #avisos, 1)
+
+    -- Bicho que nao larga nada nao gera aviso: o addon nao e um segundo escaneador de raros.
+    ns.Sighting.Announce("Javali qualquer")
+    check("bicho sem montaria nao avisa", #avisos, 1)
+
+    -- E COM O AVISO DESLIGADO ELE CALA. O usuario foi explicito que nem todo mundo quer.
+    ns.db.sightings = false
+    ns.Sighting.Announce("Chefe")
+    check("desligado, nao avisa", #avisos, 1)
+    ns.db.sightings = true
+
+    ns.Print = realShow
+
+    -- O LINK DO CHAT: clicar marca a posicao. O prefixo tem o nome do addon para nao colidir
+    -- com link de outro, e um link que nao e nosso tem que passar batido.
+    check("link de outro addon passa batido", ns.Sighting.HandleLink("item:1234"), false)
 end
 
 
