@@ -158,7 +158,37 @@ Settings = {
 }
 
 -- Conquista: a 2 de 4 critérios.
-function GetAchievementInfo(id) return id, "Conquista " .. id, 10, false end
+-- (!) O CAMINHO DAS CONQUISTAS, como o jogo entrega: categorias, e por categoria as conquistas,
+-- e por conquista o TEXTO DA RECOMPENSA. E ele que liga conquista a montaria sem ninguem curar.
+local CATEGORIAS = { 91 }
+local CONQUISTAS = {
+    [91] = {
+        -- A que da a montaria "Metodo a parte": e o caso do Corcel de Guerra Prestigioso, que o
+        -- catalogo marca SPECIAL e sobre o qual nao sabe mais nada.
+        { id = 8008, reward = "Montaria: Metodo a parte" },
+        { id = 8009, reward = "Titulo: Nada a ver" },
+    },
+}
+function GetCategoryList() return CATEGORIAS end
+function GetCategoryNumAchievements(cat) return #(CONQUISTAS[cat] or {}) end
+function GetAchievementReward(id)
+    for _, lista in pairs(CONQUISTAS) do
+        for _, a in ipairs(lista) do
+            if a.id == id then return a.reward end
+        end
+    end
+end
+
+function GetAchievementInfo(a, b)
+    -- Duas assinaturas, como no jogo: (categoria, indice) devolve o id; (id) devolve os dados.
+    if b then
+        local lista = CONQUISTAS and CONQUISTAS[a]
+        local entrada = lista and lista[b]
+        return entrada and entrada.id
+    end
+    -- A 8008 e a conquista do "Metodo a parte", e ela NAO esta concluida.
+    return a, "Conquista " .. a, 10, false
+end
 
 -- Missoes: a 500 esta feita, a 501 nao. `IsQuestFlaggedCompletedOnAccount` responde pela conta,
 -- e ela dizer "sim" NAO cumpre o requisito -- a montaria e deste personagem.
@@ -174,6 +204,7 @@ MCL_GUIDE_QUEST_DATA = {
     [26] = { quest = "Ja fiz essa",   questId = 500, npc = "Alguem", zone = "Algum lugar" },
 }
 function GetAchievementNumCriteria() return 4 end
+
 function GetAchievementCriteriaInfo(_, i) return "c" .. i, nil, i <= 2 end
 
 --------------------------------------------------------------------------------
@@ -441,9 +472,14 @@ local ordemEsperada = {
     -- saber o que falta vale mais que nao saber nada.
     -- As tres com requisito conhecido e NAO cumprido, antes das que ninguem sabe medir.
     -- Requisito conhecido e NAO cumprido, em ordem alfabetica de nome no empate de 0%.
+    -- (!) "Metodo a parte" ESTAVA AQUI EMBAIXO, ao lado de "Sem estimativa", porque o catalogo
+    -- so dizia `SPECIAL`. `Achievements.lua` le do jogo que ela vem de uma conquista NAO
+    -- concluida, e com isso ela vira requisito conhecido e nao cumprido -- 0%, como as outras
+    -- deste grupo, em ordem alfabetica. Subiu de lugar por saber MAIS, e nao por estar perto.
+    "Metodo a parte",
     "Missao pendente", "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
     "So da Alianca", "So ouro, sem guilda",
-    "Metodo a parte", "Sem estimativa",
+    "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
     "Saiu do jogo",
 }
@@ -497,7 +533,11 @@ check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, tr
 local aParte = porNome["Metodo a parte"].e
 check("metodo 'SPECIAL' nao vira aquisicao deterministica", aParte.deterministic, false)
 check("  e a montaria NAO aparece como pronta", aParte.tier ~= ns.TIER.READY, true)
-check("  ela cai em 'sem estimativa'", aParte.tier, ns.TIER.UNKNOWN)
+-- Ela ja caiu em "sem estimativa", que era o certo enquanto o addon nao sabia nada dela. Agora
+-- a conquista e um requisito conhecido e nao cumprido, e o lugar disso e a faixa de farm longo,
+-- com as outras de 0%. O que NAO pode mudar e o de baixo: ela nunca volta para o topo.
+check("  ela cai na faixa de requisito nao cumprido", aParte.tier, ns.TIER.LONGFARM)
+check("  e o que a segura e a conquista", aParte.achievementReward ~= nil, true)
 check("  e o tooltip cumprido nao a promoveu", aParte.tooltipGate, nil)
 
 -- (!) MISSAO: O CATALOGO TINHA O DADO E O ADDON IGNORAVA (22/09).
@@ -662,11 +702,17 @@ MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
 check("sem o MCL a lista continua de pe", #semMCL, 24)
-local todasSemEstimativa = true
+-- (!) "TUDO CAI EM SEM ESTIMATIVA" DEIXOU DE SER VERDADE, e a mudanca e boa: `Achievements.lua`
+-- le a conquista do proprio jogo, entao esse requisito sobrevive ao MCL sumir. O que o MCL
+-- levava embora era so a TAXA DE QUEDA -- e e isso que este teste tem que travar agora, senao
+-- ele passa a medir a moda do dia em vez da dependencia.
+local semChance, semSinalPropio = true, true
 for _, e in ipairs(semMCL) do
-    if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end
+    if e.chance then semChance = false end
+    if e.tier ~= ns.TIER.UNKNOWN and not e.achievementReward then semSinalPropio = false end
 end
-check("e sem ele tudo cai em Sem estimativa", todasSemEstimativa, true)
+check("e sem ele ninguem tem taxa de queda", semChance, true)
+check("e o que sobra de fora do MCL e so o do jogo", semSinalPropio, true)
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = guardado, guardadaMoeda
 ns.Invalidate()
 
@@ -911,6 +957,54 @@ do
     -- O LINK DO CHAT: clicar marca a posicao. O prefixo tem o nome do addon para nao colidir
     -- com link de outro, e um link que nao e nosso tem que passar batido.
     check("link de outro addon passa batido", ns.Sighting.HandleLink("item:1234"), false)
+end
+
+
+--------------------------------------------------------------------------------
+-- A CONQUISTA QUE O JOGO DIZ QUE DA A MONTARIA (22/09)
+--
+-- (!) FECHA O MAIOR BURACO DO CATALOGO SEM CURAR NADA. Sao 126 montarias marcadas "SPECIAL",
+-- sobre as quais o catalogo nao sabe mais nada -- e foi isso que deixou o Corcel de Guerra
+-- Prestigioso se anunciar como pronto. Conferido no warcraftmounts.com: boa parte delas e
+-- recompensa de conquista, e o jogo sabe de todas via `GetAchievementReward`.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- conquista que da a montaria, lida do jogo")
+
+    ns.Achievements.Scan()
+    -- A varredura e fatiada com `C_Timer.After(0, ...)`, que no simulador roda na hora.
+
+    local ach = ns.Achievements.For("Metodo a parte")
+    check("acha a conquista pelo texto da recompensa", ach ~= nil, true)
+    check("  e guarda o id dela", ach and ach.id, 8008)
+
+    -- Conquista que premia OUTRA coisa nao vira requisito de montaria nenhuma.
+    check("recompensa que nao e montaria nao entra", ns.Achievements.For("Nada a ver"), nil)
+
+    local gate = ns.Achievements.Gate("Metodo a parte")
+    check("conquista nao concluida bloqueia", gate and gate.pct, 0)
+    check("  e a linha nomeia a conquista", gate and gate.label:find("Conquista") ~= nil, true)
+
+    -- (!) SINAL NEGATIVO, como todas as fontes: conquista CONCLUIDA nao devolve "liberado".
+    -- Concluida nao prova que a montaria ainda e obtenivel -- foi assim que o tooltip promoveu
+    -- o Prestigioso para o topo, e a regra vale para a fonte nova tambem.
+    local realInfo = GetAchievementInfo
+    GetAchievementInfo = function(a, b)
+        if b then return realInfo(a, b) end
+        return a, "Conquista " .. a, 10, true      -- agora consta como concluida
+    end
+    check("conquista concluida NAO vira acesso liberado", ns.Achievements.Gate("Metodo a parte"), nil)
+    GetAchievementInfo = realInfo
+
+    -- E a montaria do caso deixa de ficar sem requisito nenhum.
+    ns.Invalidate()
+    local depois
+    for _, e in ipairs(ns.GetRanked(true)) do
+        if e.name == "Metodo a parte" then depois = e end
+    end
+    check("a montaria SPECIAL passa a ter requisito", depois.achievementReward ~= nil, true)
+    check("  e continua fora do topo", depois.tier ~= ns.TIER.READY, true)
 end
 
 
