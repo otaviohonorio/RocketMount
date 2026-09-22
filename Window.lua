@@ -125,38 +125,19 @@ local function ZoneLine(entry)
     return zone, wp
 end
 
-local function FillDetail(entry)
-    local d = detail
-    for i = 1, #d.blocks do
-        d.blocks[i].label:Hide()
-        d.blocks[i].value:Hide()
-    end
-    d.waypoint:Hide()
-
-    if not entry then
-        d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
-        d.empty:Show()
-        return
-    end
-    d.empty:Hide()
-    d.icon:Show(); d.name:Show(); d.tier:Show(); d.rule:Show()
-
-    d.icon:SetTexture(entry.icon)
-    d.name:SetText(entry.name)
-
-    local c = ns.TIER_COLOR[entry.tier] or S.dim
-    d.tier:SetText(ns.TIER_NAME[entry.tier])
-    d.tier:SetTextColor(c[1], c[2], c[3])
-
-    local n = 0
+-- (!) O CONTEÚDO DA FICHA SE MONTA FORA DO DESENHO.
+--
+-- A regra morava dentro do código que pinta widget, e por isso o harness não tinha como
+-- olhar para ela. Foi assim que a mesma informação chegou a aparecer três vezes na ficha
+-- sem nenhum teste reclamar. Separada, esta é uma função pura: entra a montaria, sai a
+-- lista de blocos, e o teste lê a lista.
+---@return table blocos `{ { label, value }, ... }`, na ordem da ficha
+---@return table|nil wp o ponto do mapa, para o botão de seta
+function ns.DetailBlocks(entry)
+    local blocks = {}
     local function Block(label, value)
         if not value or value == "" then return end
-        n = n + 1
-        local b = d.blocks[n]
-        if not b then return end
-        b.label:SetText(label)
-        b.value:SetText(value)
-        b.label:Show(); b.value:Show()
+        blocks[#blocks + 1] = { label = label, value = value }
     end
 
     -- O texto da própria Blizzard. É o melhor "como pega" que existe, e já vem traduzido.
@@ -220,15 +201,16 @@ local function FillDetail(entry)
         end
     end
 
-    -- PREÇO E FALTA SÃO DUAS LINHAS, e não um número grudado no outro: *"mistura o valor que
-    -- tenho em bag com o valor da montaria, muito confuso"*. O preço é o que interessa primeiro;
-    -- o que falta só aparece quando falta.
-    if entry.cost then
-        Block("Preço", entry.cost.price)
-        if entry.cost.gap then
-            Block("Falta", entry.cost.gap)
-        end
-    end
+    -- (!) O PREÇO NÃO TEM BLOCO PRÓPRIO, e isso é correção, não esquecimento.
+    --
+    -- Ele tinha: "Requisitos" listava o preço, e logo abaixo vinham "Preço" e "Falta" dizendo a
+    -- mesma coisa outra vez. O usuário viu isso rodando: *"tem o Requisitos, tem o preço e o
+    -- Falta, às vezes tem as mesmas informações"*. Três linhas para um fato só.
+    --
+    -- Preço É um requisito, e o lugar dele é a lista com os outros — com o mesmo sinal de
+    -- cumprido, e contado no "faltam N de M". A exigência antiga continua valendo dentro da
+    -- linha: o que ela custa primeiro, o que falta depois, nunca os dois números grudados
+    -- (`CostProgress` monta esse texto, e é lá que ele vive).
 
     if entry.gated and not entry.deterministic then
         Block("Atenção", "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria "
@@ -246,7 +228,7 @@ local function FillDetail(entry)
             texto = "Vendedor de guilda. Estas exigem reputação com a sua guilda E uma "
                 .. "conquista DA GUILDA — e é a conquista que eu não consigo ler, porque nenhum "
                 .. "catálogo instalado diz qual conquista pertence a qual montaria. O preço "
-                .. "abaixo é só uma parte do que ela custa."
+                .. "que aparece nos requisitos é só uma parte do que ela custa."
         else
             texto = "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase "
                 .. "nunca é o que trava. Pode haver conquista, nível de guilda ou classificação no "
@@ -267,6 +249,41 @@ local function FillDetail(entry)
 
     if entry.blackMarket then
         Block("Também aparece", "Mercado Negro")
+    end
+
+    return blocks, wp
+end
+
+local function FillDetail(entry)
+    local d = detail
+    for i = 1, #d.blocks do
+        d.blocks[i].label:Hide()
+        d.blocks[i].value:Hide()
+    end
+    d.waypoint:Hide()
+
+    if not entry then
+        d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
+        d.empty:Show()
+        return
+    end
+    d.empty:Hide()
+    d.icon:Show(); d.name:Show(); d.tier:Show(); d.rule:Show()
+
+    d.icon:SetTexture(entry.icon)
+    d.name:SetText(entry.name)
+
+    local c = ns.TIER_COLOR[entry.tier] or S.dim
+    d.tier:SetText(ns.TIER_NAME[entry.tier])
+    d.tier:SetTextColor(c[1], c[2], c[3])
+
+    local blocks, wp = ns.DetailBlocks(entry)
+    local n = math.min(#blocks, #d.blocks)
+    for i = 1, n do
+        local b = d.blocks[i]
+        b.label:SetText(blocks[i].label)
+        b.value:SetText(blocks[i].value)
+        b.label:Show(); b.value:Show()
     end
 
     -- Posiciona a pilha. Empilhado: 2 por dentro (rótulo → seu texto), 10 por fora.
