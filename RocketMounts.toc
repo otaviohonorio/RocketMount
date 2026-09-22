@@ -2,7 +2,7 @@
 ## Title: |cffff6a00Rocket|r Mounts
 ## Notes: The mounts you are missing, easiest first.
 ## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
-## Author: Otávio Honório
+## Author: Otto Rocket (Otávio Honório)
 ## Version: 0.18.0
 ## SavedVariables: RocketMountsDB
 ## Category: Collections
