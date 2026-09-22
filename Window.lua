@@ -4,9 +4,50 @@ local ADDON, ns = ...
 
 local S = ns.Skin
 
-local WINDOW_W, WINDOW_H = 790, 560
+-- (!) A LARGURA É UMA CONTA, E ELA ESTAVA ERRADA (relatado em 22/09, testando no jogo):
+-- *"as informações da direita estão bem grudadas e tem texto vazando pra fora da janela"*.
+--
+-- A fórmula antiga era `WINDOW_W - LIST_W - padding * 3`, e ela esquecia três coisas: as duas
+-- margens da janela, o 1px do separador e -- a maior delas -- a **barra de rolagem**. O
+-- `UIPanelScrollFrameTemplate` põe a barra FORA do quadro, encostada à direita dele, e ninguém
+-- tinha reservado espaço para ela: ela caía em cima do separador. Somando tudo, a ficha começava
+-- 15px à direita de onde cabia, e o texto dela terminava do lado de fora da borda.
+--
+-- Agora cada pedaço tem nome e a soma é conferida no harness. As margens são as duas iguais
+-- (`leftMargin`), como na barra de filtro, que já se ancorava assim.
+local SCROLLBAR_W = 25      -- a barra do `UIPanelScrollFrameTemplate`, que vive fora do quadro
+local SEP_W = 1             -- o fio entre a lista e a ficha
+
+local WINDOW_W, WINDOW_H = 880, 560
 local LIST_W = 450
-local DETAIL_W = WINDOW_W - LIST_W - S.padding * 3
+-- Medida de leitura: a ficha é prosa (o "Como pega" da Blizzard, o aviso de conferir), e texto
+-- corrido pede 45 a 75 caracteres por linha. A 12pt da fonte do jogo, 360px dão ~60.
+local DETAIL_W = 360
+
+-- O que a janela precisa ter de largura para tudo isso caber, com margem dos dois lados. Se esta
+-- conta não bater com `WINDOW_W`, algo vaza -- e é exatamente isso que o teste trava.
+local NEEDED_W = S.leftMargin + LIST_W + SCROLLBAR_W + S.padding + SEP_W + S.padding
+    + DETAIL_W + S.leftMargin
+
+-- (!) A LINHA DA LISTA TINHA O MESMO VICIO, num numero solto: o nome usava `LIST_W - 160`, e
+-- 160 nao vinha de lugar nenhum. Medido, o nome terminava 4px DEPOIS de onde o numero da
+-- direita comecava -- encostados, e o nome (que nao quebra linha) cortado bem ali.
+local ROW_W = LIST_W - 20              -- o quadro rolavel desconta a barra
+local ROW_ICON = S.rowHeight - 4
+local ROW_TEXT_X = 2 + ROW_ICON + 8    -- inset do icone + icone + respiro
+local HEADLINE_W = 96
+local HEADLINE_INSET = 6
+local ROW_GAP = 10                     -- o respiro entre o nome e o numero, que faltava
+local ROW_TEXT_W = ROW_W - ROW_TEXT_X - ROW_GAP - HEADLINE_W - HEADLINE_INSET
+
+ns.Geometry = {
+    windowW = WINDOW_W, neededW = NEEDED_W,
+    listW = LIST_W, detailW = DETAIL_W,
+    margin = S.leftMargin, padding = S.padding,
+    scrollbarW = SCROLLBAR_W, sepW = SEP_W,
+    rowW = ROW_W, rowTextX = ROW_TEXT_X, rowTextW = ROW_TEXT_W,
+    headlineW = HEADLINE_W, headlineInset = HEADLINE_INSET, rowGap = ROW_GAP,
+}
 
 local ROW_STEP = S.rowHeight + S.rowSpacing
 -- O nome da faixa mais longo ("Garantidas — requisito em andamento") a 12pt pede ~220px.
@@ -323,7 +364,7 @@ local function AcquireRow(parent, i)
     if r then return r end
 
     r = CreateFrame("Button", nil, parent)
-    r:SetSize(LIST_W - 20, S.rowHeight)
+    r:SetSize(ROW_W, S.rowHeight)
 
     r.bg = r:CreateTexture(nil, "BACKGROUND")
     r.bg:SetAllPoints()
@@ -331,22 +372,22 @@ local function AcquireRow(parent, i)
     r.icon = r:CreateTexture(nil, "ARTWORK")
     -- Quadrado e da altura da linha, como a referência do medidor faz. Máscara
     -- redonda menor que a linha parece recorte colado.
-    r.icon:SetSize(S.rowHeight - 4, S.rowHeight - 4)
+    r.icon:SetSize(ROW_ICON, ROW_ICON)
     r.icon:SetPoint("LEFT", 2, 0)
 
     r.name = ns.NewText(r, S.rowFontSize, S.text)
     r.name:SetPoint("TOPLEFT", r.icon, "TOPRIGHT", 8, -1)
-    r.name:SetWidth(LIST_W - 160)
+    r.name:SetWidth(ROW_TEXT_W)
     r.name:SetWordWrap(false)
 
     r.why = ns.NewText(r, S.subFontSize, S.dim)
     r.why:SetPoint("BOTTOMLEFT", r.icon, "BOTTOMRIGHT", 8, 1)
-    r.why:SetWidth(LIST_W - 160)
+    r.why:SetWidth(ROW_TEXT_W)
     r.why:SetWordWrap(false)
 
     r.headline = ns.NewText(r, S.rowFontSize, S.cream, "RIGHT")
-    r.headline:SetPoint("RIGHT", -6, 0)
-    r.headline:SetWidth(96)
+    r.headline:SetPoint("RIGHT", -HEADLINE_INSET, 0)
+    r.headline:SetWidth(HEADLINE_W)
 
     r:SetScript("OnEnter", function(self)
         if self.entry ~= selected then
@@ -388,7 +429,7 @@ local function AcquireHead(parent, i)
     if h then return h end
 
     h = CreateFrame("Frame", nil, parent)
-    h:SetSize(LIST_W - 20, S.sectionHeight)
+    h:SetSize(ROW_W, S.sectionHeight)
 
     -- Largura explícita nos dois: sem ela a FontString cresce até onde o texto pedir e
     -- atravessa a borda da lista — e estes rótulos mudam de tamanho a cada faixa.
@@ -399,13 +440,13 @@ local function AcquireHead(parent, i)
 
     h.hint = ns.NewText(h, S.subFontSize, S.dim)
     h.hint:SetPoint("LEFT", h.title, "RIGHT", 8, 0)
-    h.hint:SetWidth(LIST_W - 20 - TIER_TITLE_WIDTH - 8)
+    h.hint:SetWidth(ROW_W - TIER_TITLE_WIDTH - 8)
     h.hint:SetWordWrap(false)
 
     h.rule = h:CreateTexture(nil, "ARTWORK")
     h.rule:SetColorTexture(1, 1, 1, 0.08)
     h.rule:SetPoint("BOTTOMLEFT", 0, 0)
-    h.rule:SetSize(LIST_W - 20, 1)
+    h.rule:SetSize(ROW_W, 1)
 
     headPool[i] = h
     return h
@@ -637,14 +678,15 @@ local function Build()
     list:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, -S.padding)
     list:SetSize(LIST_W, WINDOW_H - S.headerHeight - 25 - S.padding * 3 - 6)
     list.content = CreateFrame("Frame", nil, list)
-    list.content:SetSize(LIST_W - 20, 1)
+    list.content:SetSize(ROW_W, 1)
     list:SetScrollChild(list.content)
 
     -- Separador entre a lista e a ficha.
     local sep = window:CreateTexture(nil, "ARTWORK")
     sep:SetColorTexture(1, 1, 1, 0.08)
-    sep:SetPoint("TOPLEFT", list, "TOPRIGHT", S.padding, 0)
-    sep:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", S.padding, 0)
+    -- A calha da barra de rolagem entra AQUI. Sem ela, a barra desenhava por cima do fio.
+    sep:SetPoint("TOPLEFT", list, "TOPRIGHT", SCROLLBAR_W + S.padding, 0)
+    sep:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", SCROLLBAR_W + S.padding, 0)
     sep:SetWidth(1)
 
     detail = BuildDetail(window)
