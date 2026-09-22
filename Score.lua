@@ -47,7 +47,7 @@ ns.TIER = {
 -- it can go on the release pipeline.
 ns.TIER_NAME = {
     [1] = "Garantidas — é só ir pegar",
-    [2] = "Confira no vendedor",
+    [2] = "Requisito desconhecido",
     [3] = "Garantidas — quase liberadas",
     [4] = "Garantidas — a meio caminho",
     [5] = "Na sorte — chance boa",
@@ -60,7 +60,7 @@ ns.TIER_NAME = {
 -- the harness, which counts LETTERS, not bytes).
 ns.TIER_HINT = {
     [1] = "requisito cumprido e conferido",
-    [2] = "o preço você tem; pode haver mais",
+    [2] = "sei o preço; o resto não sei",
     [3] = "falta pouco do requisito",
     [4] = "caminho já andado",
     [5] = "1 em 100 ou melhor",
@@ -188,8 +188,10 @@ function ns.Rank(entry)
         if e.tier == ns.TIER.READY then
             e.headline = "pode pegar"
         elseif e.tier == ns.TIER.CHECK then
-            -- NOT "ready" and not a percentage: all we claim is that the price fits.
-            e.headline = "preço ok"
+            -- (!) O NÚMERO É O PREÇO, e não um veredito. "preço ok" foi reprovado na hora —
+            -- ele parecia um "pode ir" com outro nome, que é exatamente o que esta faixa
+            -- existe para NÃO dizer. Preço é informação: quem lê decide.
+            e.headline = (e.cost and e.cost.price) or "—"
         elseif req then
             e.headline = string.format("%d%%", math.floor(req * 100 + 0.5))
         else
@@ -213,9 +215,23 @@ function ns.Rank(entry)
             e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
         end
     elseif e.tier == ns.TIER.CHECK then
-        -- The sentence has to say BOTH things: what can be guaranteed and what cannot.
-        e.why = (reqLabel and (reqLabel .. "  ·  ") or "")
-            .. "pode haver requisito que eu não leio"
+        -- A FRASE COMEÇA PELO QUE O JOGO DIZ, e não pela minha ressalva. O `sourceText` da
+        -- Blizzard costuma nomear o vendedor e a condição ("Guild Vendor", "Requires ..."), e
+        -- isso vale mais que qualquer frase minha. A ressalva vem depois, curta.
+        -- `%s+` colapsa qualquer espaco em branco, inclusive a quebra de linha que a Blizzard
+        -- poe no meio do texto -- e faz isso sem escape nenhum no padrao.
+        local doJogo = e.sourceText and e.sourceText ~= ""
+            and (e.sourceText:gsub("%s+", " ")) or nil
+        e.why = doJogo or ns.SOURCE_NAMES[e.sourceType]
+        if e.vendorGuilda then
+            e.why = e.why .. "  ·  vendedor de guilda: exige reputação e conquista DA GUILDA, "
+                .. "que eu não leio"
+        else
+            e.why = e.why .. "  ·  pode haver requisito que eu não leio"
+        end
+        if e.cost and e.cost.gap then
+            e.why = e.why .. "  ·  faltam " .. e.cost.gap
+        end
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
     elseif e.chance then

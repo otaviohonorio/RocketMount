@@ -178,8 +178,14 @@ local function FillDetail(entry)
         Block(entry.gated and "Requisito que falta" or "Requisito", p.label)
     end
 
-    if entry.cost and entry.requirementFrom ~= "cost" then
-        Block("Custo", entry.cost.label)
+    -- PREÇO E FALTA SÃO DUAS LINHAS, e não um número grudado no outro: *"mistura o valor que
+    -- tenho em bag com o valor da montaria, muito confuso"*. O preço é o que interessa primeiro;
+    -- o que falta só aparece quando falta.
+    if entry.cost then
+        Block("Preço", entry.cost.price)
+        if entry.cost.gap then
+            Block("Falta", entry.cost.gap)
+        end
     end
 
     if entry.gated and not entry.deterministic then
@@ -191,11 +197,21 @@ local function FillDetail(entry)
     -- Conquista de guilda, nível de guilda, classificação de PvP e perícia de profissão ele NÃO
     -- lê — e foi por calar sobre isso que a Fênix Negra apareceu como "é só ir pegar".
     if entry.tier == ns.TIER.CHECK then
-        local texto = "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase "
-            .. "nunca é o que trava. Pode haver conquista, nível de guilda ou classificação no "
-            .. "caminho, e isso eu não leio."
-        if entry.vendorVago then
-            texto = texto .. " Nem o catálogo sabe qual é o vendedor exato desta."
+        local texto
+        if entry.vendorGuilda then
+            -- ESPECÍFICO quando dá para ser: toda montaria de vendedor de guilda exige
+            -- reputação com a guilda mais uma conquista de guilda.
+            texto = "Vendedor de guilda. Estas exigem reputação com a sua guilda E uma "
+                .. "conquista DA GUILDA — e é a conquista que eu não consigo ler, porque nenhum "
+                .. "catálogo instalado diz qual conquista pertence a qual montaria. O preço "
+                .. "abaixo é só uma parte do que ela custa."
+        else
+            texto = "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase "
+                .. "nunca é o que trava. Pode haver conquista, nível de guilda ou classificação no "
+                .. "caminho, e isso eu não leio."
+            if entry.vendorVago then
+                texto = texto .. " Nem o catálogo sabe qual é o vendedor exato desta."
+            end
         end
         Block("Por que conferir", texto)
     end
