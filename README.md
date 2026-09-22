@@ -52,6 +52,7 @@ the vendor", which promises exactly what can be proven.
 | Reputation and renown progress | `C_Reputation`, `C_MajorFactions` |
 | Currency, gold and items you hold | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
 | Partial achievement progress | `GetAchievementCriteriaInfo` |
+| Whether the quest that grants it is done | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **What the game says is required** | the mount item's own tooltip, via `C_TooltipInfo` |
 | Drop rate, coordinates, required faction | `MCL_GUIDE` (from the MCL addon) |
 | Share of players who own the mount | `MountsRarity-2.0` (inside MountJournalEnhanced) |
@@ -113,6 +114,20 @@ spreadsheet.
 
 The requirement patterns are built from the client's own global strings, never written out in
 one language — a hardcoded "Requires" would break on every non-English client, silently.
+
+## What cannot be answered: "is this quest available?"
+
+If a mount comes from a quest, the addon tells you whether **you have completed it**, and whether
+another of your characters has. It cannot tell you whether you can *pick it up* — whether some
+earlier quest, reputation or level still stands in the way.
+
+That is not an omission. The client does not expose a quest's prerequisites to addons at all; of
+the addons installed here, 67 call `IsQuestFlaggedCompleted` and **none** call anything about
+prerequisites, because there is nothing to call. The addons that do show quest chains, like
+Zygor, ship a hand-built database of their own.
+
+"Not completed" still answers the question that matters — something is in the way — without
+pretending to know how many steps are left.
 
 ## Known gap
 

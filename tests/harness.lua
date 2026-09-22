@@ -159,6 +159,20 @@ Settings = {
 
 -- Conquista: a 2 de 4 critérios.
 function GetAchievementInfo(id) return id, "Conquista " .. id, 10, false end
+
+-- Missoes: a 500 esta feita, a 501 nao. `IsQuestFlaggedCompletedOnAccount` responde pela conta,
+-- e ela dizer "sim" NAO cumpre o requisito -- a montaria e deste personagem.
+C_QuestLog = {
+    IsQuestFlaggedCompleted = function(id) return id == 500 end,
+    IsQuestFlaggedCompletedOnAccount = function(id) return id == 500 or id == 501 end,
+    GetTitleForQuestID = function(id) return "Missao traduzida " .. id end,
+    RequestLoadQuestByID = function() end,
+}
+
+MCL_GUIDE_QUEST_DATA = {
+    [25] = { quest = "Grand Gryphon", questId = 501, npc = "Aviana", zone = "Vale Sombrio" },
+    [26] = { quest = "Ja fiz essa",   questId = 500, npc = "Alguem", zone = "Algum lugar" },
+}
 function GetAchievementNumCriteria() return 4 end
 function GetAchievementCriteriaInfo(_, i) return "c" .. i, nil, i <= 2 end
 
@@ -221,6 +235,11 @@ local MOUNTS = {
     -- sabe da conquista de guilda. E a alternativa a curar uma base a mao -- dado da Blizzard,
     -- ja traduzido, e certo depois do proximo patch tambem.
     { 24, 1024, "So o tooltip sabe",        3, false },
+    -- (!) MISSAO NAO CONCLUIDA (perguntado em 22/09 sobre o Grande Grifo): "se falta missao, nao
+    -- da para ir pegar, correto?". Correto -- e ate agora a tela nao dizia nem que havia missao,
+    -- porque o addon ignorava a tabela de missoes do catalogo inteira.
+    { 25, 1025, "Missao pendente",         2, false },
+    { 26, 1026, "Missao ja feita",         2, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -299,6 +318,7 @@ MCL_GUIDE = {
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
         [1021] = { isUnobtainable = true, chance = 100 },
         [1023] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
+        [1025] = {}, [1026] = {},
         [1024] = { itemId = 7015, vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1022] = { chance = 20, method = "Grand Hunt",
                    rep = { factionId = 9001, factionName = "Maruuk", renown = true, level = 5 } },
@@ -375,7 +395,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as vinte e uma que faltam", #ranked, 21)
+check("sobram as vinte e tres que faltam", #ranked, 23)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -394,7 +414,8 @@ check("sem dado nenhum = Sem estimativa",
 -- desloque duas montarias de lugar tem que reprovar aqui.
 local ordemEsperada = {
     -- As duas que valem "e so ir pegar": acesso conhecido E cumprido.
-    "Preco e acesso conhecido", "Pronta por reputacao",
+    -- A de missao ja feita entra junto das prontas: requisito cumprido e requisito cumprido.
+    "Missao ja feita", "Preco e acesso conhecido", "Pronta por reputacao",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
     "Metade da conquista", "Dois requisitos", "Moeda E reputacao",
@@ -413,7 +434,8 @@ local ordemEsperada = {
     -- Requisito conhecido e NAO cumprido (0%) vem antes de requisito que nao da para medir:
     -- saber o que falta vale mais que nao saber nada.
     -- As tres com requisito conhecido e NAO cumprido, antes das que ninguem sabe medir.
-    "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
+    -- Requisito conhecido e NAO cumprido, em ordem alfabetica de nome no empate de 0%.
+    "Missao pendente", "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
     "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
@@ -464,6 +486,22 @@ check("reputacao ilegivel NAO vira 'nada a cumprir'", nuncaVi.access, 0)
 check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true)
 check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
 check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
+
+-- (!) MISSAO: O CATALOGO TINHA O DADO E O ADDON IGNORAVA (22/09).
+local pendente = porNome["Missao pendente"].e
+local feita = porNome["Missao ja feita"].e
+check("missao vira requisito", pendente.quest ~= nil, true)
+check("  nao concluida = 0", pendente.quest.pct, 0)
+check("  e o nome vem TRADUZIDO do jogo, nao do catalogo em ingles",
+    pendente.quest.titulo:find("traduzida", 1, true) ~= nil, true)
+check("  e a linha diz onde pegar", pendente.quest.label:find("Aviana", 1, true) ~= nil, true)
+check("missao concluida = 1", feita.quest.pct, 1)
+
+-- (!) FEITA EM OUTRO PERSONAGEM NAO CUMPRE: a montaria e deste. Mas dizer que outro ja fez e
+-- informacao util -- evita o jogador procurar uma missao que ele nao consegue mais pegar.
+check("feita na conta nao cumpre neste personagem", pendente.quest.pct, 0)
+check("  mas a linha avisa que outro ja fez",
+    pendente.quest.label:find("outro personagem", 1, true) ~= nil, true)
 
 -- (!) O TOOLTIP DO ITEM FECHA O BURACO DO CATALOGO (22/09).
 --
@@ -605,7 +643,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 21)
+check("sem o MCL a lista continua de pe", #semMCL, 23)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

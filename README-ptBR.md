@@ -52,6 +52,7 @@ no vendedor", que promete exatamente o que dá para provar.
 | Progresso de reputação e renome | `C_Reputation`, `C_MajorFactions` |
 | Moeda, ouro e item no bolso | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
 | Progresso parcial de conquista | `GetAchievementCriteriaInfo` |
+| Se a missão que dá a montaria foi feita | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **O que o jogo diz que é exigido** | o tooltip do próprio item, via `C_TooltipInfo` |
 | Taxa de queda, coordenada, facção exigida | `MCL_GUIDE` (do addon MCL) |
 | Percentual de jogadores que têm a montaria | `MountsRarity-2.0` (dentro do MountJournalEnhanced) |
@@ -111,6 +112,20 @@ próximo patch sem ninguém manter, já vêm traduzidas, e quando elas não dize
 
 Os padrões de "Requer ..." são montados a partir das globais do próprio cliente, nunca escritos
 num idioma — um "Requer" cravado quebraria em todo cliente que não é ptBR, em silêncio.
+
+## O que não dá para responder: "essa missão está disponível?"
+
+Quando a montaria vem de missão, o addon diz se **você já a concluiu**, e se outro personagem seu
+concluiu. Ele não consegue dizer se você pode *pegá-la* — se alguma missão anterior, reputação ou
+nível ainda está no caminho.
+
+Não é omissão: o cliente não expõe pré-requisito de missão para addon nenhum. Dos addons
+instalados aqui, 67 chamam `IsQuestFlaggedCompleted` e **nenhum** chama nada sobre pré-requisito,
+porque não há o que chamar. Os que mostram cadeia de missão, como o Zygor, embarcam base
+própria feita à mão.
+
+"Não concluída" já responde o que importa — tem coisa no caminho — sem fingir saber quantos
+passos faltam.
 
 ## Lacuna conhecida
 
