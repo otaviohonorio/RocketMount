@@ -39,7 +39,41 @@ end
 
 -- Responde no chat o que o addon conseguiu ler. Existe para não precisar adivinhar
 -- por que uma montaria caiu em "sem estimativa".
-commands["debug"] = function()
+commands["debug"] = function(rest)
+    -- (!) `/rmt debug <nome>` DESPEJA TUDO QUE O ADDON SABE DE UMA MONTARIA.
+    --
+    -- Existe porque um defeito voltou: *"ainda aparece Fênix Negra e etc o erro que passei
+    -- anteriormente"*. Sem isto, a única forma de saber em que faixa ela caiu e por quê é eu
+    -- adivinhar — e já está escrito no CLAUDE.md que adivinhar custa o tempo do usuário para
+    -- descobrir o que uma linha de diagnóstico responde.
+    local alvo = (rest or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    if alvo ~= "" then
+        local achou = 0
+        for _, e in ipairs(ns.GetRanked(true)) do
+            if (e.name or ""):lower():find(alvo, 1, true) then
+                achou = achou + 1
+                ns.Print("|cffffff00" .. (e.name or "?") .. "|r")
+                print("    faixa: " .. (ns.TIER_NAME[e.tier] or "?") .. "  (" .. tostring(e.tier) .. ")")
+                print("    número da direita: " .. tostring(e.headline))
+                print("    determinística: " .. tostring(e.deterministic)
+                    .. "   fonte: " .. ns.SOURCE_NAMES[e.sourceType] .. " (" .. tostring(e.sourceType) .. ")")
+                print("    acesso: " .. tostring(e.access) .. "   preço: " .. tostring(e.price)
+                    .. "   chance: " .. tostring(e.chance))
+                print("    rep: " .. tostring(e.rep and e.rep.label))
+                print("    conquista: " .. tostring(e.achievement and e.achievement.label))
+                print("    custo: " .. tostring(e.cost and e.cost.price)
+                    .. "   falta: " .. tostring(e.cost and e.cost.gap))
+                print("    vendedor: " .. tostring(e.vendor and e.vendor.npc)
+                    .. "   de guilda: " .. tostring(e.vendorGuilda))
+                print("    texto do jogo: " .. tostring(e.sourceText))
+            end
+        end
+        if achou == 0 then
+            ns.Print("nenhuma montaria que falta tem \"" .. alvo .. "\" no nome.")
+        end
+        return
+    end
+
     local mcl, rar = ns.ProviderStatus()
     ns.Print("MCL (chance de saque, coordenada):", mcl and "|cff33ff99lido|r" or "|cffff5555ausente|r")
     ns.Print("MountJournalEnhanced (percentual da base):", rar and "|cff33ff99lido|r" or "|cffff5555ausente|r")
@@ -65,6 +99,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt minimapa|r — mostra ou esconde o botão do minimapa")
     print("    |cffffff00/rmt config|r — opções")
     print("    |cffffff00/rmt debug|r — o que o addon conseguiu ler")
+    print("    |cffffff00/rmt debug <nome>|r — tudo que ele sabe de uma montaria")
 end
 
 SLASH_ROCKETMOUNTS1 = "/rmt"

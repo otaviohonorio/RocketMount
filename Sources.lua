@@ -208,6 +208,15 @@ end
 --------------------------------------------------------------------------------
 -- Custo (ouro, moeda, item)
 --------------------------------------------------------------------------------
+---What it costs, and whether you can pay -- as TWO separate facts.
+---
+---(!) They used to be one string, and the player called it out: *"a linha onde aparece valores
+---mistura o valor que tenho em bag com o valor da montaria, muito confuso"*. He was right --
+---`"1234g 56s 78c de 3000g"` asks the reader to parse two numbers and work out which is which,
+---every row, when what he wants first is one of them: **the price**.
+---
+---So `price` is the number the row shows, and `gap` is a short clause that only exists when
+---something is missing. What you already hold is not printed unless it matters.
 local function CostProgress(spellID, itemID)
     local data = _G.MCL_GUIDE_CURRENCY_DATA
     if not data then return nil end
@@ -215,38 +224,61 @@ local function CostProgress(spellID, itemID)
     if not list then return nil end
     if type(list[1]) ~= "table" then list = { list } end
 
-    local parts, worst = {}, 1
+    local precos, faltas, worst = {}, {}, 1
     for _, c in ipairs(list) do
-        local have, need, label = nil, c.amount, nil
+        local have, need, preco, falta = nil, c.amount, nil, nil
 
         if c.type == "gold" then
             have = GetMoney and GetMoney() or 0
-            label = string.format("%s de %s", GetMoneyString(have, true), GetMoneyString(need, true))
+            -- `GetCoinTextureString` é compacto e já traz o ícone da moeda: "3000g". O
+            -- `GetMoneyString` escreve por extenso e ocupa a linha inteira.
+            preco = GetCoinTextureString and GetCoinTextureString(need) or tostring(need)
+            if have < need then
+                falta = GetCoinTextureString and GetCoinTextureString(need - have)
+                    or tostring(need - have)
+            end
         elseif c.type == "currency" and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
             local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, c.id)
             if ok and info then
                 have = info.quantity or 0
-                label = string.format("%s: %s de %s", info.name or "?",
-                    BreakUpLargeNumbers(have), BreakUpLargeNumbers(need))
+                preco = string.format("%s %s", BreakUpLargeNumbers(need), info.name or "?")
+                if have < need then
+                    falta = string.format("%s %s", BreakUpLargeNumbers(need - have), info.name or "?")
+                end
             end
         elseif c.type == "item" and C_Item and C_Item.GetItemCount then
             local ok, n = pcall(C_Item.GetItemCount, c.id, true)
             if ok then
                 have = n or 0
-                local iname = C_Item.GetItemNameByID and C_Item.GetItemNameByID(c.id) or ("item " .. c.id)
-                label = string.format("%s: %d de %d", iname or ("item " .. c.id), have, need)
+                local iname = (C_Item.GetItemNameByID and C_Item.GetItemNameByID(c.id))
+                    or ("item " .. c.id)
+                preco = string.format("%d x %s", need, iname)
+                if have < need then
+                    falta = string.format("%d x %s", need - have, iname)
+                end
             end
         end
 
-        if have and need and need > 0 then
+        if have and need and need > 0 and preco then
             local pct = math.min(1, have / need)
             if pct < worst then worst = pct end
-            parts[#parts + 1] = label
+            precos[#precos + 1] = preco
+            if falta then faltas[#faltas + 1] = falta end
         end
     end
 
-    if #parts == 0 then return nil end
-    return { pct = worst, label = table.concat(parts, " · ") }
+    if #precos == 0 then return nil end
+
+    local preco = table.concat(precos, " + ")
+    local falta = #faltas > 0 and table.concat(faltas, " + ") or nil
+    return {
+        pct = worst,
+        price = preco,
+        gap = falta,
+        -- A frase completa, para a ficha: o preço primeiro, a falta depois, e nunca os dois
+        -- números grudados um no outro.
+        label = falta and (preco .. "  ·  faltam " .. falta) or (preco .. "  ·  você tem"),
+    }
 end
 
 --------------------------------------------------------------------------------
@@ -336,6 +368,19 @@ function ns.BuildList()
                     -- catálogo é vago, o addon não pode ser categórico.
                     e.vendorVago = rec.vendorInfo ~= nil
                         and not (rec.vendorInfo.m and rec.vendorInfo.x)
+
+                    -- (!) VENDEDOR DE GUILDA TEM NOME PARA O BLOQUEIO. A Fênix Negra continuou
+                    -- incomodando mesmo depois de sair de "é só ir pegar": ela ia para a faixa
+                    -- de requisito desconhecido dizendo apenas "pode haver requisito", que é
+                    -- verdade e não ajuda ninguém.
+                    --
+                    -- Quando o vendedor é de guilda dá para ser específico: **toda** montaria de
+                    -- vendedor de guilda exige reputação com a guilda mais uma conquista DE
+                    -- GUILDA — e a conquista de guilda é justamente o que este addon não lê,
+                    -- porque nenhum catálogo instalado diz QUAL conquista é de qual montaria.
+                    -- Dizer isso é muito melhor que a ressalva genérica.
+                    local npc = rec.vendorInfo and rec.vendorInfo.npc or ""
+                    e.vendorGuilda = npc:lower():find("guild", 1, true) ~= nil
                     e.blackMarket = rec.blackMarket
                     e.unobtainable = rec.isUnobtainable
                     e.rep = ReputationProgress(rec.rep)

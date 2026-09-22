@@ -307,9 +307,18 @@ end
 local soPreco = porNome["So sei o preco"].e
 check("so com preco NAO e 'e so ir pegar'", soPreco.tier ~= ns.TIER.READY, true)
 check("so com preco cai em 'Confira no vendedor'", soPreco.tier, ns.TIER.CHECK)
-check("e o numero da direita nao promete", soPreco.headline, "preço ok")
+-- (!) O NUMERO DA DIREITA E O PRECO, e nao um veredito. "preco ok" foi reprovado pelo usuario
+-- em 22/09: parecia um "pode ir" com outro nome, que e exatamente o que esta faixa existe para
+-- NAO dizer. Preco e informacao; quem le decide.
+check("o numero da direita e o preco", soPreco.headline, soPreco.cost.price)
+check("  e nao um veredito", soPreco.headline:find("ok", 1, true), nil)
 check("a linha avisa que pode haver mais",
     soPreco.why:find("que eu n") ~= nil, true)
+-- E QUANDO O VENDEDOR E DE GUILDA, a ressalva deixa de ser generica e ganha nome: toda montaria
+-- de vendedor de guilda exige reputacao com a guilda mais uma conquista DE GUILDA.
+check("vendedor de guilda e reconhecido", soPreco.vendorGuilda, true)
+check("  e a linha nomeia o bloqueio",
+    soPreco.why:find("guilda", 1, true) ~= nil, true)
 check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true)
 
 local comAcesso = porNome["Preco e acesso conhecido"].e
@@ -333,6 +342,17 @@ check("o requisito cumprido nao vira 100%", bau.headline ~= "100%", true)
 
 local dois = porNome["Dois requisitos"].e
 check("com dois requisitos vale o mais atrasado", dois.headline, "30%")
+
+-- (!) PRECO E FALTA SAO DUAS COISAS, e nunca o mesmo texto. A versao anterior escrevia
+-- "300 de 1000" numa string so, e o usuario chamou de confuso com razao: para saber o preco era
+-- preciso primeiro descobrir qual dos dois numeros era o preco.
+check("o preco diz quanto CUSTA", dois.cost.price:find("1000", 1, true) ~= nil, true)
+check("  e nao quanto eu tenho", dois.cost.price:find("300", 1, true), nil)
+check("a falta diz quanto FALTA", dois.cost.gap:find("700", 1, true) ~= nil, true)
+check("  e preco e falta sao campos separados", dois.cost.price ~= dois.cost.gap, true)
+
+-- E quem ja pode pagar nao tem falta nenhuma: o campo some, em vez de escrever "faltam 0".
+check("quem pode pagar nao tem falta", soPreco.cost.gap, nil)
 check("e ele nao entra em 'Pronto para pegar'", dois.tier, ns.TIER.UNDERWAY)
 
 local foraDoTipo = porNome["Bau fora do tipo queda"].e
