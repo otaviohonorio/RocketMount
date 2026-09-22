@@ -77,6 +77,11 @@ SlashCmdList = {}
 MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 
 function CreateFrame(kind) return widget(kind) end
+-- O harness roda em enUS: o `Locales/ptBR.lua` sai na primeira linha, e as conferencias abaixo
+-- leem o texto das CHAVES, que sao o ingles. Trocar para "ptBR" aqui faria o addon carregar
+-- traduzido -- util para conferir uma traducao longa demais, e por isso a funcao existe em vez
+-- de a string estar cravada nos dois lugares.
+function GetLocale() return "enUS" end
 function UnitFactionGroup() return "Alliance" end
 function UnitName() return "Hamfarir" end
 function GetRealmName() return "Azralon" end
@@ -503,19 +508,19 @@ check("vendedor comum sem requisito conhecido fica em 'exige mais que o preco'",
 check("o numero da direita e o preco", soOuro.headline, soOuro.cost.price)
 check("  e nao um veredito", soOuro.headline:find("ok", 1, true), nil)
 check("a linha avisa que pode haver mais",
-    soOuro.why:find("que eu n") ~= nil, true)
+    soOuro.why:find("cannot read", 1, true) ~= nil, true)
 -- E QUANDO O VENDEDOR E DE GUILDA, a ressalva deixa de ser generica e ganha nome: toda montaria
 -- de vendedor de guilda exige reputacao com a guilda mais uma conquista DE GUILDA.
 check("vendedor de guilda e reconhecido", soPreco.vendorGuilda, true)
 check("  e a linha nomeia o bloqueio",
-    soPreco.why:find("guilda", 1, true) ~= nil, true)
+    soPreco.why:find("guild", 1, true) ~= nil, true)
 check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true)
 check("e a faixa de preco-so fica NO FIM, nao perto do topo",
     ns.TIER.CHECK > ns.TIER.LONGFARM, true)
 
 local comAcesso = porNome["Preco e acesso conhecido"].e
 check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
-check("e ele diz 'pode pegar'", comAcesso.headline, "pode pegar")
+check("e ele diz 'ready to grab'", comAcesso.headline, "ready to grab")
 check("vendedor com coordenada nao e vago", comAcesso.vendorVago, false)
 
 -- (!) REQUISITO QUE NAO DA PARA LER E REQUISITO NAO CUMPRIDO (defeito de 22/09).
@@ -527,7 +532,7 @@ local nuncaVi = porNome["Rep que nunca vi"].e
 check("reputacao ilegivel NAO vira 'nada a cumprir'", nuncaVi.access, 0)
 check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true)
 check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
-check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
+check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputation", 1, true) ~= nil, true)
 
 -- (!) O CORCEL DE GUERRA PRESTIGIOSO: "SPECIAL" E O CATALOGO DIZENDO QUE NAO SABE (22/09).
 local aParte = porNome["Metodo a parte"].e
@@ -554,7 +559,7 @@ check("missao concluida = 1", feita.quest.pct, 1)
 -- informacao util -- evita o jogador procurar uma missao que ele nao consegue mais pegar.
 check("feita na conta nao cumpre neste personagem", pendente.quest.pct, 0)
 check("  mas a linha avisa que outro ja fez",
-    pendente.quest.label:find("outro personagem", 1, true) ~= nil, true)
+    pendente.quest.label:find("another character", 1, true) ~= nil, true)
 
 -- (!) O TOOLTIP DO ITEM FECHA O BURACO DO CATALOGO (22/09).
 --
@@ -590,7 +595,7 @@ check("  e a frase e a do jogo",
 local dois2 = porNome["Moeda E reputacao"].e
 check("o addon guarda os dois requisitos", #dois2.requisitos, 2)
 check("  e conta quantos faltam", dois2.faltando, 2)
-check("  a linha avisa que ha mais de um", dois2.why:find("e mais 1") ~= nil, true)
+check("  a linha avisa que ha mais de um", dois2.why:find("1 more", 1, true) ~= nil, true)
 -- O `min` continua decidindo a FAIXA -- o mais atrasado e que diz o quanto falta --, mas nao
 -- e mais ele sozinho que a tela mostra.
 check("  e a faixa ainda sai do mais atrasado", dois2.requirement, 0.3)
@@ -624,7 +629,7 @@ ns.db.showUnobtainable = false
 
 -- ⚑ DE QUEM E A REPUTACAO (relatado em 21/09: "qual char tem essa reputacao?")
 check("reputacao de conta se identifica como tal",
-    comAcesso.rep.label:find("da conta") ~= nil, true)
+    comAcesso.rep.label:find("account-wide", 1, true) ~= nil, true)
 local doChar = porNome["Quase la por reputacao"].e
 check("reputacao de personagem diz o NOME do personagem",
     doChar.rep.label:find("Hamfarir") ~= nil, true)
@@ -659,12 +664,12 @@ check("e mostra a queda, nao 'pode pegar'", foraDoTipo.headline, "1/3")
 local trancada = porNome["Queda ainda trancada"].e
 check("queda ainda trancada cai no fim", trancada.tier, ns.TIER.LONGFARM)
 check("e a linha dela diz o que falta liberar",
-    trancada.why:find("Falta liberar") ~= nil, true)
+    trancada.why:find("Not unlocked", 1, true) ~= nil, true)
 
 -- Só aquisição determinística pode dizer "pode pegar".
 local prontos = 0
 for _, e in ipairs(ranked) do
-    if e.headline == "pode pegar" then
+    if e.headline == "ready to grab" then
         prontos = prontos + 1
         check("  '" .. e.name .. "' e mesmo deterministica", e.deterministic, true)
     end
@@ -688,7 +693,8 @@ end
 check("as faixas saem em ordem crescente", crescente, true)
 
 -- O numero que a linha mostra tem que ser o que justificou a faixa.
-check("Pronto mostra 'pode pegar', nao 100%", porNome["Pronta por reputacao"].e.headline, "pode pegar")
+check("Pronto mostra 'ready to grab', nao 100%",
+    porNome["Pronta por reputacao"].e.headline, "ready to grab")
 check("Quase liberado mostra 80%", porNome["Quase la por reputacao"].e.headline, "80%")
 check("Conquista mostra 50%", porNome["Metade da conquista"].e.headline, "50%")
 check("Farm curto mostra a queda", porNome["Farm curto"].e.headline, "1/100")
@@ -756,6 +762,40 @@ for t = 1, 7 do
     local nome, dica = ns.TIER_NAME[t], ns.TIER_HINT[t]
     check("nome da faixa " .. t .. " cabe", letras(nome) <= TITULO_MAX, true)
     check("dica da faixa " .. t .. " cabe", letras(dica) <= DICA_MAX, true)
+end
+
+-- (!) E A TRADUCAO TAMBEM, e nao so o idioma que o harness carregou.
+--
+-- O addon roda aqui em enUS, entao as chaves passavam no teto e o ptBR.lua podia crescer a
+-- vontade sem ninguem reclamar -- justamente o arquivo onde o acento faz o rotulo ocupar mais
+-- pixel por letra. Aqui o arquivo de idioma e lido como DADO: uma tabela vazia no lugar do
+-- `ns.L`, e o que ele escrever dentro dela e o que se mede.
+local function Traducoes(arquivo)
+    local chunk = loadfile(arquivo)
+    if not chunk then return nil end
+    local fingido = { L = {} }
+    local antes = GetLocale
+    GetLocale = function() return arquivo:match("([^/]+)%.lua$") end
+    local ok = pcall(chunk, ADDON, fingido)
+    GetLocale = antes
+    if not ok then return nil end
+    return fingido.L
+end
+
+local ptBR = Traducoes("Locales/ptBR.lua")
+check("o ptBR.lua carrega como dado", ptBR ~= nil, true)
+if ptBR then
+    local maiorNome, maiorDica = 0, 0
+    for t = 1, 7 do
+        local nome = ptBR[ns.TIER_NAME[t]]
+        local dica = ptBR[ns.TIER_HINT[t]]
+        check("faixa " .. t .. " tem nome traduzido", nome ~= nil, true)
+        check("faixa " .. t .. " tem dica traduzida", dica ~= nil, true)
+        if nome then maiorNome = math.max(maiorNome, letras(nome)) end
+        if dica then maiorDica = math.max(maiorDica, letras(dica)) end
+    end
+    check("o nome de faixa mais longo em ptBR cabe", maiorNome <= TITULO_MAX, true)
+    check("a dica mais longa em ptBR cabe", maiorDica <= DICA_MAX, true)
 end
 
 -- Fumaca da janela: construir e desenhar nao pode estourar.
@@ -984,7 +1024,8 @@ do
 
     local gate = ns.Achievements.Gate("Metodo a parte")
     check("conquista nao concluida bloqueia", gate and gate.pct, 0)
-    check("  e a linha nomeia a conquista", gate and gate.label:find("Conquista") ~= nil, true)
+    check("  e a linha nomeia a conquista",
+        gate and gate.label:find("Achievement", 1, true) ~= nil, true)
 
     -- (!) SINAL NEGATIVO, como todas as fontes: conquista CONCLUIDA nao devolve "liberado".
     -- Concluida nao prova que a montaria ainda e obtenivel -- foi assim que o tooltip promoveu
@@ -1040,7 +1081,7 @@ do
     check("o preco aparece uma vez so", vezes, 1)
     check("  e quem o carrega e a lista de requisitos", (function()
         for _, b in ipairs(blocos) do
-            if b.label:find("Requisitos", 1, true) and b.value:find(e.cost.price, 1, true) then
+            if b.label:find("Requirements", 1, true) and b.value:find(e.cost.price, 1, true) then
                 return true
             end
         end

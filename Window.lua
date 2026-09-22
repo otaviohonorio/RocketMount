@@ -1,6 +1,7 @@
 -- RocketMounts | Window.lua
 -- A janela: a lista ranqueada à esquerda, a ficha da montaria escolhida à direita.
 local ADDON, ns = ...
+local L = ns.L
 
 local S = ns.Skin
 
@@ -140,13 +141,13 @@ local function BuildDetail(parent)
 
     d.waypoint = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
     d.waypoint:SetSize(160, 22)
-    d.waypoint:SetText("Marcar no mapa")
+    d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
 
     d.empty = ns.NewText(d, S.rowFontSize, S.dim)
     d.empty:SetPoint("TOPLEFT", 0, -6)
     d.empty:SetWidth(DETAIL_W)
-    d.empty:SetText("Escolha uma montaria na lista para ver como ela se pega.")
+    d.empty:SetText(L["Pick a mount in the list to see how it is obtained."])
 
     return d
 end
@@ -182,7 +183,7 @@ function ns.DetailBlocks(entry)
     end
 
     -- O texto da própria Blizzard. É o melhor "como pega" que existe, e já vem traduzido.
-    Block("Como pega", entry.sourceText and entry.sourceText ~= "" and entry.sourceText
+    Block(L["How to get it"], entry.sourceText and entry.sourceText ~= "" and entry.sourceText
         or ns.SOURCE_NAMES[entry.sourceType])
 
     if entry.chance and entry.chance > 0 then
@@ -190,7 +191,7 @@ function ns.DetailBlocks(entry)
         local fmt = (pct >= 1 and "1 em %d  (%.0f%%)") or (pct >= 0.1 and "1 em %d  (%.1f%%)") or "1 em %d  (%.2f%%)"
         local txt = string.format(fmt, entry.chance, pct)
         if entry.bossName then txt = txt .. "\n" .. entry.bossName end
-        Block("Chance", txt)
+        Block(L["Chance"], txt)
     end
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
@@ -198,13 +199,13 @@ function ns.DetailBlocks(entry)
     -- A EXPANSÃO, no alto da ficha: é a primeira coisa que situa a montaria, e sem ela o
     -- jogador lê "Vendedor em Valdrakken" sem saber de que época aquilo é.
     if entry.expansionName then
-        Block("Expansão", entry.expansionName)
+        Block(L["Expansion"], entry.expansionName)
     end
 
     if entry.factionOnly then
         -- FACÇÃO É INFORMAÇÃO, e antes ela só servia para esconder a montaria. Quem planeja o
         -- outro lado precisa saber que ela existe e de quem ela é.
-        Block("Facção", entry.factionOnly == "Horde" and "Só para a Horda" or "Só para a Aliança")
+        Block(L["Faction"], entry.factionOnly == "Horde" and L["Horde only"] or L["Alliance only"])
     end
 
     -- (!) A FICHA LISTA TODOS OS REQUISITOS, um por linha, com o estado de cada um.
@@ -220,8 +221,8 @@ function ns.DetailBlocks(entry)
                 .. (r.label or "?")
         end
         Block(entry.faltando > 0
-            and string.format("Requisitos — faltam %d de %d", entry.faltando, #entry.requisitos)
-            or "Requisitos — todos cumpridos",
+            and string.format(L["Requirements — %d of %d missing"], entry.faltando, #entry.requisitos)
+            or L["Requirements — all met"],
             table.concat(linhas, string.char(10)))
     end
 
@@ -237,7 +238,7 @@ function ns.DetailBlocks(entry)
                 linhas[#linhas + 1] = string.format("%s — %s", c.name,
                     _G["FACTION_STANDING_LABEL" .. c.reaction] or "?")
             end
-            Block("Quem tem, pelo que ficou anotado",
+            Block(L["Who has it, from what was recorded"],
                 table.concat(linhas, string.char(10)))
         end
     end
@@ -254,8 +255,8 @@ function ns.DetailBlocks(entry)
     -- (`CostProgress` monta esse texto, e é lá que ele vive).
 
     if entry.gated and not entry.deterministic then
-        Block("Atenção", "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria "
-            .. "ainda depende da sorte.")
+        Block(L["Heads up"],
+            L["The requirement above only UNLOCKS the attempt. Once met, the mount still depends on luck."])
     end
 
     -- ⛑ O AVISO QUE FALTAVA. O addon só enxerga reputação, renome, conquista, moeda e ouro.
@@ -266,30 +267,25 @@ function ns.DetailBlocks(entry)
         if entry.vendorGuilda then
             -- ESPECÍFICO quando dá para ser: toda montaria de vendedor de guilda exige
             -- reputação com a guilda mais uma conquista de guilda.
-            texto = "Vendedor de guilda. Estas exigem reputação com a sua guilda E uma "
-                .. "conquista DA GUILDA — e é a conquista que eu não consigo ler, porque nenhum "
-                .. "catálogo instalado diz qual conquista pertence a qual montaria. O preço "
-                .. "que aparece nos requisitos é só uma parte do que ela custa."
+            texto = L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read, because no installed catalogue says which achievement belongs to which mount. The price shown in the requirements is only part of what it costs."]
         else
-            texto = "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase "
-                .. "nunca é o que trava. Pode haver conquista, nível de guilda ou classificação no "
-                .. "caminho, e isso eu não leio."
+            texto = L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."]
             if entry.vendorVago then
-                texto = texto .. " Nem o catálogo sabe qual é o vendedor exato desta."
+                texto = texto .. L[" Not even the catalogue knows which vendor this one has."]
             end
         end
-        Block("Por que conferir", texto)
+        Block(L["Why check"], texto)
     end
 
     local zone, wp = ZoneLine(entry)
-    if zone then Block("Onde", zone) end
+    if zone then Block(L["Where"], zone) end
 
     if entry.ownedByPct then
-        Block("Quantos jogadores têm", string.format("%.1f%% da base", entry.ownedByPct))
+        Block(L["How many players own it"], string.format(L["%.1f%% of the playerbase"], entry.ownedByPct))
     end
 
     if entry.blackMarket then
-        Block("Também aparece", "Mercado Negro")
+        Block(L["Also shows up at"], L["Black Market"])
     end
 
     return blocks, wp
@@ -349,7 +345,7 @@ local function FillDetail(entry)
             if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
                 C_SuperTrack.SetSuperTrackedUserWaypoint(true)
             end
-            ns.Print("seta apontada para " .. (entry.name or "a montaria") .. ".")
+            ns.Print(string.format(L["arrow pointed at %s."], entry.name or L["the mount"]))
         end)
         d.waypoint:Show()
     end
@@ -518,19 +514,19 @@ local function Redraw()
     -- o jogador não tem como saber disso olhando a tela — foi o segundo defeito relatado em
     -- 21/09: *"qual char tem essa reputação?"*. O nome fica à vista o tempo todo, e cada linha
     -- de reputação diz se o progresso é da conta ou só deste personagem.
-    local footer = string.format("%d montarias faltando", #entries)
+    local footer = string.format(L["%d mounts missing"], #entries)
     if #entries ~= total then
-        footer = footer .. string.format(" (filtrado de %d)", total)
+        footer = footer .. string.format(L[" (filtered from %d)"], total)
     end
     -- BUSCA SEM RESULTADO TEM QUE DIZER ISSO. Lista vazia sem explicação parece addon quebrado,
     -- e o primeiro palpite de quem vê é que o addon parou — não que o termo não achou nada.
     if ns.search and ns.search ~= "" and #entries == 0 then
-        footer = string.format("nada encontrado para \"%s\"", ns.search)
+        footer = string.format(L['nothing found for "%s"'], ns.search)
     end
     if not mcl then
-        footer = footer .. "  |cffcc6666· sem o MCL, não há a chance de saque|r"
+        footer = footer .. L["  |cffcc6666· without MCL, there is no drop chance|r"]
     elseif not rar then
-        footer = footer .. "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
+        footer = footer .. L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"]
     end
     footer = (UnitName("player") or "?") .. "  ·  " .. footer
     window.footer:SetText(footer)
@@ -549,12 +545,12 @@ end
 
 local function SourceMenu(owner)
     if not _G.MenuUtil then
-        ns.Print("este cliente não tem o menu novo; use /rmt fontes.")
+        ns.Print(L["this client has no new menu; use /rmt sources."])
         return
     end
     MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateTitle("Fontes")
-        root:CreateButton("Todas", function()
+        root:CreateTitle(L["Sources"])
+        root:CreateButton(L["All"], function()
             ns.db.sources = nil
             ns.RefreshWindow()
         end)
@@ -620,10 +616,10 @@ local function Build()
 
     local title = ns.NewText(header, S.titleFontSize, S.gold)
     title:SetPoint("LEFT", 10, 0)
-    title:SetText("Rocket Mounts — por onde começar")
+    title:SetText(L["Rocket Mounts — where to start"])
 
     local close = GlyphButton(header, "Interface\\Buttons\\UI-GroupLoot-Pass-Up",
-        "common-icon-redx", 16, "Fechar")
+        "common-icon-redx", 16, L["Close"])
     close:SetPoint("RIGHT", -8, 0)
     close:SetScript("OnClick", function() window:Hide() end)
 
@@ -637,7 +633,7 @@ local function Build()
     -- Combo de retail: 120x25 (Blizzard_Menu/Mainline/MenuTemplates.xml:4).
     sourceBtn:SetSize(120, 25)
     sourceBtn:SetPoint("LEFT")
-    sourceBtn:SetText("Fontes")
+    sourceBtn:SetText(L["Sources"])
     sourceBtn:SetScript("OnClick", function(self) SourceMenu(self) end)
 
     -- A CAIXA DE BUSCA, com a arte nativa (`SearchBoxTemplate`): lupa, texto de dica e o "x"
@@ -651,7 +647,7 @@ local function Build()
     -- função e estoura. Guardar pelo TIPO vale nos dois lados, e no jogo também protege contra
     -- um template que mude de forma.
     if type(busca.Instructions) == "table" and busca.Instructions.SetText then
-        busca.Instructions:SetText("nome, chefe, zona, vendedor")
+        busca.Instructions:SetText(L["name, boss, zone, vendor"])
     end
 
     -- FILTRA A CADA TECLA, e não só no Enter: a lista respondendo enquanto se digita é o que

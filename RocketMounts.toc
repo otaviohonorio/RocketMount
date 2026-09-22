@@ -1,9 +1,9 @@
 ## Interface: 120100
 ## Title: |cffff6a00Rocket|r Mounts
-## Notes: As montarias que faltam, da mais fácil para a mais difícil.
-## Notes-enUS: The mounts you are missing, easiest first.
+## Notes: The mounts you are missing, easiest first.
+## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
 ## Author: Otávio Honório
-## Version: 0.17.0
+## Version: 0.18.0
 ## SavedVariables: RocketMountsDB
 ## Category: Collections
 ## Category-ptBR: Coleções do Bando de Guerra
@@ -12,6 +12,8 @@
 ## OptionalDeps: MCL, MountJournalEnhanced
 ## AddonCompartmentFunc: RocketMounts_OnCompartmentClick
 
+Locales\enUS.lua
+Locales\ptBR.lua
 Core.lua
 Skin.lua
 Expansion.lua

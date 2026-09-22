@@ -25,6 +25,7 @@
 -- lockout period is missing -- the API does not expose it and no installed catalogue keeps
 -- it. Until it exists, the row shows the method and the player judges.
 local _, ns = ...
+local L = ns.L
 
 -- (!) A ORDEM DAS FAIXAS É A PROMESSA DO ADDON, e ela estava errada: "requisito desconhecido"
 -- ficava em SEGUNDO, logo abaixo de "é só ir pegar". Posição é recomendação — pôr "eu não sei"
@@ -48,18 +49,19 @@ ns.TIER = {
 -- `Deterministic`, so the label now says in words what the rule already did in code. Band 6
 -- carries neither name because it mixes both kinds.
 --
--- (!) These strings are player-facing and are still hardcoded in Brazilian Portuguese. This
--- addon has no `Locales/` yet, and it needs one -- with English as the key language -- before
--- it can go on the release pipeline.
+--
+-- (!) THE KEY IS THE ENGLISH TEXT, and the band name is where that matters most: it is the
+-- longest label the list draws, and a translation that outgrows `TIER_TITLE_WIDTH` crosses the
+-- list border. The harness counts LETTERS, not bytes, because of the accents.
 ns.TIER_NAME = {
-    [1] = "Garantidas — é só ir pegar",
-    [2] = "Garantidas — quase liberadas",
-    [3] = "Garantidas — a meio caminho",
-    [4] = "Na sorte — chance boa",
-    [5] = "Caminho longo",
-    [6] = "Exige mais que o preço",
-    [7] = "Sem estimativa",
-    [8] = "Não dá mais para conseguir",
+    [1] = L["Guaranteed — just go get it"],
+    [2] = L["Guaranteed — nearly unlocked"],
+    [3] = L["Guaranteed — halfway there"],
+    [4] = L["Down to luck — good odds"],
+    [5] = L["Long road"],
+    [6] = L["Asks for more than the price"],
+    [7] = L["No estimate"],
+    [8] = L["Cannot be obtained any more"],
 }
 
 -- The hint is short because it shares a line with the band name, which grew. Practical
@@ -69,14 +71,14 @@ ns.TIER_NAME = {
 -- ser *"sei o preço; o resto não sei"* e foi reprovada na hora: o jogador não quer saber o que
 -- o addon sabe, quer saber o que falta para ele pegar a montaria.
 ns.TIER_HINT = {
-    [1] = "requisito cumprido e conferido",
-    [2] = "falta pouco do requisito",
-    [3] = "caminho já andado",
-    [4] = "1 em 100 ou melhor",
-    [5] = "chance ruim, ou requisito longe",
-    [6] = "conquista, reputação ou guilda",
-    [7] = "sem dado para estimar",
-    [8] = "saiu do jogo",
+    [1] = L["requirement met and checked"],
+    [2] = L["a little left on the requirement"],
+    [3] = L["road already walked"],
+    [4] = L["1 in 100 or better"],
+    [5] = L["bad odds, or a distant requirement"],
+    [6] = L["achievement, reputation or guild"],
+    [7] = L["no data to estimate from"],
+    [8] = L["left the game"],
 }
 
 -- The chance above which a farm stops being an afternoon's work. Not a measurement: it is
@@ -250,7 +252,7 @@ function ns.Rank(entry)
     -- it was that mix that made a 1-in-3 cache announce itself as 100%.
     if e.deterministic then
         if e.tier == ns.TIER.READY then
-            e.headline = "pode pegar"
+            e.headline = L["ready to grab"]
         elseif e.tier == ns.TIER.CHECK then
             -- (!) O NÚMERO É O PREÇO, e não um veredito. "preço ok" foi reprovado na hora —
             -- ele parecia um "pode ir" com outro nome, que é exatamente o que esta faixa
@@ -264,7 +266,7 @@ function ns.Rank(entry)
     elseif e.chance and e.chance > 0 then
         e.headline = "1/" .. e.chance
     elseif e.ownedByPct then
-        e.headline = string.format("%.0f%% têm", e.ownedByPct)
+        e.headline = string.format(L["%.0f%% own it"], e.ownedByPct)
     else
         e.headline = "—"
     end
@@ -274,12 +276,12 @@ function ns.Rank(entry)
 
     if e.gated and not e.deterministic then
         -- First what blocks, then the luck: that is the order in which the player acts.
-        e.why = "Falta liberar — " .. (reqLabel or "requisito não cumprido")
+        e.why = string.format(L["Not unlocked yet — %s"], reqLabel or L["requirement not met"])
         if e.faltando > 1 then
-            e.why = e.why .. string.format(" (e mais %d)", e.faltando - 1)
+            e.why = e.why .. string.format(L[" (and %d more)"], e.faltando - 1)
         end
         if e.chance then
-            e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
+            e.why = e.why .. string.format(L["  ·  then, a 1 in %d chance"], e.chance)
         end
     elseif e.tier == ns.TIER.CHECK then
         -- A FRASE COMEÇA PELO QUE O JOGO DIZ, e não pela minha ressalva. O `sourceText` da
@@ -291,23 +293,22 @@ function ns.Rank(entry)
             and (e.sourceText:gsub("%s+", " ")) or nil
         e.why = doJogo or ns.SOURCE_NAMES[e.sourceType]
         if e.vendorGuilda then
-            e.why = e.why .. "  ·  vendedor de guilda: exige reputação e conquista DA GUILDA, "
-                .. "que eu não leio"
+            e.why = e.why .. L["  ·  guild vendor: asks for reputation and an achievement OF THE GUILD, which I cannot read"]
         else
-            e.why = e.why .. "  ·  pode haver requisito que eu não leio"
+            e.why = e.why .. L["  ·  there may be a requirement I cannot read"]
         end
         if e.cost and e.cost.gap then
-            e.why = e.why .. "  ·  faltam " .. e.cost.gap
+            e.why = e.why .. string.format(L["  ·  %s missing"], e.cost.gap)
         end
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
         -- E DIZ QUE HÁ MAIS, quando há. A linha não cabe os dois, mas cabe o aviso de que o
         -- outro existe — e a ficha lista todos.
         if e.faltando > 1 then
-            e.why = e.why .. string.format("  ·  e mais %d requisito(s)", e.faltando - 1)
+            e.why = e.why .. string.format(L["  ·  and %d more requirement(s)"], e.faltando - 1)
         end
     elseif e.chance then
-        e.why = string.format("Chance de 1 em %d", e.chance)
+        e.why = string.format(L["Chance of 1 in %d"], e.chance)
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
     elseif e.sourceText and e.sourceText ~= "" then

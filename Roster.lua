@@ -13,6 +13,7 @@
 -- logged in, and the row that quotes it says whose reputation it is and says it plainly -- a
 -- stale entry that pretends to be live would be worse than no entry at all.
 local _, ns = ...
+local L = ns.L
 
 local Roster = {}
 ns.Roster = Roster
@@ -107,9 +108,9 @@ function Roster.Line(factionId, targetIdx)
     local primeiro = quem[1]
     local nivel = _G["FACTION_STANDING_LABEL" .. primeiro.reaction] or "?"
     if #quem == 1 then
-        return string.format("%s tem (%s)", primeiro.name, nivel)
+        return string.format(L["%s has it (%s)"], primeiro.name, nivel)
     end
-    return string.format("%s tem (%s) e mais %d", primeiro.name, nivel, #quem - 1)
+    return string.format(L["%s has it (%s) and %d more"], primeiro.name, nivel, #quem - 1)
 end
 
 ---How many characters the ledger knows. The window says it, because a ledger with one character
