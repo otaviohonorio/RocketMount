@@ -551,7 +551,7 @@ end
 -- Fumaca da janela: construir e desenhar nao pode estourar.
 local okJanela, erroJanela = pcall(ns.ToggleWindow)
 check("a janela monta e desenha sem erro", okJanela, true)
-if not okJanela then print("      " .. tostring(erroJanela)) end
+if not okJanela then print("      ERRO: " .. tostring(erroJanela)) end
 
 print("")
 --------------------------------------------------------------------------------
@@ -644,6 +644,60 @@ do
     ns.db.chars["Ottozinho-Azralon"] = nil
     ns.Invalidate()
 end
+
+--------------------------------------------------------------------------------
+-- BUSCA EM TEXTO LIVRE (22/09)
+--
+-- (!) O EXEMPLO DO USUARIO E O TESTE: *"nao achei a montaria que dropa no Fyrakk"*. A montaria
+-- do Fyrakk se chama **Anu'relos, Flame's Guidance** -- "Fyrakk" nao aparece no nome dela em
+-- lugar nenhum. Buscar so pelo nome falharia exatamente no caso que motivou a busca.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- busca em texto livre")
+
+    ns.db.showUnobtainable = false
+    ns.db.factionFilter = nil
+    ns.search = nil
+
+    local function Nomes()
+        local out = {}
+        for _, e in ipairs((ns.GetFiltered())) do out[#out + 1] = e.name end
+        return table.concat(out, "|")
+    end
+
+    local todas = #select(1, ns.GetFiltered())
+
+    -- Pelo NOME, que e o caso facil.
+    ns.search = "farm curto"
+    check("acha pelo nome", Nomes():find("Farm curto", 1, true) ~= nil, true)
+
+    -- (!) PELO CHEFE, que e o caso do Fyrakk: o nome do chefe vem do catalogo, nao do nome da
+    -- montaria. A fixture tem "Bicho" como chefe da "Farm curto".
+    ns.search = "bicho"
+    check("acha pelo nome do CHEFE, que nao esta no nome da montaria",
+        Nomes(), "Farm curto")
+
+    -- Pelo texto que a Blizzard escreve ("Fonte da montaria N" na fixture).
+    ns.search = "fonte da montaria"
+    check("acha pelo texto do jogo", #select(1, ns.GetFiltered()) > 1, true)
+
+    -- TODOS os termos tem que bater, e nao um deles: digitar mais tem que estreitar.
+    ns.search = "bicho farm"
+    local doisTermos = #select(1, ns.GetFiltered())
+    ns.search = "bicho"
+    local umTermo = #select(1, ns.GetFiltered())
+    check("mais termos estreita, nao alarga", doisTermos <= umTermo, true)
+
+    -- Sem acento acha com acento: quem digita "fenix" tem que achar "Fenix".
+    check("a dobra tira o acento", ns.Fold("Fênix Negra"), "fenix negra")
+
+    -- Busca vazia devolve tudo.
+    ns.search = ""
+    check("busca vazia nao filtra nada", #select(1, ns.GetFiltered()), todas)
+    ns.search = nil
+end
+
 
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))
 os.exit(falhas == 0 and 0 or 1)

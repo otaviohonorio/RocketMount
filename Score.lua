@@ -309,6 +309,19 @@ function ns.GetRanked(force)
 end
 
 -- The ranked list, after the source filter.
+---Todos os termos da busca têm que aparecer, e não um deles.
+---
+---"fyrakk aberrus" acha o que está nos dois; com "um deles" bastaria, a busca ficaria mais larga
+---quanto mais se escreve, que é o contrário do que digitar mais significa.
+local function PassaBusca(e, termos)
+    if not termos then return true end
+    local alvo = e.busca or ""
+    for i = 1, #termos do
+        if not alvo:find(termos[i], 1, true) then return false end
+    end
+    return true
+end
+
 ---A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
 local function MyFaction()
     return UnitFactionGroup and UnitFactionGroup("player") or nil
@@ -331,12 +344,23 @@ function ns.GetFiltered()
     local want = ns.db.sources
     local modo = ns.db.factionFilter
 
+    -- Os termos são quebrados UMA vez, e não dentro do laço.
+    local termos
+    if ns.search and ns.search ~= "" then
+        termos = {}
+        for termo in ns.Fold(ns.search):gmatch("%S+") do
+            termos[#termos + 1] = termo
+        end
+        if #termos == 0 then termos = nil end
+    end
+
     local out = {}
     for i = 1, #all do
         local e = all[i]
         if (not want or want[e.sourceType])
             and PassaFaccao(e, modo)
-            and (ns.db.showUnobtainable or not e.unobtainable) then
+            and (ns.db.showUnobtainable or not e.unobtainable)
+            and PassaBusca(e, termos) then
             out[#out + 1] = e
         end
     end

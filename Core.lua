@@ -19,6 +19,9 @@ ns.defaults = {
     -- O MCL esconde essas por padrão (`MCL_SETTINGS.unobtainable = false`) e deixa ligar; aqui
     -- é igual, e aí quem quer ver o catálogo completo vê.
     showUnobtainable = false,
+    -- A busca NÃO é salva entre sessões de propósito: abrir a janela e encontrar a lista já
+    -- filtrada por algo que se digitou semana passada é uma lista que parece quebrada.
+    -- (fica em `ns.search`, fora do banco)
     -- Enabled sources. The key is the API `sourceType` (see ns.SOURCE_NAMES).
     sources = nil,   -- nil = all of them
     window = nil,    -- { point, x, y } of the last position

@@ -338,6 +338,67 @@ local function AchievementProgress(achID)
 end
 
 --------------------------------------------------------------------------------
+-- Busca em texto livre
+--------------------------------------------------------------------------------
+-- (!) A BUSCA NÃO PODE SER SÓ PELO NOME, e o exemplo do usuário prova: *"não achei a montaria
+-- que dropa no Fyrakk"*. A montaria do Fyrakk se chama **Anu'relos, Flame's Guidance** — a
+-- palavra "Fyrakk" não aparece no nome dela em lugar nenhum. Ela aparece no texto de origem do
+-- jogo e no nome do chefe que o catálogo guarda.
+--
+-- Então o que se pesquisa é tudo que o addon sabe sobre a montaria: nome, o texto da Blizzard,
+-- o chefe, o vendedor, a zona e a facção. Quem procura "fyrakk", "aberrus" ou "vendedor" acha.
+
+-- Acentos fora, para "fenix" achar "Fênix". São os pares do português, em UTF-8: cada acentuado
+-- ocupa dois bytes, então `gsub` byte a byte não serve e a substituição é por par.
+local ACENTOS = {
+    ["á"]="a", ["à"]="a", ["â"]="a", ["ã"]="a", ["ä"]="a",
+    ["é"]="e", ["è"]="e", ["ê"]="e", ["ë"]="e",
+    ["í"]="i", ["ì"]="i", ["î"]="i", ["ï"]="i",
+    ["ó"]="o", ["ò"]="o", ["ô"]="o", ["õ"]="o", ["ö"]="o",
+    ["ú"]="u", ["ù"]="u", ["û"]="u", ["ü"]="u",
+    ["ç"]="c", ["ñ"]="n",
+}
+
+function ns.Fold(texto)
+    if type(texto) ~= "string" then return "" end
+    texto = texto:lower()
+    for acentuado, simples in pairs(ACENTOS) do
+        texto = texto:gsub(acentuado, simples)
+    end
+    return texto
+end
+
+---Tudo que dá para pesquisar numa montaria, junto e sem acento.
+local function Haystack(e)
+    local partes = {
+        e.name, e.sourceText, e.description, e.bossName, e.method,
+        e.rep and e.rep.factionName,
+        e.vendor and e.vendor.npc, e.vendor and e.vendor.zone,
+        ns.SOURCE_NAMES[e.sourceType],
+    }
+    -- A zona das coordenadas também entra: quem lembra "Aberrus" e não o nome do chefe acha.
+    if e.coords and C_Map and C_Map.GetMapInfo then
+        for _, wp in ipairs(e.coords) do
+            if wp.m then
+                local info = C_Map.GetMapInfo(wp.m)
+                if info and info.name then partes[#partes + 1] = info.name end
+            end
+            if wp.n then partes[#partes + 1] = wp.n end
+        end
+    end
+
+    local limpo = {}
+    for _, parte in ipairs(partes) do
+        if type(parte) == "string" and parte ~= "" then
+            limpo[#limpo + 1] = parte
+        end
+    end
+    return ns.Fold(table.concat(limpo, " "))
+end
+
+ns.Haystack = Haystack
+
+--------------------------------------------------------------------------------
 -- Monta a lista
 --------------------------------------------------------------------------------
 
@@ -445,6 +506,8 @@ function ns.BuildList()
                 end
 
                 e.cost = CostProgress(spellID, e.itemID)
+                -- Montado uma vez por varredura, e não a cada tecla digitada.
+                e.busca = Haystack(e)
 
                 if rarity and rarity.GetRarityByID then
                     local ok, pct = pcall(rarity.GetRarityByID, rarity, mountID)

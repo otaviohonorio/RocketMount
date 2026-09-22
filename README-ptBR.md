@@ -77,6 +77,17 @@ está anotado.
 É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
 entrou pela última vez.
 
+## A busca
+
+A caixa no alto da janela filtra enquanto você digita, e ela **não** procura só no nome da
+montaria. A que cai do Fyrakk se chama *Anu'relos, Flame's Guidance* — a palavra "Fyrakk" não
+aparece no nome dela em lugar nenhum, então procurar só por nome falharia exatamente no caso que
+faz a pessoa querer uma busca.
+
+Ela procura em tudo que o addon sabe da montaria: nome, o texto de origem da Blizzard, o chefe,
+o vendedor, a zona e a facção. Acento é ignorado, e todas as palavras que você digitar precisam
+bater — digitar mais estreita, que é o que digitar mais deveria fazer.
+
 ## As que saíram do jogo
 
 Promoções encerradas, montarias de jogo de cartas, conquistas aposentadas. Ninguém mais consegue,
@@ -102,6 +113,7 @@ método e deixa o julgamento com você. Nenhuma estimativa foi inventada para ta
 | `/rmt faccao [minha\|horda\|alianca]` | filtra por facção |
 | `/rmt quem` | os personagens anotados e quantas reputações cada um tem |
 | `/rmt sumidas` | mostra ou esconde as que saíram do jogo |
+| `/rmt busca <texto>` | procura por nome, chefe, zona ou vendedor |
 | `/rmt debug [nome]` | o que o addon conseguiu ler, de tudo ou de uma montaria |
 
 ## Licença
