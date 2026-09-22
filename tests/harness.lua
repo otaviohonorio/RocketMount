@@ -1008,5 +1008,58 @@ do
 end
 
 
+--------------------------------------------------------------------------------
+-- A FICHA NAO PODE DIZER A MESMA COISA DUAS VEZES (relatado em 22/09, testando no jogo)
+--------------------------------------------------------------------------------
+-- *"tem o Requisitos, tem o preco e o Falta, as vezes tem as mesmas informacoes"*. O preco
+-- estava em tres lugares: na lista de requisitos, no bloco "Preco" e no bloco "Falta".
+--
+-- (!) O TESTE SO EXISTE PORQUE A REGRA SAIU DE DENTRO DO DESENHO. Enquanto ela morava no
+-- codigo que pinta widget, duplicata nenhuma era visivel daqui -- que e como esta passou.
+print("")
+print("-- a ficha da montaria")
+do
+    -- "Dois requisitos" e o pior caso: reputacao cumprida E moeda a 30%, ou seja, preco com
+    -- falta. E nele que as tres copias apareciam.
+    local e = porNome["Dois requisitos"].e
+    local blocos = ns.DetailBlocks(e)
+    check("a ficha tem blocos", #blocos > 0, true)
+
+    local porRotulo, repetido = {}, nil
+    for _, b in ipairs(blocos) do
+        if porRotulo[b.label] then repetido = b.label end
+        porRotulo[b.label] = b.value
+    end
+    check("nenhum rotulo aparece duas vezes", repetido, nil)
+
+    -- O preco tem que aparecer UMA vez -- nem zero (some a informacao) nem duas.
+    local vezes = 0
+    for _, b in ipairs(blocos) do
+        if b.value:find(e.cost.price, 1, true) then vezes = vezes + 1 end
+    end
+    check("o preco aparece uma vez so", vezes, 1)
+    check("  e quem o carrega e a lista de requisitos", (function()
+        for _, b in ipairs(blocos) do
+            if b.label:find("Requisitos", 1, true) and b.value:find(e.cost.price, 1, true) then
+                return true
+            end
+        end
+        return false
+    end)(), true)
+
+    -- E a falta continua dita, dentro da mesma linha: sumir com a duplicata nao pode sumir
+    -- com o dado. Era o risco desta correcao, e e ele que esta travado aqui.
+    check("o que falta continua na ficha", (function()
+        for _, b in ipairs(blocos) do
+            if b.value:find(e.cost.gap, 1, true) then return true end
+        end
+        return false
+    end)(), true)
+
+    -- E nao sobrou bloco "Preco"/"Falta" solto por esquecimento.
+    check("nao ha mais bloco 'Preco' separado", porRotulo["Preço"], nil)
+    check("nem bloco 'Falta'", porRotulo["Falta"], nil)
+end
+
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))
 os.exit(falhas == 0 and 0 or 1)
