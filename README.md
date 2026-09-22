@@ -52,6 +52,7 @@ the vendor", which promises exactly what can be proven.
 | Reputation and renown progress | `C_Reputation`, `C_MajorFactions` |
 | Currency, gold and items you hold | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
 | Partial achievement progress | `GetAchievementCriteriaInfo` |
+| **What the game says is required** | the mount item's own tooltip, via `C_TooltipInfo` |
 | Drop rate, coordinates, required faction | `MCL_GUIDE` (from the MCL addon) |
 | Share of players who own the mount | `MountsRarity-2.0` (inside MountJournalEnhanced) |
 
@@ -95,6 +96,23 @@ anyone any more, so they stay out of the list — in a list whose whole subject 
 start*, a mount nobody can get is the worst possible row. Turn them on with `/rmt sumidas` or in
 the options, and they appear last, in their own band, with no effort estimate: it is not hard,
 it is impossible.
+
+## Why there is no curated database here
+
+The obvious fix for "the catalogue does not know about this requirement" is to write our own
+database. We do not, and the reason is the failure mode: **a curated entry that is wrong is
+wrong silently**, forever, and it is the addon speaking with confidence about something nobody
+verified. This addon's whole point is not claiming more than it can prove.
+
+The game already knows. Hover the mount's item anywhere and the tooltip says, in your language,
+*"Requires Exalted with <faction>"* or *"Requires <achievement>"*. `C_TooltipInfo` hands those
+same lines to an addon as data, and the addon reads them: they cover every mount that has an
+item, they are right after the next patch with nobody maintaining them, they are already
+translated, and when they say nothing that silence is the truth rather than a gap in somebody's
+spreadsheet.
+
+The requirement patterns are built from the client's own global strings, never written out in
+one language — a hardcoded "Requires" would break on every non-English client, silently.
 
 ## Known gap
 

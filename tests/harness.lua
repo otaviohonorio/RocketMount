@@ -80,6 +80,44 @@ function CreateFrame(kind) return widget(kind) end
 function UnitFactionGroup() return "Alliance" end
 function UnitName() return "Hamfarir" end
 function GetRealmName() return "Azralon" end
+
+-- As globais de requisito vem do CLIENTE, e o addon monta os padroes a partir delas. O stub usa
+-- o texto em INGLES de proposito: se o codigo tivesse "Requer" cravado, passaria aqui e quebraria
+-- em todo cliente que nao e ptBR.
+ITEM_REQ_REPUTATION = "Requires %s - %s"
+ITEM_REQ_SKILL = "Requires %s"
+ITEM_MIN_LEVEL = "Requires Level %d"
+
+Enum = Enum or {}
+Enum.TooltipDataLineType = { UsageRequirement = 12 }
+
+-- O tooltip de cada item, como o jogo entrega: linhas com texto, tipo e cor. Vermelho e como o
+-- jogo diz "voce nao cumpre isto".
+local TOOLTIPS = {
+    -- O caso da Fenix Negra: o catalogo so sabe o preco, e o TOOLTIP sabe da conquista.
+    [7015] = { lines = {
+        { leftText = "Reins of the Dark Phoenix" },
+        { leftText = "Requires Guild Glory of the Cataclysm Raider", type = 12,
+          leftColor = { r = 1, g = 0.125, b = 0.125 } },
+    } },
+    -- Um item cujo requisito o jogador CUMPRE: o jogo nao pinta de vermelho.
+    [7016] = { lines = {
+        { leftText = "Requires Level 10", type = 12,
+          leftColor = { r = 1, g = 1, b = 1 } },
+    } },
+    -- (!) SEM O CAMPO `type`: aqui so o TEXTO identifica o requisito, e ele so e identificado se
+    -- o padrao tiver saido da global do cliente. Com "Requer %s - %s" cravado em portugues, esta
+    -- linha em ingles passaria batida -- que e o defeito que quebraria o addon para todo mundo
+    -- fora do Brasil, e em silencio.
+    [7017] = { lines = {
+        { leftText = "Requires Maruuk Centaur - Exalted",
+          leftColor = { r = 1, g = 0.125, b = 0.125 } },
+    } },
+}
+
+C_TooltipInfo = {
+    GetItemByID = function(id) return TOOLTIPS[id] end,
+}
 function UnitClass() return "Death Knight", "DEATHKNIGHT" end
 function time() return 1758500000 end
 function GetCursorPosition() return 0, 0 end
@@ -179,6 +217,10 @@ local MOUNTS = {
     -- ressonancia mas que tambem falta reputacao"*. A tela mostrava so o mais atrasado, entao
     -- quem lia ia farmar a moeda e descobria a reputacao no vendedor.
     { 23, 1023, "Moeda E reputacao",        3, false },
+    -- (!) O CASO DA FENIX NEGRA RESOLVIDO PELO TOOLTIP: o catalogo so sabe o preco, e o jogo
+    -- sabe da conquista de guilda. E a alternativa a curar uma base a mao -- dado da Blizzard,
+    -- ja traduzido, e certo depois do proximo patch tambem.
+    { 24, 1024, "So o tooltip sabe",        3, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -257,6 +299,7 @@ MCL_GUIDE = {
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
         [1021] = { isUnobtainable = true, chance = 100 },
         [1023] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
+        [1024] = { itemId = 7015, vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1022] = { chance = 20, method = "Grand Hunt",
                    rep = { factionId = 9001, factionName = "Maruuk", renown = true, level = 5 } },
         [1016] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" },
@@ -280,6 +323,7 @@ MCL_GUIDE_CURRENCY_DATA = {
     -- 300 no bolso de 1000: 30%. A reputacao dessa esta em 80%, entao a moeda e a mais atrasada
     -- -- e era so ela que aparecia.
     [1023] = { { type = "currency", id = 77, amount = 1000 } },
+    [1024] = { { type = "gold", id = 0, amount = 1000 } },
     [1019] = { { type = "gold", id = 0, amount = 1000 } },
     [1020] = { { type = "gold", id = 0, amount = 1000 } },
     [1016] = { { type = "gold", id = 0, amount = 1000 } },
@@ -331,7 +375,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as vinte que faltam", #ranked, 20)
+check("sobram as vinte e uma que faltam", #ranked, 21)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -368,7 +412,8 @@ local ordemEsperada = {
     -- ela cai aqui embaixo, e nao la em cima junto das que dao para comprar.
     -- Requisito conhecido e NAO cumprido (0%) vem antes de requisito que nao da para medir:
     -- saber o que falta vale mais que nao saber nada.
-    "Rep que nunca vi", "So sei o preco", "Farm longo",
+    -- As tres com requisito conhecido e NAO cumprido, antes das que ninguem sabe medir.
+    "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
     "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
@@ -419,6 +464,31 @@ check("reputacao ilegivel NAO vira 'nada a cumprir'", nuncaVi.access, 0)
 check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true)
 check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
 check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
+
+-- (!) O TOOLTIP DO ITEM FECHA O BURACO DO CATALOGO (22/09).
+--
+-- Antes: catalogo so sabe o preco -> "exige mais que o preco", sem dizer o que. Agora o jogo
+-- diz, em texto proprio e ja traduzido: "Requires Guild Glory of the Cataclysm Raider".
+local soTooltip = porNome["So o tooltip sabe"].e
+check("o tooltip vira requisito de acesso", soTooltip.tooltipGate ~= nil, true)
+check("  e ele conta como NAO cumprido", soTooltip.tooltipGate.pct, 0)
+check("  entao a montaria nao fica em 'exige mais que o preco'",
+    soTooltip.tier ~= ns.TIER.CHECK, true)
+check("  e a linha diz o que o JOGO disse",
+    soTooltip.tooltipGate.label:find("Guild Glory", 1, true) ~= nil, true)
+
+-- (!) OS PADROES SAIEM DAS GLOBAIS DO CLIENTE, e nao de uma lista em portugues: o stub usa o
+-- texto em ingles, e casar com ele prova que nada foi cravado no idioma errado.
+local cumprido = ns.Tooltip.Gate(7016)
+check("requisito nao-vermelho conta como cumprido", cumprido and cumprido.pct, 1)
+check("item sem tooltip nao inventa requisito", ns.Tooltip.Gate(999999), nil)
+
+-- Linha SEM o campo `type`: so o texto a identifica, e so se o padrao veio da global do cliente.
+local soTexto = ns.Tooltip.Gate(7017)
+check("requisito reconhecido pelo TEXTO da global", soTexto ~= nil, true)
+check("  e ele nao esta cumprido", soTexto and soTexto.pct, 0)
+check("  e a frase e a do jogo",
+    soTexto and soTexto.label:find("Maruuk", 1, true) ~= nil, true)
 
 -- (!) DOIS REQUISITOS FALTANDO: OS DOIS APARECEM (defeito de 22/09).
 local dois2 = porNome["Moeda E reputacao"].e
@@ -535,7 +605,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 20)
+check("sem o MCL a lista continua de pe", #semMCL, 21)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

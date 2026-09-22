@@ -517,6 +517,13 @@ function ns.BuildList()
                 end
 
                 e.cost = CostProgress(spellID, e.itemID)
+
+                -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a
+                -- Fênix Negra abriu: o catálogo não sabe da conquista de guilda, e o tooltip do
+                -- item sabe — em português, e certo depois do próximo patch também.
+                if e.itemID and ns.Tooltip then
+                    e.tooltipGate = ns.Tooltip.Gate(e.itemID)
+                end
                 -- Montado uma vez por varredura, e não a cada tecla digitada.
                 e.expansion, e.expansionName = ns.Expansion and ns.Expansion.Of(mountID)
                 e.busca = Haystack(e)
