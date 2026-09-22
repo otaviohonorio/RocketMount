@@ -1061,5 +1061,40 @@ do
     check("nem bloco 'Falta'", porRotulo["Falta"], nil)
 end
 
+--------------------------------------------------------------------------------
+-- GEOMETRIA DA JANELA (relatado em 22/09, testando no jogo)
+--------------------------------------------------------------------------------
+-- *"as informacoes da direita estao bem grudadas e tem texto vazando pra fora da janela"*.
+--
+-- Isto e aritmetica, e aritmetica se confere em disco -- nao se gasta uma rodada de teste
+-- in-game com ela. O que os testes travam e a RELACAO entre as pecas, nao o numero cru: os
+-- numeros mudam quando a janela mudar; o "tem que caber" nao pode voltar a quebrar.
+print("")
+print("-- geometria da janela")
+do
+    local G = ns.Geometry
+    check("a geometria esta exposta", type(G) == "table", true)
+
+    -- (!) A CONTA QUE ESTAVA ERRADA. A largura declarada tem que ser exatamente a que as pecas
+    -- pedem: menor, e a ficha vaza pela borda (era o caso, por 15px); maior, sobra buraco.
+    -- Somam: margem + lista + barra de rolagem + respiro + fio + respiro + ficha + margem.
+    check("a largura declarada e a largura necessaria batem", G.windowW, G.neededW)
+
+    -- A barra de rolagem vive FORA do quadro rolavel, encostada a direita dele. Sem calha
+    -- propria ela desenha por cima do fio separador, que foi metade do "bem grudadas".
+    check("ha calha para a barra de rolagem", G.scrollbarW >= 20, true)
+
+    -- Na linha, o nome nao pode terminar depois de onde o numero da direita comeca. Estava
+    -- 4px por cima -- e como o nome nao quebra linha, ele era cortado encostado no numero.
+    local fimDoNome = G.rowTextX + G.rowTextW
+    local inicioDoNumero = G.rowW - G.headlineInset - G.headlineW
+    check("o nome termina antes do numero da direita", fimDoNome <= inicioDoNumero, true)
+    check("  e sobra respiro entre os dois", inicioDoNumero - fimDoNome >= 8, true)
+
+    -- E a ficha nao pode ser mais estreita que a medida de leitura: ela e prosa, e prosa em
+    -- coluna estreita vira escada.
+    check("a ficha tem largura de leitura", G.detailW >= 320, true)
+end
+
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))
 os.exit(falhas == 0 and 0 or 1)

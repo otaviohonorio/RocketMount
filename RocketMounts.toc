@@ -3,7 +3,7 @@
 ## Notes: As montarias que faltam, da mais fácil para a mais difícil.
 ## Notes-enUS: The mounts you are missing, easiest first.
 ## Author: Otávio Honório
-## Version: 0.16.0
+## Version: 0.17.0
 ## SavedVariables: RocketMountsDB
 ## Category: Collections
 ## Category-ptBR: Coleções do Bando de Guerra
