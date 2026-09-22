@@ -187,6 +187,19 @@ local function FillDetail(entry)
             .. "ainda depende da sorte.")
     end
 
+    -- ⛑ O AVISO QUE FALTAVA. O addon só enxerga reputação, renome, conquista, moeda e ouro.
+    -- Conquista de guilda, nível de guilda, classificação de PvP e perícia de profissão ele NÃO
+    -- lê — e foi por calar sobre isso que a Fênix Negra apareceu como "é só ir pegar".
+    if entry.tier == ns.TIER.CHECK then
+        local texto = "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase "
+            .. "nunca é o que trava. Pode haver conquista, nível de guilda ou classificação no "
+            .. "caminho, e isso eu não leio."
+        if entry.vendorVago then
+            texto = texto .. " Nem o catálogo sabe qual é o vendedor exato desta."
+        end
+        Block("Por que conferir", texto)
+    end
+
     local zone, wp = ZoneLine(entry)
     if zone then Block("Onde", zone) end
 
@@ -374,6 +387,10 @@ local function Redraw()
     content:SetHeight(math.max(y, 1))
 
     local mcl, rar = ns.ProviderStatus()
+    -- DE QUEM É ESTA LISTA. Reputação, moeda e conquista são lidas do personagem CONECTADO, e
+    -- o jogador não tem como saber disso olhando a tela — foi o segundo defeito relatado em
+    -- 21/09: *"qual char tem essa reputação?"*. O nome fica à vista o tempo todo, e cada linha
+    -- de reputação diz se o progresso é da conta ou só deste personagem.
     local footer
     if limit < #entries then
         footer = string.format("Mostrando as %d primeiras de %d que faltam", limit, #entries)
@@ -388,6 +405,7 @@ local function Redraw()
     elseif not rar then
         footer = footer .. "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
     end
+    footer = (UnitName("player") or "?") .. "  ·  " .. footer
     window.footer:SetText(footer)
 end
 

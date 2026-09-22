@@ -28,11 +28,12 @@ local _, ns = ...
 
 ns.TIER = {
     READY     = 1,
-    CLOSE     = 2,
-    UNDERWAY  = 3,
-    SHORTFARM = 4,
-    LONGFARM  = 5,
-    UNKNOWN   = 6,
+    CHECK     = 2,
+    CLOSE     = 3,
+    UNDERWAY  = 4,
+    SHORTFARM = 5,
+    LONGFARM  = 6,
+    UNKNOWN   = 7,
 }
 
 -- Os nomes carregam a divisão que a comunidade de colecionadores realmente usa —
@@ -42,22 +43,24 @@ ns.TIER = {
 -- regra já fazia em código. A faixa 5 não leva nenhum dos dois nomes: ela mistura os tipos.
 ns.TIER_NAME = {
     [1] = "Garantidas — é só ir pegar",
-    [2] = "Garantidas — quase liberadas",
-    [3] = "Garantidas — a meio caminho",
-    [4] = "Na sorte — chance boa",
-    [5] = "Caminho longo",
-    [6] = "Sem estimativa",
+    [2] = "Confira no vendedor",
+    [3] = "Garantidas — quase liberadas",
+    [4] = "Garantidas — a meio caminho",
+    [5] = "Na sorte — chance boa",
+    [6] = "Caminho longo",
+    [7] = "Sem estimativa",
 }
 
 -- A dica é curta porque divide a linha com o nome da faixa, que cresceu. Teto prático:
 -- ~36 caracteres. Acima disso ela atravessa a borda da lista (ver TIER_HINT_WIDTH).
 ns.TIER_HINT = {
-    [1] = "nada aqui depende de sorte",
-    [2] = "falta pouco do requisito",
-    [3] = "caminho já andado neste personagem",
-    [4] = "1 em 100 ou melhor",
-    [5] = "chance ruim, ou requisito no começo",
-    [6] = "não há como medir esta",
+    [1] = "requisito cumprido e conferido",
+    [2] = "o preço você tem; pode haver mais",
+    [3] = "falta pouco do requisito",
+    [4] = "caminho já andado",
+    [5] = "1 em 100 ou melhor",
+    [6] = "chance ruim, ou requisito no começo",
+    [7] = "não há como medir esta",
 }
 
 -- Chance a partir da qual o farm deixa de ser de uma tarde. Não é medição, é o corte
@@ -79,12 +82,29 @@ local function Deterministic(e)
     return true
 end
 
--- O requisito que está MAIS ATRASADO, e não o mais adiantado. Quem precisa de reputação
--- e de 10.000 de moeda não está pronto por ter a reputação — está preso na moeda. A
--- primeira versão usava o máximo e por isso mostrava sempre o número mais bonito.
-local function Requirement(e)
+-- ⛑ ACESSO NÃO É PREÇO, e confundir os dois foi o defeito relatado em 21/09.
+--
+-- A Fênix Negra apareceu como "é só ir pegar". O catálogo sabe uma coisa só sobre ela: custa
+-- 3.000 de ouro. O jogador tem o ouro → requisito cumprido → pronto. Só que ela exige **guilda
+-- Exaltada mais a conquista "Guild Glory of the Cataclysm Raider"**, e disso não há uma linha
+-- em lugar nenhum do dado que este addon lê.
+--
+-- A lição não é sobre essa montaria: é que **a ausência de requisito conhecido estava sendo
+-- lida como ausência de requisito**. E ouro quase nunca é o que trava alguém — o que trava é
+-- reputação, conquista, guilda, classificação. Saber só o preço é saber quase nada.
+--
+-- Então os requisitos viraram duas famílias:
+--
+--   ACESSO  reputação, renome, conquista — o que decide se você PODE
+--   PREÇO   ouro, moeda, item            — o que decide se você PAGA
+--
+-- "É só ir pegar" exige um acesso conhecido E cumprido. Sabendo só o preço, a montaria vai
+-- para "Confira no vendedor", que promete exatamente o que dá para provar.
+local ACCESS_KEYS = { "rep", "achievement" }
+
+local function Access(e)
     local worst, from = nil, nil
-    for _, key in ipairs({ "rep", "cost", "achievement" }) do
+    for _, key in ipairs(ACCESS_KEYS) do
         local p = e[key]
         if p and p.pct then
             if not worst or p.pct < worst then
@@ -95,18 +115,46 @@ local function Requirement(e)
     return worst, from
 end
 
+local function Price(e)
+    local p = e.cost
+    if p and p.pct then return p.pct end
+    return nil
+end
+
 function ns.Rank(entry)
     local e = entry
-    local req, from = Requirement(e)
+    local acesso, from = Access(e)
+    local preco = Price(e)
+
+    -- O requisito que a linha mostra é o mais atrasado dos dois: quem tem a reputação mas não
+    -- o ouro está preso no ouro, e vice-versa.
+    local req = acesso
+    if preco and (not req or preco < req) then
+        req, from = preco, "cost"
+    end
+
+    e.access = acesso
+    e.price = preco
     e.requirement = req
     e.requirementFrom = from
     e.deterministic = Deterministic(e)
     e.gated = (req ~= nil and req < 1)
 
     if e.deterministic then
-        if req == nil then
-            -- Sem taxa de queda e sem requisito mensurável: não há o que afirmar.
-            e.tier = ns.TIER.UNKNOWN
+        if acesso == nil then
+            -- SEM ACESSO CONHECIDO. Não dá para dizer "é só ir pegar": o que se sabe é o preço,
+            -- e preço quase nunca é o que trava.
+            if preco == nil then
+                e.tier = ns.TIER.UNKNOWN
+            elseif preco >= 1 then
+                e.tier = ns.TIER.CHECK
+            elseif preco >= 0.75 then
+                e.tier = ns.TIER.CLOSE
+            elseif preco > 0 then
+                e.tier = ns.TIER.UNDERWAY
+            else
+                e.tier = ns.TIER.LONGFARM
+            end
         elseif req >= 1 then
             e.tier = ns.TIER.READY
         elseif req >= 0.75 then
@@ -131,6 +179,9 @@ function ns.Rank(entry)
     if e.deterministic then
         if e.tier == ns.TIER.READY then
             e.headline = "pode pegar"
+        elseif e.tier == ns.TIER.CHECK then
+            -- NÃO é "pode pegar" e não é porcentagem: o que se afirma é só que o preço cabe.
+            e.headline = "preço ok"
         elseif req then
             e.headline = string.format("%d%%", math.floor(req * 100 + 0.5))
         else
@@ -153,6 +204,10 @@ function ns.Rank(entry)
         if e.chance then
             e.why = e.why .. "  ·  depois, chance de 1 em " .. e.chance
         end
+    elseif e.tier == ns.TIER.CHECK then
+        -- A frase precisa dizer as DUAS coisas: o que dá para garantir e o que não dá.
+        e.why = (reqLabel and (reqLabel .. "  ·  ") or "")
+            .. "pode haver requisito que eu não leio"
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
     elseif e.chance then
