@@ -240,6 +240,11 @@ local MOUNTS = {
     -- porque o addon ignorava a tabela de missoes do catalogo inteira.
     { 25, 1025, "Missao pendente",         2, false },
     { 26, 1026, "Missao ja feita",         2, false },
+    -- (!) O CORCEL DE GUERRA PRESTIGIOSO (relatado em 22/09): o catalogo so sabe
+    -- `method = "SPECIAL"` e o item; o tooltip do item so tem "Requer nivel 10", que o jogador
+    -- cumpre. Aparecia como "e so ir pegar" -- mas ela vem de uma conquista que nada disso
+    -- menciona. Sao 126 montarias marcadas SPECIAL no catalogo.
+    { 27, 1027, "Metodo a parte",          0, false },
     -- O caso da Fenix Negra (21/09): o catalogo sabe SO o preco. O jogador tem o ouro, e a
     -- versao anterior concluia "e so ir pegar" -- mas ela exige guilda Exaltada mais uma
     -- conquista de guilda, e disso nao ha uma linha no dado que este addon le.
@@ -319,6 +324,7 @@ MCL_GUIDE = {
         [1021] = { isUnobtainable = true, chance = 100, lockBossName = "Chefe sumido" },
         [1023] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
         [1025] = {}, [1026] = {},
+        [1027] = { method = "SPECIAL", itemId = 7016 },
         [1024] = { itemId = 7015, vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1022] = { chance = 20, method = "Grand Hunt",
                    rep = { factionId = 9001, factionName = "Maruuk", renown = true, level = 5 } },
@@ -395,7 +401,7 @@ for i, e in ipairs(ranked) do porNome[e.name] = { pos = i, e = e } end
 
 check("montaria ja coletada fica de fora", porNome["Ja coletada"], nil)
 check("montaria da outra faccao fica de fora", porNome["Da outra faccao"], nil)
-check("sobram as vinte e tres que faltam", #ranked, 23)
+check("sobram as vinte e quatro que faltam", #ranked, 24)
 
 check("reputacao cumprida = Pronto para pegar",
     porNome["Pronta por reputacao"].e.tier, ns.TIER.READY)
@@ -437,7 +443,7 @@ local ordemEsperada = {
     -- Requisito conhecido e NAO cumprido, em ordem alfabetica de nome no empate de 0%.
     "Missao pendente", "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
     "So da Alianca", "So ouro, sem guilda",
-    "Sem estimativa",
+    "Metodo a parte", "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
     "Saiu do jogo",
 }
@@ -487,6 +493,13 @@ check("  e a montaria NAO sobe para o topo", nuncaVi.tier ~= ns.TIER.READY, true
 check("  nem fica na faixa de so-preco", nuncaVi.tier ~= ns.TIER.CHECK, true)
 check("  e a linha diz o que houve", nuncaVi.rep.label:find("reputa") ~= nil, true)
 
+-- (!) O CORCEL DE GUERRA PRESTIGIOSO: "SPECIAL" E O CATALOGO DIZENDO QUE NAO SABE (22/09).
+local aParte = porNome["Metodo a parte"].e
+check("metodo 'SPECIAL' nao vira aquisicao deterministica", aParte.deterministic, false)
+check("  e a montaria NAO aparece como pronta", aParte.tier ~= ns.TIER.READY, true)
+check("  ela cai em 'sem estimativa'", aParte.tier, ns.TIER.UNKNOWN)
+check("  e o tooltip cumprido nao a promoveu", aParte.tooltipGate, nil)
+
 -- (!) MISSAO: O CATALOGO TINHA O DADO E O ADDON IGNORAVA (22/09).
 local pendente = porNome["Missao pendente"].e
 local feita = porNome["Missao ja feita"].e
@@ -518,7 +531,12 @@ check("  e a linha diz o que o JOGO disse",
 -- (!) OS PADROES SAIEM DAS GLOBAIS DO CLIENTE, e nao de uma lista em portugues: o stub usa o
 -- texto em ingles, e casar com ele prova que nada foi cravado no idioma errado.
 local cumprido = ns.Tooltip.Gate(7016)
-check("requisito nao-vermelho conta como cumprido", cumprido and cumprido.pct, 1)
+-- (!) O TOOLTIP SO SERVE COMO SINAL NEGATIVO (defeito do Corcel de Guerra Prestigioso, 22/09).
+--
+-- Ele ja devolveu `pct = 1` quando nada estava vermelho, e isso mandou para o topo uma montaria
+-- que vem de conquista que o tooltip nem menciona -- o item so trazia um "Requer nivel 10" que o
+-- jogador cumpre. Nada bloqueando NAO e prova de que da para pegar.
+check("nada bloqueando no tooltip nao vira acesso liberado", cumprido, nil)
 check("item sem tooltip nao inventa requisito", ns.Tooltip.Gate(999999), nil)
 
 -- Linha SEM o campo `type`: so o texto a identifica, e so se o padrao veio da global do cliente.
@@ -643,7 +661,7 @@ local guardado, guardadaMoeda = MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA
 MCL_GUIDE, MCL_GUIDE_CURRENCY_DATA = nil, nil
 ns.Invalidate()
 local semMCL = ns.GetRanked(true)
-check("sem o MCL a lista continua de pe", #semMCL, 23)
+check("sem o MCL a lista continua de pe", #semMCL, 24)
 local todasSemEstimativa = true
 for _, e in ipairs(semMCL) do
     if e.tier ~= ns.TIER.UNKNOWN then todasSemEstimativa = false end

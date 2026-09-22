@@ -94,9 +94,16 @@ local LUCK_SOURCE = {
 -- The acquisition is deterministic when nothing in it depends on luck: buying from the
 -- vendor, handing in the quest, closing the achievement. A drop chance on the record is
 -- proof of the opposite.
+-- (!) "SPECIAL" É O CATÁLOGO DIZENDO QUE NÃO SABE. São 126 montarias marcadas assim — evento,
+-- promoção, recompensa esquisita — e para todas elas o registro traz **só** o método e o item.
+-- Tratar isso como aquisição determinística é concluir "é só comprar" a partir de um campo que
+-- literalmente diz "é um caso à parte".
+local UNKNOWN_METHOD = { SPECIAL = true, [""] = true }
+
 local function Deterministic(e)
     if e.chance and e.chance > 0 then return false end
     if LUCK_SOURCE[e.sourceType] then return false end
+    if e.method and UNKNOWN_METHOD[e.method] then return false end
     return true
 end
 
@@ -228,6 +235,12 @@ function ns.Rank(entry)
     elseif e.chance and e.chance > 0 then
         e.tier = (e.chance <= SHORT_FARM_CHANCE) and ns.TIER.SHORTFARM or ns.TIER.LONGFARM
     else
+        -- Aqui cai o método "à parte" (`SPECIAL`) sem chance: não é determinístico, não tem
+        -- requisito e não tem sorte medida — sobra "sem estimativa", que é a verdade.
+        --
+        -- Houve aqui um `elseif` só para esse caso. Ele saiu: nenhuma sabotagem conseguia
+        -- derrubá-lo, porque este `else` já levava ao mesmo lugar. Regra que não muda nada é
+        -- código que alguém vai ter que entender à toa depois.
         e.tier = ns.TIER.UNKNOWN
     end
 

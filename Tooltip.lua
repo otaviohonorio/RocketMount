@@ -137,12 +137,20 @@ function Tooltip.Gate(itemID)
         if not r.cumprido then faltando[#faltando + 1] = r.texto end
     end
 
-    if #faltando == 0 then
-        return {
-            kind = "tooltip", pct = 1, fromTooltip = true,
-            label = "O jogo diz que você cumpre os requisitos deste item",
-        }
-    end
+    -- (!) O TOOLTIP SÓ SERVE COMO SINAL NEGATIVO. Ele diz o que BLOQUEIA, nunca o que libera.
+    --
+    -- Esta função já devolveu `pct = 1` quando nada no tooltip estava vermelho, e isso virou
+    -- defeito no mesmo dia: o Corcel de Guerra Prestigioso apareceu como "é só ir pegar". O
+    -- catálogo não sabe nada dele (`method = "SPECIAL"` e só), e o tooltip do item traz um
+    -- "Requer nível 10" que o jogador cumpre — então "requisito cumprido" virou acesso
+    -- liberado. Só que a montaria vem da conquista *Free For All, More For Me*, que o tooltip
+    -- do item não menciona.
+    --
+    -- **Nada bloqueando no tooltip não é prova de que dá para pegar.** É a mesma lição das
+    -- outras cinco vezes, agora aplicada à fonte mais nova do addon: ausência de impedimento
+    -- lida como permissão. Devolver `nil` deixa a montaria cair onde ela pertence — em "sem
+    -- estimativa" — em vez de subir para o topo.
+    if #faltando == 0 then return nil end
 
     return {
         kind = "tooltip", pct = 0, fromTooltip = true,
