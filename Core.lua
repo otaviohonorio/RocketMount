@@ -1,4 +1,4 @@
--- RocketMounts | Core.lua
+-- RocketMount | Core.lua
 -- Addon namespace: everything shared between files lives in `ns`.
 local ADDON, ns = ...
 
@@ -42,7 +42,7 @@ ns.defaults = {
 }
 
 function ns.Print(...)
-    print("|cffff6a00Rocket|r Mounts:", ...)
+    print("|cffff6a00Rocket|r Mount:", ...)
 end
 
 --------------------------------------------------------------------------------
@@ -54,13 +54,13 @@ function handlers:ADDON_LOADED(addon)
     if addon ~= ADDON then return end
 
     -- SavedVariables only exist from here on.
-    RocketMountsDB = RocketMountsDB or {}
+    RocketMountDB = RocketMountDB or {}
     for k, v in pairs(ns.defaults) do
-        if RocketMountsDB[k] == nil then
-            RocketMountsDB[k] = v
+        if RocketMountDB[k] == nil then
+            RocketMountDB[k] = v
         end
     end
-    ns.db = RocketMountsDB
+    ns.db = RocketMountDB
 
     if ns.SetupOptions then
         ns.SetupOptions()
@@ -150,6 +150,6 @@ function ns.WaitForProviders(elapsed)
     end)
 end
 
-function RocketMounts_OnCompartmentClick()
+function RocketMount_OnCompartmentClick()
     ns.ToggleWindow()
 end

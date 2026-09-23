@@ -1,4 +1,4 @@
-# Rocket Mounts
+# Rocket Mount
 
 As montarias que ainda faltam, **ordenadas da mais fácil para a mais difícil**, com uma ficha
 explicando como cada uma se pega. Para World of Warcraft: Midnight (12.x).
@@ -15,7 +15,7 @@ Catálogo de montaria já existe, e é bom. O que nenhum deles responde é a per
 realmente tem ao sentar para coletar: **qual eu vou buscar primeiro?**
 
 Os addons existentes ordenam por raridade — do mais raro primeiro, que é o oposto de um ponto de
-partida — e respondem por zona, quando você está com o mapa do mundo aberto. O Rocket Mounts faz
+partida — e respondem por zona, quando você está com o mapa do mundo aberto. O Rocket Mount faz
 a pergunta inversa e responde numa lista ordenada só.
 
 ## Como a ordem é decidida

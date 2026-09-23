@@ -1,4 +1,4 @@
--- RocketMounts | Expansion.lua
+-- RocketMount | Expansion.lua
 -- Which expansion a mount belongs to.
 --
 -- (!) THE GAME DOES NOT TELL YOU. `C_MountJournal` has no expansion field, and the Mount Journal

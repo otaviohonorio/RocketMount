@@ -1,4 +1,4 @@
--- RocketMounts | Tooltip.lua
+-- RocketMount | Tooltip.lua
 -- Reads the mount item's own tooltip and pulls out what the game says is required.
 --
 -- (!) THIS IS THE ANSWER TO "SHOULD WE CURATE A DATABASE?" -- and it is a better one.

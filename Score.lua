@@ -1,4 +1,4 @@
--- RocketMounts | Score.lua
+-- RocketMount | Score.lua
 -- The order. It is the one thing this addon does that the others do not.
 --
 -- The criterion is stated, not a magic number: every mount lands in a band by a RULE,

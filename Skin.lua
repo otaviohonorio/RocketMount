@@ -1,4 +1,4 @@
--- RocketMounts | Skin.lua
+-- RocketMount | Skin.lua
 -- Single source of truth for the look. A new panel that copies values from the window
 -- diverges on the third change; every screen in this addon reads from here.
 local _, ns = ...

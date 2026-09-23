@@ -1,4 +1,4 @@
--- RocketMounts | Achievements.lua
+-- RocketMount | Achievements.lua
 -- Which achievement rewards which mount -- asked of the game, not written down by hand.
 --
 -- (!) THIS CLOSES THE BIGGEST HOLE THE CATALOGUE HAS, AND IT COSTS NO CURATION.

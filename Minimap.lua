@@ -1,4 +1,4 @@
--- RocketMounts | Minimap.lua
+-- RocketMount | Minimap.lua
 -- Botão de minimapa próprio, sem LibDBIcon: são ~60 linhas e evita embutir biblioteca.
 -- Guarda a posição como ângulo, então continua no lugar em qualquer tamanho de minimapa.
 -- É o mesmo desenho dos outros addons Rocket, de propósito: o jogador aprende um e conhece os três.
@@ -69,7 +69,7 @@ function ns.CreateMinimapButton()
 
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText("|cffff6a00Rocket|r Mounts", 1, 1, 1)
+        GameTooltip:SetText("|cffff6a00Rocket|r Mount", 1, 1, 1)
         -- A dica responde a pergunta que o ícone levanta: quantas faltam, e qual é a
         -- primeira da fila. Sem isso o ícone só ocupa espaço no minimapa.
         local ok, list = pcall(ns.GetRanked)
