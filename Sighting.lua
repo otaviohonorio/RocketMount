@@ -42,11 +42,15 @@ local REPEAT_AFTER = 600
 
 local byVignette     -- vignette id      -> { points }
 local byName         -- folded name      -> { points }
+local byNpc          -- npc id           -> { points }, from Data/RareDrops.lua
 local lastSeen = {}  -- key              -> when we announced it
+local mountOfItem = {} -- item id -> mount id (false when the item is not a mount); never changes
 local frame
 
 -- A point is one place the catalogue puts one mount's rare: `{ entry, m, x, y }`. Carrying the
 -- coordinates in the index is what lets the arrow point at the RARE instead of at the player.
+-- A point from the Wowhead table carries `drop = { count, outof }` instead of coordinates:
+-- that table knows who drops what and how often, but not where.
 
 --------------------------------------------------------------------------------
 -- The index: vignette and name -> the mounts you are missing
@@ -57,14 +61,44 @@ local function Push(tabela, chave, ponto)
     tabela[chave][#tabela[chave] + 1] = ponto
 end
 
+local function MountOfItem(item)
+    local cached = mountOfItem[item]
+    if cached ~= nil then return cached or nil end
+    local id
+    if C_MountJournal and C_MountJournal.GetMountFromItem then
+        local ok, r = pcall(C_MountJournal.GetMountFromItem, item)
+        id = ok and type(r) == "number" and r or nil
+    end
+    mountOfItem[item] = id or false
+    return id
+end
+
+---(!) THE WOWHEAD TABLE IS WHAT KNOWS WHO DROPS WHAT. MCL ties Rootstalker Grimlynx to Rhazul
+---alone; Wowhead records fifteen rares in Harandar dropping it. The table is keyed by npc id,
+---read from the unit's GUID -- the same key SilverDragon uses, and it cannot be fooled by a name.
+local function IndexarRareDrops(lista)
+    if type(ns.RareDrops) ~= "table" then return end
+    local porMontaria = {}
+    for _, e in ipairs(lista) do
+        if e.mountID and not e.unobtainable then porMontaria[e.mountID] = e end
+    end
+    for npc, rec in pairs(ns.RareDrops) do
+        for _, d in ipairs(rec) do
+            local e = d.count and d.count > 0 and porMontaria[MountOfItem(d.item)]
+            if e then Push(byNpc, npc, { entry = e, drop = d }) end
+        end
+    end
+end
+
 ---Rebuilt when the list changes, not on every event: a rare showing up is no time to walk four
 ---hundred mounts.
 function Sighting.Rebuild()
-    byVignette, byName = {}, {}
+    byVignette, byName, byNpc = {}, {}, {}
     if not ns.GetRanked then return end
 
     local ok, lista = pcall(ns.GetRanked)
     if not ok or type(lista) ~= "table" then return end
+    IndexarRareDrops(lista)
 
     for _, e in ipairs(lista) do
         -- Only what can still be obtained: alerting about a mount that left the game is a taunt.
@@ -99,6 +133,17 @@ end
 -- `GameObject`, and neither can ever be a rare -- so neither gets in here.
 local TIPO_DE_CRIATURA = { Creature = true, Vehicle = true }
 
+---The npc id inside a creature GUID (`Creature-0-server-instance-zone-NPC-spawn`), or nil for
+---anything that is not a creature. A secret GUID is refused before any string call touches it:
+---identity can be hidden in some contexts (`C_Secrets.ShouldUnitIdentityBeSecret`).
+function Sighting.NpcOfGUID(guid)
+    if type(guid) ~= "string" then return nil end
+    if issecretvalue and issecretvalue(guid) then return nil end
+    local tipo, id = guid:match("^(%a+)%-%d+%-%d+%-%d+%-%d+%-(%d+)%-")
+    if not TIPO_DE_CRIATURA[tipo] then return nil end
+    return tonumber(id)
+end
+
 ---The name of a unit, but only when it is something that could actually be a rare.
 ---
 ---Two checks, both copied from SilverDragon because both earn their place:
@@ -114,14 +159,13 @@ local function NomeDeRaro(unit)
     if UnitIsDead and UnitIsDead(unit) then return nil end
 
     local ok, guid = pcall(UnitGUID, unit)
-    if not ok or type(guid) ~= "string" then return nil end
-    local tipo = guid:match("^(%a+)%-")
-    if not TIPO_DE_CRIATURA[tipo] then return nil end
+    local npc = Sighting.NpcOfGUID(ok and guid)
+    if not npc then return nil end
 
     local classe = UnitClassification and UnitClassification(unit)
     if classe ~= "rare" and classe ~= "rareelite" then return nil end
 
-    return UnitName(unit)
+    return UnitName(unit), npc
 end
 
 ---The map the player is standing on, or nil when the client will not say.
@@ -151,11 +195,22 @@ end
 --------------------------------------------------------------------------------
 -- The panel
 --------------------------------------------------------------------------------
+-- The panel's geometry. Every row hangs from the panel's TOP, so the mount name and its chance
+-- use the same arithmetic and cannot drift apart as the panel grows.
+local WIDTH      = 300
+local PAD        = 8
+local ICON       = 48
+local TEXT_X     = PAD + ICON + 10
+local ROW_STEP   = 14
+local MAX_ROWS   = 3                      -- plus one for "and N more"
+local ODDS_WIDTH = 56
+local NAME_WIDTH = WIDTH - TEXT_X - PAD - ODDS_WIDTH - 6
+
 local function Build()
     if frame then return frame end
 
     frame = CreateFrame("Frame", ADDON .. "Sighting", UIParent, "BackdropTemplate")
-    frame:SetSize(280, 64)
+    frame:SetSize(WIDTH, 64)
     frame:SetFrameStrata("HIGH")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -186,20 +241,33 @@ local function Build()
     end)
 
     frame.icon = frame:CreateTexture(nil, "ARTWORK")
-    frame.icon:SetSize(48, 48)
-    frame.icon:SetPoint("LEFT", 8, 0)
+    frame.icon:SetSize(ICON, ICON)
+    frame.icon:SetPoint("TOPLEFT", PAD, -PAD)
     frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
     frame.who = ns.NewText(frame, ns.Skin.rowFontSize, ns.Skin.gold)
     frame.who:SetPoint("TOPLEFT", frame.icon, "TOPRIGHT", 10, -2)
-    frame.who:SetWidth(200)
+    frame.who:SetWidth(WIDTH - TEXT_X - PAD)
     frame.who:SetWordWrap(false)
 
-    frame.what = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.text)
-    frame.what:SetPoint("TOPLEFT", frame.icon, "TOPRIGHT", 10, -20)
-    frame.what:SetWidth(200)
-    frame.what:SetJustifyV("TOP")
-    frame.what:SetSpacing(2)
+    -- One row per mount: the name on the left, the chance right-aligned. Two single-line
+    -- strings per row rather than two multi-line blocks side by side: a long name that wrapped
+    -- in one block would push every chance in the other out of line with its mount.
+    frame.rows = {}
+    for i = 1, MAX_ROWS + 1 do
+        local y = -PAD - 20 - (i - 1) * ROW_STEP
+        local name = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.text)
+        name:SetPoint("TOPLEFT", frame, "TOPLEFT", TEXT_X, y)
+        name:SetWidth(NAME_WIDTH)
+        name:SetWordWrap(false)
+        name:SetJustifyH("LEFT")
+        local odds = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.text)
+        odds:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -PAD, y)
+        odds:SetWidth(ODDS_WIDTH)
+        odds:SetWordWrap(false)
+        odds:SetJustifyH("RIGHT")
+        frame.rows[i] = { name = name, odds = odds }
+    end
 
     frame:SetScript("OnMouseUp", function(self) self:Hide() end)
     frame:Hide()
@@ -215,28 +283,69 @@ end
 -- read. Clicking it still dismisses it early.
 local HOLD = 25
 
-local function Show(nome, pontos)
-    Build()
-    local vistas, entradas = {}, {}
-    for _, p in ipairs(pontos) do
-        if not vistas[p.entry] then
-            vistas[p.entry] = true
-            entradas[#entradas + 1] = p.entry
-        end
+---"1/910", or a percentage when the chance is better than 1 in 10.
+---
+---Wowhead's numbers are samples, not Blizzard's rates, so they are rounded to two significant
+---figures -- 6391/7 is "1/910", not a precise-looking "1/913" -- and marked "~" when fewer than
+---ten drops were seen, which is where the estimate is roughest.
+function Sighting.ChanceText(ponto)
+    local n, rough
+    local d = ponto and ponto.drop
+    if d and d.count and d.count > 0 and d.outof and d.outof > 0 then
+        n, rough = d.outof / d.count, d.count < 10
+    elseif ponto and ponto.entry and ponto.entry.chance and ponto.entry.chance > 0 then
+        n = ponto.entry.chance
+    else
+        return nil
     end
+    local text
+    if n < 10 then
+        text = string.format("%d%%", math.floor(100 / n + 0.5))
+    else
+        local mag = 10 ^ (math.floor(math.log10(n)) - 1)
+        text = "1/" .. string.format("%d", math.floor(n / mag + 0.5) * mag)
+    end
+    return rough and ("~" .. text) or text
+end
 
-    frame.icon:SetTexture(entradas[1] and entradas[1].icon)
+---One point per mount. When two sources know the same mount, the one with a drop count wins
+---the chance and the one with coordinates wins the arrow.
+local function PorMontaria(pontos)
+    local vistas, lista = {}, {}
+    for _, p in ipairs(pontos) do
+        local atual = vistas[p.entry]
+        if not atual then
+            atual = { entry = p.entry }
+            vistas[p.entry] = atual
+            lista[#lista + 1] = atual
+        end
+        atual.drop = atual.drop or p.drop
+        if not atual.m and p.m then atual.m, atual.x, atual.y = p.m, p.x, p.y end
+    end
+    return lista
+end
+
+local function Show(nome, montarias)
+    Build()
+    frame.icon:SetTexture(montarias[1] and montarias[1].entry.icon)
     frame.who:SetText(nome)
 
-    local linhas = {}
-    for i = 1, math.min(#entradas, 3) do
-        linhas[#linhas + 1] = entradas[i].name
+    local linhas = math.min(#montarias, MAX_ROWS)
+    for i, row in ipairs(frame.rows) do
+        local m = montarias[i]
+        if i <= math.min(#montarias, MAX_ROWS) then
+            row.name:SetText(m.entry.name)
+            row.odds:SetText(Sighting.ChanceText(m) or "")
+        elseif i == MAX_ROWS + 1 and #montarias > MAX_ROWS then
+            row.name:SetText(string.format(L["and %d more"], #montarias - MAX_ROWS))
+            row.odds:SetText("")
+            linhas = linhas + 1
+        else
+            row.name:SetText("")
+            row.odds:SetText("")
+        end
     end
-    if #entradas > 3 then
-        linhas[#linhas + 1] = string.format(L["and %d more"], #entradas - 3)
-    end
-    frame.what:SetText(table.concat(linhas, "\n"))
-    frame:SetHeight(math.max(64, 28 + 14 * #linhas))
+    frame:SetHeight(math.max(64, PAD + 20 + ROW_STEP * linhas + PAD))
 
     frame:Show()
     -- Guarded BY TYPE: in the harness's simulator any unknown field answers a function, which
@@ -245,7 +354,6 @@ local function Show(nome, pontos)
     if C_Timer and C_Timer.NewTimer then
         frame.__hide = C_Timer.NewTimer(HOLD, function() frame:Hide() end)
     end
-    return entradas
 end
 
 --------------------------------------------------------------------------------
@@ -261,7 +369,7 @@ end
 --
 -- `SetItemRef` is the funnel for EVERY link click in the game; the hook recognises our prefix
 -- and lets everything else through untouched.
-local LINK_PREFIX = "rocketmounts"
+local LINK_PREFIX = "rocketmount"
 
 ---@param ponto table `{ m, x, y }` -- the rare's place, in the catalogue's 0-100 coordinates
 local function ChatLink(ponto)
@@ -293,7 +401,7 @@ end
 --------------------------------------------------------------------------------
 -- Announcing
 --------------------------------------------------------------------------------
-local function Announce(chave, nome, pontos)
+local function Announce(chave, nome, pontos, onde)
     if not ns.db or ns.db.sightings == false then return false end
     if not pontos or #pontos == 0 then return false end
 
@@ -301,40 +409,78 @@ local function Announce(chave, nome, pontos)
     if lastSeen[chave] and (agora - lastSeen[chave]) < REPEAT_AFTER then return false end
     lastSeen[chave] = agora
 
-    local entradas = Show(nome, pontos)
+    local montarias = PorMontaria(pontos)
+    Show(nome, montarias)
 
-    local nomes = {}
-    for i = 1, math.min(#entradas, 3) do nomes[#nomes + 1] = entradas[i].name end
-    local link = ChatLink(pontos[1])
+    local partes = {}
+    for i = 1, math.min(#montarias, MAX_ROWS) do
+        local m = montarias[i]
+        local chance = Sighting.ChanceText(m)
+        partes[#partes + 1] = chance and string.format("%s (%s)", m.entry.name, chance) or m.entry.name
+    end
+    -- Where the rare IS beats where the catalogue says it spawns: a live vignette position
+    -- first, the catalogue's point second.
+    local alvo = onde
+    if not alvo then
+        for _, m in ipairs(montarias) do
+            if m.m then alvo = m; break end
+        end
+    end
+    local link = ChatLink(alvo)
     ns.Print(string.format(L["|cffffff00%s|r can drop: %s%s"], nome,
-        table.concat(nomes, ", "), link and ("  " .. link) or ""))
+        table.concat(partes, ", "), link and ("  " .. link) or ""))
     return true
+end
+
+---Every way of recognising a rare ends here, so that one rare seen three ways -- vignette,
+---nameplate, target -- is ONE alert, keyed by the strongest identity available.
+---
+---  npc       from a GUID: exact, and the key of the Wowhead table;
+---  vignette  from the minimap: exact, the key of MCL's pins;
+---  name      the fallback, and only inside the zone guard.
+function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
+    if not byNpc then Sighting.Rebuild() end
+    local pontos = {}
+    local function Somar(lista)
+        for _, p in ipairs(lista or {}) do pontos[#pontos + 1] = p end
+    end
+    if npc then Somar(byNpc[npc]) end
+    if vignetteID then Somar(byVignette[vignetteID]) end
+    local dobrado = nome and ns.Fold(nome) or ""
+    if dobrado ~= "" then Somar(NoMapaCerto(byName[dobrado], mapa or MapaAtual())) end
+
+    local chave = (npc and "npc:" .. npc) or (vignetteID and "v:" .. tostring(vignetteID))
+        or ("n:" .. dobrado)
+    return Announce(chave, nome or "?", pontos, onde)
 end
 
 ---A vignette the minimap is showing. The precise path: the id is a number and means the same
 ---thing in every language, so no zone guard is needed -- a vignette you can see is, by
 ---definition, near you.
-function Sighting.SightVignette(vignetteID, nome)
-    if not byVignette then Sighting.Rebuild() end
-    local pontos = byVignette and byVignette[vignetteID]
-    if not pontos then return false end
-    return Announce("v:" .. tostring(vignetteID), nome or "?", pontos)
+function Sighting.SightVignette(vignetteID, nome, npc, onde)
+    return Sighting.Sight(npc, vignetteID, nome, nil, onde)
 end
 
 ---A name, from a unit or from a yell. The fallback path, and the one that needs the zone guard:
 ---a name on its own proves nothing.
 function Sighting.SightName(nome, mapa)
-    if not byName then Sighting.Rebuild() end
-    local chave = ns.Fold(nome or "")
-    if chave == "" then return false end
-    local pontos = NoMapaCerto(byName[chave], mapa or MapaAtual())
-    if not pontos then return false end
-    return Announce("n:" .. chave, nome, pontos)
+    if (nome or "") == "" then return false end
+    return Sighting.Sight(nil, nil, nome, mapa)
 end
 
 --------------------------------------------------------------------------------
 -- Detection
 --------------------------------------------------------------------------------
+---Where a vignette is right now, in the catalogue's 0-100 scale, so the arrow points at the
+---rare you are flying past rather than at one of its spawn points.
+local function PosicaoDaVinheta(guid)
+    local mapa = MapaAtual()
+    if not (mapa and C_VignetteInfo.GetVignettePosition) then return nil end
+    local ok, pos = pcall(C_VignetteInfo.GetVignettePosition, guid, mapa)
+    if not ok or type(pos) ~= "table" or not pos.x then return nil end
+    return { m = mapa, x = pos.x * 100, y = pos.y * 100 }
+end
+
 local function VarrerVinhetas()
     if not (C_VignetteInfo and C_VignetteInfo.GetVignettes) then return end
     local ok, lista = pcall(C_VignetteInfo.GetVignettes)
@@ -342,7 +488,10 @@ local function VarrerVinhetas()
     for _, guid in ipairs(lista) do
         local okI, info = pcall(C_VignetteInfo.GetVignetteInfo, guid)
         if okI and type(info) == "table" and info.vignetteID then
-            Sighting.SightVignette(info.vignetteID, info.name)
+            -- A rare's vignette carries the creature's own GUID: that is the npc id, from as
+            -- far away as the minimap reaches -- which is what makes the alert work in flight.
+            local npc = Sighting.NpcOfGUID(info.objectGUID)
+            Sighting.SightVignette(info.vignetteID, info.name, npc, PosicaoDaVinheta(guid))
         end
     end
 end
@@ -368,8 +517,8 @@ function Sighting.OnEvent(_, event, arg1, arg2)
     if event == "UPDATE_MOUSEOVER_UNIT" then unit = "mouseover" end
     if event == "PLAYER_TARGET_CHANGED" then unit = "target" end
 
-    local nome = NomeDeRaro(unit)
-    if nome then Sighting.SightName(nome, nil) end
+    local nome, npc = NomeDeRaro(unit)
+    if nome then Sighting.Sight(npc, nil, nome, nil) end
 end
 
 function Sighting.Enable()

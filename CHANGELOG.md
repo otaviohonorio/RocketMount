@@ -1,8 +1,20 @@
-# Rocket Mount 0.20.0
+# Rocket Mount 0.21.0
+
+**The rare alert now tells you the chance.** When you fly past a rare that drops a mount you are
+missing, the panel says who the rare is, which mounts, and the chance of each — for example
+`Rootstalker Grimlynx ~1/910`.
+
+- The chances come from Wowhead's drop counts and are built into the addon, so no other addon is
+  needed. They are samples, not official rates: rounded to two figures, with a `~` when fewer than
+  ten drops were recorded.
+- Many more rares are recognised. Rootstalker Grimlynx, for instance, drops from fifteen rares in
+  Harandar, not just Rhazul.
+- Rares are now identified by their creature ID, including from the minimap vignette, so the
+  alert works in flight and the same rare seen two ways alerts only once.
+- The chat link points the map arrow at where the rare actually is.
 
 **The addon is now called Rocket Mount** (it was *Rocket Mounts*). The folder, the saved settings
 and the GitHub repository all use the new name.
-
 
 Still an **alpha** — most of this is covered by an offline test harness rather than confirmed in
 a live client. Please keep reporting what you find.
