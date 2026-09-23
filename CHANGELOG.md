@@ -1,4 +1,14 @@
-# Rocket Mount 0.21.0
+# Rocket Mount 0.22.0
+
+**The window now looks like part of the game.** It is built on the same parts as Blizzard's own
+mount journal: the portrait frame with its title and close button, the list inset with the
+journal's row style and scroll bar, the search box and the standard filter button (with its
+reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
+
+- The filter button replaces the old "Sources" button; the source list inside it is the same.
+- The chat command is `/rmt` (also `/rocketmount`).
+
+## 0.21.0
 
 **The rare alert now tells you the chance.** When you fly past a rare that drops a mount you are
 missing, the panel says who the rare is, which mounts, and the chance of each — for example

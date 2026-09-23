@@ -19,9 +19,12 @@ read_globals = {
     "C_Timer", "C_Spell", "C_Item", "C_AddOns", "C_Secrets", "C_CurveUtil",
     "C_DurationUtil", "C_RestrictedActions", "C_UnitAuras", "C_ChatInfo",
     "Settings", "EventRegistry", "LibStub",
+    -- The window, on Blizzard's list parts (23/09).
+    "CreateDataProvider", "ScrollBoxConstants", "CreateScrollBoxListLinearView", "ScrollUtil",
+    "CreateAnchor", "NOT_COLLECTED", "UISpecialFrames", "tinsert",
 }
 
 globals = {
-    "SLASH_ROCKETMOUNTS1", "SLASH_ROCKETMOUNTS2",
+    "SLASH_ROCKETMOUNT1", "SLASH_ROCKETMOUNT2",
     "RocketMountDB", "RocketMount_OnCompartmentClick",
 }

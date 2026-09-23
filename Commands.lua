@@ -235,15 +235,15 @@ local ALIASES = {
     ajuda = "help",
 }
 
-SLASH_ROCKETMOUNTS1 = "/rmt"
-SLASH_ROCKETMOUNTS2 = "/rocketmounts"
+SLASH_ROCKETMOUNT1 = "/rmt"
+SLASH_ROCKETMOUNT2 = "/rocketmount"
 
-SlashCmdList["ROCKETMOUNTS"] = function(msg)
+SlashCmdList["ROCKETMOUNT"] = function(msg)
     local cmd, rest = (msg or ""):match("^(%S*)%s*(.-)$")
     cmd = (cmd or ""):lower()
     -- The sentinel key can never be a command, so an unknown word falls through to help
     -- instead of quietly toggling the window (which is what `commands[""]` does).
-    local handler = commands[cmd] or commands[ALIASES[cmd] or " "]
+    local handler = commands[cmd] or commands[ALIASES[cmd] or "\0"]
     if handler then
         handler(rest)
     else
