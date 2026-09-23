@@ -53,13 +53,34 @@ ns.TIER = {
 -- (!) THE KEY IS THE ENGLISH TEXT, and the band name is where that matters most: it is the
 -- longest label the list draws, and a translation that outgrows `TIER_TITLE_WIDTH` crosses the
 -- list border. The harness counts LETTERS, not bytes, because of the accents.
+-- (!) WHERE EACH BAND SITS IN THE LIST, apart from its number. The number is the band's identity
+-- (colour, name, hint are indexed by it); this is the ORDER, and the two had to come apart.
+--
+-- The user, 23/09, at a vendor with the gold for a mount the list put at the very end: *"a ideia é
+-- uma ordem do mais fácil para o mais difícil (...) esse aí é só ter o gold e ir no NPC agora"*.
+-- "Check with the vendor" -- price met, no access requirement known, ordinary vendor -- had been
+-- sent BELOW every luck band after the Black Phoenix. That overcorrected: the Phoenix is a GUILD
+-- vendor, and guild vendors already go to the long road on their own rule. What is left in this
+-- band is gold in hand and a walk to an NPC, which is the second easiest thing there is. The
+-- README always listed it second; the code had drifted from it.
+ns.TIER_RANK = {
+    [ns.TIER.READY]     = 1,
+    [ns.TIER.CHECK]     = 2,
+    [ns.TIER.CLOSE]     = 3,
+    [ns.TIER.UNDERWAY]  = 4,
+    [ns.TIER.SHORTFARM] = 5,
+    [ns.TIER.LONGFARM]  = 6,
+    [ns.TIER.UNKNOWN]   = 7,
+    [ns.TIER.GONE]      = 8,
+}
+
 ns.TIER_NAME = {
     [1] = L["Guaranteed — just go get it"],
     [2] = L["Guaranteed — nearly unlocked"],
     [3] = L["Guaranteed — halfway there"],
     [4] = L["Down to luck — good odds"],
     [5] = L["Long road"],
-    [6] = L["Asks for more than the price"],
+    [6] = L["Check with the vendor"],
     [7] = L["No estimate"],
     [8] = L["Cannot be obtained any more"],
 }
@@ -103,7 +124,7 @@ ns.TIER_HINT = {
     [3] = L["road already walked"],
     [4] = L["1% or better"],
     [5] = L["bad odds, or a distant requirement"],
-    [6] = L["achievement, reputation or guild"],
+    [6] = L["may ask for more than gold"],
     [7] = L["no data to estimate from"],
     [8] = L["left the game"],
 }
@@ -359,7 +380,7 @@ end
 -- "long road", which mixes both -- it would decide wrongly: grinding reputation from zero to
 -- buy something is a worse bet than a 1-in-3 drop already 80% unlocked.
 local function Compare(a, b)
-    if a.tier ~= b.tier then return a.tier < b.tier end
+    if a.tier ~= b.tier then return ns.TIER_RANK[a.tier] < ns.TIER_RANK[b.tier] end
 
     -- (!) ONDE A SORTE DECIDE, A CHANCE MANDA — e não o requisito (defeito de 22/09).
     --

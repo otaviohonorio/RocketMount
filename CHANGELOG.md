@@ -6,6 +6,10 @@ journal's row style and scroll bar, the search box and the standard filter butto
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
+- **Mounts you can buy now come right after "just go get it".** A regular vendor mount whose
+  price you already have sits in the second band, "Check with the vendor", instead of at the end
+  of the list. Open the vendor once and the game settles it: if it sells to you, the mount moves
+  to "just go get it"; if it does not, the card says so.
 - **Every drop chance is now a percentage** — in the list, on the mount's card, in the alert
   and in chat. 1 in 200 reads 0.5%; 1 in 100 reads 1%.
 - The chat command is `/rmt` (also `/rocketmount`).

@@ -572,6 +572,12 @@ local ordemEsperada = {
     -- As duas que valem "e so ir pegar": acesso conhecido E cumprido.
     -- A de missao ja feita entra junto das prontas: requisito cumprido e requisito cumprido.
     "Missao ja feita", "Preco e acesso conhecido", "Pronta por reputacao",
+    -- (!) LOGO DEPOIS, O VENDEDOR COMUM COM O OURO NA MAO (23/09, a pedido do usuario): "a ideia
+    -- e uma ordem do mais facil para o mais dificil (...) esse ai e so ter o gold e ir no NPC
+    -- agora". Ela ja esteve aqui, foi rebaixada para o fim ("eu nao sei pertence ao fim") depois
+    -- da Fenix Negra, e voltou: a Fenix e vendedor de GUILDA, que tem regra propria e continua no
+    -- caminho longo. Abrir o vendedor tira a duvida (veredito do vendedor, Sources.lua).
+    "So da Alianca", "So ouro, sem guilda",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
     "Metade da conquista", "Dois requisitos", "Moeda E reputacao",
@@ -582,9 +588,6 @@ local ordemEsperada = {
     "Renome cumprido, 1 em 20",
     "Farm curto mais raro", "Farm curto",
     "Queda ainda trancada",
-    -- (!) E SO ENTAO a de preco-so. Ela ja esteve em TERCEIRO, logo abaixo de "e so ir pegar",
-    -- e isso fazia a lista recomendar justamente o que ela nao consegue avaliar. Posicao e
-    -- recomendacao: "eu nao sei" pertence ao fim, ao lado de "sem estimativa".
     -- A reputacao que a API nao le entra como NAO cumprida (0%), e nao como ausente: por isso
     -- ela cai aqui embaixo, e nao la em cima junto das que dao para comprar.
     -- Requisito conhecido e NAO cumprido (0%) vem antes de requisito que nao da para medir:
@@ -597,7 +600,6 @@ local ordemEsperada = {
     -- deste grupo, em ordem alfabetica. Subiu de lugar por saber MAIS, e nao por estar perto.
     "Metodo a parte",
     "Missao pendente", "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
-    "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
     "Saiu do jogo",
@@ -629,8 +631,13 @@ check("vendedor de guilda e reconhecido", soPreco.vendorGuilda, true)
 check("  e a linha nomeia o bloqueio",
     soPreco.why:find("guild", 1, true) ~= nil, true)
 check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true)
-check("e a faixa de preco-so fica NO FIM, nao perto do topo",
-    ns.TIER.CHECK > ns.TIER.LONGFARM, true)
+-- (!) INVERTIDO EM 23/09, a pedido: "a ideia e uma ordem do mais facil para o mais dificil (...)
+-- esse ai e so ter o gold e ir no NPC agora". Preco cumprido em vendedor comum e a segunda coisa
+-- mais facil que existe; o vendedor de GUILDA (o caso da Fenix) continua no caminho longo, acima.
+check("a faixa 'confira no vendedor' vem logo depois de 'e so ir pegar'",
+    ns.TIER_RANK[ns.TIER.CHECK], ns.TIER_RANK[ns.TIER.READY] + 1)
+check("  e antes de toda faixa de sorte",
+    ns.TIER_RANK[ns.TIER.CHECK] < ns.TIER_RANK[ns.TIER.SHORTFARM], true)
 
 local comAcesso = porNome["Preco e acesso conhecido"].e
 check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
@@ -820,7 +827,7 @@ rawset(ns.L, ".", nil)
 -- A faixa nunca pode ficar fora de ordem, seja qual for a regra que a produziu.
 local crescente = true
 for i = 2, #ranked do
-    if ranked[i].tier < ranked[i - 1].tier then crescente = false end
+    if ns.TIER_RANK[ranked[i].tier] < ns.TIER_RANK[ranked[i - 1].tier] then crescente = false end
 end
 check("as faixas saem em ordem crescente", crescente, true)
 
