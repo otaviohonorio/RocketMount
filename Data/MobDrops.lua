@@ -6,6 +6,8 @@
 -- for each mount the item id, how many times it dropped (`count`) and in how many kills
 -- (`outof`). These are Wowhead's samples, not Blizzard's rates -- a small `count` is a
 -- rough estimate, and the alert says so.
+-- `where` is where Wowhead's map puts the creature: { [uiMapID] = { x1, y1, x2, y2, ... } },
+-- in the 0-100 scale, at most 12 points per map. It feeds the world-map pins.
 local ADDON, ns = ...
 
 ns.MobDrops = {
@@ -103,6 +105,7 @@ ns.MobDrops = {
     },
     [32491] = { name = "Time-Lost Proto-Drake", c = 4,
         { item = 44168, count = 1870, outof = 1894 }, -- Reins of the Time-Lost Proto-Drake
+        where = { [120] = { 28, 65.4, 30, 67.8, 36.6, 69.8, 39.4, 84.4, 41.2, 68.2, 41.8, 82.8 }, [550] = { 90.6, 29.6 } },
     },
     [33288] = { name = "Yogg-Saron", c = 1,
         { item = 45693, count = 24, outof = 2028 }, -- Mimiron's Head
@@ -133,30 +136,39 @@ ns.MobDrops = {
     },
     [50005] = { name = "Poseidus", c = 4,
         { item = 67151, count = 2028, outof = 2049 }, -- Reins of Poseidus
+        where = { [204] = { 39.4, 71.6, 40.2, 75.4, 40.2, 75.6, 40.4, 73.4, 40.4, 73.8, 40.6, 73, 40.6, 75.6, 41, 76.6, 41.6, 76.6, 41.8, 73.4, 42, 76.4, 42.2, 73.6 }, [205] = { 37.8, 66.8, 38.2, 68.2, 39.2, 65.8, 39.4, 68.8, 39.8, 66.4, 40, 67.2, 44.4, 49.4, 44.4, 50.2, 44.6, 49.4, 44.6, 49.6, 44.8, 50.8, 45, 48.4 } },
     },
     [50062] = { name = "Aeonaxx", c = 4,
         { item = 63042, count = 1015, outof = 1015 }, -- Reins of the Phosphorescent Stone Drake
+        where = { [207] = { 31.2, 42.6, 35, 42, 39.4, 48.8, 41.4, 82.4, 41.8, 43.6, 42.6, 46.8, 42.8, 58.4, 43.2, 48.4, 43.2, 51.2, 43.4, 60.4, 46.4, 44.8, 47, 57.4 } },
     },
     [50245] = { name = "Dormus the Camel-Hoarder", c = 1,
         { item = 63046, count = 1169, outof = 1170 }, -- Reins of the Grey Riding Camel
+        where = { [69] = { 69.4, 73.2, 69.6, 73.2 } },
     },
     [50883] = { name = "Pathrunner", c = 2,
         { item = 116773, count = 3883, outof = 3885 }, -- Swift Breezestrider
+        where = { [539] = { 38.6, 37, 39.4, 36.4, 39.6, 35, 39.6, 36.4, 39.6, 36.8, 42.4, 30.8, 43, 31.4, 43, 31.6, 43.2, 32.6, 44.2, 43.2, 44.4, 43.8, 44.6, 43.4 } },
     },
     [50981] = { name = "Luk'hok", c = 2,
         { item = 116661, count = 3318, outof = 3318 }, -- Mottled Meadowstomper
+        where = { [550] = { 66.2, 44, 66.4, 43, 66.4, 44.8, 66.6, 43.4, 66.6, 44.6, 67.2, 43.6, 72.2, 53.8, 72.6, 53.4, 72.6, 53.8, 74.4, 32.4, 75.2, 32.2, 76, 30.6 } },
     },
     [50985] = { name = "Poundfist", c = 2,
         { item = 116792, count = 2560, outof = 2564 }, -- Sunhide Gronnling
+        where = { [543] = { 42, 25, 43.2, 55.5, 45.4, 47.5, 47, 54.1, 51.4, 43.1 } },
     },
     [50990] = { name = "Nakk the Thunderer", c = 2,
         { item = 116659, count = 1464, outof = 1464 }, -- Bloodhoof Bull
+        where = { [550] = { 50, 34.2, 50.2, 34.8, 54.4, 35.6, 55, 35.4, 55.2, 35.8, 60.2, 32, 60.8, 31.8, 62.4, 14.8, 62.4, 15.8, 62.6, 15.2, 62.6, 18, 62.8, 17 } },
     },
     [50992] = { name = "Gorok", c = 2,
         { item = 116674, count = 3722, outof = 3723 }, -- Great Greytusk
+        where = { [525] = { 22.4, 66, 23.2, 65.4, 23.2, 65.6, 51.2, 50.6, 51.6, 50.4, 58, 19.6, 58.4, 19.2, 58.6, 18.4, 58.6, 19, 63.4, 79.6, 63.4, 80.6, 63.6, 80.4 } },
     },
     [51015] = { name = "Silthide", c = 2,
         { item = 116767, count = 2252, outof = 2252 }, -- Sapphire Riverbeast
+        where = { [535] = { 55, 81.2, 55, 81.6, 62, 32.4, 62.4, 33.2, 62.4, 45.2, 62.4, 46.2, 62.4, 47, 62.6, 46, 63, 46.8, 67.2, 59.8, 67.2, 60.6, 67.4, 58.8 } },
     },
     [52059] = { name = "High Priestess Kilnara", c = 1,
         { item = 68824, count = 2593, outof = 285605 }, -- Swift Zulian Panther
@@ -169,51 +181,63 @@ ns.MobDrops = {
     },
     [60491] = { name = "Sha of Anger", c = 1,
         { item = 87771, count = 240, outof = 87235 }, -- Reins of the Heavenly Onyx Cloud Serpent
+        where = { [379] = { 54.4, 63.2 } },
     },
     [62346] = { name = "Galleon", c = 1,
         { item = 89783, count = 162, outof = 63300 }, -- Son of Galleon's Saddle
+        where = { [376] = { 71.6, 64.4 } },
     },
     [64403] = { name = "Alani", c = 1,
         { item = 90655, count = 954, outof = 954 }, -- Reins of the Thundering Ruby Cloud Serpent
+        where = { [390] = { 16.4, 38, 17, 40.6, 18, 22.8, 18.6, 44.6, 19.4, 18.4, 20, 17.4, 20, 46.2, 21.2, 18.2, 22.4, 48.8, 22.6, 17.2, 24.2, 54.6, 24.2, 62.2 } },
     },
     [68476] = { name = "Horridon", c = 1,
         { item = 93666, count = 439, outof = 11100 }, -- Spawn of Horridon
     },
     [69099] = { name = "Nalak", c = 1,
         { item = 95057, count = 165, outof = 49516 }, -- Reins of the Thundering Cobalt Cloud Serpent
+        where = { [504] = { 60.5, 37.3 } },
     },
     [69161] = { name = "Oondasta", c = 1,
         { item = 94228, count = 149, outof = 38360 }, -- Reins of the Cobalt Primordial Direhorn
+        where = { [507] = { 49.9, 54, 50.6, 54.4 } },
     },
     [69712] = { name = "Ji-Kun", c = 1,
         { item = 95059, count = 1211, outof = 36146 }, -- Clutch of Ji-Kun
     },
     [69768] = { name = "Zandalari Warscout", c = 4,
         { item = 94230, count = 15, outof = 298824 }, -- Reins of the Amber Primordial Direhorn
+        where = { [371] = { 43.2, 17.2, 43.6, 17.2, 44.4, 17.6, 45, 17.8, 45.4, 17.4, 45.6, 17.4, 46.4, 18.2, 46.8, 18.8, 46.8, 20.2, 47.4, 21, 47.6, 21, 48.8, 21.4 }, [379] = { 64.6, 64, 65.2, 64.8, 66.2, 65, 67, 64.6, 67, 81, 67.2, 81.8, 67.4, 64.4, 67.4, 79.6, 67.8, 79.4, 68, 64.4, 68.8, 64.6, 69.6, 65.2 }, [388] = { 36.8, 85.2, 37.2, 86, 37.4, 84.2, 37.4, 86.6, 37.6, 84.2, 38.4, 83.4, 38.4, 87.4, 38.6, 87.4, 38.8, 82.6, 38.8, 87.6, 39.2, 82, 39.4, 81.4 }, [418] = { 36.2, 60.2, 37.2, 62.4, 38, 64.4, 38.4, 65.6, 38.6, 66.4, 38.6, 66.6, 39.2, 63.6, 57.8, 29.2 }, [422] = { 37.4, 48.4, 37.4, 49.4, 38, 48.6, 39, 46.4, 39.4, 49.4, 41.2, 50.2, 43, 51.6, 44.4, 54.2, 45.4, 56, 45.6, 57, 46, 58.4, 46.4, 59.4 } },
     },
     [69769] = { name = "Zandalari Warbringer", c = 2,
         { item = 94229, count = 3757, outof = 93318 }, -- Reins of the Slate Primordial Direhorn
+        where = { [371] = { 52.4, 18.8, 52.4, 19.6, 52.6, 19, 52.6, 19.6 }, [379] = { 75, 67.4, 75, 67.6 }, [388] = { 36.4, 85.4, 36.4, 85.6, 36.6, 85.4, 36.6, 85.6 }, [418] = { 38.4, 67, 38.6, 67.2, 38.8, 66.4, 38.8, 67.6, 39.8, 65.4, 39.8, 65.6 }, [422] = { 47.2, 61, 47.4, 61.6, 47.6, 61.4, 47.6, 61.6 } },
     },
     [69841] = { name = "Zandalari Warbringer", c = 2,
         { item = 94230, count = 2652, outof = 54875 }, -- Reins of the Amber Primordial Direhorn
+        where = { [371] = { 52.4, 18.8, 52.6, 19, 52.8, 19.6 }, [379] = { 75, 67.4, 75, 67.6 }, [388] = { 36.4, 85.4, 36.4, 85.6, 36.6, 85.4, 36.6, 85.6 }, [422] = { 47.2, 61.4, 47.4, 61.6, 47.6, 61.6 } },
     },
     [69842] = { name = "Zandalari Warbringer", c = 2,
         { item = 94231, count = 2073, outof = 52627 }, -- Reins of the Jade Primordial Direhorn
+        where = { [371] = { 52.4, 18.8, 52.6, 19, 52.6, 19.6 }, [379] = { 75, 67.4, 75, 67.6 }, [388] = { 36.4, 85.4, 36.4, 85.6, 36.6, 85.4, 36.6, 85.6 }, [422] = { 47.2, 61.4, 47.4, 61.6, 47.6, 61.4, 47.6, 61.6 } },
     },
     [71865] = { name = "Garrosh Hellscream", c = 1,
         { item = 104253, count = 856, outof = 37132 }, -- Kor'kron Juggernaut
     },
     [73167] = { name = "Huolon", c = 2,
         { item = 104269, count = 681, outof = 76296 }, -- Reins of the Thundering Onyx Cloud Serpent
+        where = { [554] = { 57.4, 57.8, 57.6, 57.8, 57.8, 58.8, 58, 57.4, 65, 57.2, 65.4, 36.2, 65.6, 57, 66, 58.8, 66.4, 59.8, 66.6, 57.6, 67.2, 57.4, 67.2, 59 } },
     },
     [77325] = { name = "Blackhand", c = 1,
         { item = 116660, count = 2730, outof = 73599 }, -- Ironhoof Destroyer
     },
     [81001] = { name = "Nok-Karosh", c = 1,
         { item = 116794, count = 13745, outof = 13746 }, -- Garn Nighthowl
+        where = { [525] = { 13, 50.4, 13.2, 50.6, 13.6, 51, 14, 50, 14.6, 52.4 } },
     },
     [83746] = { name = "Rukhmar", c = 1,
         { item = 116771, count = 185, outof = 5479 }, -- Solar Spirehawk
+        where = { [542] = { 47.1, 78.4 } },
     },
     [91331] = { name = "Archimonde", c = 1,
         { item = 123890, count = 2243, outof = 29965 }, -- Felsteel Annihilator
@@ -243,108 +267,137 @@ ns.MobDrops = {
     },
     [119629] = { name = "Lord Hel'nurath", c = 2,
         { item = 142233, count = 8, outof = 14 }, -- Shadowy Reins of the Accursed Wrathsteed
+        where = { [646] = { 44.4, 52.4, 44.4, 53, 44.6, 53, 45.2, 51.8, 45.6, 53.6, 46.8, 50 } },
     },
     [122958] = { name = "Blistermaw", c = 2,
         { item = 152905, count = 1441, outof = 49748 }, -- Crimson Slavermaw
+        where = { [885] = { 61.4, 36.8, 61.4, 37.8, 61.8, 37.2, 61.8, 37.6, 62.6, 37.4 } },
     },
     [124828] = { name = "Argus the Unmaker", c = 1,
         { item = 152789, count = -1, outof = 19 }, -- Shackled Ur'zul
     },
     [126040] = { name = "Puscilla", c = 2,
         { item = 152903, count = 389, outof = 10133 }, -- Biletooth Gnasher
+        where = { [885] = { 64, 20.8 } },
     },
     [126187] = { name = "Corpse Bringer Yal'kar", c = 4,
         { item = 163575, count = 26, outof = 93354 }, -- Reins of a Tamed Bloodfeaster
+        where = { [863] = { 41.2, 53.4, 41.2, 53.6, 41.6, 53.4 } },
     },
     [126199] = { name = "Vrax'thul", c = 2,
         { item = 152903, count = 1384, outof = 40874 }, -- Biletooth Gnasher
+        where = { [885] = { 53, 35.4, 53, 36.4, 53, 36.6, 53.6, 36.6 } },
     },
     [126852] = { name = "Wrangler Kravos", c = 2,
         { item = 152814, count = 1670, outof = 45811 }, -- Maddened Chaosrunner
+        where = { [882] = { 54.4, 59.4, 55.2, 59.2, 55.2, 60.2, 55.2, 61.6, 55.4, 60.6, 55.6, 58.2, 55.6, 59.4, 55.6, 59.8, 55.6, 60.6 } },
     },
     [126867] = { name = "Venomtail Skyfin", c = 2,
         { item = 152844, count = 1176, outof = 36536 }, -- Lambent Mana Ray
+        where = { [882] = { 33.2, 47.4, 33.4, 48.2, 33.4, 48.6, 33.6, 47.6, 33.6, 48.6, 33.8, 47.4 } },
     },
     [126912] = { name = "Skreeg the Devourer", c = 2,
         { item = 152904, count = 1050, outof = 38707 }, -- Acid Belcher
+        where = { [882] = { 47.4, 9, 48.4, 11, 48.6, 11.6, 49.2, 11, 49.4, 8.8, 49.4, 9.8, 49.8, 10, 49.8, 10.6, 50, 9.4, 50.6, 9.8, 50.6, 10.6 } },
     },
     [126983] = { name = "Harlan Sweete", c = 1,
         { item = 159842, count = 863, outof = 173721 }, -- Sharkbait's Favorite Crackers
     },
     [127288] = { name = "Houndmaster Kerrax", c = 2,
         { item = 152790, count = 2208, outof = 63395 }, -- Vile Fiend
+        where = { [885] = { 63.2, 23.6, 63.4, 22.4, 63.4, 23, 63.6, 22.6, 63.8, 22, 64, 21.4 } },
     },
     [128686] = { name = "Kamid the Trapper", c = 4,
         { item = 163576, count = 22, outof = 48421 }, -- Captured Dune Scavenger
+        where = { [864] = { 35.2, 51.4, 35.2, 51.6 } },
     },
     [130079] = { name = "Wagga Snarltusk", c = 4,
         { item = 163573, count = 2, outof = 45181 }, -- Goldenmane's Reins
     },
     [130897] = { name = "Captain Razorspine", c = 4,
         { item = 163573, count = 26, outof = 168858 }, -- Goldenmane's Reins
+        where = { [942] = { 47.2, 65.4, 47.2, 65.6, 47.6, 65.2 } },
     },
     [131404] = { name = "Foreman Scripps", c = 4,
         { item = 163573, count = 68, outof = 95703 }, -- Goldenmane's Reins
+        where = { [942] = { 64.2, 65.4, 64.4, 65.8, 64.4, 67, 64.6, 65.4, 64.6, 65.8 } },
     },
     [133007] = { name = "Unbound Abomination", c = 1,
         { item = 160829, count = 546, outof = 132843 }, -- Underrot Crawg Harness
     },
     [134745] = { name = "Skycarver Krakit", c = 4,
         { item = 163576, count = 81, outof = 77872 }, -- Captured Dune Scavenger
+        where = { [864] = { 51.4, 36.2, 51.6, 36 } },
     },
     [138794] = { name = "Dunegorger Kraulok", c = 2,
         { item = 174842, count = 128, outof = 1966 }, -- Slightly Damp Pile of Fur
+        where = { [864] = { 44, 55.4, 44.2, 55.8, 44.4, 56.6, 44.6, 55.4, 44.6, 56.2, 44.6, 56.6 } },
     },
     [140474] = { name = "Adherent of the Abyss", c = 2,
         { item = 161479, count = 1326, outof = 2345 }, -- Nazjatar Blood Serpent
     },
     [141143] = { name = "Sister Absinthe", c = 4,
         { item = 163573, count = 5, outof = 92777 }, -- Goldenmane's Reins
+        where = { [942] = { 61.2, 57.6, 61.4, 57, 61.6, 57, 61.8, 56.4 } },
     },
     [141286] = { name = "Poacher Zane", c = 4,
         { item = 163573, count = 3, outof = 84786 }, -- Goldenmane's Reins
+        where = { [942] = { 34.4, 67.4, 34.4, 67.8, 34.6, 67.4, 34.6, 67.8 } },
     },
     [142423] = { name = "Overseer Krix", c = 2,
         { item = 163646, count = 11676, outof = 175730 }, -- Lil' Donkey
+        where = { [14] = { 27, 56.4, 27.2, 56.8, 32.8, 35.4, 33, 36.4, 33, 37.4, 33, 37.6 } },
     },
     [142437] = { name = "Skullripper", c = 2,
         { item = 163645, count = 11580, outof = 186189 }, -- Skullripper
+        where = { [14] = { 56.2, 46.6, 56.4, 44.2, 56.4, 45.4, 56.4, 46.2, 56.8, 44.2, 56.8, 45, 56.8, 46, 56.8, 46.6, 57, 43.4, 57.6, 44.4, 57.6, 45, 57.6, 45.6 } },
     },
     [142692] = { name = "Nimar the Slayer", c = 4,
         { item = 163706, count = 11420, outof = 205547 }, -- Witherbark Direwing
+        where = { [14] = { 67, 61.6, 67.4, 60.4, 67.4, 60.8, 67.6, 60.4, 67.6, 60.8 } },
     },
     [142709] = { name = "Beastrider Kama", c = 4,
         { item = 163644, count = 12619, outof = 222413 }, -- Swift Albino Raptor
+        where = { [14] = { 64.8, 71.6, 65.4, 68.8, 65.4, 70.4, 65.4, 70.6, 65.6, 69.4, 65.6, 70, 65.6, 70.6, 65.6, 71.6, 66, 67.6, 66.2, 67.4, 66.6, 66.8, 66.8, 65.4 } },
     },
     [142739] = { name = "Knight-Captain Aldrin", c = 4,
         { item = 163578, count = 7720, outof = 115848 }, -- Broken Highland Mustang
+        where = { [14] = { 47.4, 41.2, 47.8, 41.6, 48.4, 39.4, 48.4, 40.4, 48.4, 40.6, 48.6, 40.6, 48.8, 40.2, 49.4, 37.6, 49.4, 39.4, 49.6, 39.2, 49.6, 39.6, 49.6, 41 } },
     },
     [142741] = { name = "Doomrider Helgrim", c = 4,
         { item = 163579, count = 7825, outof = 115070 }, -- Highland Mustang
+        where = { [14] = { 52.4, 57.6, 53.2, 56, 53.2, 57.4, 53.2, 57.8, 53.4, 58.6, 53.6, 58, 53.8, 57.2, 54.6, 58 } },
     },
     [144796] = { name = "High Tinker Mekkatorque", c = 1,
         { item = 166518, count = -2, outof = 9957 }, -- G.M.O.D.
     },
     [147701] = { name = "Moxo the Beheader", c = 4,
         { item = 166434, count = 1569, outof = 29976 }, -- Captured Umber Nightsaber
+        where = { [62] = { 63.2, 20, 63.2, 20.6, 63.4, 19.4, 64, 19.2, 64.2, 20, 64.6, 19.4, 64.8, 20, 65, 20.6, 65.8, 19.8, 66.4, 19.2, 66.8, 18.4, 67, 18.8 } },
     },
     [148037] = { name = "Athil Dewfire", c = 4,
         { item = 166803, count = 3981, outof = 80017 }, -- Umber Nightsaber
+        where = { [62] = { 40.4, 73.2, 40.4, 74, 40.8, 73, 40.8, 74.2, 41.4, 74.8, 41.4, 76.4, 41.4, 76.6, 41.6, 75, 41.6, 76.4, 41.6, 76.6 } },
     },
     [148787] = { name = "Alash'anir", c = 2,
         { item = 166432, count = 4684, outof = 84132 }, -- Ashenvale Chimaera
+        where = { [62] = { 56.4, 30.8, 56.6, 30.4, 56.6, 30.8 } },
     },
     [149652] = { name = "Agathe Wyrmwood", c = 4,
         { item = 166438, count = 1102, outof = 25073 }, -- Caged Bear
+        where = { [62] = { 49.4, 24.8, 49.6, 25 } },
     },
     [149655] = { name = "Croz Bloodrage", c = 4,
         { item = 166437, count = 1176, outof = 26887 }, -- Captured Kaldorei Nightsaber
+        where = { [62] = { 50.4, 32.4, 50.4, 32.6, 50.6, 32.4, 50.6, 32.6 } },
     },
     [149660] = { name = "Blackpaw", c = 4,
         { item = 166428, count = 4801, outof = 80790 }, -- Blackpaw
+        where = { [62] = { 49.4, 24.8, 49.6, 25 } },
     },
     [149663] = { name = "Shadowclaw", c = 4,
         { item = 166435, count = 4329, outof = 84727 }, -- Kaldorei Nightsaber
+        where = { [62] = { 39.4, 33.2, 39.4, 33.6, 39.6, 33.6, 39.8, 32.4, 39.8, 32.8 } },
     },
     [150397] = { name = "King Mechagon", c = 1,
         { item = 168830, count = 519, outof = 8960 }, -- Aerial Unit R-21/X
@@ -357,12 +410,15 @@ ns.MobDrops = {
     },
     [151934] = { name = "Arachnoid Harvester", c = 2,
         { item = 168823, count = 286, outof = 88278 }, -- Rusty Mechanocrawler
+        where = { [1462] = { 51.4, 41.2, 51.4, 41.6, 52.2, 41.6, 52.4, 40.4, 52.4, 40.8, 52.6, 40.4, 53, 40.6, 53.6, 40.8 } },
     },
     [152182] = { name = "Rustfeather", c = 4,
         { item = 168370, count = 405, outof = 82093 }, -- Rusted Keys to the Junkheap Drifter
+        where = { [1462] = { 65, 77.4, 65.4, 78.4, 65.4, 78.6, 65.6, 78.4, 65.6, 78.6, 65.8, 79.6 } },
     },
     [152290] = { name = "Soundless", c = 4,
         { item = 169163, count = 220, outof = 14985 }, -- Silent Glider
+        where = { [1355] = { 53.6, 41.4, 53.8, 42.2, 53.8, 42.6, 54.4, 50.4, 54.6, 49.4, 54.6, 50.2, 54.8, 50.6, 57.4, 51.4, 57.4, 51.8, 57.6, 51.4, 57.6, 51.8, 58, 42 } },
     },
     [152995] = { name = "Warden of Souls", c = 1,
         { item = 188700, count = 6, outof = 8966 }, -- Sturdy Silver Mawrat Harness
@@ -384,6 +440,7 @@ ns.MobDrops = {
     },
     [154342] = { name = "Arachnoid Harvester", c = 2,
         { item = 168823, count = 23, outof = 7063 }, -- Rusty Mechanocrawler
+        where = { [1462] = { 52.2, 41.6, 52.2, 42.6, 52.4, 39.4, 52.4, 40.4, 52.4, 41, 52.6, 39.2, 52.6, 41.6, 52.8, 38, 52.8, 40, 53.2, 40.6, 53.6, 40.8, 54.6, 40.6 } },
     },
     [155250] = { name = "Decayspeaker", c = 1,
         { item = 188700, count = 18, outof = 14187 }, -- Sturdy Silver Mawrat Harness
@@ -405,21 +462,27 @@ ns.MobDrops = {
     },
     [157134] = { name = "Ishak of the Four Winds", c = 2,
         { item = 174641, count = 456, outof = 15287 }, -- Reins of the Drake of the Four Winds
+        where = { [1527] = { 73.8, 83.4, 73.8, 83.6 } },
     },
     [157146] = { name = "Rotfeaster", c = 4,
         { item = 174753, count = 349, outof = 10398 }, -- Waste Marauder
+        where = { [1527] = { 68, 31.4, 68, 31.6, 68.6, 32 } },
     },
     [157153] = { name = "Ha-Li", c = 2,
         { item = 173887, count = 427, outof = 14737 }, -- Clutch of Ha-Li
+        where = { [1530] = { 30.4, 41, 30.6, 40.8, 31.4, 40.4, 31.4, 41.8, 31.4, 43.4, 31.6, 40.4, 31.6, 41.8, 31.6, 43.2, 32.8, 41.4, 32.8, 41.6, 36.2, 35.4, 36.2, 35.6 } },
     },
     [157160] = { name = "Houndlord Ren", c = 4,
         { item = 174841, count = 329, outof = 11093 }, -- Ren's Stalwart Hound
+        where = { [1530] = { 8.8, 35.6, 9, 35.4, 9.4, 34.4, 9.6, 34.8, 10, 34, 10.2, 33.4, 10.4, 31.2, 10.4, 32, 10.6, 32.6, 10.8, 31.6, 11.2, 31.2, 11.4, 30.4 } },
     },
     [157309] = { name = "Violet Mistake", c = 4,
         { item = 182079, count = 352, outof = 9476 }, -- Slime-Covered Reins of the Hulking Deathroc
+        where = { [1536] = { 58.4, 74.2, 58.4, 74.6, 58.6, 74.2 } },
     },
     [157466] = { name = "Anh-De the Loyal", c = 4,
         { item = 174840, count = 325, outof = 11846 }, -- Xinlao
+        where = { [1530] = { 33.4, 67.4, 33.4, 68, 33.8, 67.4, 34.2, 68, 34.4, 68.6, 34.6, 68, 34.6, 68.6, 34.8, 67.4 } },
     },
     [159190] = { name = "Synod", c = 1,
         { item = 188700, count = 27, outof = 16489 }, -- Sturdy Silver Mawrat Harness
@@ -429,75 +492,98 @@ ns.MobDrops = {
     },
     [160708] = { name = "Mail Muncher", c = 4,
         { item = 174653, count = 792, outof = 792 }, -- Mail Muncher
+        where = { [2403] = { 36.8, 75.2, 38.2, 86, 39.4, 48.4, 39.4, 48.6, 39.4, 79.4, 39.4, 79.6, 39.6, 48.6, 39.6, 79.8, 39.6, 80.6, 39.8, 48.4, 39.8, 79.2, 40.2, 78.4 }, [2404] = { 49.2, 86, 49.4, 86.6, 49.6, 86.4, 49.8, 86.8, 53, 56, 54, 56.2, 54.4, 57.2, 54.4, 57.6, 54.6, 54.2, 54.6, 56.2, 54.8, 57.4, 54.8, 57.6 } },
     },
     [160821] = { name = "Worldedge Gorger", c = 2,
         { item = 180583, count = 1097, outof = 20469 }, -- Impressionable Gorger Spawn
+        where = { [1525] = { 38.8, 71.4, 38.8, 72, 39, 72.8 } },
     },
     [162147] = { name = "Corpse Eater", c = 4,
         { item = 174769, count = 337, outof = 27603 }, -- Malevolent Drone
+        where = { [1527] = { 30.4, 49.4, 30.4, 49.6, 30.8, 49.4, 30.8, 49.6 } },
     },
     [162586] = { name = "Tahonta", c = 4,
         { item = 182075, count = 299, outof = 48174 }, -- Bonehoof Tauralus
+        where = { [1536] = { 44, 50.4, 44.2, 51.4, 44.4, 52, 44.6, 50.8, 44.6, 52 } },
     },
     [162588] = { name = "Gristlebeak", c = 4,
         { item = 184104, count = 44, outof = 20098 }, -- Blight-Touched Egg
+        where = { [1536] = { 57.4, 51.4, 57.4, 51.6, 57.6, 51.4, 57.6, 51.6 } },
     },
     [162690] = { name = "Nerissa Heartless", c = 4,
         { item = 182084, count = 531, outof = 24361 }, -- Gorespine
+        where = { [1536] = { 65.4, 35.2, 65.8, 35.6, 66, 34.4, 66, 35.2 } },
     },
     [162741] = { name = "Gieger", c = 4,
         { item = 182080, count = 1033, outof = 44499 }, -- Predatory Plagueroc
+        where = { [1536] = { 31.4, 35.4, 31.4, 35.6, 31.6, 35.6 } },
     },
     [162819] = { name = "Warbringer Mal'Korak", c = 2,
         { item = 182085, count = 442, outof = 18182 }, -- Blisterback Bloodtusk
+        where = { [1536] = { 33.6, 80, 33.8, 79.4 } },
     },
     [162853] = { name = "Unbreakable Urtz", c = 1,
         { item = 184062, count = 476, outof = 95244 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 50.2, 47.4, 50.2, 47.6, 50.4, 48.6, 50.6, 47.4, 50.6, 47.6, 50.6, 48.6 } },
     },
     [162872] = { name = "Xantuth the Blighted", c = 1,
         { item = 184062, count = 178, outof = 34769 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 50.2, 47.4, 50.2, 47.6, 50.6, 47.4, 50.6, 47.6 } },
     },
     [162873] = { name = "Azmogal", c = 1,
         { item = 184062, count = 91, outof = 16176 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 50.2, 47.4, 50.2, 47.6, 50.6, 47.4, 50.6, 47.6 } },
     },
     [162874] = { name = "Ti'or", c = 1,
         { item = 184062, count = 190, outof = 46322 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 50.2, 47.2 } },
     },
     [162875] = { name = "Devmorta", c = 1,
         { item = 184062, count = 84, outof = 23872 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 49.4, 47.4, 49.4, 47.6, 50.2, 46.4, 50.2, 47.4, 50.2, 47.6, 50.4, 48.6, 50.6, 46.4, 50.6, 47.4, 50.6, 48, 50.6, 48.6 } },
     },
     [162880] = { name = "Mistress Dyrax", c = 1,
         { item = 184062, count = 157, outof = 40176 }, -- Gnawed Reins of the Battle-Bound Warhound
+        where = { [1536] = { 50.4, 47.4, 50.4, 47.6, 50.6, 47.4, 50.6, 47.6 } },
     },
     [164107] = { name = "Gormtamer Tizo", c = 4,
         { item = 180725, count = 2610, outof = 4061 }, -- Spinemaw Gladechewer
+        where = { [1565] = { 26.6, 55.2, 26.6, 56.8, 27.4, 52.4, 27.4, 52.6, 27.4, 56.2, 27.4, 57.6, 27.6, 52.4, 27.6, 56.2, 27.6, 56.6, 27.8, 54, 28, 52.6, 28.4, 55 } },
     },
     [165290] = { name = "Harika the Horrid", c = 4,
         { item = 180461, count = 1437, outof = 67516 }, -- Horrid Dredwing
+        where = { [1525] = { 45.4, 78.2, 46, 78.4, 46, 78.6 } },
     },
     [166521] = { name = "Famu the Infinite", c = 2,
         { item = 180582, count = 371, outof = 42414 }, -- Endmire Flyer Tether
+        where = { [1525] = { 62.4, 46.8, 62.4, 47.6, 62.6, 47, 62.8, 47.6, 63, 46.4 } },
     },
     [166679] = { name = "Hopecrusher", c = 2,
         { item = 180581, count = 418, outof = 28081 }, -- Hopecrusher Gargon
+        where = { [1525] = { 51.4, 52.4, 51.4, 52.6, 51.6, 52.6, 52, 51.4, 52, 51.8 } },
     },
     [167749] = { name = "Doomwalker", c = 1,
         { item = 43959, count = 12, outof = 14545 }, -- Reins of the Grand Black War Mammoth
         { item = 44083, count = 12, outof = 14545 }, -- Reins of the Grand Black War Mammoth
         { item = 186469, count = 1678, outof = 14545 }, -- Illidari Doomhawk
         { item = 208572, count = 206, outof = 14545 }, -- Azure Worldchiller
+        where = { [71] = { 62.7, 50, 63.1, 49.8, 63.2, 49.1, 63.3, 50.7, 64.4, 49.8 } },
     },
     [168135] = { name = "Night Mare", c = 2,
         { item = 180728, count = 1693, outof = 1977 }, -- Swift Gloomhoof
+        where = { [1565] = { 57.4, 50.2, 58, 49.6, 58, 50.8, 58.2, 49.2, 58.6, 49.6, 58.8, 49.2, 58.8, 50.8, 58.8, 55.4, 59.4, 48.4, 59.4, 56.2, 59.4, 56.8, 59.6, 56.4 } },
     },
     [168147] = { name = "Sabriel the Bonecleaver", c = 2,
         { item = 181815, count = 186, outof = 39026 }, -- Armored Bonehoof Tauralus
+        where = { [1536] = { 50.2, 48.6, 50.4, 47.4, 50.4, 48, 50.6, 47.4, 50.6, 47.8 } },
     },
     [168216] = { name = "Galescreamer Elder", c = 1,
         { item = 184104, count = 2, outof = 2095 }, -- Blight-Touched Egg
+        where = { [1536] = { 42.8, 51.4, 43.4, 50, 43.4, 52.4, 43.4, 52.8, 43.6, 52.4, 43.6, 53.6, 44, 50.2, 44, 51, 44.4, 53.2, 44.6, 52.2, 44.6, 52.8, 45, 50.2 } },
     },
     [168647] = { name = "Valfir the Unrelenting", c = 2,
         { item = 180730, count = 270, outof = 25273 }, -- Wild Glimmerfur Prowler
+        where = { [1565] = { 29.4, 55.8, 29.8, 55.6, 30.4, 55.2, 30.6, 55 } },
     },
     [169859] = { name = "Observer Zelgar", c = 1,
         { item = 188700, count = 31, outof = 16004 }, -- Sturdy Silver Mawrat Harness
@@ -510,12 +596,15 @@ ns.MobDrops = {
     },
     [172390] = { name = "Flayedwing Fleshripper", c = 1,
         { item = 184104, count = 142, outof = 83246 }, -- Blight-Touched Egg
+        where = { [1536] = { 33.4, 76.2, 33.4, 76.6, 33.6, 75.8, 33.6, 76.6, 35.4, 77.4, 35.4, 77.6, 35.6, 77, 35.6, 78 } },
     },
     [174062] = { name = "Skadi the Ruthless", c = 2,
         { item = 44151, count = 85, outof = 13717 }, -- Reins of the Blue Proto-Drake
+        where = { [118] = { 57.4, 56, 57.6, 56 } },
     },
     [174861] = { name = "Gorged Shadehound", c = 1,
         { item = 184167, count = 365, outof = 19842 }, -- Mawsworn Soulhunter
+        where = { [1543] = { 53.4, 79.2, 53.6, 78.4, 53.6, 78.8 } },
     },
     [175726] = { name = "Skyja", c = 1,
         { item = 186656, count = 57, outof = 12716 }, -- Sanctum Gloomcharger's Reins
@@ -531,69 +620,87 @@ ns.MobDrops = {
     },
     [179460] = { name = "Fallen Charger", c = 2,
         { item = 186659, count = 919, outof = 8635 }, -- Fallen Charger's Reins
+        where = { [1543] = { 16.4, 49.6, 17, 49, 17.2, 49.6, 18, 48.6, 19.2, 48.6, 19.4, 48.2, 19.6, 48.2, 19.8, 47.4, 20.4, 45.8, 20.8, 45.8, 21.2, 45, 21.4, 44 } },
     },
     [179472] = { name = "Konthrogz the Obliterator", c = 2,
         { item = 187183, count = 1479, outof = 62470 }, -- Rampaging Mauler
+        where = { [1961] = { 44.4, 29.4, 44.4, 29.6, 44.6, 29.4, 44.6, 29.6, 44.6, 43, 47, 35.4, 47, 35.8, 47.6, 35.4, 47.6, 35.6, 51.4, 41.4, 51.4, 41.6, 51.6, 41.6 } },
     },
     [179526] = { name = "Troz'igal the Oppressor", c = 1,
         { item = 188700, count = 86, outof = 6311 }, -- Sturdy Silver Mawrat Harness
     },
     [179684] = { name = "Malbog", c = 4,
         { item = 186645, count = 847, outof = 42345 }, -- Crimson Shardhide
+        where = { [1961] = { 44.4, 29.4, 44.4, 29.6, 44.4, 30.6, 44.6, 29.4, 44.6, 29.6, 44.6, 30.6, 45, 28.4 } },
     },
     [180160] = { name = "Reliwik the Defiant", c = 4,
         { item = 186652, count = 475, outof = 18177 }, -- Garnet Razorwing
+        where = { [1961] = { 55.4, 67.4, 56.2, 66.4, 56.2, 66.8, 56.4, 67.6, 56.6, 67, 56.6, 67.6 } },
     },
     [180978] = { name = "Hirukon", c = 2,
         { item = 187676, count = 620, outof = 13501 }, -- Deepstar Polyp
+        where = { [1970] = { 51.4, 74.2, 51.4, 74.6, 51.6, 74.2, 51.6, 74.6 } },
     },
     [180990] = { name = "The Jailer", c = 1,
         { item = 190768, count = 87, outof = 9354 }, -- Fractal Cypher of the Zereth Overseer
     },
     [182120] = { name = "Rhuv, Gorger of Ruin", c = 1,
         { item = 190765, count = 311, outof = 1232 }, -- Iska's Mawrat Leash
+        where = { [1970] = { 63.2, 25.4, 63.2, 26, 63.6, 26.2, 63.6, 26.6 } },
     },
     [195353] = { name = "Breezebiter", c = 1,
         { item = 201440, count = 140, outof = 7002 }, -- Reins of the Liberated Slyvern
+        where = { [2024] = { 25.8, 46, 26, 47.4, 26, 47.6, 26.4, 44.8, 26.6, 44.6, 27.4, 44.2, 27.4, 48.2, 27.6, 44.2, 28.2, 44.8, 28.2, 48, 28.4, 46, 28.4, 47.4 } },
     },
     [199000] = { name = "Chrono-Lord Deios", c = 1,
         { item = 208216, count = 176, outof = 7923 }, -- Reins of the Quantum Courser
     },
     [200537] = { name = "Gahz'raxes", c = 2,
         { item = 192772, count = 128, outof = 17143 }, -- Ancient Salamanther
+        where = { [2151] = { 28, 38.6, 28.2, 38.2 } },
     },
     [200579] = { name = "Ishyra", c = 2,
         { item = 192772, count = 139, outof = 21677 }, -- Ancient Salamanther
+        where = { [2151] = { 41, 14, 41, 14.6, 41.2, 13.4 } },
     },
     [200584] = { name = "Vraken the Hunter", c = 2,
         { item = 192772, count = 171, outof = 24645 }, -- Ancient Salamanther
+        where = { [2151] = { 58.4, 48.4, 58.4, 48.6, 58.6, 48.8 } },
     },
     [200600] = { name = "Reisa the Drowned", c = 2,
         { item = 192772, count = 129, outof = 20283 }, -- Ancient Salamanther
+        where = { [2151] = { 47.4, 20.4, 47.4, 20.6, 47.6, 20.4, 47.6, 20.6 } },
     },
     [200610] = { name = "Duzalgor", c = 2,
         { item = 192772, count = 62, outof = 9071 }, -- Ancient Salamanther
     },
     [200681] = { name = "Bonesifter Marwak", c = 2,
         { item = 192772, count = 123, outof = 15936 }, -- Ancient Salamanther
+        where = { [2151] = { 43.4, 60.4, 43.4, 60.8, 43.6, 60.4, 43.6, 60.8 } },
     },
     [200717] = { name = "Galakhad", c = 2,
         { item = 192772, count = 114, outof = 16896 }, -- Ancient Salamanther
+        where = { [2151] = { 44.4, 79.2, 44.8, 79.2, 44.8, 79.6 } },
     },
     [200721] = { name = "Grugoth the Hullcrusher", c = 2,
         { item = 192772, count = 151, outof = 20662 }, -- Ancient Salamanther
+        where = { [2151] = { 43.4, 89.4, 43.4, 90, 44, 89.8, 44.2, 89.4, 44.4, 90.6, 44.6, 90.4, 44.6, 90.6 } },
     },
     [200885] = { name = "Lady Shaz'ra", c = 2,
         { item = 192772, count = 168, outof = 24280 }, -- Ancient Salamanther
+        where = { [2151] = { 59.8, 58.8 } },
     },
     [200904] = { name = "Veltrax", c = 2,
         { item = 192772, count = 149, outof = 21095 }, -- Ancient Salamanther
+        where = { [2151] = { 72.4, 67.4, 72.4, 67.6, 72.8, 67.4, 72.8, 67.6 } },
     },
     [200911] = { name = "Volcanakk", c = 2,
         { item = 192772, count = 52, outof = 6926 }, -- Ancient Salamanther
+        where = { [1978] = { 70, 10.4 } },
     },
     [200956] = { name = "Ookbeard", c = 2,
         { item = 192772, count = 102, outof = 11821 }, -- Ancient Salamanther
+        where = { [2151] = { 36.8, 12.2, 36.8, 12.6 } },
     },
     [200960] = { name = "Warden Entrix", c = 2,
         { item = 192772, count = 107, outof = 14015 }, -- Ancient Salamanther
@@ -603,24 +710,30 @@ ns.MobDrops = {
     },
     [201013] = { name = "Wyrmslayer Angvardi", c = 2,
         { item = 192772, count = 88, outof = 11253 }, -- Ancient Salamanther
+        where = { [2151] = { 61.8, 33.6, 62.4, 32.4, 62.4, 32.6, 62.6, 32.4, 62.6, 32.6 } },
     },
     [201181] = { name = "Mad-Eye Carrey", c = 2,
         { item = 192772, count = 98, outof = 11269 }, -- Ancient Salamanther
+        where = { [2151] = { 68.2, 45.4, 68.4, 45.6, 68.6, 45.4, 68.6, 45.6 } },
     },
     [203625] = { name = "Karokta", c = 2,
         { item = 205203, count = 217, outof = 26503 }, -- Cobalt Shalewing
+        where = { [2133] = { 42.2, 65.4, 42.2, 65.6 } },
     },
     [204931] = { name = "Fyrakk", c = 1,
         { item = 210061, count = 68, outof = 10867 }, -- Reins of Anu'relos, Flame's Guidance
     },
     [205490] = { name = "Treasure Goblin", c = 2,
         { item = 246264, count = 1, outof = 60 }, -- Inarius' Charger
+        where = { [1] = { 41.4, 24, 41.8, 20.2, 42, 17.8, 42.2, 16.8, 42.2, 21.4, 42.8, 17.4, 43.2, 16.4, 43.2, 19, 43.4, 17.8, 43.4, 20.4, 43.4, 21.2, 43.4, 22.2 }, [84] = { 40.2, 43.4, 40.2, 43.6, 50, 85.4, 50.4, 86, 50.4, 86.6, 50.6, 85.4, 50.6, 86, 50.6, 86.8, 54.4, 53.4, 54.4, 54, 54.6, 54, 54.6, 54.6 }, [85] = { 43.8, 49.6, 44, 48.4, 44, 48.8, 50, 78.8, 50.2, 78.4, 52.4, 36.4, 52.4, 36.6, 52.6, 36.4, 52.6, 36.6, 68.4, 41.4, 68.4, 41.6, 68.6, 41.4 }, [2022] = { 67, 38, 67, 38.8, 70.2, 44.4, 70.2, 44.6, 74.2, 36.2, 74.2, 44, 74.6, 35.4, 76.8, 47.4, 76.8, 47.6 }, [2023] = { 45.8, 65.4, 45.8, 65.6, 51, 55.8, 52, 49.4, 52, 49.6, 52.2, 44, 52.6, 44, 54.4, 62.6, 54.6, 62.4, 54.6, 62.6 }, [2024] = { 64, 43.6, 64.2, 30.2, 64.2, 43, 67.4, 30, 67.4, 31, 67.6, 30.2, 71.2, 35.4, 71.2, 35.6 }, [2025] = { 52.4, 64.4, 52.4, 65.2, 52.6, 65, 56.8, 79.2, 56.8, 79.6, 57.4, 84.2, 57.6, 84.4, 57.6, 84.6, 58.4, 77.4, 58.4, 77.6, 58.6, 77.4, 58.6, 77.6 }, [2112] = { 26.4, 57.6, 26.6, 57.8, 46, 29.6, 46, 65.2, 46, 65.6, 46.2, 29.2, 55, 79, 57.2, 19.4, 57.4, 19.6, 79.2, 44.8 }, [2248] = { 53.2, 54.2, 53.2, 55.8, 53.4, 55, 53.8, 54.2, 53.8, 56, 54.4, 53, 54.4, 54.8, 54.6, 54.8, 54.6, 56.6, 54.8, 54, 55, 53.4, 55, 55.6 } },
     },
     [207802] = { name = "Beledar's Spawn", c = 2,
         { item = 223315, count = 1346, outof = 24386 }, -- Beledar's Spawn
+        where = { [2215] = { 25.8, 57.4, 25.8, 57.6, 32.8, 39.4, 32.8, 39.6, 37, 72, 37.4, 46, 37.6, 45.8, 38.4, 24.4, 38.4, 24.6, 38.6, 24.4, 38.6, 24.6, 42.8, 31.4 } },
     },
     [208029] = { name = "Doomshadow", c = 1,
         { item = 212645, count = 151, outof = 21877 }, -- Clayscale Hornstrider
+        where = { [2024] = { 27.8, 46 } },
     },
     [213119] = { name = "Void Speaker Eirich", c = 1,
         { item = 226683, count = 78, outof = 2401 }, -- Malfunctioning Mechsuit
@@ -631,9 +744,11 @@ ns.MobDrops = {
     },
     [219281] = { name = "Alunira", c = 4,
         { item = 223270, count = 410, outof = 636 }, -- Alunira
+        where = { [2248] = { 23, 58.6, 23.2, 58.4 } },
     },
     [220285] = { name = "Lurker of the Deeps", c = 2,
         { item = 223501, count = 131, outof = 2190 }, -- Regurgitated Mole Reins
+        where = { [2214] = { 56.8, 76.6, 60.8, 76.4, 60.8, 76.6 } },
     },
     [231075] = { name = "Chrome King Gallywix", c = 1,
         { item = 235626, count = 20, outof = 152 }, -- Keys to the Big G
@@ -641,435 +756,548 @@ ns.MobDrops = {
     },
     [231229] = { name = "Korgoth the Hungerer", c = 2,
         { item = 246240, count = 3503, outof = 4650 }, -- Devoured Energy-Pod
+        where = { [2371] = { 71.4, 27.4, 71.4, 27.6 } },
     },
     [231310] = { name = "Darkfuse Precipitant", c = 2,
         { item = 229955, count = 58, outof = 1345 }, -- Darkfuse Spy-Eye
+        where = { [2346] = { 41, 91.4, 41.2, 92.6, 41.4, 92 } },
     },
     [232195] = { name = "Urmag", c = 4,
         { item = 246067, count = 655, outof = 8175 }, -- Pearlescent Krolusk
+        where = { [2371] = { 69.4, 50, 70, 49.4, 70, 49.8, 70.6, 49.4 } },
     },
     [233824] = { name = "Dimensius", c = 1,
         { item = 243061, count = 15, outof = 87 }, -- Unbound Star-Eater
     },
     [234621] = { name = "Gallagio Garbage", c = 2,
         { item = 229953, count = 1181, outof = 74480 }, -- Salvaged Goblin Gazillionaire's Flying Machine
+        where = { [2346] = { 32, 21.4, 32.2, 21.8, 36.2, 45.2, 36.4, 45.6, 36.6, 45, 38.4, 81, 38.6, 80.8, 50.4, 63.4, 50.4, 63.8, 50.6, 63.4, 50.6, 63.6, 52.4, 83.4 } },
     },
     [234845] = { name = "Sthaarbs", c = 2,
         { item = 246160, count = 347, outof = 5070 }, -- Sthaarbs's Last Lunch
+        where = { [2371] = { 74, 32.4, 74, 32.6 } },
     },
     [234970] = { name = "Miasmawrath", c = 2,
         { item = 246240, count = 8268, outof = 10751 }, -- Devoured Energy-Pod
+        where = { [2371] = { 50.4, 53.4, 50.4, 54, 50.4, 54.6, 50.6, 53.4, 50.6, 54, 50.8, 54.6 } },
     },
     [235087] = { name = "The Harvester", c = 2,
         { item = 246240, count = 7333, outof = 9513 }, -- Devoured Energy-Pod
+        where = { [2371] = { 49.4, 64.2, 49.4, 64.6, 49.6, 63.4, 49.6, 64.2, 49.6, 64.6 } },
     },
     [235104] = { name = "The Wallbreaker", c = 2,
         { item = 246240, count = 6478, outof = 8448 }, -- Devoured Energy-Pod
+        where = { [2472] = { 27, 72.4, 27.4, 71.4, 27.4, 73.2, 27.4, 74, 27.4, 74.6, 27.4, 75.6, 28.4, 71.2, 28.4, 72.4, 28.4, 73.4, 28.4, 73.6, 28.4, 74.8, 28.4, 75.6 } },
     },
     [237702] = { name = "Stinkstomp", c = 1,
         { item = 255826, count = 21, outof = 512 }, -- Mysterious Skyshards
+        where = { [2413] = { 46.4, 25.8, 47, 24.4, 47, 25.4, 47, 25.8, 47.2, 27.6, 47.4, 27.4, 47.6, 25.2, 47.8, 28.6, 48, 27.2, 48.4, 24, 48.4, 26.4, 48.4, 28 } },
     },
     [237711] = { name = "Petalchomper", c = 1,
         { item = 255826, count = 154, outof = 3369 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 52.9, 27.8, 53.4, 29.2, 53.4, 29.6, 53.6, 27.8, 53.6, 29.2, 54.4, 31, 54.8, 28, 54.8, 30.4, 54.8, 30.5, 55, 28.8 } },
     },
     [237991] = { name = "Void-Scarred Gryphon", c = 1,
         { item = 235700, count = 714, outof = 715 }, -- Reins of the Void-Scarred Gryphon
+        where = { [2404] = { 66.6, 71.4, 67.4, 72.4, 67.4, 72.6, 67.6, 72.4, 68, 73.2, 68, 73.6 } },
     },
     [238079] = { name = "Void-Forged Stallion", c = 4,
         { item = 235705, count = 884, outof = 886 }, -- Void-Forged Stallion's Reins
+        where = { [2404] = { 63, 37, 63.2, 35.4, 63.2, 36.4, 63.8, 37.6 } },
     },
     [238145] = { name = "Void-Scarred Wyvern Matriarch", c = 1,
         { item = 235707, count = 278, outof = 279 }, -- Reins of the Void-Scarred Windrider
+        where = { [2403] = { 48.2, 53.2, 48.4, 54, 48.4, 55, 48.4, 55.6, 48.6, 54.4, 48.8, 55, 49, 53.2, 49.2, 56.2, 49.4, 56.8, 49.4, 57.6, 49.6, 54.4, 49.6, 55.2 } },
     },
     [238498] = { name = "Territorial Voidscythe", c = 4,
         { item = 257085, count = 4, outof = 4235 }, -- Augmented Stormray
         { item = 260635, count = 9, outof = 4235 }, -- Sanguine Harrower
+        where = { [2405] = { 34, 82, 47.2, 83.4 } },
     },
     [238836] = { name = "Void-Scarred Wolf", c = 4,
         { item = 235706, count = 76, outof = 76 }, -- Void-Scarred Pack Mother's Harness
+        where = { [2403] = { 60.4, 55, 60.8, 54.4, 60.8, 54.8 } },
     },
     [239581] = { name = "Nesting Swarmite", c = 4,
         { item = 223265, count = 282, outof = 282 }, -- Nesting Swarmite
+        where = { [2403] = { 38.6, 78, 39.2, 77, 40.4, 78.4, 40.4, 79, 40.6, 78.2, 40.6, 79, 41, 76.8, 46.8, 77.2, 47.4, 75.2, 47.4, 75.6, 47.4, 77.8, 47.6, 75.2 }, [2404] = { 51.2, 77.4, 52.2, 78, 52.4, 77.2, 52.6, 77.2, 55.4, 49.8, 55.4, 51.2, 55.4, 52.8, 55.6, 51.2, 55.8, 49.4, 55.8, 49.6, 55.8, 54.2, 56.6, 50.2 } },
     },
     [240129] = { name = "Overfester Hydra", c = 4,
         { item = 257147, count = 14, outof = 6684 }, -- Cobalt Dragonhawk
         { item = 257156, count = 6, outof = 6684 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 54.6, 60.2 } },
     },
     [241443] = { name = "Tremora", c = 4,
         { item = 257085, count = 5, outof = 3268 }, -- Augmented Stormray
         { item = 260635, count = 6, outof = 3268 }, -- Sanguine Harrower
+        where = { [2405] = { 36, 83.2, 36.2, 83.6, 47.2, 83.4 } },
     },
     [242023] = { name = "Necrohexxer Raz'ka", c = 4,
         { item = 257152, count = 10, outof = 8153 }, -- Amani Sharptalon
         { item = 257200, count = 6, outof = 8153 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 34.2, 33 } },
     },
     [242024] = { name = "The Snapping Scourge", c = 4,
         { item = 257152, count = 14, outof = 7380 }, -- Amani Sharptalon
         { item = 257200, count = 6, outof = 7380 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 51.4, 18.2, 51.4, 18.6, 51.6, 18.4, 51.8, 18.6 } },
     },
     [242025] = { name = "Skullcrusher Harak", c = 4,
         { item = 257152, count = 8, outof = 6409 }, -- Amani Sharptalon
         { item = 257200, count = 9, outof = 6409 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 51.4, 72.4, 51.4, 72.6, 51.8, 72.4, 51.8, 72.8 } },
     },
     [242026] = { name = "Elder Oaktalon", c = 4,
         { item = 257152, count = 5, outof = 4575 }, -- Amani Sharptalon
         { item = 257200, count = 11, outof = 4575 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 33.4, 88.4, 33.4, 89, 33.6, 89 } },
     },
     [242027] = { name = "Depthborn Eelamental", c = 4,
         { item = 257152, count = 7, outof = 7759 }, -- Amani Sharptalon
         { item = 257200, count = 13, outof = 7759 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 47.4, 20.8, 47.6, 20.4, 47.6, 20.6 } },
     },
     [242028] = { name = "Lightwood Borer", c = 4,
         { item = 257152, count = 9, outof = 8116 }, -- Amani Sharptalon
         { item = 257200, count = 8, outof = 8116 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 28.8, 24.2, 28.9, 24.5 } },
     },
     [242031] = { name = "Spinefrill", c = 4,
         { item = 257152, count = 8, outof = 7591 }, -- Amani Sharptalon
         { item = 257200, count = 12, outof = 7591 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 30.4, 44.4, 30.4, 44.6, 30.6, 44.4, 30.6, 44.6 } },
     },
     [242032] = { name = "Oophaga", c = 4,
         { item = 257152, count = 8, outof = 9311 }, -- Amani Sharptalon
         { item = 257200, count = 7, outof = 9311 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 46.4, 51.2, 46.4, 51.6, 46.5, 51.2 } },
     },
     [242033] = { name = "Tiny Vermin", c = 4,
         { item = 257152, count = 11, outof = 8467 }, -- Amani Sharptalon
         { item = 257200, count = 10, outof = 8467 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 47.4, 34.2, 47.8, 34.2, 47.8, 34.5 } },
     },
     [242034] = { name = "Voidtouched Crustacean", c = 4,
         { item = 257152, count = 9, outof = 5250 }, -- Amani Sharptalon
         { item = 257200, count = 7, outof = 5250 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 21.2, 70.4, 21.4, 70.6, 21.6, 70.4, 21.6, 70.6 } },
     },
     [242035] = { name = "The Devouring Invader", c = 4,
         { item = 257152, count = 6, outof = 7750 }, -- Amani Sharptalon
         { item = 257200, count = 6, outof = 7750 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 39.4, 20.4, 39.4, 20.8, 39.6, 20.4, 39.6, 20.8 } },
     },
     [243776] = { name = "Ingester Glorbus", c = 1,
         { item = 255826, count = 14, outof = 380 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 71, 67, 71.2, 66.5, 71.8, 66.4, 71.8, 66.7 } },
     },
     [243778] = { name = "Torbrul", c = 1,
         { item = 255826, count = 24, outof = 541 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 71.4, 65.4, 71.4, 65.6, 71.7, 65.3, 71.9, 65.5 } },
     },
     [244272] = { name = "Sundereth the Caller", c = 4,
         { item = 257085, count = 12, outof = 6020 }, -- Augmented Stormray
         { item = 260635, count = 11, outof = 6020 }, -- Sanguine Harrower
+        where = { [2405] = { 29.4, 50, 29.6, 50, 47.2, 83.4 } },
     },
     [244338] = { name = "Wetland Terror", c = 1,
         { item = 255826, count = 83, outof = 1719 }, -- Mysterious Skyshards
+        where = { [2413] = { 39.6, 59.1, 39.8, 58.4, 40, 56.4, 40.1, 56.9, 41.1, 58.2, 41.1, 59.5, 41.2, 58.8, 41.8, 59.1, 42.1, 60.2, 42.1, 60.8, 42.4, 55.2, 42.5, 60.7 } },
     },
     [244463] = { name = "Morta'ka the Sundered Echo", c = 1,
         { item = 255826, count = 79, outof = 1574 }, -- Mysterious Skyshards
+        where = { [2413] = { 60.8, 60.6 } },
     },
     [245044] = { name = "Nightbrood", c = 4,
         { item = 257085, count = 3, outof = 5327 }, -- Augmented Stormray
         { item = 260635, count = 2, outof = 5327 }, -- Sanguine Harrower
+        where = { [2405] = { 40.2, 41.4, 40.2, 41.6, 40.6, 41.2, 47.2, 83.4 } },
     },
     [245182] = { name = "Eruundi", c = 4,
         { item = 257085, count = 6, outof = 2512 }, -- Augmented Stormray
         { item = 260635, count = 2, outof = 2512 }, -- Sanguine Harrower
+        where = { [2444] = { 40.4, 88.8, 40.6, 88.4, 41, 89, 41.2, 89.6, 41.2, 90.6, 41.6, 90.2, 41.6, 90.6 } },
     },
     [245691] = { name = "The Decaying Diamondback", c = 2,
         { item = 257152, count = 8, outof = 4572 }, -- Amani Sharptalon
         { item = 257200, count = 1, outof = 4572 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 46.4, 43.4, 46.4, 43.5, 46.6, 43.4, 46.6, 43.6 } },
     },
     [245692] = { name = "Ash'an the Empowered", c = 2,
         { item = 257152, count = 11, outof = 6168 }, -- Amani Sharptalon
         { item = 257200, count = 6, outof = 6168 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 45.2, 41.4, 45.2, 41.6, 45.6, 41.6 } },
     },
     [245975] = { name = "Mrrlokk", c = 4,
         { item = 257152, count = 7, outof = 6959 }, -- Amani Sharptalon
         { item = 257200, count = 9, outof = 6959 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 50.8, 64.4, 50.8, 65.2, 50.8, 65.6 } },
     },
     [246332] = { name = "Warden of Weeds", c = 4,
         { item = 257147, count = 13, outof = 10122 }, -- Cobalt Dragonhawk
         { item = 257156, count = 12, outof = 10122 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 51.4, 74.4, 51.4, 74.6, 51.6, 74.2, 51.6, 74.6, 52, 75.6, 52.6, 74.2, 52.8, 74.6 } },
     },
     [246633] = { name = "Harried Hawkstrider", c = 4,
         { item = 257147, count = 20, outof = 10414 }, -- Cobalt Dragonhawk
         { item = 257156, count = 27, outof = 10414 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 44.8, 79.6, 45, 77.4, 45, 77.6, 45.2, 79, 45.6, 79.2 } },
     },
     [247976] = { name = "Poacher Rav'ik", c = 4,
         { item = 257152, count = 8, outof = 8473 }, -- Amani Sharptalon
         { item = 257200, count = 12, outof = 8473 }, -- Escaped Witherbark Pango
+        where = { [2437] = { 39, 50 } },
     },
     [248068] = { name = "Nullspiral", c = 2,
         { item = 257085, count = 10, outof = 5783 }, -- Augmented Stormray
         { item = 260635, count = 6, outof = 5783 }, -- Sanguine Harrower
+        where = { [2405] = { 29.4, 67.4, 29.4, 67.8, 29.6, 67.8, 29.8, 66.8, 47.2, 83.4 } },
     },
     [248459] = { name = "The Many-Broken", c = 2,
         { item = 257085, count = 4, outof = 4183 }, -- Augmented Stormray
         { item = 260635, count = 4, outof = 4183 }, -- Sanguine Harrower
+        where = { [2405] = { 28.4, 70.2, 28.8, 70.2, 47.2, 83.4 } },
     },
     [248700] = { name = "Abysslick", c = 2,
         { item = 257085, count = 3, outof = 2717 }, -- Augmented Stormray
         { item = 260635, count = 4, outof = 2717 }, -- Sanguine Harrower
+        where = { [2405] = { 28.2, 66, 47.2, 83.4 } },
     },
     [248741] = { name = "Rhazul", c = 4,
         { item = 246735, count = 7, outof = 6391 }, -- Rootstalker Grimlynx
         { item = 252012, count = 9, outof = 6391 }, -- Vibrant Petalwing
         { item = 255826, count = 2198, outof = 6391 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 51.2, 45.2, 51.6, 45.2 } },
     },
     [248791] = { name = "Voidseer Orivane", c = 2,
         { item = 257085, count = 11, outof = 7256 }, -- Augmented Stormray
         { item = 260635, count = 10, outof = 7256 }, -- Sanguine Harrower
+        where = { [2405] = { 29.4, 68.1, 29.6, 67.6, 30, 66.4, 30, 66.6, 30, 69.2, 30.2, 69.6, 30.6, 66.4, 30.6, 66.6, 47.2, 83.4 } },
     },
     [248823] = { name = "Blackcore", c = 2,
         { item = 257085, count = 5, outof = 3478 }, -- Augmented Stormray
         { item = 260635, count = 11, outof = 3478 }, -- Sanguine Harrower
+        where = { [2405] = { 24.8, 67.8, 47.2, 83.4 } },
     },
     [248986] = { name = "Malgar the Uprooter", c = 1,
         { item = 255826, count = 15, outof = 502 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 71.4, 65.4, 71.4, 65.6, 71.4, 65.8, 71.5, 65.8, 71.6, 65.4, 71.6, 65.8 } },
     },
     [249322] = { name = "Muckmire", c = 1,
         { item = 255826, count = 158, outof = 3460 }, -- Mysterious Skyshards
+        where = { [2413] = { 49.4, 67.4, 49.4, 68, 49.4, 68.6, 49.6, 68.6, 49.8, 67.4, 49.8, 68 } },
     },
     [249325] = { name = "Gelatonius", c = 1,
         { item = 255826, count = 42, outof = 538 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 49.6, 73.6, 49.8, 73.2 } },
     },
     [249328] = { name = "Hellebora", c = 1,
         { item = 255826, count = 28, outof = 561 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 52.2, 71.6, 52.4, 71, 52.5, 71, 52.5, 71.6 } },
     },
     [249329] = { name = "Toadshade", c = 1,
         { item = 255826, count = 97, outof = 2640 }, -- Mysterious Skyshards
+        where = { [2413] = { 49, 79.4, 49.2, 79.6 } },
     },
     [249332] = { name = "Slewstalk", c = 1,
         { item = 255826, count = 28, outof = 668 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 53.2, 74.4, 53.4, 74.8, 53.5, 74.4, 53.6, 74.8 } },
     },
     [249334] = { name = "Gorebarb", c = 1,
         { item = 255826, count = 106, outof = 2198 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 51.4, 77.4, 51.4, 77.6, 51.6, 77.4, 51.6, 77.6 } },
     },
     [249343] = { name = "Dionaea", c = 1,
         { item = 255826, count = 68, outof = 1622 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 52.4, 79.4, 52.4, 79.8, 52.6, 79.4, 52.6, 79.8 } },
     },
     [249400] = { name = "Stinkcap Lashroom", c = 1,
         { item = 255826, count = 24, outof = 454 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 47.6, 73, 48.2, 74.6, 48.2, 76.2, 48.4, 74.4, 48.8, 76.8, 49, 73.6, 49, 79, 49, 79.6, 49.2, 69.6, 49.2, 70.6, 49.2, 72.4 } },
     },
     [249409] = { name = "Vigilant Sporeglider", c = 1,
         { item = 255826, count = 8, outof = 182 }, -- Mysterious Skyshards
+        where = { [2413] = { 48.8, 71.5, 49, 71, 49.2, 75.4, 49.2, 75.6, 50.3, 77.9, 50.6, 69, 51.5, 72, 52, 74.2, 52.4, 79.8 } },
     },
     [249412] = { name = "Surly Thornmaw", c = 1,
         { item = 255826, count = 46, outof = 798 }, -- Mysterious Skyshards
+        where = { [2413] = { 48.8, 71.4, 48.8, 71.8, 49.2, 69.8, 49.2, 78.4, 49.2, 79.2, 49.2, 79.6, 50.4, 67.6, 50.4, 70, 50.5, 69.9, 50.8, 68.4, 50.8, 68.6, 51, 73 } },
     },
     [249413] = { name = "Mire Stalker", c = 1,
         { item = 255826, count = 23, outof = 538 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 48.4, 73.2, 48.4, 73.6, 48.6, 74.2, 48.8, 73, 48.8, 75.6, 49, 75.4, 49.2, 72.4, 49.2, 77.4, 49.2, 78.4, 49.2, 78.6, 49.2, 79.6 } },
     },
     [249776] = { name = "Thorm'belan", c = 1,
         { item = 255826, count = 83, outof = 1984 }, -- Mysterious Skyshards
+        where = { [2413] = { 38.4, 66.6, 38.8, 66.4, 38.8, 66.6, 39.3, 67.6, 47.2, 50 } },
     },
     [249844] = { name = "Chironex", c = 4,
         { item = 246735, count = 7, outof = 5714 }, -- Rootstalker Grimlynx
         { item = 252012, count = 5, outof = 5714 }, -- Vibrant Petalwing
         { item = 255826, count = 1984, outof = 5714 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 68, 40.2, 68.2, 39.2, 68.4, 40.6, 69.2, 38.6, 69.4, 40.4, 69.4, 40.6, 69.6, 39.2, 69.6, 40.4, 69.6, 40.6 } },
     },
     [249849] = { name = "Ha'kalawe", c = 4,
         { item = 246735, count = 8, outof = 6653 }, -- Rootstalker Grimlynx
         { item = 252012, count = 13, outof = 6653 }, -- Vibrant Petalwing
         { item = 255826, count = 2315, outof = 6653 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 67.4, 60.8, 67.4, 61.8, 67.8, 62.6, 67.9, 62.4, 68.2, 60.4, 68.2, 60.6, 68.6, 60.2, 69, 60.8, 69.2, 63.2, 69.6, 60.2, 69.7, 62.9 } },
     },
     [249902] = { name = "Tallcap the Truthspreader", c = 4,
         { item = 246735, count = 9, outof = 4488 }, -- Rootstalker Grimlynx
         { item = 252012, count = 8, outof = 4488 }, -- Vibrant Petalwing
         { item = 255826, count = 1611, outof = 4488 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 72.4, 69, 72.6, 69.2 } },
     },
     [249962] = { name = "Queen Lashtongue", c = 4,
         { item = 246735, count = 12, outof = 6790 }, -- Rootstalker Grimlynx
         { item = 252012, count = 10, outof = 6790 }, -- Vibrant Petalwing
         { item = 255826, count = 2409, outof = 6790 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 59.8, 46.4, 59.8, 46.8, 59.8, 47.6 } },
     },
     [249997] = { name = "Chlorokyll", c = 4,
         { item = 246735, count = 5, outof = 4997 }, -- Rootstalker Grimlynx
         { item = 252012, count = 14, outof = 4997 }, -- Vibrant Petalwing
         { item = 255826, count = 1703, outof = 4997 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 64.4, 47.4, 64.4, 47.6, 64.6, 48 } },
     },
     [250086] = { name = "Stumpy", c = 2,
         { item = 246735, count = 9, outof = 5560 }, -- Rootstalker Grimlynx
         { item = 252012, count = 10, outof = 5560 }, -- Vibrant Petalwing
         { item = 255826, count = 1813, outof = 5560 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 65.4, 32.4, 65.4, 32.6, 65.6, 32.4, 65.6, 32.6 } },
     },
     [250180] = { name = "Serrasa", c = 4,
         { item = 246735, count = 11, outof = 5494 }, -- Rootstalker Grimlynx
         { item = 252012, count = 2, outof = 5494 }, -- Vibrant Petalwing
         { item = 255826, count = 2033, outof = 5494 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 55.6, 31.4, 56.2, 32.4, 56.2, 32.6, 56.3, 34.5, 56.4, 33.6, 56.5, 35, 56.6, 33, 56.8, 34 } },
     },
     [250226] = { name = "Mindrot", c = 4,
         { item = 246735, count = 7, outof = 5634 }, -- Rootstalker Grimlynx
         { item = 252012, count = 9, outof = 5634 }, -- Vibrant Petalwing
         { item = 255826, count = 2125, outof = 5634 }, -- Mysterious Skyshards
+        where = { [2413] = { 45.4, 29.2, 45.4, 31.4, 45.6, 29.4, 45.8, 31.6, 46, 30.4, 46, 30.8, 46.2, 32.8, 47.2, 50 } },
     },
     [250231] = { name = "Dracaena", c = 4,
         { item = 246735, count = 7, outof = 5862 }, -- Rootstalker Grimlynx
         { item = 252012, count = 11, outof = 5862 }, -- Vibrant Petalwing
         { item = 255826, count = 2080, outof = 5862 }, -- Mysterious Skyshards
+        where = { [2413] = { 40.4, 43.2, 40.4, 43.6, 40.6, 43, 47.2, 50 } },
     },
     [250246] = { name = "Treetop", c = 4,
         { item = 246735, count = 8, outof = 5193 }, -- Rootstalker Grimlynx
         { item = 252012, count = 11, outof = 5193 }, -- Vibrant Petalwing
         { item = 255826, count = 1895, outof = 5193 }, -- Mysterious Skyshards
+        where = { [2413] = { 36.4, 75, 36.6, 74.4, 36.6, 75, 47.2, 50 } },
     },
     [250317] = { name = "Oro'ohna", c = 2,
         { item = 246735, count = 15, outof = 5390 }, -- Rootstalker Grimlynx
         { item = 252012, count = 13, outof = 5390 }, -- Vibrant Petalwing
         { item = 255826, count = 1773, outof = 5390 }, -- Mysterious Skyshards
+        where = { [2413] = { 28.2, 81.8, 28.4, 81.4, 28.6, 81.4, 28.6, 81.6, 47.2, 50 } },
     },
     [250321] = { name = "Pterrock", c = 4,
         { item = 246735, count = 5, outof = 4191 }, -- Rootstalker Grimlynx
         { item = 252012, count = 5, outof = 4191 }, -- Vibrant Petalwing
         { item = 255826, count = 1630, outof = 4191 }, -- Mysterious Skyshards
+        where = { [2413] = { 27.2, 70.4, 27.2, 70.6, 47.2, 50 } },
     },
     [250347] = { name = "Ahl'ua'huhi", c = 4,
         { item = 246735, count = 7, outof = 5881 }, -- Rootstalker Grimlynx
         { item = 252012, count = 6, outof = 5881 }, -- Vibrant Petalwing
         { item = 255826, count = 2111, outof = 5881 }, -- Mysterious Skyshards
+        where = { [2413] = { 39.4, 60.6, 39.8, 59.4, 39.8, 60.4, 39.8, 60.6, 40.6, 60.6, 47.2, 50 } },
     },
     [250358] = { name = "Annulus the Worldshaker", c = 2,
         { item = 246735, count = 5, outof = 2508 }, -- Rootstalker Grimlynx
         { item = 252012, count = 6, outof = 2508 }, -- Vibrant Petalwing
         { item = 255826, count = 938, outof = 2508 }, -- Mysterious Skyshards
+        where = { [2413] = { 43.4, 16.4, 43.4, 16.6, 43.4, 17.6, 43.6, 16.8, 44.4, 16, 44.4, 17.6, 44.6, 17.2, 44.6, 17.6, 44.7, 16.4, 47.2, 50 } },
     },
     [250582] = { name = "Bloated Snapdragon", c = 4,
         { item = 257147, count = 15, outof = 10870 }, -- Cobalt Dragonhawk
         { item = 257156, count = 15, outof = 10870 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 36.4, 63.8, 36.6, 64, 37.4, 64.7, 37.6, 64.2, 37.6, 64.6 } },
     },
     [250683] = { name = "Coralfang", c = 4,
         { item = 257147, count = 16, outof = 7571 }, -- Cobalt Dragonhawk
         { item = 257156, count = 7, outof = 7571 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 36.2, 36.6, 36.4, 36.4, 36.6, 36.2, 36.6, 36.6 } },
     },
     [250719] = { name = "Cre'van", c = 4,
         { item = 257147, count = 11, outof = 7837 }, -- Cobalt Dragonhawk
         { item = 257156, count = 5, outof = 7837 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 62.4, 49.6, 62.8, 49.6, 63, 48.6, 63.2, 48.2, 63.6, 49.2, 63.6, 49.8 } },
     },
     [250754] = { name = "Lady Liminus", c = 4,
         { item = 257147, count = 14, outof = 8792 }, -- Cobalt Dragonhawk
         { item = 257156, count = 16, outof = 8792 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 36.4, 77.2, 36.6, 77.2 } },
     },
     [250780] = { name = "Waverly", c = 4,
         { item = 257147, count = 14, outof = 7345 }, -- Cobalt Dragonhawk
         { item = 257156, count = 6, outof = 7345 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 34.8, 21 } },
     },
     [250806] = { name = "Lost Guardian", c = 4,
         { item = 257147, count = 15, outof = 8867 }, -- Cobalt Dragonhawk
         { item = 257156, count = 13, outof = 8867 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 59.2, 79.2 } },
     },
     [250826] = { name = "Banuran", c = 4,
         { item = 257147, count = 18, outof = 8743 }, -- Cobalt Dragonhawk
         { item = 257156, count = 13, outof = 8743 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 56.4, 77.4, 56.4, 77.6, 56.6, 77, 56.6, 77.6 } },
     },
     [250841] = { name = "Bad Zed", c = 4,
         { item = 257147, count = 8, outof = 5976 }, -- Cobalt Dragonhawk
         { item = 257156, count = 9, outof = 5976 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 48.4, 88, 49, 87.8 } },
     },
     [250876] = { name = "Terrinor", c = 4,
         { item = 257147, count = 6, outof = 6602 }, -- Cobalt Dragonhawk
         { item = 257156, count = 13, outof = 6602 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 40.2, 85.2, 40.4, 85.6 } },
     },
     [251305] = { name = "Toa'mara", c = 1,
         { item = 255826, count = 42, outof = 1096 }, -- Mysterious Skyshards
+        where = { [2413] = { 70.4, 33.8, 70.8, 34.2, 70.8, 34.6 } },
     },
     [251525] = { name = "Dri'hara", c = 1,
         { item = 255826, count = 61, outof = 1479 }, -- Mysterious Skyshards
+        where = { [2413] = { 47.2, 50, 70, 36.4, 70, 37, 70.4, 37.6, 70.6, 37.2 } },
     },
     [251544] = { name = "Kham'dur", c = 1,
         { item = 255826, count = 58, outof = 1522 }, -- Mysterious Skyshards
+        where = { [2413] = { 72.4, 35, 72.6, 34.8 } },
     },
     [252851] = { name = "Ancient Devilsaptor", c = 1,
         { item = 255826, count = 54, outof = 1065 }, -- Mysterious Skyshards
+        where = { [2413] = { 41.3, 45, 41.4, 44.4, 45.8, 39.8, 47.2, 50, 57.5, 40.7, 66, 35.8, 66.4, 35.2, 67, 34.4, 67, 35, 67.4, 35.6, 67.6, 34.8 } },
     },
     [255087] = { name = "Malformed Leviathan", c = 2,
         { item = 276803, count = 1, outof = 183 }, -- Ruby Writhe
+        where = { [2512] = { 46.9, 62.2 } },
     },
     [255088] = { name = "Looming Mutagenitor", c = 2,
         { item = 276549, count = 3, outof = 2084 }, -- Topaz Skyfang
         { item = 276803, count = 3, outof = 2084 }, -- Ruby Writhe
+        where = { [2512] = { 26.4, 64.8, 26.6, 64.4, 26.6, 64.8, 26.6, 68.4 } },
     },
     [255302] = { name = "Duskburn", c = 4,
         { item = 257147, count = 12, outof = 9799 }, -- Cobalt Dragonhawk
         { item = 257156, count = 17, outof = 9799 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 42, 68.4, 42.2, 69.6, 42.4, 68.8, 42.6, 68.4, 42.6, 68.8 } },
     },
     [255329] = { name = "Malfunctioning Construct", c = 4,
         { item = 257147, count = 18, outof = 11018 }, -- Cobalt Dragonhawk
         { item = 257156, count = 18, outof = 11018 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 51.4, 45.8, 51.6, 45.8 } },
     },
     [255348] = { name = "Dame Bloodshed", c = 4,
         { item = 257147, count = 16, outof = 11940 }, -- Cobalt Dragonhawk
         { item = 257156, count = 16, outof = 11940 }, -- Cerulean Hawkstrider
+        where = { [2395] = { 44.2, 37.4, 44.2, 38, 44.6, 38.2, 45.4, 38.6, 45.6, 38.4, 45.6, 38.8 } },
     },
     [255927] = { name = "Venom Lancer Ori'kassi", c = 2,
         { item = 276549, count = 4, outof = 3454 }, -- Topaz Skyfang
         { item = 276803, count = 6, outof = 3454 }, -- Ruby Writhe
+        where = { [2512] = { 67.2, 77.4, 67.4, 77.8, 67.6, 77.8 } },
     },
     [256234] = { name = "Ravaging Hydra", c = 1,
         { item = 255826, count = 1, outof = 13 }, -- Mysterious Skyshards
+        where = { [2413] = { 37.4, 59.3, 37.4, 59.7, 37.5, 59.4, 37.5, 59.5, 37.7, 58.1, 47.2, 50 } },
     },
     [256631] = { name = "Big Mon", c = 4,
         { item = 276549, count = 4, outof = 4442 }, -- Topaz Skyfang
         { item = 276803, count = 5, outof = 4442 }, -- Ruby Writhe
+        where = { [2512] = { 69.4, 63.8, 69.8, 63.4, 70, 63.6, 70.6, 63.8 } },
     },
     [256770] = { name = "Bilemaw the Gluttonous", c = 4,
         { item = 257085, count = 9, outof = 5857 }, -- Augmented Stormray
         { item = 260635, count = 3, outof = 5857 }, -- Sanguine Harrower
+        where = { [2405] = { 35.4, 50, 35.6, 50, 47.2, 83.4 } },
     },
     [256808] = { name = "Ravengerus", c = 2,
         { item = 257085, count = 4, outof = 2105 }, -- Augmented Stormray
         { item = 260635, count = 2, outof = 2105 }, -- Sanguine Harrower
+        where = { [2405] = { 47.2, 83.4, 48.4, 53.4, 48.4, 53.6, 48.6, 53.6, 48.7, 53.1, 48.8, 53.2 } },
     },
     [256821] = { name = "Far'thana the Mad", c = 2,
         { item = 257085, count = 11, outof = 6064 }, -- Augmented Stormray
         { item = 260635, count = 6, outof = 6064 }, -- Sanguine Harrower
+        where = { [2405] = { 47.2, 83.4, 53.8, 62.4, 53.8, 62.6 } },
     },
     [256922] = { name = "Screammaxa the Matriarch", c = 4,
         { item = 257085, count = 3, outof = 2227 }, -- Augmented Stormray
         { item = 260635, count = 3, outof = 2227 }, -- Sanguine Harrower
+        where = { [2405] = { 43.6, 51.4, 43.8, 51.6, 47.2, 83.4 } },
     },
     [256923] = { name = "Bane of the Vilebloods", c = 4,
         { item = 257085, count = 11, outof = 4437 }, -- Augmented Stormray
         { item = 260635, count = 6, outof = 4437 }, -- Sanguine Harrower
+        where = { [2405] = { 47, 80.4, 47, 80.6, 47.2, 83.4 } },
     },
     [256924] = { name = "Aeonelle Blackstar", c = 4,
         { item = 257085, count = 4, outof = 5191 }, -- Augmented Stormray
         { item = 260635, count = 8, outof = 5191 }, -- Sanguine Harrower
+        where = { [2405] = { 39.2, 64, 47.2, 83.4 } },
     },
     [256925] = { name = "Lotus Darkblossom", c = 4,
         { item = 257085, count = 3, outof = 2275 }, -- Augmented Stormray
         { item = 260635, count = 9, outof = 2275 }, -- Sanguine Harrower
+        where = { [2405] = { 37.8, 71.6, 38, 71.4, 47.2, 83.4 } },
     },
     [256926] = { name = "Queen o' War", c = 4,
         { item = 257085, count = 6, outof = 4678 }, -- Augmented Stormray
         { item = 260635, count = 11, outof = 4678 }, -- Sanguine Harrower
+        where = { [2405] = { 47.2, 83.4, 55.4, 79.4, 55.6, 79.4, 55.6, 79.6 } },
     },
     [257027] = { name = "Rakshur the Bonegrinder", c = 4,
         { item = 257085, count = 7, outof = 3427 }, -- Augmented Stormray
         { item = 260635, count = 8, outof = 3427 }, -- Sanguine Harrower
+        where = { [2444] = { 46.4, 40.4, 46.4, 40.8, 46.4, 41.6, 46.6, 40.4, 46.6, 40.8, 46.6, 41.6 } },
     },
     [257199] = { name = "Hardin Steellock", c = 2,
         { item = 257085, count = 3, outof = 1427 }, -- Augmented Stormray
         { item = 260635, count = 2, outof = 1427 }, -- Sanguine Harrower
+        where = { [2444] = { 28.4, 56.4, 28.4, 56.8, 28.4, 57.6, 28.6, 56.4, 28.6, 57.2, 28.6, 57.6 } },
     },
     [257231] = { name = "Gar'chak Skullcleave", c = 2,
         { item = 257085, count = 6, outof = 1368 }, -- Augmented Stormray
         { item = 260635, count = 5, outof = 1368 }, -- Sanguine Harrower
+        where = { [2444] = { 69.4, 77.2, 69.4, 77.8, 69.6, 77.2, 69.6, 77.6, 70.2, 76.4, 70.5, 76.3, 70.5, 76.5 } },
     },
     [257863] = { name = "Vassti, the Exalted Broodmother", c = 2,
         { item = 276549, count = 1, outof = 2527 }, -- Topaz Skyfang
         { item = 276803, count = 3, outof = 2527 }, -- Ruby Writhe
+        where = { [2512] = { 45.2, 28.4, 45.2, 28.6, 45.5, 28.7, 45.6, 28.2 } },
     },
     [257906] = { name = "Coin-Eye Skully", c = 4,
         { item = 276549, count = 1, outof = 1817 }, -- Topaz Skyfang
         { item = 276803, count = 4, outof = 1817 }, -- Ruby Writhe
+        where = { [2512] = { 56.2, 65.6, 56.2, 67.2, 56.4, 65.4, 56.5, 65.1, 56.9, 68.1, 57.7, 64.4, 57.9, 68.5, 58.2, 65, 58.2, 68, 58.4, 66.4, 58.4, 66.9, 58.5, 65 }, [2537] = { 75.3, 72.2 } },
     },
     [258916] = { name = "Garsecg", c = 4,
         { item = 276549, count = 7, outof = 5944 }, -- Topaz Skyfang
         { item = 276803, count = 5, outof = 5944 }, -- Ruby Writhe
+        where = { [2512] = { 69.4, 44.4, 69.4, 45, 69.6, 44.4, 69.6, 45, 69.7, 45.8 } },
     },
     [258920] = { name = "Nar'zira", c = 4,
         { item = 276549, count = 3, outof = 6327 }, -- Topaz Skyfang
         { item = 276803, count = 4, outof = 6327 }, -- Ruby Writhe
+        where = { [2512] = { 52, 44.8, 52.1, 44.6 } },
     },
     [261109] = { name = "Sss'alik", c = 4,
         { item = 276549, count = 4, outof = 4610 }, -- Topaz Skyfang
         { item = 276803, count = 5, outof = 4610 }, -- Ruby Writhe
+        where = { [2512] = { 57.2, 40.4, 57.2, 40.6, 58, 40, 59.2, 39.6 } },
     },
     [261142] = { name = "Destra", c = 4,
         { item = 276549, count = 2, outof = 1740 }, -- Topaz Skyfang
         { item = 276803, count = 3, outof = 1740 }, -- Ruby Writhe
+        where = { [2512] = { 51.7, 32.5, 51.9, 32.3, 52.2, 32.6 } },
     },
     [263456] = { name = "Szarith the Fanged", c = 4,
         { item = 276549, count = 1, outof = 1230 }, -- Topaz Skyfang
@@ -1077,17 +1305,21 @@ ns.MobDrops = {
     [265237] = { name = "Lockjaw", c = 4,
         { item = 276549, count = 1, outof = 2650 }, -- Topaz Skyfang
         { item = 276803, count = 1, outof = 2650 }, -- Ruby Writhe
+        where = { [2512] = { 31.6, 56.8, 31.8, 56.4 } },
     },
     [265262] = { name = "Hisstara", c = 4,
         { item = 276549, count = 5, outof = 2831 }, -- Topaz Skyfang
         { item = 276803, count = 3, outof = 2831 }, -- Ruby Writhe
+        where = { [2512] = { 43.8, 50.8, 44, 50.4 } },
     },
     [268049] = { name = "Siltmouth", c = 4,
         { item = 276549, count = 1, outof = 3279 }, -- Topaz Skyfang
         { item = 276803, count = 2, outof = 3279 }, -- Ruby Writhe
+        where = { [2512] = { 50, 68.4, 50.2, 69.4, 50.3, 69.5, 50.5, 69.3 } },
     },
     [268090] = { name = "Kari'zah the Forgotten", c = 4,
         { item = 276549, count = 4, outof = 1893 }, -- Topaz Skyfang
         { item = 276803, count = 1, outof = 1893 }, -- Ruby Writhe
+        where = { [2512] = { 24.4, 73, 24.6, 73.4, 24.8, 73.6 } },
     },
 }
