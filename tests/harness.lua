@@ -217,6 +217,38 @@ for i = 1, 8 do
 end
 
 C_Timer = { After = function(_, fn) fn() end }
+
+-- O MAPA-MUNDI, com o sistema de marcadores da Blizzard (MapCanvas). O stub guarda os marcadores
+-- que o provedor pediu, para o teste perguntar o que foi desenhado e passar o mouse por cima.
+function Mixin(obj, ...)
+    for i = 1, select("#", ...) do
+        for k, v in pairs((select(i, ...))) do obj[k] = v end
+    end
+    return obj
+end
+function CreateFromMixins(...) return Mixin({}, ...) end
+MapCanvasDataProviderMixin = { GetMap = function(self) return self.__map end }
+MapCanvasPinMixin = {
+    SetPosition = function(self, x, y) self.__x, self.__y = x, y end,
+    UseFrameLevelType = function(self, t) self.__level = t end,
+    SetScalingLimits = function() end,
+}
+MAPA_DO_MUNDI = 2413
+WorldMapFrame = { __pins = {}, __providers = {} }
+function WorldMapFrame:AddDataProvider(p) p.__map = self; self.__providers[#self.__providers + 1] = p end
+function WorldMapFrame:GetMapID() return MAPA_DO_MUNDI end
+function WorldMapFrame:RemoveAllPinsByTemplate() self.__pins = {} end
+function WorldMapFrame:AcquirePin(template, data)
+    local pin = Mixin(widget("Pin"), RocketMountMapPinMixin)
+    pin.__template = template
+    pin.Texture = pin:CreateTexture()
+    function pin.SetAlpha(_, a) pin.__alpha = a end
+    pin:OnLoad()
+    pin:OnAcquired(data)
+    self.__pins[#self.__pins + 1] = pin
+    return pin
+end
+Enum.UIMapType = { Cosmic = 0, World = 1, Continent = 2, Zone = 3, Dungeon = 4, Micro = 5, Orphan = 6 }
 C_Texture = { GetAtlasInfo = function() return nil end }
 -- ONDE O JOGADOR ESTA, e o teste mexe nisso a vontade: a guarda de zona e o que separa "o raro
 -- esta na sua frente" de "alguem com esse nome existe em algum lugar do mundo".
@@ -1574,6 +1606,102 @@ do
     C_MountJournal.GetMountFromItem = nil
     ns.db.vendorSeen = nil
     ns.GetRanked(true)
+end
+
+print("")
+print("-- o mapa-mundi (23/09)")
+do
+    local S, M = ns.Sighting, ns.MapPins
+    C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
+    local realDrops = ns.MobDrops
+    ns.MobDrops = {
+        -- elite com montaria que falta, em dois pontos de Harandar (2413)
+        [60491] = { name = "Sha of Anger", c = 1, { item = 9005, count = 240, outof = 87235 },
+                    where = { [2413] = { 47.2, 50, 51.2, 45.2 } } },
+        -- raro cuja unica montaria voce ja tem
+        [300000] = { name = "So coletada", c = 4, { item = 9007, count = 9, outof = 90 },
+                     where = { [2413] = { 10, 10 } } },
+        -- chefe dentro de masmorra
+        [777] = { name = "Chefe de masmorra", c = 1, { item = 9005, count = 50, outof = 1000 },
+                  where = { [999] = { 50, 50 } } },
+    }
+    S.Rebuild()
+
+    M.Enable()
+    M.Enable()
+    check("o provedor entra no mapa uma vez so", #WorldMapFrame.__providers, 1)
+    local P = M.GetProvider()
+
+    MAPA_DO_MUNDI = 2413
+    P:RefreshAllData()
+    check("um marcador por ponto da criatura que ainda tem montaria", #WorldMapFrame.__pins, 2)
+    local pin = WorldMapFrame.__pins[1]
+    check("  na posicao do Wowhead, normalizada", math.abs(pin.__x - 0.472) < 1e-9, true)
+    check("  na camada das vinhetas do jogo", pin.__level, "PIN_FRAME_LEVEL_VIGNETTE")
+    check("  com a arte de elite", pin.Texture:GetAtlas(), "VignetteKillElite")
+    local soColetada = false
+    for _, p in ipairs(WorldMapFrame.__pins) do
+        if p.data.npc == 300000 then soColetada = true end
+    end
+    check("criatura so de montaria que voce ja tem nao vai para o mapa", soColetada, false)
+
+    -- O BALAO: nome, classe, montaria e chance.
+    local linhas = {}
+    local tip = {
+        SetText = function(_, t) linhas[#linhas + 1] = t end,
+        AddLine = function(_, t) linhas[#linhas + 1] = t end,
+        AddDoubleLine = function(_, a, b) linhas[#linhas + 1] = a .. " | " .. b end,
+    }
+    M.Tooltip(tip, pin.data)
+    local texto = table.concat(linhas, "\n")
+    check("o balao tem o nome", linhas[1], "Sha of Anger")
+    check("  a classe", linhas[2], "Elite")
+    check("  e a montaria com a chance", texto:find("Farm longo | 0.28%", 1, true) ~= nil, true)
+    check("  e ainda nao diz que foi saqueado", texto:find("looted", 1, true), nil)
+
+    -- SAQUEADO: o marcador fica apagado (continua la para amanha) e o balao diz quando volta.
+    GetNumLootItems = function() return 1 end
+    GetLootSourceInfo = function() return "Creature-0-1-2-3-60491-000", 1 end
+    C_DateAndTime = { GetSecondsUntilDailyReset = function() return 3 * 3600 end,
+                      GetSecondsUntilWeeklyReset = function() return 5 * 86400 end }
+    S.OnEvent(nil, "LOOT_OPENED")
+    P:RefreshAllData()
+    pin = WorldMapFrame.__pins[1]
+    check("saqueado, o marcador continua no mapa", #WorldMapFrame.__pins, 2)
+    check("  mas apagado", pin.__alpha, 0.5)
+    linhas = {}
+    M.Tooltip(tip, pin.data)
+    check("  e o balao diz quando volta",
+        table.concat(linhas, "\n"):find("Already looted", 1, true) ~= nil, true)
+    ns.db.looted = nil
+    GetNumLootItems, GetLootSourceInfo, C_DateAndTime = nil, nil, nil
+
+    -- O CLIQUE aponta a seta para o ponto.
+    local realSet = C_Map.SetUserWaypoint
+    local apontado
+    C_Map.SetUserWaypoint = function(p) apontado = p end
+    pin:OnMouseUp("LeftButton")
+    check("clicar aponta a seta para o marcador", apontado and apontado.m, 2413)
+    C_Map.SetUserWaypoint = realSet
+
+    -- MAPA DE INSTANCIA: nada. O aviso e so no mundo aberto, e o mapa tambem.
+    local realInfo = C_Map.GetMapInfo
+    C_Map.GetMapInfo = function(id) return { name = "Masmorra", mapType = id == 999 and Enum.UIMapType.Dungeon or Enum.UIMapType.Zone } end
+    MAPA_DO_MUNDI = 999
+    P:RefreshAllData()
+    check("mapa de masmorra nao ganha marcador", #WorldMapFrame.__pins, 0)
+    C_Map.GetMapInfo = realInfo
+
+    -- E A OPCAO DESLIGA.
+    MAPA_DO_MUNDI = 2413
+    ns.db.mapPins = false
+    P:RefreshAllData()
+    check("com a opcao desligada, nenhum marcador", #WorldMapFrame.__pins, 0)
+    ns.db.mapPins = nil
+
+    ns.MobDrops = realDrops
+    C_MountJournal.GetMountFromItem = nil
+    S.Rebuild()
 end
 
 print("")

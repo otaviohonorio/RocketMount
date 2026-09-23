@@ -210,6 +210,15 @@ local function NomeDeRaro(unit)
     local classe = UnitClassification and UnitClassification(unit)
     if byNpc and byNpc[npc] then
         classeVista[npc] = classe
+        -- The name in the player's language, for the world-map tooltip: the table only has
+        -- Wowhead's English one. Kept for this character's account, and only for our creatures.
+        if ns.db then
+            ns.db.npcNames = ns.db.npcNames or {}
+            local okN, nomeLocal = pcall(UnitName, unit)
+            if okN and type(nomeLocal) == "string" and not (issecretvalue and issecretvalue(nomeLocal)) then
+                ns.db.npcNames[npc] = nomeLocal
+            end
+        end
         return UnitName(unit), npc
     end
     if classe ~= "rare" and classe ~= "rareelite" then return nil end
@@ -490,6 +499,8 @@ end
 ---Write down what this loot window came from. Only creatures in the drop table: recording every
 ---boar the player skins would grow the saved file for nothing.
 function Sighting.RecordLoot()
+    -- The looted creature's pin goes dim right away.
+    if ns.MapPins then C_Timer.After(0, ns.MapPins.Refresh) end
     if not (GetNumLootItems and GetLootSourceInfo and type(ns.MobDrops) == "table") then return end
     local reg = Registro()
     if not reg then return end
@@ -519,6 +530,15 @@ function Sighting.RecordLoot()
 end
 
 ---True when this rare cannot drop anything for this character right now.
+---What one creature can still give THIS character: the mounts it drops that are missing, with
+---the chance. The world-map pins ask this, so the map and the alert can never disagree.
+---@return table list of `{ entry, drop }`, empty when it has nothing left for you
+function Sighting.MountsOf(npc)
+    if ns.IsDirty and ns.IsDirty() and ns.GetRanked then pcall(ns.GetRanked) end
+    if not byNpc then Sighting.Rebuild() end
+    return PorMontaria(byNpc[npc] or {})
+end
+
 ---@return boolean locked, string|nil source ("dq:<quest>" or "loot"), number|nil secondsLeft
 function Sighting.LockedOut(npc, pontos)
     for _, p in ipairs(pontos or {}) do

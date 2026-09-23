@@ -64,6 +64,11 @@ end
 local handlers = {}
 
 function handlers:ADDON_LOADED(addon)
+    -- The world map can load after us; its pins wait for it.
+    if addon == "Blizzard_WorldMap" and ns.MapPins then
+        ns.MapPins.Enable()
+        return
+    end
     if addon ~= ADDON then return end
 
     -- SavedVariables only exist from here on.
@@ -86,6 +91,7 @@ function handlers:PLAYER_LOGIN()
     -- O livro-caixa se escreve ao entrar, que é quando a API fala deste personagem.
     if ns.Roster then ns.Roster.Record() end
     if ns.Sighting then ns.Sighting.Enable() end
+    if ns.MapPins then ns.MapPins.Enable() end
     -- MCL builds `MCL_GUIDE.mountLookup` at PLAYER_LOGIN + 4s and tells nobody. Rather
     -- than guessing a longer delay, we wait for its own ready flag -- and give up after a
     -- while, because it may simply not be installed.
@@ -151,6 +157,8 @@ function ns.MarkClean()
     dirty = false
     -- O índice de bichos vive da lista: refaz junto, e não a cada raro que aparece.
     if ns.Sighting then ns.Sighting.Rebuild() end
+    -- And the map pins, which read that same index.
+    if ns.MapPins then ns.MapPins.Refresh() end
 end
 
 --------------------------------------------------------------------------------

@@ -79,6 +79,14 @@ está anotado.
 É livro-caixa, não leitura ao vivo, e ele diz isso: tudo ali era verdade quando aquele personagem
 entrou pela última vez.
 
+## No mapa-múndi
+
+Os raros, elites e chefes do mundo que largam montaria que **você** não tem aparecem no mapa-múndi,
+com os ícones de raro do próprio jogo. Passe o mouse: quais montarias, e a chance de cada uma.
+Clique: a seta do mapa aponta para lá. Saqueado hoje, o marcador fica apagado — o lugar continua
+valendo para amanhã. Só no mundo aberto, como o aviso. As posições vêm do mapa do Wowhead,
+embutidas no addon; os marcadores se desligam nas opções.
+
 ## Quando algo na sua frente larga montaria
 
 Passe voando e veja no minimapa, mire, passe o mouse, ou deixe o raro gritar quando nasce: um
