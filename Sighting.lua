@@ -127,14 +127,25 @@ function Sighting.Rebuild()
             local primeiro
             if e.coords then
                 for _, wp in ipairs(e.coords) do
-                    -- `dq` is the rare's daily tracking quest, when MCL knows it: see
-                    -- `Sighting.LockedOut`.
-                    local ponto = { entry = e, m = wp.m, x = wp.x, y = wp.y, dq = wp.dq }
-                    primeiro = primeiro or ponto
-                    -- `wp.v` IS THE VIGNETTE, and it is the good key: a number, identical in
-                    -- every language, and it cannot collide with a pet's name.
-                    if wp.v then Push(byVignette, wp.v, ponto) end
-                    if wp.n then Push(byName, ns.Fold(wp.n), ponto) end
+                    -- (!) `i` IS AN INSTANCE, NOT A CREATURE. Reported with a screenshot (23/09):
+                    -- "Abismo Peçonhento pode largar: Viperiveno Carmesim, Amigo do Céu Primevo",
+                    -- flying past the entrance of The Venomous Abyss -- a RAID (Ula'tek, mythic,
+                    -- 20 players). MCL pins that mount at the raid's entrance, with the entrance's
+                    -- own vignette (8032) and name; the minimap showed the entrance, and this index
+                    -- took it for a rare. The open-world guard could not help: the player WAS in
+                    -- the open world. MCL does not document `i`; the data does -- on 23/09 all 14
+                    -- points carrying it were instanced content (raid and dungeon bosses, holiday
+                    -- dungeon bosses), and none of the 206 rare points had it.
+                    if not wp.i then
+                        -- `dq` is the rare's daily tracking quest, when MCL knows it: see
+                        -- `Sighting.LockedOut`.
+                        local ponto = { entry = e, m = wp.m, x = wp.x, y = wp.y, dq = wp.dq }
+                        primeiro = primeiro or ponto
+                        -- `wp.v` IS THE VIGNETTE, and it is the good key: a number, identical
+                        -- in every language, and it cannot collide with a pet's name.
+                        if wp.v then Push(byVignette, wp.v, ponto) end
+                        if wp.n then Push(byName, ns.Fold(wp.n), ponto) end
+                    end
                 end
             end
             -- `lockBossName` has no coordinates of its own, so it borrows the entry's first
