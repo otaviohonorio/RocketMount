@@ -1510,6 +1510,66 @@ end
 -- in-game com ela. O que os testes travam e a RELACAO entre as pecas, nao o numero cru: os
 -- numeros mudam quando a janela mudar; o "tem que caber" nao pode voltar a quebrar.
 print("")
+print("-- o veredito do vendedor (23/09)")
+do
+    -- (!) O CASO RELATADO: Rocktusk Battleboar na Trader Araanda. O catalogo so sabe o preco,
+    -- o jogador tem o ouro, e a montaria ia para a ultima faixa. "So ouro, sem guilda" tem o mesmo
+    -- formato: preco conhecido e cumprido, nenhum acesso conhecido, vendedor comum.
+    -- (Nao o "So sei o preco": aquele e o vendedor de GUILDA, o caso da Fenix Negra.)
+    local function Achar(nome)
+        for _, e in ipairs(ns.GetRanked(true)) do
+            if e.name == nome then return e end
+        end
+    end
+    check("sem visitar o vendedor, preco-so fica em 'pede mais que o preco'",
+        Achar("So ouro, sem guilda").tier, ns.TIER.CHECK)
+
+    local VENDE = { isPurchasable = true, isUsable = true }
+    GetMerchantNumItems = function() return 1 end
+    GetMerchantItemID = function() return 99018 end
+    C_MountJournal.GetMountFromItem = function(item) return item > 99000 and item - 99000 or nil end
+    C_MerchantFrame = { GetItemInfo = function() return {
+        name = "So ouro, sem guilda", isPurchasable = VENDE.isPurchasable, isUsable = VENDE.isUsable } end }
+
+    ns.frame.__scripts.OnEvent(ns.frame, "MERCHANT_SHOW")
+    local e = Achar("So ouro, sem guilda")
+    check("o vendedor vendendo: vira 'e so ir pegar'", e.tier, ns.TIER.READY)
+    local temLinha = false
+    for _, r in ipairs(e.requisitos) do
+        if r.key == "vendorCheck" and r.cumprido and r.label:find("vendor sells it to you", 1, true) then
+            temLinha = true
+        end
+    end
+    check("  e a ficha diz que o vendedor vende, com a data", temLinha, true)
+
+    -- O vendedor RECUSANDO (o item vermelho): bloqueia, e diz por que.
+    VENDE.isPurchasable = false
+    ns.frame.__scripts.OnEvent(ns.frame, "MERCHANT_UPDATE")
+    e = Achar("So ouro, sem guilda")
+    check("o vendedor recusando: nao fica pronta", e.tier ~= ns.TIER.READY and e.tier ~= ns.TIER.CHECK, true)
+    local disse = false
+    for _, r in ipairs(e.requisitos) do
+        if r.key == "vendorCheck" and not r.cumprido and r.label:find("does not sell", 1, true) then
+            disse = true
+        end
+    end
+    check("  e diz que o vendedor ainda nao vende", disse, true)
+
+    -- E O VEREDITO E DE QUEM ESTAVA NO VENDEDOR: outro personagem nao herda.
+    VENDE.isPurchasable = true
+    ns.frame.__scripts.OnEvent(ns.frame, "MERCHANT_UPDATE")
+    local realReino = GetRealmName
+    GetRealmName = function() return "OutroReino" end
+    check("outro personagem nao herda o veredito", Achar("So ouro, sem guilda").tier, ns.TIER.CHECK)
+    GetRealmName = realReino
+
+    GetMerchantNumItems, GetMerchantItemID, C_MerchantFrame = nil, nil, nil
+    C_MountJournal.GetMountFromItem = nil
+    ns.db.vendorSeen = nil
+    ns.GetRanked(true)
+end
+
+print("")
 print("-- o diario de desenvolvimento")
 do
     local S = ns.Sighting

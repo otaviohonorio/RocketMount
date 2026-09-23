@@ -158,7 +158,9 @@ end
 -- `tooltipGate` entra como acesso: ele é o jogo dizendo "você não pode comprar isto ainda", e
 -- isso é exatamente um requisito de acesso. Vem por último na lista porque é o mais genérico —
 -- quando reputação e conquista já explicam, a frase do tooltip costuma repetir o que elas dizem.
-local ACCESS_KEYS = { "rep", "achievement", "achievementReward", "quest", "tooltipGate" }
+-- `vendorCheck` is the vendor's own verdict (Sources.lua): the only source that can say "met"
+-- on its own, because it is the game answering, not the catalogue being silent.
+local ACCESS_KEYS = { "rep", "achievement", "achievementReward", "quest", "tooltipGate", "vendorCheck" }
 
 local function Access(e)
     local worst, from = nil, nil
@@ -212,7 +214,7 @@ function ns.Rank(entry)
     -- que mostrar um número grande.
     e.requisitos = {}
     for _, key in ipairs({ "rep", "achievement", "achievementReward", "quest",
-                          "tooltipGate", "cost" }) do
+                          "tooltipGate", "vendorCheck", "cost" }) do
         local p = e[key]
         if p and p.pct then
             e.requisitos[#e.requisitos + 1] = {

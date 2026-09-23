@@ -130,6 +130,12 @@ L["alert %s; last lines of the log:"] = "aviso %s; últimas linhas do diário:"
 L["OFF"] = "DESLIGADO"
 L["on"] = "ligado"
 L["the development log"] = "o diário de desenvolvimento"
+
+-- O veredito do próprio vendedor (Sources.lua).
+L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto em %s)"
+L["the vendor does not sell it to you yet (seen %s)"] = "o vendedor ainda não vende para você (visto em %s)"
+-- Formato curto de data para "visto em": dia/mês em português.
+L["%m/%d"] = "%d/%m"
 L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
 L["no error captured (capture: %s)."] = "nenhum erro capturado (captura: %s)."
 L["%d error(s) captured, %d occurrence(s):"] = "%d erro(s) capturado(s), %d ocorrência(s):"

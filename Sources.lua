@@ -599,6 +599,8 @@ function ns.BuildList()
                 if e.itemID and ns.Tooltip then
                     e.tooltipGate = ns.Tooltip.Gate(e.itemID)
                 end
+                -- What a vendor told THIS character, when it stood in front of one.
+                e.vendorCheck = ns.VendorVerdict(mountID)
                 -- Montado uma vez por varredura, e não a cada tecla digitada.
                 e.expansion, e.expansionName = ns.Expansion and ns.Expansion.Of(mountID)
                 e.busca = Haystack(e)
@@ -614,4 +616,80 @@ function ns.BuildList()
     end
 
     return out
+end
+
+--------------------------------------------------------------------------------
+-- THE VENDOR'S OWN VERDICT
+--
+-- (!) Reported on 23/09 with a screenshot, standing at Trader Araanda (Lunarfall): *"tem montaria
+-- que posso pegar, mas no addon não mostra"*. Rocktusk Battleboar, 10,000 gold, the player
+-- holding 19,334. The catalogue knows only the price, so the mount went to "Asks for more than
+-- the price" -- the band that sits at the END of the list since the Black Phoenix (price known,
+-- guild achievement missing, shown as "just go get it"). Right for the Phoenix, wrong here: for
+-- the boar, the price IS the whole story, and nothing in the data could say so.
+--
+-- The game can. With the vendor open, `C_MerchantFrame.GetItemInfo` answers `isPurchasable`
+-- and `isUsable` for every item, and Blizzard tints an item red exactly when either is false
+-- (`MerchantFrame.lua:362`, 12.1.0). The screenshot shows it is about REQUIREMENTS, not money:
+-- a 500-gold item is red with 19k in the bag, and the 20k Witherhide Cliffstomper is NOT red
+-- although the player cannot afford it.
+--
+-- This is not "no data, so it is fine" -- the family of defect this addon keeps fighting. It is
+-- the game itself saying "you may buy this". It is recorded per character (the verdict belongs
+-- to who stood at the vendor), with the day, and read as an ACCESS requirement: met, or not.
+--------------------------------------------------------------------------------
+local function CharKey()
+    local name = UnitName and UnitName("player")
+    if not name then return nil end
+    return name .. "-" .. (GetRealmName and GetRealmName() or "")
+end
+
+---What the vendor said to THIS character about this mount, as an access requirement.
+---@return table|nil `{ pct = 1|0, label }`, nil when this character never saw it at a vendor
+function ns.VendorVerdict(mountID)
+    local chave = CharKey()
+    local porChar = chave and ns.db and ns.db.vendorSeen and ns.db.vendorSeen[chave]
+    local v = porChar and porChar[mountID]
+    if not v then return nil end
+    local quando = date and v.t and date(L["%m/%d"], v.t) or "?"
+    if v.ok then
+        return { pct = 1, label = string.format(L["the vendor sells it to you (seen %s)"], quando) }
+    end
+    return { pct = 0, label = string.format(L["the vendor does not sell it to you yet (seen %s)"], quando) }
+end
+
+---Reads the open vendor. Called on MERCHANT_SHOW and MERCHANT_UPDATE.
+---@return boolean changed whether any verdict is new or different
+function ns.ScanMerchant()
+    if not (GetMerchantNumItems and GetMerchantItemID and C_MerchantFrame
+        and C_MerchantFrame.GetItemInfo and C_MountJournal and C_MountJournal.GetMountFromItem) then
+        return false
+    end
+    local chave = CharKey()
+    if not (chave and ns.db) then return false end
+    ns.db.vendorSeen = ns.db.vendorSeen or {}
+    ns.db.vendorSeen[chave] = ns.db.vendorSeen[chave] or {}
+    local reg = ns.db.vendorSeen[chave]
+
+    local mudou = false
+    local okN, n = pcall(GetMerchantNumItems)
+    for i = 1, (okN and n or 0) do
+        local okI, itemID = pcall(GetMerchantItemID, i)
+        local okM, mountID = pcall(C_MountJournal.GetMountFromItem, okI and itemID or 0)
+        if okM and type(mountID) == "number" then
+            local okInfo, info = pcall(C_MerchantFrame.GetItemInfo, i)
+            if okInfo and type(info) == "table" then
+                -- The same test Blizzard uses to tint the item red.
+                local ok = info.isPurchasable and info.isUsable and true or false
+                local antes = reg[mountID]
+                if not antes or antes.ok ~= ok then mudou = true end
+                reg[mountID] = { ok = ok, t = time and time() or 0 }
+                ns.Log.Add("merchant", {
+                    mount = mountID, item = itemID, name = info.name,
+                    purchasable = info.isPurchasable, usable = info.isUsable, verdict = ok,
+                })
+            end
+        end
+    end
+    return mudou
 end
