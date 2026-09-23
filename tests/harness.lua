@@ -455,7 +455,10 @@ MCL_GUIDE = {
         coords = { { m = 23, x = 26.8, y = 11.6, n = "Rhazul", v = 5555, dq = 92191 } } },
         [1005] = { chance = 2000, method = "BOSS", lockBossName = "Chefe" },
         [1009] = { rep = { factionId = 9003, factionName = "Faccao mais perto", levelName = "Exalted" } },
-        [1010] = { chance = 50, method = "NPC" },
+        -- O CASO DE 23/09, com os dados reais do MCL: a montaria pinada na ENTRADA de uma raide
+        -- (The Venomous Abyss), com a vinheta e o nome da entrada, e `i = true`.
+        [1010] = { chance = 50, method = "NPC",
+                   coords = { { m = 2509, x = 47.2, y = 21.7, n = "The Venomous Abyss", v = 8032, i = true } } },
         [1011] = { chance = 3, method = "USE",
                    rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
         [1012] = { chance = 3, method = "USE",
@@ -1266,6 +1269,18 @@ do
     UNIDADE = { existe = true, nome = "Elite qualquer", guid = "Creature-0-1-2-3-424242-000", classe = "elite" }
     S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate2")
     check("elite fora da tabela nao avisa", #avisos, 0)
+
+    -- (!) ENTRADA DE RAIDE NAO E RARO (23/09, com print): voando perto da entrada do Abismo
+    -- Peconhento, a vinheta DA ENTRADA apareceu no minimapa e o aviso disse que ela "pode largar"
+    -- montaria de raide mitica. O jogador estava no mundo aberto -- a guarda de instancia nao
+    -- tinha como pegar. O ponto do MCL com `i` e de dentro de instancia e nao entra no indice.
+    IsInInstance = function() return false, "none" end
+    TEMPO = TEMPO + 601
+    avisos = {}
+    check("a vinheta da entrada da raide NAO avisa", S.SightVignette(8032, "The Venomous Abyss"), false)
+    check("  nem o nome da entrada, no mapa dela", S.SightName("The Venomous Abyss", 2509), false)
+    check("  e nada foi para o chat", #avisos, 0)
+    IsInInstance = nil
 
     -- (!) SO NO MUNDO ABERTO. Pedido do usuario: "dentro de dungeons e raids nao precisa do
     -- aviso". O mesmo elite, a mesma montaria faltando: dentro de instancia, silencio.
