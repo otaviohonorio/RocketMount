@@ -1,4 +1,4 @@
--- RocketMounts | Roster.lua
+-- RocketMount | Roster.lua
 -- Which of your characters has the reputation a mount asks for.
 --
 -- (!) THIS EXISTS BECAUSE THE API CANNOT ANSWER IT. `C_Reputation` only ever speaks about the

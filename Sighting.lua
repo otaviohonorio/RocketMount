@@ -1,12 +1,12 @@
--- RocketMounts | Sighting.lua
+-- RocketMount | Sighting.lua
 -- Tells you when something in front of you can drop a mount you are missing.
 --
 -- (!) THIS FILE WAS REWRITTEN ON 22/09 AFTER FOUR DEFECTS IN ONE SINGLE REPORT.
 --
 -- The player stood in Silvermoon, at the login loading screen, and got:
 --
---     Rocket Mounts: Rhazul pode largar: Petalasa Vibrante, Malevolince Espreitarraiz
---     Rocket Mounts: seta apontada para onde você viu.
+--     Rocket Mount: Rhazul pode largar: Petalasa Vibrante, Malevolince Espreitarraiz
+--     Rocket Mount: seta apontada para onde você viu.
 --
 -- Rhazul is a real rare, and the catalogue was right about it -- it drops Rootstalker Grimlynx,
 -- in map 2413. Everything else was wrong:

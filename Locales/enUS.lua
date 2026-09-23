@@ -1,4 +1,4 @@
--- RocketMounts | Locales/enUS.lua
+-- RocketMount | Locales/enUS.lua
 -- Localization base. This file ALWAYS loads, whatever the client language is.
 --
 -- Same structure as RocketMeter and RocketSwap (standardized on 05/09/2026), in two layers:

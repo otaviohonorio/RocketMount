@@ -23,5 +23,5 @@ read_globals = {
 
 globals = {
     "SLASH_ROCKETMOUNTS1", "SLASH_ROCKETMOUNTS2",
-    "RocketMountsDB", "RocketMounts_OnCompartmentClick",
+    "RocketMountDB", "RocketMount_OnCompartmentClick",
 }

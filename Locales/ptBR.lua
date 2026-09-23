@@ -1,4 +1,4 @@
--- RocketMounts | Locales/ptBR.lua
+-- RocketMount | Locales/ptBR.lua
 -- Sobrescreve o que o enUS.lua deixou. Uma chave ausente aqui NÃO é um buraco: ela cai no
 -- rótulo do jogo (quando `FROM_GAME` cobre) ou na própria chave, que já é o texto em inglês.
 --
@@ -116,7 +116,7 @@ L["%s has it (%s) and %d more"] = "%s tem (%s) e mais %d"
 -- escolha ganha da palavra do jogo.
 L["All"] = "Todas"
 
-L["Rocket Mounts — where to start"] = "Rocket Mounts — por onde começar"
+L["Rocket Mount — where to start"] = "Rocket Mount — por onde começar"
 L["Sources"] = "Fontes"
 L["name, boss, zone, vendor"] = "nome, chefe, zona, vendedor"
 L["Set map pin"] = "Marcar no mapa"

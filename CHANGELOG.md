@@ -1,4 +1,8 @@
-# Rocket Mounts 0.19.0
+# Rocket Mount 0.20.0
+
+**The addon is now called Rocket Mount** (it was *Rocket Mounts*). The folder, the saved settings
+and the GitHub repository all use the new name.
+
 
 Still an **alpha** — most of this is covered by an offline test harness rather than confirmed in
 a live client. Please keep reporting what you find.

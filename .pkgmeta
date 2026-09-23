@@ -1,4 +1,4 @@
-package-as: RocketMounts
+package-as: RocketMount
 
 # Nada daqui é código do addon: tudo isto fica fora do zip que o jogador baixa.
 ignore:

@@ -1,16 +1,16 @@
 ## Interface: 120100
-## Title: |cffff6a00Rocket|r Mounts
+## Title: |cffff6a00Rocket|r Mount
 ## Notes: The mounts you are missing, easiest first.
 ## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
 ## Author: Otto Rocket (Otávio Honório)
-## Version: 0.19.0
-## SavedVariables: RocketMountsDB
+## Version: 0.20.0
+## SavedVariables: RocketMountDB
 ## Category: Collections
 ## Category-ptBR: Coleções do Bando de Guerra
 ## IconTexture: Interface\Icons\Ability_Mount_RidingHorse
 ## AllowAddOnTableAccess: 1
 ## OptionalDeps: MCL, MountJournalEnhanced
-## AddonCompartmentFunc: RocketMounts_OnCompartmentClick
+## AddonCompartmentFunc: RocketMount_OnCompartmentClick
 
 Locales\enUS.lua
 Locales\ptBR.lua

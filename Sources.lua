@@ -1,4 +1,4 @@
--- RocketMounts | Sources.lua
+-- RocketMount | Sources.lua
 -- Camada de dados: junta o que a API do jogo sabe com o que os addons de catálogo
 -- já curaram, e devolve um registro normalizado por montaria que falta.
 --

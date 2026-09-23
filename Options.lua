@@ -1,4 +1,4 @@
--- RocketMounts | Options.lua
+-- RocketMount | Options.lua
 -- Um lugar só para configurar: Opções > AddOns. A Settings API já traz a métrica de
 -- formulário da Blizzard de graça — nenhum SetPoint aqui.
 local ADDON, ns = ...
@@ -7,7 +7,7 @@ local L = ns.L
 function ns.SetupOptions()
     if ns.category then return end
 
-    local category = Settings.RegisterVerticalLayoutCategory("Rocket Mounts")
+    local category = Settings.RegisterVerticalLayoutCategory("Rocket Mount")
     ns.category = category
 
     --[[ O deslizador de tamanho da lista saiu na 0.10.0 junto com o teto de linhas.

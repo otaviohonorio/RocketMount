@@ -1,4 +1,4 @@
--- RocketMounts | Window.lua
+-- RocketMount | Window.lua
 -- A janela: a lista ranqueada à esquerda, a ficha da montaria escolhida à direita.
 local ADDON, ns = ...
 local L = ns.L
@@ -616,7 +616,7 @@ local function Build()
 
     local title = ns.NewText(header, S.titleFontSize, S.gold)
     title:SetPoint("LEFT", 10, 0)
-    title:SetText(L["Rocket Mounts — where to start"])
+    title:SetText(L["Rocket Mount — where to start"])
 
     local close = GlyphButton(header, "Interface\\Buttons\\UI-GroupLoot-Pass-Up",
         "common-icon-redx", 16, L["Close"])

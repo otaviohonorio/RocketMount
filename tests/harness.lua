@@ -1,4 +1,4 @@
--- RocketMounts | tests/harness.lua
+-- RocketMount | tests/harness.lua
 -- Simulador mínimo da API do WoW para rodar o addon fora do jogo.
 --
 --     luajit tests/harness.lua        (da pasta do addon)
@@ -8,7 +8,7 @@
 -- Se a regra de faixa quebrar, quebra aqui, em disco, e não depois de o jogador abrir a
 -- janela e ver uma montaria de 1/2000 no topo. Este arquivo NÃO entra no .toc.
 
-local ADDON = "RocketMounts"
+local ADDON = "RocketMount"
 
 --------------------------------------------------------------------------------
 -- Objeto genérico: qualquer método vira no-op que devolve outro objeto genérico.

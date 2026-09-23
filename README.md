@@ -1,4 +1,4 @@
-# Rocket Mounts
+# Rocket Mount
 
 The mounts you are still missing, **ordered from easiest to hardest**, with a card explaining how
 each one is obtained. For World of Warcraft: Midnight (12.x).
@@ -15,7 +15,7 @@ Mount catalogues already exist and they are good. What none of them answers is t
 actually have when you sit down to collect: **which one should I go after first?**
 
 The existing addons sort by rarity — the rarest first, which is the opposite of a starting point
-— and they answer per zone, when you happen to have the world map open. Rocket Mounts asks the
+— and they answer per zone, when you happen to have the world map open. Rocket Mount asks the
 inverse question and answers it in one ordered list.
 
 ## How the order is decided
