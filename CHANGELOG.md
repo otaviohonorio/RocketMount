@@ -7,8 +7,9 @@ missing, the panel says who the rare is, which mounts, and the chance of each â€
 - The chances come from Wowhead's drop counts and are built into the addon, so no other addon is
   needed. They are samples, not official rates: rounded to two figures, with a `~` when fewer than
   ten drops were recorded.
-- Many more rares are recognised. Rootstalker Grimlynx, for instance, drops from fifteen rares in
-  Harandar, not just Rhazul.
+- Many more creatures are recognised â€” rares, elites, world bosses and the trash that drops a
+  mount, such as the Qiraji tanks in Ahn'Qiraj. Rootstalker Grimlynx, for instance, drops from
+  fifteen rares in Harandar, not just Rhazul.
 - Rares are now identified by their creature ID, including from the minimap vignette, so the
   alert works in flight and the same rare seen two ways alerts only once.
 - The chat link points the map arrow at where the rare actually is.

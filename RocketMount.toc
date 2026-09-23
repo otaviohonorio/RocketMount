@@ -14,7 +14,7 @@
 
 Locales\enUS.lua
 Locales\ptBR.lua
-Data\RareDrops.lua
+Data\MobDrops.lua
 Core.lua
 Skin.lua
 Expansion.lua

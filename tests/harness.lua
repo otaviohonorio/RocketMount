@@ -1091,7 +1091,7 @@ end
 -- A CHANCE DE DROP, PELA TABELA DO WOWHEAD (23/09)
 --
 -- Pedido: voando pela zona, o aviso diz quem e o raro, o que ele dropa e QUAL A CHANCE. O MCL
--- tem a chance de 5 dos 40 raros; a tabela gerada do Wowhead (`Data/RareDrops.lua`) tem por
+-- tem a chance de 5 dos 40 raros; a tabela gerada do Wowhead (`Data/MobDrops.lua`) tem por
 -- NPC, e e chaveada pelo npc id do GUID -- que nao se engana com nome.
 --------------------------------------------------------------------------------
 do
@@ -1122,13 +1122,14 @@ do
 
     -- A TABELA. Item 9000+n e a montaria n da fixture; a 7 ja foi coletada.
     C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
-    local realDrops = ns.RareDrops
-    ns.RareDrops = {
+    local realDrops = ns.MobDrops
+    ns.MobDrops = {
         [248741] = { name = "Rhazul", { item = 9005, count = 7, outof = 6391 } },
         [250317] = { name = "Oro'ohna",
             { item = 9005, count = 15, outof = 5390 },
             { item = 9007, count = 3, outof = 900 } },     -- ja coletada
         [300000] = { name = "So coletada", { item = 9007, count = 9, outof = 90 } },
+        [15311] = { name = "Anubisath Warder", c = 1, { item = 9005, count = 40, outof = 88000 } },
     }
     S.Rebuild()
 
@@ -1157,6 +1158,21 @@ do
     S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
     check("  e mirar o mesmo raro depois nao repete", #avisos, 1)
 
+    -- (!) ELITE COMUM DA TABELA AVISA. Pedido do usuario: "raros, elites, world boss e etc".
+    -- A guarda de classificacao era para o NOME; com o npc id exato, um elite de AQ que larga
+    -- o tanque Qiraji e reconhecido igual a um raro.
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "elite" }
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    check("elite da tabela avisa, mesmo sem ser raro", #avisos, 1)
+    check("  com a chance dele", (avisos[1] or ""):find("Farm longo (1/2200)", 1, true) ~= nil, true)
+
+    -- E o elite FORA da tabela continua calado: o addon nao vira um alarme de todo elite.
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Elite qualquer", guid = "Creature-0-1-2-3-424242-000", classe = "elite" }
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate2")
+    check("elite fora da tabela nao avisa", #avisos, 0)
+
     -- Raro cuja unica montaria voce ja tem: silencio.
     avisos = {}
     UNIDADE = { existe = true, nome = "So coletada", guid = "Creature-0-1-2-3-300000-000", classe = "rare" }
@@ -1166,7 +1182,7 @@ do
     UNIDADE = { existe = false }
     VINHETAS = {}
     ns.Print = realPrint
-    ns.RareDrops = realDrops
+    ns.MobDrops = realDrops
     C_MountJournal.GetMountFromItem = nil
     S.Rebuild()
 end

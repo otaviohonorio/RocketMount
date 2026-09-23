@@ -42,7 +42,7 @@ local REPEAT_AFTER = 600
 
 local byVignette     -- vignette id      -> { points }
 local byName         -- folded name      -> { points }
-local byNpc          -- npc id           -> { points }, from Data/RareDrops.lua
+local byNpc          -- npc id           -> { points }, from Data/MobDrops.lua
 local lastSeen = {}  -- key              -> when we announced it
 local mountOfItem = {} -- item id -> mount id (false when the item is not a mount); never changes
 local frame
@@ -76,13 +76,13 @@ end
 ---(!) THE WOWHEAD TABLE IS WHAT KNOWS WHO DROPS WHAT. MCL ties Rootstalker Grimlynx to Rhazul
 ---alone; Wowhead records fifteen rares in Harandar dropping it. The table is keyed by npc id,
 ---read from the unit's GUID -- the same key SilverDragon uses, and it cannot be fooled by a name.
-local function IndexarRareDrops(lista)
-    if type(ns.RareDrops) ~= "table" then return end
+local function IndexarMobDrops(lista)
+    if type(ns.MobDrops) ~= "table" then return end
     local porMontaria = {}
     for _, e in ipairs(lista) do
         if e.mountID and not e.unobtainable then porMontaria[e.mountID] = e end
     end
-    for npc, rec in pairs(ns.RareDrops) do
+    for npc, rec in pairs(ns.MobDrops) do
         for _, d in ipairs(rec) do
             local e = d.count and d.count > 0 and porMontaria[MountOfItem(d.item)]
             if e then Push(byNpc, npc, { entry = e, drop = d }) end
@@ -98,7 +98,7 @@ function Sighting.Rebuild()
 
     local ok, lista = pcall(ns.GetRanked)
     if not ok or type(lista) ~= "table" then return end
-    IndexarRareDrops(lista)
+    IndexarMobDrops(lista)
 
     for _, e in ipairs(lista) do
         -- Only what can still be obtained: alerting about a mount that left the game is a taunt.
@@ -161,6 +161,12 @@ local function NomeDeRaro(unit)
     local ok, guid = pcall(UnitGUID, unit)
     local npc = Sighting.NpcOfGUID(ok and guid)
     if not npc then return nil end
+
+    -- (!) THE CLASSIFICATION GUARD IS FOR THE NAME, NOT FOR THE ID. A creature whose npc id is
+    -- in the drop table is recognised exactly, whatever it is -- an elite, a world boss, the
+    -- trash in Ahn'Qiraj that drops the Qiraji tanks. Only the name path, which can be fooled,
+    -- still demands that the game call it a rare.
+    if byNpc and byNpc[npc] then return UnitName(unit), npc end
 
     local classe = UnitClassification and UnitClassification(unit)
     if classe ~= "rare" and classe ~= "rareelite" then return nil end
