@@ -70,11 +70,38 @@ ns.TIER_NAME = {
 -- A dica fala do que a MONTARIA exige, e não do que o addon sabe. A dica da faixa 6 chegou a
 -- ser *"sei o preço; o resto não sei"* e foi reprovada na hora: o jogador não quer saber o que
 -- o addon sabe, quer saber o que falta para ele pegar a montaria.
+---A 1-in-n chance as a percentage, the ONE formatter for the window, the card, the alert and chat.
+---
+---The user (23/09): *"esse 1/200 por exemplo, poderia ser tudo convertido em percentual, tanto
+---na janela, quanto nos avisos"*. Two significant figures below 1% (1/200 is 0.5%, 1/910 is
+---0.11%, 1/2000 is 0.05%), one decimal from 1% to 10% (1/60 is 1.7%), whole numbers above.
+---Trailing zeros go (1/100 is "1%", not "1.0%"). `rough` puts "~" in front: a Wowhead sample
+---with fewer than ten drops.
+---
+---The decimal point comes from the translation (`L["."]`): "0,5%" in Portuguese is the correct
+---form, and Blizzard's own `FormattingUtil.lua` only localises the THOUSANDS separator.
+function ns.FormatChance(n, rough)
+    if type(n) ~= "number" or n <= 0 then return nil end
+    local pct = 100 / n
+    local casas
+    if pct >= 10 then
+        casas = 0
+    elseif pct >= 1 then
+        casas = 1
+    else
+        casas = -math.floor(math.log10(pct)) + 1
+    end
+    local txt = string.format("%." .. casas .. "f", pct)
+    if casas > 0 then txt = txt:gsub("0+$", ""):gsub("%.$", "") end
+    txt = txt:gsub("%.", L["."]) .. "%"
+    return rough and ("~" .. txt) or txt
+end
+
 ns.TIER_HINT = {
     [1] = L["requirement met and checked"],
     [2] = L["a little left on the requirement"],
     [3] = L["road already walked"],
-    [4] = L["1 in 100 or better"],
+    [4] = L["1% or better"],
     [5] = L["bad odds, or a distant requirement"],
     [6] = L["achievement, reputation or guild"],
     [7] = L["no data to estimate from"],
@@ -264,7 +291,7 @@ function ns.Rank(entry)
             e.headline = "—"
         end
     elseif e.chance and e.chance > 0 then
-        e.headline = "1/" .. e.chance
+        e.headline = ns.FormatChance(e.chance)
     elseif e.ownedByPct then
         e.headline = string.format(L["%.0f%% own it"], e.ownedByPct)
     else
@@ -281,7 +308,7 @@ function ns.Rank(entry)
             e.why = e.why .. string.format(L[" (and %d more)"], e.faltando - 1)
         end
         if e.chance then
-            e.why = e.why .. string.format(L["  ·  then, a 1 in %d chance"], e.chance)
+            e.why = e.why .. string.format(L["  ·  then, a %s chance"], ns.FormatChance(e.chance))
         end
     elseif e.tier == ns.TIER.CHECK then
         -- A FRASE COMEÇA PELO QUE O JOGO DIZ, e não pela minha ressalva. O `sourceText` da
@@ -308,7 +335,7 @@ function ns.Rank(entry)
             e.why = e.why .. string.format(L["  ·  and %d more requirement(s)"], e.faltando - 1)
         end
     elseif e.chance then
-        e.why = string.format(L["Chance of 1 in %d"], e.chance)
+        e.why = string.format(L["%s chance"], ns.FormatChance(e.chance))
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
     elseif e.sourceText and e.sourceText ~= "" then

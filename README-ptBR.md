@@ -29,7 +29,7 @@ pôs ali**. Discordar do critério é possível olhando a lista.
 | **Confira no vendedor** | o preço cabe, mas nenhum requisito de acesso é conhecido |
 | **Garantidas — quase liberadas** | 75% ou mais do requisito |
 | **Garantidas — a meio caminho** | 25% ou mais |
-| **Na sorte — chance boa** | liberada, e 1 em 100 ou melhor |
+| **Na sorte — chance boa** | liberada, e 1% ou mais |
 | **Caminho longo** | chance pior, ou requisito ainda no começo |
 | **Sem estimativa** | nenhum catálogo instalado sabe medir esta |
 

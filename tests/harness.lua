@@ -749,7 +749,7 @@ check("reputacao de personagem diz o NOME do personagem",
 local bau = porNome["Bau com reputacao pronta"].e
 check("baú com reputacao pronta NAO e 'Pronto para pegar'", bau.tier ~= ns.TIER.READY, true)
 check("baú com reputacao pronta cai em Farm curto", bau.tier, ns.TIER.SHORTFARM)
-check("e o numero da linha e a QUEDA, nao o requisito", bau.headline, "1/3")
+check("e o numero da linha e a QUEDA, nao o requisito", bau.headline, "33%")
 check("o requisito cumprido nao vira 100%", bau.headline ~= "100%", true)
 
 local dois = porNome["Dois requisitos"].e
@@ -770,7 +770,7 @@ check("e ele nao entra em 'Pronto para pegar'", dois.tier, ns.TIER.UNDERWAY)
 local foraDoTipo = porNome["Bau fora do tipo queda"].e
 check("taxa de queda basta para nao ser deterministica", foraDoTipo.deterministic, false)
 check("mesmo a fonte sendo vendedor, ela cai no farm", foraDoTipo.tier, ns.TIER.SHORTFARM)
-check("e mostra a queda, nao 'pode pegar'", foraDoTipo.headline, "1/3")
+check("e mostra a queda, nao 'pode pegar'", foraDoTipo.headline, "33%")
 
 local trancada = porNome["Queda ainda trancada"].e
 check("queda ainda trancada cai no fim", trancada.tier, ns.TIER.LONGFARM)
@@ -787,14 +787,32 @@ for _, e in ipairs(ranked) do
 end
 check("alguma montaria chega a 'pode pegar'", prontos > 0, true)
 
--- Nenhuma linha pode mostrar porcentagem quando a sorte decide.
-local pctOndeNaoDeve = 0
+-- (!) QUANDO A SORTE DECIDE, O NUMERO DA LINHA E A CHANCE DA QUEDA -- nunca o progresso do
+-- requisito. Era "nenhuma queda em porcentagem" ate 23/09, quando o usuario pediu a chance em
+-- porcentagem ("esse 1/200 ... poderia ser tudo convertido em percentual"). O que a regra
+-- protegia continua: um bau de 1 em 3 com a reputacao cumprida chegou a anunciar "100%".
+local numeroErrado = 0
 for _, e in ipairs(ranked) do
-    if not e.deterministic and e.headline:find("%%") and not e.headline:find("t\195\170m") then
-        pctOndeNaoDeve = pctOndeNaoDeve + 1
+    -- (A que saiu do jogo mostra "—" de proposito: nao e ranqueada.)
+    if not e.deterministic and not e.unobtainable and e.chance and e.chance > 0
+        and e.headline ~= ns.FormatChance(e.chance) then
+        numeroErrado = numeroErrado + 1
     end
 end
-check("nenhuma queda se anuncia em porcentagem", pctOndeNaoDeve, 0)
+check("quando a sorte decide, o numero e a chance da queda", numeroErrado, 0)
+
+-- O FORMATADOR. Dois algarismos abaixo de 1%, uma casa ate 10%, inteiro acima; sem zero
+-- sobrando; "~" para amostra pequena; e a virgula do portugues vem da traducao.
+check("1 em 200 e 0.5%", ns.FormatChance(200), "0.5%")
+check("1 em 60 e 1.7%", ns.FormatChance(60), "1.7%")
+check("1 em 3 e 33%", ns.FormatChance(3), "33%")
+check("1 em 100 e 1%, sem o .0", ns.FormatChance(100), "1%")
+check("1 em 7000 guarda dois algarismos", ns.FormatChance(7000), "0.014%")
+check("amostra pequena leva o ~", ns.FormatChance(913, true), "~0.11%")
+check("sem chance, sem texto", ns.FormatChance(nil), nil)
+rawset(ns.L, ".", ",")
+check("em portugues, virgula", ns.FormatChance(200), "0,5%")
+rawset(ns.L, ".", nil)
 
 -- A faixa nunca pode ficar fora de ordem, seja qual for a regra que a produziu.
 local crescente = true
@@ -808,7 +826,7 @@ check("Pronto mostra 'ready to grab', nao 100%",
     porNome["Pronta por reputacao"].e.headline, "ready to grab")
 check("Quase liberado mostra 80%", porNome["Quase la por reputacao"].e.headline, "80%")
 check("Conquista mostra 50%", porNome["Metade da conquista"].e.headline, "50%")
-check("Farm curto mostra a queda", porNome["Farm curto"].e.headline, "1/100")
+check("Farm curto mostra a queda", porNome["Farm curto"].e.headline, "1%")
 check("Sem estimativa nao inventa numero", porNome["Sem estimativa"].e.headline, "—")
 
 -- Sem catalogo nenhum o addon nao pode quebrar: ele so perde a taxa de queda.
@@ -1187,14 +1205,14 @@ do
 
     -- O TEXTO DA CHANCE. Duas casas significativas, porque sao amostras: 6391/7 e "1/910", e
     -- nao um "1/913" com cara de precisao. E "~" abaixo de dez quedas vistas.
-    check("amostra pequena leva ~ e arredonda", S.ChanceText({ drop = { count = 7, outof = 6391 } }), "~1/910")
-    check("amostra de 15 nao leva ~", S.ChanceText({ drop = { count = 15, outof = 5390 } }), "1/360")
-    check("chance do MCL e exata", S.ChanceText({ entry = { chance = 100 } }), "1/100")
-    check("  e 1/2000 continua 1/2000", S.ChanceText({ entry = { chance = 2000 } }), "1/2000")
+    check("amostra pequena leva ~ e arredonda", S.ChanceText({ drop = { count = 7, outof = 6391 } }), "~0.11%")
+    check("amostra de 15 nao leva ~", S.ChanceText({ drop = { count = 15, outof = 5390 } }), "0.28%")
+    check("chance do MCL e exata", S.ChanceText({ entry = { chance = 100 } }), "1%")
+    check("  e 1 em 2000 vira 0.05%", S.ChanceText({ entry = { chance = 2000 } }), "0.05%")
     check("melhor que 1 em 10 vira porcentagem", S.ChanceText({ entry = { chance = 4 } }), "25%")
     check("sem dado nenhum, sem texto", S.ChanceText({ entry = {} }), nil)
     check("  e quem ja tem contagem do Wowhead ganha dela",
-        S.ChanceText({ entry = { chance = 100 }, drop = { count = 50, outof = 1000 } }), "1/20")
+        S.ChanceText({ entry = { chance = 100 }, drop = { count = 50, outof = 1000 } }), "5%")
 
     -- A TABELA. Item 9000+n e a montaria n da fixture; a 7 ja foi coletada.
     C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
@@ -1219,7 +1237,7 @@ do
     UNIDADE = { existe = true, nome = "Rhazul", guid = "Creature-0-1-2-3-248741-000", classe = "rare" }
     S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
     check("raro da tabela avisa em qualquer mapa", #avisos, 1)
-    check("  com a montaria e a chance", (avisos[1] or ""):find("Farm longo (~1/910)", 1, true) ~= nil, true)
+    check("  com a montaria e a chance", (avisos[1] or ""):find("Farm longo (~0.11%)", 1, true) ~= nil, true)
 
     -- O MESMO RARO POR OUTRO CAMINHO E UM AVISO SO. Voando, a vinheta chega primeiro; depois o
     -- jogador mira. Sao duas deteccoes do mesmo bicho, e a chave e o npc id nas duas.
@@ -1228,7 +1246,7 @@ do
     S.OnEvent(nil, "VIGNETTE_MINIMAP_UPDATED")
     check("vinheta com GUID de criatura avisa pelo npc", #avisos, 1)
     check("  so com o que falta (a coletada nao entra)",
-        (avisos[1] or ""):find("Farm longo (1/360)", 1, true) ~= nil
+        (avisos[1] or ""):find("Farm longo (0.28%)", 1, true) ~= nil
             and (avisos[1] or ""):find("Ja coletada", 1, true) == nil, true)
     UNIDADE = { existe = true, nome = "Oro'ohna", guid = "Creature-0-1-2-3-250317-000", classe = "rare" }
     S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
@@ -1241,7 +1259,7 @@ do
     UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "elite" }
     S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
     check("elite da tabela avisa, mesmo sem ser raro", #avisos, 1)
-    check("  com a chance dele", (avisos[1] or ""):find("Farm longo (1/2200)", 1, true) ~= nil, true)
+    check("  com a chance dele", (avisos[1] or ""):find("Farm longo (0.045%)", 1, true) ~= nil, true)
 
     -- E o elite FORA da tabela continua calado: o addon nao vira um alarme de todo elite.
     avisos = {}
@@ -1498,7 +1516,7 @@ do
     local function Ultima() local es = RocketMountLogDB.entries; return es[#es] end
     local u = Ultima()
     check("o aviso grava 'alert'", u and u.event, "alert")
-    check("  com a montaria e a chance", u and u.data.mounts, "Farm longo 1/360")
+    check("  com a montaria e a chance", u and u.data.mounts, "Farm longo 0.28%")
     check("  e de onde veio", u and u.data.via, "unit:nameplate1")
     check("  e a classe que o jogo deu", u and u.data.class, "worldboss")
 

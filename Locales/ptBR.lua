@@ -28,7 +28,7 @@ L["Cannot be obtained any more"]  = "Não dá mais para conseguir"
 L["requirement met and checked"]        = "requisito cumprido e conferido"
 L["a little left on the requirement"]   = "falta pouco do requisito"
 L["road already walked"]                = "caminho já andado"
-L["1 in 100 or better"]                 = "1 em 100 ou melhor"
+L["1% or better"]                       = "1% ou mais"
 L["bad odds, or a distant requirement"] = "chance ruim, ou requisito longe"
 L["achievement, reputation or guild"]   = "conquista, reputação ou guilda"
 L["no data to estimate from"]           = "sem dado para estimar"
@@ -43,14 +43,16 @@ L["%.0f%% own it"] = "%.0f%% têm"
 L["Not unlocked yet — %s"] = "Falta liberar — %s"
 L["requirement not met"]   = "requisito não cumprido"
 L[" (and %d more)"]        = " (e mais %d)"
-L["  ·  then, a 1 in %d chance"] = "  ·  depois, chance de 1 em %d"
+L["  ·  then, a %s chance"] = "  ·  depois, chance de %s"
 L["  ·  guild vendor: asks for reputation and an achievement OF THE GUILD, which I cannot read"] =
     "  ·  vendedor de guilda: exige reputação e conquista DA GUILDA, que eu não leio"
 L["  ·  there may be a requirement I cannot read"] =
     "  ·  pode haver requisito que eu não leio"
 L["  ·  %s missing"] = "  ·  faltam %s"
 L["  ·  and %d more requirement(s)"] = "  ·  e mais %d requisito(s)"
-L["Chance of 1 in %d"] = "Chance de 1 em %d"
+L["%s chance"] = "chance de %s"
+-- O separador decimal da porcentagem de chance (0,5%). A chave e o ponto do ingles.
+L["."] = ","
 
 --------------------------------------------------------------------------------
 -- Nome das fontes (plano B: o jogo traduz `BATTLE_PET_SOURCE_<n>` sozinho)

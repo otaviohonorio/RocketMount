@@ -180,9 +180,8 @@ function ns.DetailBlocks(entry)
         or ns.SOURCE_NAMES[entry.sourceType])
 
     if entry.chance and entry.chance > 0 then
-        local pct = 100 / entry.chance
-        local fmt = (pct >= 1 and "1 em %d  (%.0f%%)") or (pct >= 0.1 and "1 em %d  (%.1f%%)") or "1 em %d  (%.2f%%)"
-        local txt = string.format(fmt, entry.chance, pct)
+        -- (Era "1 em %d" em portugues fixo no codigo: saia em portugues para quem joga em ingles.)
+        local txt = ns.FormatChance(entry.chance)
         if entry.bossName then txt = txt .. "\n" .. entry.bossName end
         Block(L["Chance"], txt)
     end
