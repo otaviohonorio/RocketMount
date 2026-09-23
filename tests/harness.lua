@@ -85,7 +85,9 @@ function GetLocale() return "enUS" end
 function UnitFactionGroup() return "Alliance" end
 function UnitName(u)
     -- Com unidade falsa montada, responde o nome dela; sem ela, o personagem.
-    if u and UNIDADE and UNIDADE.nome then return UNIDADE.nome end
+    -- "player" e sempre o personagem: o registro de saque e por personagem, e com a unidade
+    -- montada ele saia no nome do raro.
+    if u and u ~= "player" and UNIDADE and UNIDADE.nome then return UNIDADE.nome end
     return "Hamfarir"
 end
 function GetRealmName() return "Azralon" end
@@ -376,7 +378,8 @@ MCL_GUIDE = {
         -- `n` e `v` reproduzem o registro real do MCL: nome do raro no pin e o id da
         -- vinheta. O "Rhazul" e o caso de 22/09 -- raro de verdade, mapa 23, e o aviso
         -- disparando com o jogador em outra zona.
-        coords = { { m = 23, x = 26.8, y = 11.6, n = "Rhazul", v = 5555 } } },
+        -- `dq` e a missao diaria oculta do raro, como no MCL de verdade (Pterrock: 92191).
+        coords = { { m = 23, x = 26.8, y = 11.6, n = "Rhazul", v = 5555, dq = 92191 } } },
         [1005] = { chance = 2000, method = "BOSS", lockBossName = "Chefe" },
         [1009] = { rep = { factionId = 9003, factionName = "Faccao mais perto", levelName = "Exalted" } },
         [1010] = { chance = 50, method = "NPC" },
@@ -1178,6 +1181,68 @@ do
     UNIDADE = { existe = true, nome = "So coletada", guid = "Creature-0-1-2-3-300000-000", classe = "rare" }
     S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
     check("raro so de montaria coletada nao avisa", #avisos, 0)
+
+    -- (!) RARO JA SAQUEADO HOJE NAO AVISA. Pedido do usuario: "se der respawn eu nao posso avisar
+    -- de novo, por que o jogador ja matou ele e nao vai dropar nada".
+    --
+    -- Fonte 1, a do jogo: a missao diaria oculta que o MCL cataloga (`dq`).
+    local realQuest = C_QuestLog.IsQuestFlaggedCompleted
+    C_QuestLog.IsQuestFlaggedCompleted = function(id) return id == 92191 or realQuest(id) end
+    TEMPO = TEMPO + 601
+    avisos = {}
+    check("raro com a diaria do MCL feita NAO avisa", S.SightVignette(5555, "Rhazul"), false)
+    C_QuestLog.IsQuestFlaggedCompleted = realQuest
+    check("  e com a diaria por fazer avisa", S.SightVignette(5555, "Rhazul"), true)
+
+    -- Fonte 2, o nosso registro: o saque aberto diz de que corpo veio.
+    local realTime = time
+    local AGORA = realTime()
+    time = function() return AGORA end
+    C_DateAndTime = {
+        GetSecondsUntilDailyReset = function() return 3600 end,
+        GetSecondsUntilWeeklyReset = function() return 5 * 86400 end,
+    }
+    local SAQUE = {}
+    GetNumLootItems = function() return #SAQUE end
+    GetLootSourceInfo = function(slot) return SAQUE[slot], 1 end
+    ns.MobDrops[15311].c = 3                         -- o elite de AQ faz as vezes de chefe
+
+    SAQUE = { "Creature-0-1-2-3-248741-000", "Creature-0-1-2-3-424242-000" }
+    ns.db.sightings = false                          -- anota mesmo com o aviso desligado
+    S.OnEvent(nil, "LOOT_OPENED")
+    ns.db.sightings = true
+    check("o saque anota o raro da tabela", ns.db.looted["Hamfarir-Azralon"] ~= nil
+        and ns.db.looted["Hamfarir-Azralon"][248741] == AGORA + 3600, true)
+    check("  e ignora o bicho que nao esta na tabela", ns.db.looted["Hamfarir-Azralon"][424242], nil)
+
+    TEMPO = TEMPO + 601
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Rhazul", guid = "Creature-0-1-2-3-248741-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("raro saqueado hoje NAO avisa no respawn", #avisos, 0)
+
+    AGORA = AGORA + 3601                             -- passou o reset diario
+    TEMPO = TEMPO + 601
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("  e depois do reset volta a avisar", #avisos, 1)
+    check("  e o registro vencido some do arquivo", ns.db.looted["Hamfarir-Azralon"][248741], nil)
+
+    -- Chefe (classe 3): o bloqueio e semanal, e nao some no reset do dia.
+    SAQUE = { "Creature-0-1-2-3-15311-000" }
+    S.OnEvent(nil, "LOOT_OPENED")
+    check("chefe fica bloqueado ate o reset SEMANAL",
+        ns.db.looted["Hamfarir-Azralon"][15311], AGORA + 5 * 86400)
+    AGORA = AGORA + 3601
+    TEMPO = TEMPO + 601
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "elite" }
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    check("  e continua calado no dia seguinte", #avisos, 0)
+
+    ns.db.looted = nil
+    ns.MobDrops[15311].c = 1
+    time = realTime
+    GetNumLootItems, GetLootSourceInfo, C_DateAndTime = nil, nil, nil
 
     -- (!) A MONTARIA RECEM-APRENDIDA SAI DO AVISO NA HORA. Pedido do usuario: "so avise sobre a
     -- montaria que o usuario nao tenha ainda". O evento de montaria nova so marcava a lista como

@@ -106,7 +106,9 @@ function Sighting.Rebuild()
             local primeiro
             if e.coords then
                 for _, wp in ipairs(e.coords) do
-                    local ponto = { entry = e, m = wp.m, x = wp.x, y = wp.y }
+                    -- `dq` is the rare's daily tracking quest, when MCL knows it: see
+                    -- `Sighting.LockedOut`.
+                    local ponto = { entry = e, m = wp.m, x = wp.x, y = wp.y, dq = wp.dq }
                     primeiro = primeiro or ponto
                     -- `wp.v` IS THE VIGNETTE, and it is the good key: a number, identical in
                     -- every language, and it cannot collide with a pet's name.
@@ -407,6 +409,91 @@ end
 --------------------------------------------------------------------------------
 -- Announcing
 --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- The loot lockout
+--
+-- (!) A RARE YOU ALREADY LOOTED TODAY DROPS NOTHING. Most rares give loot once per day per
+-- character (world bosses once per week); after that they respawn and die as often as you like,
+-- and the loot window stays empty. The user's words: "se der respawn eu não posso avisar de
+-- novo, por que o jogador já matou ele e não vai dropar nada".
+--
+-- Two sources, strongest first:
+--
+--   1. THE GAME'S OWN FLAG. MCL's catalogue carries, for 142 rares, the hidden daily tracking
+--      quest (`dq`) the game completes when you get the day's credit -- the same thing MCL uses
+--      to grey out its pins (`MCL_Guide.lua`, `GetWaypointState`). Exact, and it knows about a
+--      kill made before this addon was installed.
+--   2. OUR OWN RECORD, for every other creature. When a loot window opens, `GetLootSourceInfo`
+--      says which corpse each item came from (Wowhead's own Looter reads it the same way); the
+--      npc is written down for this character until the next daily reset -- weekly for a boss.
+--      It is a heuristic: a very old rare with no lockout at all would be silenced until the
+--      reset. Silence is the cheap mistake here; an alert for a rare that cannot drop anything
+--      is the one the user reported.
+--------------------------------------------------------------------------------
+local WEEKLY_CLASSES = { [3] = true }   -- Wowhead class 3: boss (world bosses: once a week)
+
+local function CharKey()
+    local name = UnitName and UnitName("player")
+    if not name then return nil end
+    return name .. "-" .. (GetRealmName and GetRealmName() or "")
+end
+
+local function Registro()
+    if not ns.db then return nil end
+    local chave = CharKey()
+    if not chave then return nil end
+    ns.db.looted = ns.db.looted or {}
+    ns.db.looted[chave] = ns.db.looted[chave] or {}
+    return ns.db.looted[chave]
+end
+
+local function SegundosAteReset(semanal)
+    local f = C_DateAndTime and (semanal and C_DateAndTime.GetSecondsUntilWeeklyReset
+        or C_DateAndTime.GetSecondsUntilDailyReset)
+    local ok, s = pcall(f or error)
+    return ok and type(s) == "number" and s or 24 * 3600
+end
+
+---Write down what this loot window came from. Only creatures in the drop table: recording every
+---boar the player skins would grow the saved file for nothing.
+function Sighting.RecordLoot()
+    if not (GetNumLootItems and GetLootSourceInfo and type(ns.MobDrops) == "table") then return end
+    local reg = Registro()
+    if not reg then return end
+    local agora = time and time() or 0
+    local okN, n = pcall(GetNumLootItems)
+    for slot = 1, (okN and n or 0) do
+        local fontes = { pcall(GetLootSourceInfo, slot) }
+        -- `GetLootSourceInfo` answers (guid, quantity) pairs, one per corpse the slot came from.
+        for i = 2, #fontes, 2 do
+            local npc = Sighting.NpcOfGUID(fontes[i])
+            local rec = npc and ns.MobDrops[npc]
+            if rec then
+                reg[npc] = agora + SegundosAteReset(WEEKLY_CLASSES[rec.c])
+            end
+        end
+    end
+end
+
+---True when this rare cannot drop anything for this character right now.
+function Sighting.LockedOut(npc, pontos)
+    for _, p in ipairs(pontos or {}) do
+        if p.dq and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+            local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, p.dq)
+            if ok and feito then return true end
+        end
+    end
+    if npc then
+        local reg = Registro()
+        local ate = reg and reg[npc]
+        if ate then
+            if (time and time() or 0) < ate then return true end
+            reg[npc] = nil     -- the reset came: forget it, and keep the file small
+        end
+    end
+    return false
+end
+
 local function Announce(chave, nome, pontos, onde)
     if not ns.db or ns.db.sightings == false then return false end
     if not pontos or #pontos == 0 then return false end
@@ -464,6 +551,7 @@ function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
 
     local chave = (npc and "npc:" .. npc) or (vignetteID and "v:" .. tostring(vignetteID))
         or ("n:" .. dobrado)
+    if Sighting.LockedOut(npc, pontos) then return false end
     return Announce(chave, nome or "?", pontos, onde)
 end
 
@@ -510,6 +598,12 @@ local function VarrerVinhetas()
 end
 
 function Sighting.OnEvent(_, event, arg1, arg2)
+    -- The loot is recorded even with the alert off: turning it back on later must not bring
+    -- back an alert for a rare already looted today.
+    if event == "LOOT_OPENED" then
+        Sighting.RecordLoot()
+        return
+    end
     if not ns.db or ns.db.sightings == false then return end
 
     if event == "VIGNETTE_MINIMAP_UPDATED" or event == "VIGNETTES_UPDATED" then
@@ -541,7 +635,7 @@ function Sighting.Enable()
     for _, event in ipairs({
         "NAME_PLATE_UNIT_ADDED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED",
         "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_EMOTE",
-        "VIGNETTE_MINIMAP_UPDATED", "VIGNETTES_UPDATED",
+        "VIGNETTE_MINIMAP_UPDATED", "VIGNETTES_UPDATED", "LOOT_OPENED",
     }) do
         pcall(frame.__events.RegisterEvent, frame.__events, event)
     end
