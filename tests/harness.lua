@@ -72,6 +72,8 @@ end
 --------------------------------------------------------------------------------
 _G = _G or getfenv(0)
 
+-- `date` e global no jogo (o diario de desenvolvimento usa).
+date = date or os.date
 UIParent = widget("UIParent")
 GameTooltip = widget("GameTooltip")
 Minimap = widget("Minimap")
@@ -1474,6 +1476,108 @@ end
 -- Isto e aritmetica, e aritmetica se confere em disco -- nao se gasta uma rodada de teste
 -- in-game com ela. O que os testes travam e a RELACAO entre as pecas, nao o numero cru: os
 -- numeros mudam quando a janela mudar; o "tem que caber" nao pode voltar a quebrar.
+print("")
+print("-- o diario de desenvolvimento")
+do
+    local S = ns.Sighting
+    check("em desenvolvimento o diario e o de verdade", ns.Log.enabled, true)
+
+    -- O QUE O DIARIO PRECISA RESPONDER: "o aviso nao apareceu -- por que?". Uma linha por
+    -- decisao sobre um candidato, com o motivo quando fica quieto.
+    ns.Log.Clear()
+    C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
+    local realDrops = ns.MobDrops
+    ns.MobDrops = { [60491] = { name = "Sha of Anger", c = 1, { item = 9005, count = 240, outof = 87235 } } }
+    S.Rebuild()
+    local realPrint = ns.Print
+    ns.Print = function() end
+
+    TEMPO = TEMPO + 601
+    UNIDADE = { existe = true, nome = "Sha of Anger", guid = "Creature-0-1-2-3-60491-000", classe = "worldboss" }
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    local function Ultima() local es = RocketMountLogDB.entries; return es[#es] end
+    local u = Ultima()
+    check("o aviso grava 'alert'", u and u.event, "alert")
+    check("  com a montaria e a chance", u and u.data.mounts, "Farm longo 1/360")
+    check("  e de onde veio", u and u.data.via, "unit:nameplate1")
+    check("  e a classe que o jogo deu", u and u.data.class, "worldboss")
+
+    -- Repetido dentro do intervalo: fica quieto E diz por que.
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    u = Ultima()
+    check("repetido grava 'silent' com o motivo", u and u.event == "silent" and u.data.reason, "repeat")
+
+    -- O saque grava o bloqueio, e o respawn seguinte diz "looted".
+    local SAQUE = { "Creature-0-1-2-3-60491-000" }
+    GetNumLootItems = function() return #SAQUE end
+    GetLootSourceInfo = function(slot) return SAQUE[slot], 1 end
+    C_DateAndTime = { GetSecondsUntilDailyReset = function() return 3600 end,
+                      GetSecondsUntilWeeklyReset = function() return 5 * 86400 end }
+    S.OnEvent(nil, "LOOT_OPENED")
+    u = Ultima()
+    check("o saque grava 'loot' com o bloqueio semanal do world boss",
+        u and u.event == "loot" and u.data.lockout, "weekly")
+    TEMPO = TEMPO + 601
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    u = Ultima()
+    check("o respawn saqueado grava o motivo 'looted'", u and u.data.reason, "looted")
+    check("  com a fonte do bloqueio", u and u.data.lockout, "loot")
+
+    -- O comando mostra as linhas sem erro.
+    local okCmd = pcall(SlashCmdList["ROCKETMOUNT"], "log")
+    check("/rmt log roda", okCmd, true)
+
+    ns.db.looted = nil
+    GetNumLootItems, GetLootSourceInfo, C_DateAndTime = nil, nil, nil
+    UNIDADE = { existe = false }
+
+    -- (!) O PACOTE NAO LEVA O DIARIO. Regra do usuario (23/09): *"quando forem publicados nao
+    -- devem gerar os logs"*. As regras do empacotador aplicadas ao .toc (README do
+    -- BigWigsMods/packager, "In TOC files"): o bloco `#@debug@` sai inteiro; do `#@non-debug@`
+    -- sai o "# " do comeco de cada linha.
+    local pacote, dentroDebug, dentroNon = {}, false, false
+    for linha in io.lines(ADDON .. ".toc") do
+        linha = linha:gsub("%s+$", "")
+        if linha == "#@debug@" then dentroDebug = true
+        elseif linha == "#@end-debug@" then dentroDebug = false
+        elseif linha == "#@non-debug@" then dentroNon = true
+        elseif linha == "#@end-non-debug@" then dentroNon = false
+        elseif not dentroDebug then
+            pacote[#pacote + 1] = dentroNon and linha:gsub("^# ", "") or linha
+        end
+    end
+    local temLog, svs = false, nil
+    for _, linha in ipairs(pacote) do
+        if linha:match("Log%.lua$") then temLog = true end
+        local v = linha:match("^## SavedVariables: (.*)$")
+        if v then svs = v end
+    end
+    check("o .toc empacotado nao carrega Log.lua", temLog, false)
+    check("  e so declara o banco de configuracoes", svs, "RocketMountDB")
+    local pkg = io.open(".pkgmeta"):read("*a")
+    check("  e o .pkgmeta nem poe o Log.lua no zip", pkg:find("%- Log%.lua") ~= nil, true)
+
+    -- E SEM O Log.lua O ADDON RODA IGUAL: o diario de reserva do Core.lua engole tudo, e nenhum
+    -- banco de diario e criado no disco do jogador.
+    local real = ns.Log
+    ns.Log = setmetatable({ enabled = false }, { __index = function() return function() end end })
+    RocketMountLogDB = nil
+    TEMPO = TEMPO + 601
+    UNIDADE = { existe = true, nome = "Sha of Anger", guid = "Creature-0-1-2-3-60491-000", classe = "worldboss" }
+    local okAviso, avisou = pcall(S.OnEvent, nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    check("sem o diario, o aviso roda", okAviso, true)
+    local okLog = pcall(SlashCmdList["ROCKETMOUNT"], "log")
+    check("  e /rmt log so explica que e de desenvolvimento", okLog, true)
+    check("  e nenhum banco de diario e criado", RocketMountLogDB, nil)
+    ns.Log = real
+    UNIDADE = { existe = false }
+
+    ns.Print = realPrint
+    ns.MobDrops = realDrops
+    C_MountJournal.GetMountFromItem = nil
+    S.Rebuild()
+end
+
 print("")
 print("-- geometria da janela (padrao Blizzard, 23/09)")
 do

@@ -51,6 +51,23 @@ local mountOfItem = {} -- item id -> mount id (false when the item is not a moun
 local classeVista = {}
 local frame
 
+-- THE DIARY (`Log.lua`). One line per decision about a CANDIDATE -- a creature the drop table
+-- knows, a rare, a vignette or a name the catalogue has -- never per nameplate: a city fires
+-- hundreds. The same decision about the same creature is written once a minute at most; the
+-- nameplate of a rare standing still re-fires the whole time, and without this the ring would
+-- be swept by one creature and lose the line that explains it.
+local TRACE_EVERY = 60
+local lastTraced = {}
+local function Trace(event, chave, data)
+    if not (ns.Log and ns.Log.Add) then return end
+    local motivo = data and data.reason or ""
+    local k = event .. "|" .. tostring(chave) .. "|" .. tostring(motivo)
+    local agora = GetTime and GetTime() or 0
+    if lastTraced[k] and agora - lastTraced[k] < TRACE_EVERY then return end
+    lastTraced[k] = agora
+    pcall(ns.Log.Add, event, data)
+end
+
 -- A point is one place the catalogue puts one mount's rare: `{ entry, m, x, y }`. Carrying the
 -- coordinates in the index is what lets the arrow point at the RARE instead of at the player.
 -- A point from the Wowhead table carries `drop = { count, outof }` instead of coordinates:
@@ -129,6 +146,13 @@ function Sighting.Rebuild()
                     or { entry = e, m = nil, x = nil, y = nil })
             end
         end
+    end
+    if ns.Log then
+        local function Conta(t) local n = 0; for _ in pairs(t) do n = n + 1 end; return n end
+        pcall(ns.Log.Add, "rebuild", {
+            missing = #lista, npcs = Conta(byNpc), vignettes = Conta(byVignette),
+            names = Conta(byName), table = type(ns.MobDrops) == "table" and Conta(ns.MobDrops) or 0,
+        })
     end
 end
 
@@ -467,44 +491,59 @@ function Sighting.RecordLoot()
     if not reg then return end
     local agora = time and time() or 0
     local okN, n = pcall(GetNumLootItems)
+    local anotados = {}
     for slot = 1, (okN and n or 0) do
         local fontes = { pcall(GetLootSourceInfo, slot) }
         -- `GetLootSourceInfo` answers (guid, quantity) pairs, one per corpse the slot came from.
         for i = 2, #fontes, 2 do
             local npc = Sighting.NpcOfGUID(fontes[i])
             local rec = npc and ns.MobDrops[npc]
-            if rec then
-                reg[npc] = agora + SegundosAteReset(classeVista[npc] == "worldboss")
+            if rec and not anotados[npc] then
+                anotados[npc] = true
+                local semanal = classeVista[npc] == "worldboss"
+                reg[npc] = agora + SegundosAteReset(semanal)
+                if ns.Log then
+                    pcall(ns.Log.Add, "loot", {
+                        npc = npc, name = rec.name, class = classeVista[npc] or "unseen",
+                        lockout = semanal and "weekly" or "daily",
+                        untilIn = reg[npc] - agora,
+                    })
+                end
             end
         end
     end
 end
 
 ---True when this rare cannot drop anything for this character right now.
+---@return boolean locked, string|nil source ("dq:<quest>" or "loot"), number|nil secondsLeft
 function Sighting.LockedOut(npc, pontos)
     for _, p in ipairs(pontos or {}) do
         if p.dq and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
             local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, p.dq)
-            if ok and feito then return true end
+            if ok and feito then return true, "dq:" .. tostring(p.dq) end
         end
     end
     if npc then
         local reg = Registro()
         local ate = reg and reg[npc]
         if ate then
-            if (time and time() or 0) < ate then return true end
+            local agora = time and time() or 0
+            if agora < ate then return true, "loot", ate - agora end
             reg[npc] = nil     -- the reset came: forget it, and keep the file small
         end
     end
     return false
 end
 
+---@return boolean announced, string|nil reason, number|nil secondsAgo
 local function Announce(chave, nome, pontos, onde)
-    if not ns.db or ns.db.sightings == false then return false end
-    if not pontos or #pontos == 0 then return false end
+    if not ns.db or ns.db.sightings == false then return false, "off" end
+    if not pontos or #pontos == 0 then return false, "no-missing-mount" end
 
     local agora = GetTime and GetTime() or 0
-    if lastSeen[chave] and (agora - lastSeen[chave]) < REPEAT_AFTER then return false end
+    if lastSeen[chave] and (agora - lastSeen[chave]) < REPEAT_AFTER then
+        return false, "repeat", math.floor(agora - lastSeen[chave])
+    end
     lastSeen[chave] = agora
 
     local montarias = PorMontaria(pontos)
@@ -546,7 +585,7 @@ function Sighting.InOpenWorld()
     return not (ok and dentro)
 end
 
-function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
+function Sighting.Sight(npc, vignetteID, nome, mapa, onde, via)
     if not Sighting.InOpenWorld() then return false end
     -- (!) ONLY MOUNTS YOU DO NOT HAVE. Learning a mount marks the list dirty and nothing more,
     -- so with the window closed this index kept the old list: kill a rare, loot its mount, see
@@ -567,22 +606,63 @@ function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
 
     local chave = (npc and "npc:" .. npc) or (vignetteID and "v:" .. tostring(vignetteID))
         or ("n:" .. dobrado)
-    if Sighting.LockedOut(npc, pontos) then return false end
-    return Announce(chave, nome or "?", pontos, onde)
+
+    -- Only a CANDIDATE gets a line: something in a table of ours, or a unit the game calls rare.
+    -- Every vignette on the minimap (treasures, quests) and every yell would bury the rest.
+    local conhecido = npc and type(ns.MobDrops) == "table" and ns.MobDrops[npc] ~= nil
+    local candidato = #pontos > 0 or conhecido or (via and via:find("unit", 1, true))
+        or (dobrado ~= "" and byName[dobrado] ~= nil)
+    local base
+    if candidato then
+        base = { via = via or "direct", npc = npc, vignette = vignetteID, name = nome,
+                 map = MapaAtual(), class = npc and classeVista[npc], known = conhecido or nil }
+    end
+
+    local preso, fonte, falta = Sighting.LockedOut(npc, pontos)
+    if preso then
+        if base then
+            base.reason, base.lockout, base.untilIn = "looted", fonte, falta
+            Trace("silent", chave, base)
+        end
+        return false
+    end
+
+    local ok, motivo, haQuanto = Announce(chave, nome or "?", pontos, onde)
+    if base then
+        if ok then
+            local ms = {}
+            for _, m in ipairs(PorMontaria(pontos)) do
+                ms[#ms + 1] = tostring(m.entry.name) .. " " .. tostring(Sighting.ChanceText(m) or "?")
+            end
+            base.mounts = table.concat(ms, "; ")
+            pcall(ns.Log.Add, "alert", base)
+        else
+            -- A name the catalogue knows, refused by the zone guard: say so, it is the one
+            -- silence that looks like a bug.
+            if motivo == "no-missing-mount" and dobrado ~= "" and byName[dobrado] and not conhecido then
+                motivo = "wrong-zone"
+            elseif motivo == "no-missing-mount" and not conhecido and not vignetteID then
+                motivo = "not-in-table"
+            end
+            base.reason, base.ago = motivo, haQuanto
+            Trace("silent", chave, base)
+        end
+    end
+    return ok
 end
 
 ---A vignette the minimap is showing. The precise path: the id is a number and means the same
 ---thing in every language, so no zone guard is needed -- a vignette you can see is, by
 ---definition, near you.
 function Sighting.SightVignette(vignetteID, nome, npc, onde)
-    return Sighting.Sight(npc, vignetteID, nome, nil, onde)
+    return Sighting.Sight(npc, vignetteID, nome, nil, onde, "vignette")
 end
 
 ---A name, from a unit or from a yell. The fallback path, and the one that needs the zone guard:
 ---a name on its own proves nothing.
-function Sighting.SightName(nome, mapa)
+function Sighting.SightName(nome, mapa, via)
     if (nome or "") == "" then return false end
-    return Sighting.Sight(nil, nil, nome, mapa)
+    return Sighting.Sight(nil, nil, nome, mapa, nil, via or "name")
 end
 
 --------------------------------------------------------------------------------
@@ -634,7 +714,7 @@ function Sighting.OnEvent(_, event, arg1, arg2)
     -- no unit behind it to classify, so it is the weakest evidence there is. It now goes through
     -- the same zone guard as everything else, which is what makes it safe to keep.
     if event == "CHAT_MSG_MONSTER_YELL" or event == "CHAT_MSG_MONSTER_EMOTE" then
-        Sighting.SightName(arg2, nil)
+        Sighting.SightName(arg2, nil, "yell")
         return
     end
 
@@ -643,7 +723,7 @@ function Sighting.OnEvent(_, event, arg1, arg2)
     if event == "PLAYER_TARGET_CHANGED" then unit = "target" end
 
     local nome, npc = NomeDeRaro(unit)
-    if nome then Sighting.Sight(npc, nil, nome, nil) end
+    if nome then Sighting.Sight(npc, nil, nome, nil, nil, "unit:" .. tostring(unit)) end
 end
 
 function Sighting.Enable()

@@ -4,7 +4,12 @@
 ## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
 ## Author: Otto Rocket (Otávio Honório)
 ## Version: 0.22.0
-## SavedVariables: RocketMountDB
+#@debug@
+## SavedVariables: RocketMountDB, RocketMountLogDB
+#@end-debug@
+#@non-debug@
+# ## SavedVariables: RocketMountDB
+#@end-non-debug@
 ## Category: Collections
 ## Category-ptBR: Coleções do Bando de Guerra
 ## IconTexture: Interface\Icons\Ability_Mount_RidingHorse
@@ -16,6 +21,9 @@ Locales\enUS.lua
 Locales\ptBR.lua
 Data\MobDrops.lua
 Core.lua
+#@debug@
+Log.lua
+#@end-debug@
 Skin.lua
 Expansion.lua
 Tooltip.lua
