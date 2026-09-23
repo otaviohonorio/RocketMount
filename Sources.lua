@@ -7,6 +7,7 @@
 -- drop e a coordenada. Sem eles o addon continua funcionando com menos informação.
 local _, ns = ...
 local L = ns.L
+local Vendedores   -- defined below (the vendor section); used by BuildList at run time
 
 --------------------------------------------------------------------------------
 -- Provedores opcionais
@@ -536,12 +537,19 @@ function ns.BuildList()
                     e.itemID = rec.itemId
                     e.coords = rec.coords
                     e.bossName = rec.lockBossName
-                    e.vendor = rec.vendorInfo
-                    -- ⛑ VENDEDOR SEM COORDENADA é sinal de que nem o catálogo sabe qual é: a
-                    -- Fênix Negra vem como `{ npc = "Guild Vendors", zone = "" }`. Onde o
-                    -- catálogo é vago, o addon não pode ser categórico.
-                    e.vendorVago = rec.vendorInfo ~= nil
-                        and not (rec.vendorInfo.m and rec.vendorInfo.x)
+                    -- (!) `vendorInfo` CAN BE A LIST. For the 504 mounts it knows only from its
+                    -- vendor table, MCL builds a minimal record with `vendorInfo = vendorList`
+                    -- (`MCL_Guide.lua:484`). Read as one vendor, `.npc` was nil: the Dark Phoenix
+                    -- stopped being recognised as a guild vendor, and the Gilded Prowler said
+                    -- "not even the catalogue knows the vendor" with the vendor right there.
+                    e.vendors = Vendedores(rec.vendorInfo)
+                    e.vendor = e.vendors[1]
+                    for _, v in ipairs(e.vendors) do
+                        if v.m and v.x then e.vendor = v; break end
+                    end
+                    -- ⛑ VENDEDOR SEM COORDENADA é sinal de que nem o catálogo sabe qual é.
+                    e.vendorVago = #e.vendors > 0 and not (e.vendor.m and e.vendor.x)
+                    e.isVendorMount = #e.vendors > 0 or rec.method == "VENDOR"
 
                     -- (!) VENDEDOR DE GUILDA TEM NOME PARA O BLOQUEIO. A Fênix Negra continuou
                     -- incomodando mesmo depois de sair de "é só ir pegar": ela ia para a faixa
@@ -564,8 +572,12 @@ function ns.BuildList()
                     --
                     -- Então ela entra como acesso a 0%, exatamente como a reputação que não dá
                     -- para ler: não dá para afirmar que está cumprido, então não está.
-                    local npc = rec.vendorInfo and rec.vendorInfo.npc or ""
-                    e.vendorGuilda = npc:lower():find("guild", 1, true) ~= nil
+                    e.vendorGuilda = false
+                    for _, v in ipairs(e.vendors) do
+                        if type(v.npc) == "string" and v.npc:lower():find("guild", 1, true) then
+                            e.vendorGuilda = true
+                        end
+                    end
                     e.blackMarket = rec.blackMarket
                     -- Marca do MCL para o que saiu do jogo. Ela existia e não era usada: ver
                     -- `showUnobtainable` no `Core.lua`.
@@ -596,7 +608,14 @@ function ns.BuildList()
                     e.achievementReward = ns.Achievements.Gate(e.name)
                 end
 
-                if e.itemID and ns.Tooltip then
+                -- The item, when the catalogue does not have it: our table, but only where
+                -- the GAME agrees the item teaches this mount.
+                if not e.itemID then e.itemID = ns.VerifiedMountItem(mountID) end
+                -- (!) READ ONLY WHAT ARRIVED. An item out of the cache answers with an empty
+                -- tooltip, and empty is not "no requirement". Until it loads, the mount cannot be
+                -- confirmed (Score.lua), and the validation (Core.lua) waits for it.
+                e.tooltipState = e.itemID and ns.Tooltip and ns.Tooltip.State(e.itemID) or nil
+                if e.tooltipState == "ok" then
                     e.tooltipGate = ns.Tooltip.Gate(e.itemID)
                 end
                 -- What a vendor told THIS character, when it stood in front of one.
@@ -616,6 +635,26 @@ function ns.BuildList()
     end
 
     return out
+end
+
+---MCL's `vendorInfo` as a list, whatever shape it came in (one vendor, or a list of them).
+Vendedores = function(vi)
+    if type(vi) ~= "table" then return {} end
+    if vi.npc or vi.m then return { vi } end
+    local out = {}
+    for _, v in ipairs(vi) do
+        if type(v) == "table" then out[#out + 1] = v end
+    end
+    return out
+end
+
+---The item that teaches this mount, from `Data/MountItems.lua` -- only when the game agrees.
+function ns.VerifiedMountItem(mountID)
+    local item = ns.MountItems and ns.MountItems[mountID]
+    if not (item and C_MountJournal and C_MountJournal.GetMountFromItem) then return nil end
+    local ok, m = pcall(C_MountJournal.GetMountFromItem, item)
+    if ok and m == mountID then return item end
+    return nil
 end
 
 --------------------------------------------------------------------------------

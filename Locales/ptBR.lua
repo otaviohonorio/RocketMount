@@ -21,7 +21,7 @@ L["Guaranteed — nearly unlocked"] = "Garantidas — quase liberadas"
 L["Guaranteed — halfway there"]   = "Garantidas — a meio caminho"
 L["Down to luck — good odds"]     = "Na sorte — chance boa"
 L["Long road"]                    = "Caminho longo"
-L["Check with the vendor"] = "Confira no vendedor"
+L["Not confirmed"] = "Sem confirmação"
 L["No estimate"]                  = "Sem estimativa"
 L["Cannot be obtained any more"]  = "Não dá mais para conseguir"
 
@@ -30,7 +30,12 @@ L["a little left on the requirement"]   = "falta pouco do requisito"
 L["road already walked"]                = "caminho já andado"
 L["1% or better"]                       = "1% ou mais"
 L["bad odds, or a distant requirement"] = "chance ruim, ou requisito longe"
-L["may ask for more than gold"] = "pode pedir mais que ouro"
+L["open the vendor to confirm"] = "abra o vendedor para confirmar"
+
+-- A validação antes da lista (Core.lua, Window.lua).
+L["Checking every mount for this character…"] = "Conferindo cada montaria para este personagem…"
+L["%d of %d items loaded"] = "%d de %d itens carregados"
+L["waiting for the collection data"] = "esperando os dados da coleção"
 L["no data to estimate from"]           = "sem dado para estimar"
 L["left the game"]                      = "saiu do jogo"
 
@@ -222,7 +227,7 @@ L["|cffffff00%s|r can drop: %s%s"]      = "|cffffff00%s|r pode largar: %s%s"
 --------------------------------------------------------------------------------
 -- O painel de opções
 --------------------------------------------------------------------------------
-L["Hide what this character cannot get"] = "Esconder o que este personagem não pode pegar"
+L["Only what I can get"] = "Só o que posso pegar"
 L["A mount from the other faction or another class leaves the list. Uncheck to see the whole collection."] =
     "Montaria de outra facção ou de outra classe sai da lista. Desmarque para ver a coleção "
     .. "inteira."
@@ -232,11 +237,10 @@ L["The button opens the list with a click and the options with a right-click. It
     "O botão abre a lista com um clique e as opções com o botão direito. A dica dele já mostra a "
     .. "próxima montaria da fila."
 
-L["Warn when you see something that drops a mount"] =
-    "Avisar quando ver um bicho que larga montaria"
-L["Shows up on a rare's nameplate, target or minimap pin — and only for a mount you do not have yet. A chat link points your arrow at the rare."] =
-    "Aparece na placa de nome, no alvo ou no marcador do minimapa de um raro — e só para "
-    .. "montaria que você ainda não tem. Um link no chat aponta a sua seta para o raro."
+L["Alert on mount rares"] = "Avisar de raro com montaria"
+L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."] =
+    "Raro, elite ou chefe do mundo que larga montaria que você não tem: o aviso diz quem é, "
+    .. "a montaria e a chance. Só no mundo aberto, e em silêncio depois que você saqueou."
 
 L["Show the ones that left the game"] = "Mostrar as que saíram do jogo"
 L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =

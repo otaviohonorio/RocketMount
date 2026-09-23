@@ -20,6 +20,7 @@
 Locales\enUS.lua
 Locales\ptBR.lua
 Data\MobDrops.lua
+Data\MountItems.lua
 Core.lua
 #@debug@
 Log.lua

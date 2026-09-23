@@ -10,10 +10,15 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   missing now show on the world map, with the game's own rare icons. Hover one to see which
   mounts it drops and the chance of each; click it to point the arrow there. Once you loot it,
   it dims until it can drop again. Only in the open world; turn it off in the options.
-- **Mounts you can buy now come right after "just go get it".** A regular vendor mount whose
-  price you already have sits in the second band, "Check with the vendor", instead of at the end
-  of the list. Open the vendor once and the game settles it: if it sells to you, the mount moves
-  to "just go get it"; if it does not, the card says so.
+- **Nothing reaches the top of the list without being checked.** When a character logs in, the
+  addon loads every missing mount's item from the server and reads its requirements before
+  showing the list — a loading bar shows the progress. A mount bought from a vendor is "just go
+  get it" only when that vendor has told this character it will sell; open the vendor once and
+  the game settles it. Until then it waits in "Not confirmed", near the end of the list, with
+  what is already known about it.
+- Covenant, Brawler's Guild and reputation vendor mounts that the collection data knows only by
+  vendor are now read from their item, so their requirements show up.
+- Guild vendor mounts (such as the Dark Phoenix) are recognised again in every case.
 - **Every drop chance is now a percentage** — in the list, on the mount's card, in the alert
   and in chat. 1 in 200 reads 0.5%; 1 in 100 reads 1%.
 - The chat command is `/rmt` (also `/rocketmount`).

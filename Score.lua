@@ -65,11 +65,16 @@ ns.TIER = {
 -- README always listed it second; the code had drifted from it.
 ns.TIER_RANK = {
     [ns.TIER.READY]     = 1,
-    [ns.TIER.CHECK]     = 2,
-    [ns.TIER.CLOSE]     = 3,
-    [ns.TIER.UNDERWAY]  = 4,
-    [ns.TIER.SHORTFARM] = 5,
-    [ns.TIER.LONGFARM]  = 6,
+    [ns.TIER.CLOSE]     = 2,
+    [ns.TIER.UNDERWAY]  = 3,
+    [ns.TIER.SHORTFARM] = 4,
+    [ns.TIER.LONGFARM]  = 5,
+    -- (!) AND BACK AT THE BOTTOM, THE SAME DAY. Moving it second put every mount the addon
+    -- could not check -- Dark Phoenix, covenant and Brawler's Guild mounts -- among the easy ones,
+    -- and the user: *"se não tem [certeza], vai pra sessão de que não sabe"*. The rule that came
+    -- out of it: the top is only what is CERTAIN. A purchase is certain when the vendor said so
+    -- (Sources.lua, vendorCheck); everything else waits here, next to "no estimate".
+    [ns.TIER.CHECK]     = 6,
     [ns.TIER.UNKNOWN]   = 7,
     [ns.TIER.GONE]      = 8,
 }
@@ -80,7 +85,7 @@ ns.TIER_NAME = {
     [3] = L["Guaranteed — halfway there"],
     [4] = L["Down to luck — good odds"],
     [5] = L["Long road"],
-    [6] = L["Check with the vendor"],
+    [6] = L["Not confirmed"],
     [7] = L["No estimate"],
     [8] = L["Cannot be obtained any more"],
 }
@@ -124,7 +129,7 @@ ns.TIER_HINT = {
     [3] = L["road already walked"],
     [4] = L["1% or better"],
     [5] = L["bad odds, or a distant requirement"],
-    [6] = L["may ask for more than gold"],
+    [6] = L["open the vendor to confirm"],
     [7] = L["no data to estimate from"],
     [8] = L["left the game"],
 }
@@ -282,6 +287,26 @@ function ns.Rank(entry)
         else
             e.tier = ns.TIER.LONGFARM
         end
+    end
+
+    -- (!) CERTAINTY FOR A PURCHASE (23/09). "Just go get it" on a vendor mount is a promise the
+    -- player acts on -- a trip to the NPC -- and the user: *"isso é frustrante chegar no NPC e não
+    -- poder comprar"*. What the addon can read about a purchase is never the whole of it: MCL may
+    -- not know the vendor's condition, and an item tooltip does not show an achievement the
+    -- vendor asks for. The one source that is the whole of it is the vendor itself.
+    -- So a vendor mount is "ready" ONLY with the vendor's verdict for this character; otherwise it
+    -- waits in "not confirmed". A known requirement that is NOT met still pushes it down, as always.
+    if e.isVendorMount and e.tier == ns.TIER.READY
+        and not (e.vendorCheck and e.vendorCheck.pct >= 1) then
+        e.tier = ns.TIER.CHECK
+    end
+    -- And no tooltip still loading can be read as clean.
+    if e.tier == ns.TIER.READY and (e.tooltipState == "pending" or e.tooltipState == "failed") then
+        e.tier = ns.TIER.CHECK
+    end
+
+    if e.deterministic then
+        -- decided in the block above
     elseif e.gated then
         -- Depends on luck AND is not even unlocked yet: the worst of both worlds.
         e.tier = ns.TIER.LONGFARM
@@ -395,6 +420,12 @@ local function Compare(a, b)
     --
     -- O requisito continua mandando onde ele DECIDE alguma coisa: nas faixas determinísticas,
     -- onde ele é o próprio caminho, e na classificação de faixa (gated vai para o fim).
+    -- In "not confirmed", what is known and met goes first: it is the best bet for the trip.
+    if a.tier == ns.TIER.CHECK then
+        local ka, kb = (a.access or 0) >= 1, (b.access or 0) >= 1
+        if ka ~= kb then return ka end
+    end
+
     local sorte = not a.deterministic and not b.deterministic
     if sorte then
         local ca, cb = a.chance or math.huge, b.chance or math.huge

@@ -25,12 +25,12 @@ there**. If you disagree with the criterion, you can see why it landed where it 
 
 | Band | Rule |
 |---|---|
-| **Guaranteed — just go get it** | a known access requirement, met, and nothing left to luck |
-| **Check with the vendor** | the price fits, but no access requirement is known |
+| **Guaranteed — just go get it** | a known access requirement, met, and nothing left to luck — a purchase only once the vendor confirmed it |
 | **Guaranteed — nearly unlocked** | 75% or more of the requirement |
 | **Guaranteed — halfway** | 25% or more |
 | **Luck — good odds** | unlocked, and 1% or better |
 | **Long road** | worse odds, or the requirement barely started |
+| **Not confirmed** | a purchase the vendor has not confirmed yet — open it once to settle it |
 | **No estimate** | no installed catalogue knows how to measure this one |
 
 Two distinctions carry the whole thing:

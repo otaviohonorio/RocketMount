@@ -92,6 +92,11 @@ function Achievements.Scan()
     Step()
 end
 
+---True once the scan went through every category (the validation waits for it).
+function Achievements.IsDone()
+    return byMount ~= nil and not scanning
+end
+
 ---A conquista que dá esta montaria, se alguma.
 function Achievements.For(mountName)
     if not byMount or not mountName then return nil end
