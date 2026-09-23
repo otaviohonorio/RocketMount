@@ -33,7 +33,9 @@ function ns.SetupOptions()
     ]]
 
     do
-        local name = L["Hide what this character cannot get"]
+        -- Short on purpose: the Settings panel gives a label ~200px, and the longer version was
+        -- cut to "Esconder o que este persona..." (screenshot, 23/09).
+        local name = L["Only what I can get"]
         local variable = ADDON .. "HideUnavailable"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -60,7 +62,7 @@ function ns.SetupOptions()
     end
 
     do
-        local name = L["Warn when you see something that drops a mount"]
+        local name = L["Alert on mount rares"]
         local variable = ADDON .. "Sightings"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -68,7 +70,7 @@ function ns.SetupOptions()
             function(value) ns.db.sightings = value end)
 
         Settings.CreateCheckbox(category, setting,
-            L["Shows up on a rare's nameplate, target or minimap pin — and only for a mount you do not have yet. A chat link points your arrow at the rare."])
+            L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."])
     end
 
     do

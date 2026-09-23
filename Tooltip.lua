@@ -158,3 +158,77 @@ function Tooltip.Gate(itemID)
         label = table.concat(faltando, "  ·  "),
     }
 end
+
+--------------------------------------------------------------------------------
+-- LOADING THE ITEMS BEFORE READING THEM
+--
+-- (!) An item the client has not cached yet answers its tooltip with nothing, and nothing was
+-- read as "no requirement" -- once, at login, and never again. Reported 23/09 with a list of
+-- covenant, Brawler's Guild and reputation mounts sitting among the easy ones, and the user:
+-- *"faça todas as validações antes de mostrar essa tela, mesmo que demore (...) coloca uma barra
+-- de loading"*. So every missing mount's item is requested from the server first
+-- (`C_Item.RequestLoadItemDataByID`, answered by `ITEM_DATA_LOAD_RESULT` -- both in the 12.1.0
+-- API docs), and a tooltip is read only once its item is in the cache.
+--------------------------------------------------------------------------------
+local falhou = {}          -- itemID -> true: the server said no, or it never answered
+local pendentes = {}       -- itemID -> true while waiting
+local total, feitos = 0, 0
+local aoTerminar
+local frameEv
+local TIMEOUT = 30
+
+---"ok" (in the cache, the tooltip can be trusted), "pending" or "failed".
+function Tooltip.State(itemID)
+    if type(itemID) ~= "number" then return nil end
+    if not (C_Item and C_Item.IsItemDataCachedByID) then return "ok" end
+    local ok, cached = pcall(C_Item.IsItemDataCachedByID, itemID)
+    if ok and cached then return "ok" end
+    if falhou[itemID] then return "failed" end
+    return "pending"
+end
+
+local function Terminar()
+    for id in pairs(pendentes) do falhou[id] = true end
+    pendentes = {}
+    local fn = aoTerminar
+    aoTerminar = nil
+    if fn then fn() end
+end
+
+local function Uma(itemID, sucesso)
+    if not pendentes[itemID] then return end
+    pendentes[itemID] = nil
+    feitos = feitos + 1
+    if not sucesso then falhou[itemID] = true end
+    if ns.OnValidationProgress then ns.OnValidationProgress() end
+    if next(pendentes) == nil then Terminar() end
+end
+
+---Asks the server for every item not in the cache, and calls `onDone` when all answered (or
+---after TIMEOUT seconds; what did not answer is "failed", never "fine").
+function Tooltip.Preload(itemIDs, onDone)
+    total, feitos = 0, 0
+    pendentes = {}
+    for _, id in ipairs(itemIDs) do
+        if Tooltip.State(id) == "pending" and not pendentes[id] then
+            pendentes[id] = true
+            total = total + 1
+        end
+    end
+    aoTerminar = onDone
+    if total == 0 or not (C_Item and C_Item.RequestLoadItemDataByID) then
+        Terminar()
+        return
+    end
+    if not frameEv then
+        frameEv = CreateFrame("Frame")
+        pcall(frameEv.RegisterEvent, frameEv, "ITEM_DATA_LOAD_RESULT")
+        frameEv:SetScript("OnEvent", function(_, _, itemID, sucesso) Uma(itemID, sucesso) end)
+    end
+    for id in pairs(pendentes) do pcall(C_Item.RequestLoadItemDataByID, id) end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(TIMEOUT, function() if aoTerminar then Terminar() end end)
+    end
+end
+
+function Tooltip.Progress() return feitos, total end

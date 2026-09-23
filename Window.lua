@@ -467,7 +467,56 @@ end
 -- far down, and the cut removed exactly what the player wanted to check. The ceiling existed for
 -- performance; the right answer was not to build what is not on screen -- which is what the
 -- scroll box does.
+--------------------------------------------------------------------------------
+-- The loading bar, while the validation runs (Core.lua)
+--------------------------------------------------------------------------------
+local loading
+
+local function BuildLoading(host)
+    loading = CreateFrame("Frame", nil, host)
+    loading:SetPoint("TOPLEFT", host, "TOPLEFT", 20, -SEARCH_ROW - 40)
+    loading:SetPoint("TOPRIGHT", host, "TOPRIGHT", -20, -SEARCH_ROW - 40)
+    loading:SetHeight(60)
+
+    loading.text = Text(loading, "GameFontNormal", "CENTER")
+    loading.text:SetPoint("TOP")
+    loading.text:SetPoint("LEFT")
+    loading.text:SetPoint("RIGHT")
+    loading.text:SetText(L["Checking every mount for this character…"])
+
+    loading.bar = CreateFrame("StatusBar", nil, loading)
+    loading.bar:SetPoint("TOPLEFT", loading.text, "BOTTOMLEFT", 20, -12)
+    loading.bar:SetPoint("TOPRIGHT", loading.text, "BOTTOMRIGHT", -20, -12)
+    loading.bar:SetHeight(14)
+    loading.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    loading.bar:SetStatusBarColor(1, 0.82, 0)
+    loading.bar:SetMinMaxValues(0, 1)
+    loading.bar.bg = loading.bar:CreateTexture(nil, "BACKGROUND")
+    loading.bar.bg:SetAllPoints()
+    loading.bar.bg:SetColorTexture(0, 0, 0, 0.5)
+
+    loading.detail = Text(loading, "GameFontHighlightSmall", "CENTER")
+    loading.detail:SetPoint("TOP", loading.bar, "BOTTOM", 0, -6)
+end
+
+---Shows the bar while validating, the list once done. Called by the validation as it goes.
+function ns.UpdateLoading()
+    if not (window and loading) then return end
+    local pronto = ns.ValidationDone and ns.ValidationDone()
+    loading:SetShown(not pronto)
+    list:SetShown(pronto)
+    if pronto then return end
+    local v = ns.validation or {}
+    local feitos, total = v.done or 0, v.total or 0
+    loading.bar:SetValue(total > 0 and feitos / total or 0)
+    loading.detail:SetText(total > 0
+        and string.format(L["%d of %d items loaded"], feitos, total)
+        or L["waiting for the collection data"])
+end
+
 local function Redraw()
+    ns.UpdateLoading()
+    if ns.ValidationDone and not ns.ValidationDone() then return end
     local entries, total = ns.GetFiltered()
     local provider = CreateDataProvider(ns.ListElements(entries))
     local keep = ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition
@@ -646,6 +695,7 @@ local function Build()
         { CreateAnchor("TOPLEFT", host, "TOPLEFT", 3, -SEARCH_ROW),
           CreateAnchor("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3, 3) })
     window.list = list
+    BuildLoading(host)
 
     detail = BuildDetail(window)
     detail:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)

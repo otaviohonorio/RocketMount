@@ -25,12 +25,12 @@ pôs ali**. Discordar do critério é possível olhando a lista.
 
 | Faixa | Regra |
 |---|---|
-| **Garantidas — é só ir pegar** | requisito de acesso conhecido e cumprido, e nada por sorte |
-| **Confira no vendedor** | o preço cabe, mas nenhum requisito de acesso é conhecido |
+| **Garantidas — é só ir pegar** | requisito de acesso conhecido e cumprido, e nada por sorte — compra, só depois de o vendedor confirmar |
 | **Garantidas — quase liberadas** | 75% ou mais do requisito |
 | **Garantidas — a meio caminho** | 25% ou mais |
 | **Na sorte — chance boa** | liberada, e 1% ou mais |
 | **Caminho longo** | chance pior, ou requisito ainda no começo |
+| **Sem confirmação** | compra que o vendedor ainda não confirmou — abra o vendedor uma vez para decidir |
 | **Sem estimativa** | nenhum catálogo instalado sabe medir esta |
 
 Duas distinções sustentam tudo:

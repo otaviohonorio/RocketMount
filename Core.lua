@@ -174,11 +174,69 @@ function ns.WaitForProviders(elapsed)
         -- A varredura de conquistas só começa depois de a lista existir: ela casa o texto de
         -- recompensa contra as montarias que FALTAM, e antes disso não há contra o que casar.
         if ns.Achievements then ns.Achievements.Scan() end
+        ns.StartValidation()
         return
     end
     C_Timer.After(WAIT_STEP, function()
         ns.WaitForProviders(elapsed + WAIT_STEP)
     end)
+end
+
+--------------------------------------------------------------------------------
+-- THE VALIDATION, before the list is shown.
+--
+-- (!) The user (23/09), after reaching an NPC that would not sell: *"cada vez que um char logar,
+-- tem que validar (...) faça todas as validações antes de mostrar essa tela, mesmo que demore
+-- para carregar, coloca uma barra de loading"*. Per character, at every login: wait for the
+-- achievement scan, then have the server send every missing mount's item, so each tooltip is
+-- read with its content and not empty. Until then the window shows the bar, not a list that
+-- would be half-checked.
+--------------------------------------------------------------------------------
+ns.validation = { state = "idle", done = 0, total = 0 }
+
+local ESPERA_CONQUISTAS = 30   -- seconds; the scan runs in slices of 40 per frame
+
+function ns.ValidationDone()
+    return ns.validation.state == "done"
+end
+
+function ns.OnValidationProgress()
+    if ns.Tooltip then
+        ns.validation.done, ns.validation.total = ns.Tooltip.Progress()
+    end
+    if ns.UpdateLoading then ns.UpdateLoading() end
+end
+
+function ns.StartValidation()
+    if ns.validation.state ~= "idle" then return end
+    ns.validation.state = "running"
+    ns.Log.Add("validate", { phase = "start" })
+
+    local espera = 0
+    local function Itens()
+        local ids = {}
+        local ok, lista = pcall(ns.GetRanked, true)
+        for _, e in ipairs(ok and lista or {}) do
+            if e.itemID then ids[#ids + 1] = e.itemID end
+        end
+        ns.Log.Add("validate", { phase = "items", items = #ids })
+        ns.Tooltip.Preload(ids, function()
+            ns.validation.state = "done"
+            local feitos, total = ns.Tooltip.Progress()
+            ns.Log.Add("validate", { phase = "done", loaded = feitos, requested = total })
+            ns.Invalidate()
+            ns.OnValidationProgress()
+            if ns.RefreshWindow then ns.RefreshWindow() end
+        end)
+        ns.OnValidationProgress()
+    end
+    local function Conquistas()
+        local pronto = not ns.Achievements or ns.Achievements.IsDone()
+        if pronto or espera >= ESPERA_CONQUISTAS then return Itens() end
+        espera = espera + 0.5
+        C_Timer.After(0.5, Conquistas)
+    end
+    Conquistas()
 end
 
 function RocketMount_OnCompartmentClick()

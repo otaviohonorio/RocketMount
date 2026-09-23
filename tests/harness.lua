@@ -124,11 +124,11 @@ ScrollUtil = {
     InitScrollBoxListWithScrollBar = function(list, _, view)
         list.__view = view
         list.__frames = { Frame = {}, Button = {} }
-        list.__shown = {}
+        list.__linhas = {}
         function list.SetDataProvider(_, provider)
             local items = provider.__items or {}
             local usados = { Frame = 0, Button = 0 }
-            list.__shown = {}
+            list.__linhas = {}
             for _, data in ipairs(items) do
                 view.__factory(function(kind, init)
                     usados[kind] = usados[kind] + 1
@@ -140,12 +140,12 @@ ScrollUtil = {
                     end
                     f.GetElementData = function() return data end
                     init(f, data)
-                    list.__shown[#list.__shown + 1] = f
+                    list.__linhas[#list.__linhas + 1] = f
                 end, data)
             end
         end
         function list.ForEachFrame(_, fn)
-            for _, f in ipairs(list.__shown) do fn(f) end
+            for _, f in ipairs(list.__linhas) do fn(f) end
         end
     end,
     AddManagedScrollBarVisibilityBehavior = function() end,
@@ -497,10 +497,13 @@ MCL_GUIDE = {
                    rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
         [1013] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
         [1014] = { chance = 3, method = "USE" },
-        [1015] = { vendorInfo = { npc = "Guild Vendors", zone = "" } },
+        -- (!) O FORMATO REAL (23/09): para montaria so da tabela de vendedores, o MCL poe uma
+        -- LISTA em `vendorInfo` (`MCL_Guide.lua:484`). Lida como um vendedor so, a Fenix Negra
+        -- deixava de ser vendedor de guilda. A 1016 fica no formato de um vendedor so.
+        [1015] = { vendorInfo = { { npc = "Guild Vendors", zone = "" } } },
         [1017] = { rep = { factionId = 9999, factionName = "Faccao que nunca vi",
                            levelName = "Exalted" } },
-        [1018] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
+        [1018] = { vendorInfo = { { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } } },
         [1019] = { vendorInfo = { npc = "Katie Stokx", zone = "Cidade", m = 1519, x = 77, y = 67 } },
         [1020] = { vendorInfo = { npc = "Ogunaro", zone = "Orgrimmar", m = 85, x = 61, y = 35 } },
         [1021] = { isUnobtainable = true, chance = 100, lockBossName = "Chefe sumido" },
@@ -603,13 +606,10 @@ check("sem dado nenhum = Sem estimativa",
 local ordemEsperada = {
     -- As duas que valem "e so ir pegar": acesso conhecido E cumprido.
     -- A de missao ja feita entra junto das prontas: requisito cumprido e requisito cumprido.
-    "Missao ja feita", "Preco e acesso conhecido", "Pronta por reputacao",
-    -- (!) LOGO DEPOIS, O VENDEDOR COMUM COM O OURO NA MAO (23/09, a pedido do usuario): "a ideia
-    -- e uma ordem do mais facil para o mais dificil (...) esse ai e so ter o gold e ir no NPC
-    -- agora". Ela ja esteve aqui, foi rebaixada para o fim ("eu nao sei pertence ao fim") depois
-    -- da Fenix Negra, e voltou: a Fenix e vendedor de GUILDA, que tem regra propria e continua no
-    -- caminho longo. Abrir o vendedor tira a duvida (veredito do vendedor, Sources.lua).
-    "So da Alianca", "So ouro, sem guilda",
+    -- (!) COMPRA NAO ENTRA AQUI SEM O VENDEDOR (23/09). "Preco e acesso conhecido" -- reputacao
+    -- cumprida e o ouro -- esteve nesta faixa e saiu: o usuario chegou ao NPC e nao pode comprar
+    -- outras montarias assim. "E so ir pegar" de compra exige o veredito do vendedor.
+    "Missao ja feita", "Pronta por reputacao",
     -- Dentro da faixa, quem andou mais caminho vem antes: 95% na frente de 80%.
     "Quase la com mais rep", "Quase la por reputacao",
     "Metade da conquista", "Dois requisitos", "Moeda E reputacao",
@@ -632,6 +632,10 @@ local ordemEsperada = {
     -- deste grupo, em ordem alfabetica. Subiu de lugar por saber MAIS, e nao por estar perto.
     "Metodo a parte",
     "Missao pendente", "Rep que nunca vi", "So o tooltip sabe", "So sei o preco", "Farm longo",
+    -- (!) SEM CONFIRMACAO, NO FIM (23/09). Esteve em 2o por algumas horas e trouxe para o topo
+    -- tudo que o addon nao consegue conferir -- Fenix Negra, montarias de pacto e dos Brigoes.
+    -- Aqui dentro, quem tem requisito conhecido e cumprido vem primeiro.
+    "Preco e acesso conhecido", "So da Alianca", "So ouro, sem guilda",
     "Sem estimativa",
     -- Por ultimo, e so quando pedida: nao e dificil, e impossivel.
     "Saiu do jogo",
@@ -666,14 +670,17 @@ check("vendedor sem coordenada fica marcado como vago", soPreco.vendorVago, true
 -- (!) INVERTIDO EM 23/09, a pedido: "a ideia e uma ordem do mais facil para o mais dificil (...)
 -- esse ai e so ter o gold e ir no NPC agora". Preco cumprido em vendedor comum e a segunda coisa
 -- mais facil que existe; o vendedor de GUILDA (o caso da Fenix) continua no caminho longo, acima.
-check("a faixa 'confira no vendedor' vem logo depois de 'e so ir pegar'",
-    ns.TIER_RANK[ns.TIER.CHECK], ns.TIER_RANK[ns.TIER.READY] + 1)
-check("  e antes de toda faixa de sorte",
-    ns.TIER_RANK[ns.TIER.CHECK] < ns.TIER_RANK[ns.TIER.SHORTFARM], true)
+-- (!) E VOLTOU AO FIM NO MESMO DIA: "se nao tem [certeza], vai pra sessao de que nao sabe".
+check("a faixa 'sem confirmacao' vem depois de toda faixa de progresso e de sorte",
+    ns.TIER_RANK[ns.TIER.CHECK] > ns.TIER_RANK[ns.TIER.LONGFARM], true)
+check("  logo antes de 'sem estimativa'",
+    ns.TIER_RANK[ns.TIER.CHECK], ns.TIER_RANK[ns.TIER.UNKNOWN] - 1)
 
 local comAcesso = porNome["Preco e acesso conhecido"].e
-check("com acesso conhecido e cumprido, ai sim e pronto", comAcesso.tier, ns.TIER.READY)
-check("e ele diz 'ready to grab'", comAcesso.headline, "ready to grab")
+-- (!) NEM ASSIM E "E SO IR PEGAR" (23/09): reputacao cumprida e ouro nao sao a condicao inteira
+-- de uma compra. Sem o veredito do vendedor, fica sem confirmacao -- e na frente da faixa.
+check("com acesso conhecido e cumprido, SEM o vendedor, fica sem confirmacao",
+    comAcesso.tier, ns.TIER.CHECK)
 check("vendedor com coordenada nao e vago", comAcesso.vendorVago, false)
 
 -- (!) REQUISITO QUE NAO DA PARA LER E REQUISITO NAO CUMPRIDO (defeito de 22/09).
@@ -1548,6 +1555,82 @@ end
 -- Isto e aritmetica, e aritmetica se confere em disco -- nao se gasta uma rodada de teste
 -- in-game com ela. O que os testes travam e a RELACAO entre as pecas, nao o numero cru: os
 -- numeros mudam quando a janela mudar; o "tem que caber" nao pode voltar a quebrar.
+
+print("")
+print("-- certeza antes de mostrar (23/09)")
+do
+    local function Achar(nome)
+        for _, e in ipairs(ns.GetRanked(true)) do
+            if e.name == nome then return e end
+        end
+    end
+
+    -- O vendedor em LISTA continua sendo lido: guilda reconhecida, coordenada achada.
+    check("vendedor em lista: a guilda e reconhecida", Achar("So sei o preco").vendorGuilda, true)
+    check("vendedor em lista com coordenada nao e vago", Achar("So ouro, sem guilda").vendorVago, false)
+
+    -- O ITEM DA NOSSA TABELA SO VALE QUANDO O JOGO CONCORDA.
+    C_MountJournal.GetMountFromItem = function(item) return item == 5001 and 1 or nil end
+    ns.MountItems = { [1] = 5001, [2] = 5999 }      -- a 2 esta errada: o jogo nao confirma
+    check("item conferido pelo jogo entra", Achar("Pronta por reputacao").itemID, 5001)
+    check("item que o jogo nao confirma e descartado", Achar("Quase la por reputacao").itemID, nil)
+
+    -- (!) ITEM AINDA CARREGANDO NAO E TOOLTIP LIMPO. A 1 esta pronta pela reputacao; com o item
+    -- fora do cache, nao pode ficar em "e so ir pegar".
+    local cache = {}
+    C_Item.IsItemDataCachedByID = function(id) return cache[id] == true end
+    check("item carregando: nao fica em 'e so ir pegar'", Achar("Pronta por reputacao").tier, ns.TIER.CHECK)
+    cache[5001] = true
+    check("item carregado e limpo: volta para 'e so ir pegar'", Achar("Pronta por reputacao").tier, ns.TIER.READY)
+
+    -- A PRE-CARGA: pede ao servidor, espera, e o que nao chega fica "failed", nunca "ok".
+    local realAfter = C_Timer.After
+    local timeouts = {}
+    C_Timer.After = function(_, fn) timeouts[#timeouts + 1] = fn end
+    local pedidos = {}
+    C_Item.RequestLoadItemDataByID = function(id) pedidos[#pedidos + 1] = id end
+    local terminou = false
+    ns.Tooltip.Preload({ 7001, 7002, 5001 }, function() terminou = true end)
+    check("so pede o que nao esta no cache", #pedidos, 2)
+    local ev
+    for _, f in ipairs(FRAMES_CRIADOS) do
+        if f.__events and f.__events.ITEM_DATA_LOAD_RESULT then ev = f end
+    end
+    ev.__scripts.OnEvent(ev, "ITEM_DATA_LOAD_RESULT", 7001, true)
+    cache[7001] = true
+    check("  e espera todos", terminou, false)
+    ev.__scripts.OnEvent(ev, "ITEM_DATA_LOAD_RESULT", 7002, false)
+    check("  e termina quando todos responderam", terminou, true)
+    check("o que o servidor recusou fica 'failed'", ns.Tooltip.State(7002), "failed")
+    check("o que chegou fica 'ok'", ns.Tooltip.State(7001), "ok")
+    local feitos, total = ns.Tooltip.Progress()
+    check("  e o progresso conta os dois", feitos .. "/" .. total, "2/2")
+
+    -- E O QUE NAO RESPONDE ATE O PRAZO TAMBEM E "failed".
+    terminou = false
+    ns.Tooltip.Preload({ 7003 }, function() terminou = true end)
+    timeouts[#timeouts]()
+    check("sem resposta ate o prazo: termina, e o item fica 'failed'",
+        terminou and ns.Tooltip.State(7003), "failed")
+    C_Timer.After = realAfter
+
+    -- A JANELA NAO MOSTRA LISTA PELA METADE.
+    if not ns.window:IsShown() then ns.ToggleWindow() end
+    local real = ns.validation.state
+    ns.validation.state = "running"
+    ns.RefreshWindow()
+    check("validando: a lista fica escondida", ns.window.list:IsShown(), false)
+    ns.validation.state = "done"
+    ns.RefreshWindow()
+    check("validado: a lista aparece", ns.window.list:IsShown(), true)
+    ns.validation.state = real
+
+    C_Item.IsItemDataCachedByID, C_Item.RequestLoadItemDataByID = nil, nil
+    C_MountJournal.GetMountFromItem = nil
+    ns.MountItems = nil
+    ns.GetRanked(true)
+end
+
 print("")
 print("-- o veredito do vendedor (23/09)")
 do
@@ -1862,7 +1945,7 @@ do
     -- a montaria A passa a mostrar a B. Selecionar A e redesenhar nao pode deixar a B marcada,
     -- e a A continua marcada mesmo com a lista reconstruida (tabelas novas, mesmo mountID).
     local primeira
-    for _, f in ipairs(lista.__shown) do
+    for _, f in ipairs(lista.__linhas) do
         if rawget(f, "entry") then primeira = f; break end
     end
     primeira:GetScript("OnClick")(primeira)
@@ -1870,7 +1953,7 @@ do
     ns.GetRanked(true)
     ns.RefreshWindow()
     local marcadas, certa = 0, false
-    for _, f in ipairs(lista.__shown) do
+    for _, f in ipairs(lista.__linhas) do
         if rawget(f, "entry") and f.selectedTexture:IsShown() then
             marcadas = marcadas + 1
             certa = f.entry.mountID == escolhida.mountID
@@ -1883,7 +1966,7 @@ do
     ns.search = "farm longo"
     ns.RefreshWindow()
     local herdou = false
-    for _, f in ipairs(lista.__shown) do
+    for _, f in ipairs(lista.__linhas) do
         if rawget(f, "entry") and f.entry.mountID ~= escolhida.mountID and f.selectedTexture:IsShown() then
             herdou = true
         end
