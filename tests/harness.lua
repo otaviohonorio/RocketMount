@@ -23,6 +23,9 @@ local function widget(kind)
     function self.Show() self.__shown = true end
     function self.Hide() self.__shown = false end
     function self.IsShown() return self.__shown end
+    -- `SetShown` MUDA o estado, como no jogo. Sem isto ele caia no no-op generico, e a
+    -- selecao da lista nunca aparecia nem sumia no simulador.
+    function self.SetShown(_, v) self.__shown = v and true or false end
     function self.GetName() return kind .. "Frame" end
 
     function self.CreateFontString(_, _, template)
@@ -76,7 +79,75 @@ UISpecialFrames = {}
 SlashCmdList = {}
 MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 
-function CreateFrame(kind) return widget(kind) end
+-- As PARTES que cada template da Blizzard cria (copiado do harness do RocketSwap). Sem isto o
+-- simulador devolveria uma FUNCAO para `frame.Inset` (o metatable responde qualquer chave), o
+-- guard passaria e o `:ClearAllPoints()` estouraria -- erro que so existe no simulador.
+local TEMPLATE_PARTS = {
+    ButtonFrameTemplate = { "Inset", "Bg", "TitleContainer", "CloseButton", "PortraitContainer" },
+    SearchBoxTemplate = { "Instructions" },
+}
+
+FRAMES_CRIADOS = {}
+function CreateFrame(kind, name, parent, template)
+    local f = widget(kind)
+    f.__name, f.__template = name, template
+    for _, part in ipairs(TEMPLATE_PARTS[template or ""] or {}) do
+        f[part] = widget(part)
+    end
+    if f.Instructions then
+        local fs = f:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+        f.Instructions = fs
+    end
+    FRAMES_CRIADOS[#FRAMES_CRIADOS + 1] = f
+    return f
+end
+
+-- O SCROLLBOX, como no RocketSwap: o SetDataProvider CHAMA o inicializador de cada elemento,
+-- para o teste exercitar FillRow/FillHead de verdade, e as linhas sao RECICLADAS como no jogo
+-- (estado que fica na linha de uma montaria reaparece na de outra). A fabrica escolhe o tipo
+-- por elemento -- a lista daqui tem dois: cabecalho de faixa e montaria.
+function CreateDataProvider(t) return { __items = t } end
+function CreateAnchor() return {} end
+ScrollBoxConstants = { RetainScrollPosition = true }
+
+function CreateScrollBoxListLinearView()
+    local view = {}
+    function view.SetPadding(_, ...) view.__padding = { ... } end
+    function view.SetElementExtentCalculator(_, fn) view.__extent = fn end
+    function view.SetElementFactory(_, fn) view.__factory = fn end
+    return view
+end
+
+ScrollUtil = {
+    InitScrollBoxListWithScrollBar = function(list, _, view)
+        list.__view = view
+        list.__frames = { Frame = {}, Button = {} }
+        list.__shown = {}
+        function list.SetDataProvider(_, provider)
+            local items = provider.__items or {}
+            local usados = { Frame = 0, Button = 0 }
+            list.__shown = {}
+            for _, data in ipairs(items) do
+                view.__factory(function(kind, init)
+                    usados[kind] = usados[kind] + 1
+                    local pool = list.__frames[kind]
+                    local f = pool[usados[kind]]
+                    if not f then
+                        f = CreateFrame(kind, nil, list)
+                        pool[usados[kind]] = f
+                    end
+                    f.GetElementData = function() return data end
+                    init(f, data)
+                    list.__shown[#list.__shown + 1] = f
+                end, data)
+            end
+        end
+        function list.ForEachFrame(_, fn)
+            for _, f in ipairs(list.__shown) do fn(f) end
+        end
+    end,
+    AddManagedScrollBarVisibilityBehavior = function() end,
+}
 -- O harness roda em enUS: o `Locales/ptBR.lua` sai na primeira linha, e as conferencias abaixo
 -- leem o texto das CHAVES, que sao o ingles. Trocar para "ptBR" aqui faria o addon carregar
 -- traduzido -- util para conferir uma traducao longa demais, e por isso a funcao existe em vez
@@ -1404,30 +1475,90 @@ end
 -- in-game com ela. O que os testes travam e a RELACAO entre as pecas, nao o numero cru: os
 -- numeros mudam quando a janela mudar; o "tem que caber" nao pode voltar a quebrar.
 print("")
-print("-- geometria da janela")
+print("-- geometria da janela (padrao Blizzard, 23/09)")
 do
     local G = ns.Geometry
     check("a geometria esta exposta", type(G) == "table", true)
 
-    -- (!) A CONTA QUE ESTAVA ERRADA. A largura declarada tem que ser exatamente a que as pecas
-    -- pedem: menor, e a ficha vaza pela borda (era o caso, por 15px); maior, sobra buraco.
-    -- Somam: margem + lista + barra de rolagem + respiro + fio + respiro + ficha + margem.
-    check("a largura declarada e a largura necessaria batem", G.windowW, G.neededW)
+    -- A LARGURA E UMA CONTA FECHADA: borda do inset + lista + calha + ficha + margem direita.
+    -- Menor, a ficha vaza pela borda (ja aconteceu, por 15px); maior, sobra buraco.
+    check("a largura declarada fecha a conta",
+        G.insetX + G.listW + G.gutter + G.detailW + G.rightMargin, G.windowW)
 
-    -- A barra de rolagem vive FORA do quadro rolavel, encostada a direita dele. Sem calha
-    -- propria ela desenha por cima do fio separador, que foi metade do "bem grudadas".
-    check("ha calha para a barra de rolagem", G.scrollbarW >= 20, true)
+    -- A LINHA CABE NO INSET com a barra de rolagem e o recuo do icone (44, o do diario).
+    check("a linha cabe no inset com a barra e o recuo do icone",
+        3 + G.rowPad + G.rowW + G.scrollbarW + 3, G.listW)
+    check("  e a linha tem a altura da do diario de montarias", G.rowH, 46)
 
-    -- Na linha, o nome nao pode terminar depois de onde o numero da direita comeca. Estava
-    -- 4px por cima -- e como o nome nao quebra linha, ele era cortado encostado no numero.
+    -- Na linha, o nome nao pode terminar depois de onde o numero da direita comeca.
     local fimDoNome = G.rowTextX + G.rowTextW
     local inicioDoNumero = G.rowW - G.headlineInset - G.headlineW
     check("o nome termina antes do numero da direita", fimDoNome <= inicioDoNumero, true)
     check("  e sobra respiro entre os dois", inicioDoNumero - fimDoNome >= 8, true)
 
-    -- E a ficha nao pode ser mais estreita que a medida de leitura: ela e prosa, e prosa em
-    -- coluna estreita vira escada.
+    -- O RETRATO: disco de 58 com centro em (26, -22). Nada da lista pode comecar acima de -55
+    -- (a regra que o RocketSwap aprendeu com texto embaixo do disco).
+    check("a lista comeca abaixo do retrato", G.listTop <= -55, true)
+
     check("a ficha tem largura de leitura", G.detailW >= 320, true)
+end
+
+print("")
+print("-- a lista no ScrollBox")
+do
+    ns.search = nil
+    ns.db.sources = nil
+    if not ns.window:IsShown() then ns.ToggleWindow() end
+    ns.RefreshWindow()
+    local lista = ns.window.list
+    local entries = ns.GetFiltered()
+
+    -- UM CABECALHO POR FAIXA, antes das montarias dela.
+    local faixas, cabecalhos, linhas = {}, 0, 0
+    for _, e in ipairs(entries) do faixas[e.tier] = true end
+    local nFaixas = 0
+    for _ in pairs(faixas) do nFaixas = nFaixas + 1 end
+    for _, item in ipairs(ns.ListElements(entries)) do
+        if item.head then cabecalhos = cabecalhos + 1 else linhas = linhas + 1 end
+    end
+    check("um cabecalho por faixa", cabecalhos, nFaixas)
+    check("  e uma linha por montaria", linhas, #entries)
+    check("o contador diz quantas faltam", ns.window.count:GetText(), tostring(#entries))
+
+    -- (`rawget`: no simulador, `f.entry` de um CABECALHO responde uma funcao, verdadeira.)
+    -- A SELECAO E POR MONTARIA, NAO POR MOLDURA. O ScrollBox recicla: a moldura que mostrava
+    -- a montaria A passa a mostrar a B. Selecionar A e redesenhar nao pode deixar a B marcada,
+    -- e a A continua marcada mesmo com a lista reconstruida (tabelas novas, mesmo mountID).
+    local primeira
+    for _, f in ipairs(lista.__shown) do
+        if rawget(f, "entry") then primeira = f; break end
+    end
+    primeira:GetScript("OnClick")(primeira)
+    local escolhida = primeira.entry
+    ns.GetRanked(true)
+    ns.RefreshWindow()
+    local marcadas, certa = 0, false
+    for _, f in ipairs(lista.__shown) do
+        if rawget(f, "entry") and f.selectedTexture:IsShown() then
+            marcadas = marcadas + 1
+            certa = f.entry.mountID == escolhida.mountID
+        end
+    end
+    check("depois de reconstruir, uma linha so fica marcada", marcadas, 1)
+    check("  e e a da montaria escolhida", certa, true)
+
+    -- Filtrando para outra montaria, a moldura reciclada NAO herda a marca.
+    ns.search = "farm longo"
+    ns.RefreshWindow()
+    local herdou = false
+    for _, f in ipairs(lista.__shown) do
+        if rawget(f, "entry") and f.entry.mountID ~= escolhida.mountID and f.selectedTexture:IsShown() then
+            herdou = true
+        end
+    end
+    check("linha reciclada nao herda a selecao de outra montaria", herdou, false)
+    ns.search = nil
+    ns.RefreshWindow()
 end
 
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))

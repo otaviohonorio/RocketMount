@@ -39,6 +39,10 @@ ns.L = L
 local FROM_GAME = {
     ["Close"] = "CLOSE",
     ["All"]   = "ALL",
+    -- The label of the window's counter. Evidence it exists: Blizzard's own mount journal uses
+    -- it for its filter (`Blizzard_MountCollection.lua`, `CreateCheckbox(NOT_COLLECTED, ...)`),
+    -- and the number next to it is exactly that: the mounts not collected.
+    ["Not collected"] = "NOT_COLLECTED",
 }
 
 -- What did NOT get in, and why. Checked against the addons installed on this machine on

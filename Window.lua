@@ -1,138 +1,131 @@
 -- RocketMount | Window.lua
--- A janela: a lista ranqueada à esquerda, a ficha da montaria escolhida à direita.
+-- The window: the ranked list on the left, the card of the chosen mount on the right.
+--
+-- (!) REBUILT ON BLIZZARD'S OWN PARTS (23/09). The user put this window next to RocketSwap's in
+-- one screenshot and asked for the same *"cara de Blizzard"*. This one was drawn by hand -- a
+-- flat colour backdrop, the damage meter's header strip, a glyph for a close button, the old
+-- `UIPanelScrollFrameTemplate` with its arrow buttons and self-painted rows -- and next to a
+-- native frame every one of those reads as a stranger.
+--
+-- The reference is the game's own MOUNT JOURNAL (`Blizzard_MountCollection.xml`, 12.1.0, read
+-- in the Gethe/wow-ui-source mirror), because it is the same content: a list of mounts with a
+-- search, a filter and a detail pane. Every number below that is not derived is from there or
+-- from RocketSwap's window, which follows the same template:
+--
+--   frame      `ButtonFrameTemplate`: portrait, title, close button, Esc, footer band of 26
+--   counter    `InsetFrameTemplate3`, 130x20 at (70, -35) -- the journal's "Total" box
+--   list       the template's `Inset` from y -60; search (SearchBoxTemplate) and filter
+--              (`WowStyle1FilterDropdownTemplate`, width 90) INSIDE its top 36 px, like the
+--              journal; `WowScrollBoxList` + `MinimalScrollBar` below them
+--   row        `MountListButtonTemplate`'s parts: 46 high, `PetList-ButtonBackground`, select
+--              and highlight atlases, 38 icon hanging in a 44 left padding, name in
+--              `GameFontNormal`, the second line in `GameFontDisableSmall`
+--   card       on the window background, not an inset -- RocketSwap's right column: the
+--              inset's marble is a LIST background
 local ADDON, ns = ...
 local L = ns.L
 
 local S = ns.Skin
 
--- (!) A LARGURA É UMA CONTA, E ELA ESTAVA ERRADA (relatado em 22/09, testando no jogo):
--- *"as informações da direita estão bem grudadas e tem texto vazando pra fora da janela"*.
---
--- A fórmula antiga era `WINDOW_W - LIST_W - padding * 3`, e ela esquecia três coisas: as duas
--- margens da janela, o 1px do separador e -- a maior delas -- a **barra de rolagem**. O
--- `UIPanelScrollFrameTemplate` põe a barra FORA do quadro, encostada à direita dele, e ninguém
--- tinha reservado espaço para ela: ela caía em cima do separador. Somando tudo, a ficha começava
--- 15px à direita de onde cabia, e o texto dela terminava do lado de fora da borda.
---
--- Agora cada pedaço tem nome e a soma é conferida no harness. As margens são as duas iguais
--- (`leftMargin`), como na barra de filtro, que já se ancorava assim.
-local SCROLLBAR_W = 25      -- a barra do `UIPanelScrollFrameTemplate`, que vive fora do quadro
-local SEP_W = 1             -- o fio entre a lista e a ficha
+-- The template's anatomy (`PANEL_INSET_*`, `SharedUIPanelTemplates.lua:4-9`; RocketSwap UI.lua).
+local INSET_X = 4             -- the inset's left edge
+local LIST_TOP = -60          -- top of the inset: below the portrait (disc of 58 at (26, -22))
+local FOOTER = 26             -- the band the template reserves at the bottom
+local ATTIC_Y = -35           -- the counter's line, between the title and the inset
+local GUTTER = 20             -- between the list and the card (MountJournal, RocketSwap)
+local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (RocketSwap)
 
-local WINDOW_W, WINDOW_H = 880, 560
-local LIST_W = 450
--- Medida de leitura: a ficha é prosa (o "Como pega" da Blizzard, o aviso de conferir), e texto
--- corrido pede 45 a 75 caracteres por linha. A 12pt da fonte do jogo, 360px dão ~60.
+-- The list column. The inset holds the search row on top (36, as in the journal) and the
+-- scroll box under it, 3 in from each side; the scroll bar sits inside the inset's right side.
+local LIST_W = 460
+local SEARCH_ROW = 36
+local SCROLLBAR_W = 17        -- what `AddManagedScrollBarVisibilityBehavior` gives up (RocketSwap)
+local ROW_PAD = 44            -- the journal's left padding: room for the icon hanging off the row
+
+-- Reading measure: the card is prose (Blizzard's "how to get it", the check-the-vendor note),
+-- and running text wants 45 to 75 characters a line. At the game's 12pt, 360px is ~60.
 local DETAIL_W = 360
 
--- O que a janela precisa ter de largura para tudo isso caber, com margem dos dois lados. Se esta
--- conta não bater com `WINDOW_W`, algo vaza -- e é exatamente isso que o teste trava.
-local NEEDED_W = S.leftMargin + LIST_W + SCROLLBAR_W + S.padding + SEP_W + S.padding
-    + DETAIL_W + S.leftMargin
+local COL_X = INSET_X + LIST_W + GUTTER
+local WINDOW_W = COL_X + DETAIL_W + RIGHT_MARGIN
+local WINDOW_H = 560
 
--- (!) A LINHA DA LISTA TINHA O MESMO VICIO, num numero solto: o nome usava `LIST_W - 160`, e
--- 160 nao vinha de lugar nenhum. Medido, o nome terminava 4px DEPOIS de onde o numero da
--- direita comecava -- encostados, e o nome (que nao quebra linha) cortado bem ali.
-local ROW_W = LIST_W - 20              -- o quadro rolavel desconta a barra
-local ROW_ICON = S.rowHeight - 4
-local ROW_TEXT_X = 2 + ROW_ICON + 8    -- inset do icone + icone + respiro
-local HEADLINE_W = 96
-local HEADLINE_INSET = 6
-local ROW_GAP = 10                     -- o respiro entre o nome e o numero, que faltava
+-- The row. Its width is what the scroll box leaves once the scroll bar and the icon padding
+-- are paid for -- derived, because the last time a number here was chosen by hand the name
+-- ended 4px inside the figure on the right.
+local ROW_H = 46              -- `MountListButtonTemplate`
+local ROW_ICON = 38
+local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
+local ROW_TEXT_X = 6          -- icon at -42, 38 wide, name 10 to its right: -42 + 38 + 10
+local HEADLINE_W = 80
+local HEADLINE_INSET = 8
+local ROW_GAP = 10            -- between the name and the figure
 local ROW_TEXT_W = ROW_W - ROW_TEXT_X - ROW_GAP - HEADLINE_W - HEADLINE_INSET
 
+-- A band's header: a line of its own in the same list, spanning the icon column too.
+local HEAD_H = 30
+local TIER_TITLE_WIDTH = 230  -- the longest band name ("Guaranteed — halfway") at 12pt, ~220
+
 ns.Geometry = {
-    windowW = WINDOW_W, neededW = NEEDED_W,
-    listW = LIST_W, detailW = DETAIL_W,
-    margin = S.leftMargin, padding = S.padding,
-    scrollbarW = SCROLLBAR_W, sepW = SEP_W,
-    rowW = ROW_W, rowTextX = ROW_TEXT_X, rowTextW = ROW_TEXT_W,
+    windowW = WINDOW_W, windowH = WINDOW_H,
+    insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
+    detailW = DETAIL_W, rightMargin = RIGHT_MARGIN,
+    scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD,
+    rowW = ROW_W, rowH = ROW_H, rowTextX = ROW_TEXT_X, rowTextW = ROW_TEXT_W,
     headlineW = HEADLINE_W, headlineInset = HEADLINE_INSET, rowGap = ROW_GAP,
+    headH = HEAD_H, listTop = LIST_TOP, footer = FOOTER,
 }
 
-local ROW_STEP = S.rowHeight + S.rowSpacing
--- O nome da faixa mais longo ("Garantidas — requisito em andamento") a 12pt pede ~220px.
-local TIER_TITLE_WIDTH = 230
-local SECTION_STEP = S.sectionHeight + S.sectionGap
-
 local window, list, detail
-local rowPool, headPool = {}, {}
-local selected
+local selected           -- the entry on the card, matched by mountID across rebuilds
+-- Which recycled frames were already built. A field on the frame (`row.built`) would do in the
+-- game, but the harness answers every unknown field with a function -- truthy -- and the row
+-- was never built there. A table of our own means the same thing in both.
+local built = setmetatable({}, { __mode = "k" })
 
---------------------------------------------------------------------------------
--- Peças
---------------------------------------------------------------------------------
-
-local function Backdrop(frame, alpha)
-    local bg = frame:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(0.035, 0.035, 0.05, alpha or S.panelAlpha)
-    return bg
+local function Text(parent, fontObject, justify)
+    local fs = parent:CreateFontString(nil, "OVERLAY", fontObject)
+    fs:SetJustifyH(justify or "LEFT")
+    return fs
 end
 
-local function GlyphButton(parent, texture, atlas, size, tooltip)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetSize(size, size)
-    local tex = b:CreateTexture(nil, "ARTWORK")
-    tex:SetAllPoints()
-    -- Glifo chapado, não botão com moldura: misturar as duas famílias numa barra de
-    -- ícones produz o efeito "botão de Windows XP no meio de ícone plano".
-    if atlas and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) then
-        tex:SetAtlas(atlas)
-    else
-        tex:SetTexture(texture)
-    end
-    tex:SetDesaturated(true)
-    tex:SetVertexColor(0.78, 0.73, 0.58)
-    b:SetScript("OnEnter", function(self)
-        tex:SetVertexColor(1, 0.95, 0.80)
-        if tooltip then
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:SetText(tooltip, 1, 1, 1)
-            GameTooltip:Show()
-        end
-    end)
-    b:SetScript("OnLeave", function()
-        tex:SetVertexColor(0.78, 0.73, 0.58)
-        GameTooltip:Hide()
-    end)
-    b.texture = tex
-    return b
+local function Same(a, b)
+    return a ~= nil and b ~= nil and (a == b or (a.mountID ~= nil and a.mountID == b.mountID))
 end
 
 --------------------------------------------------------------------------------
--- Ficha da montaria (painel da direita)
+-- The card (right column)
 --------------------------------------------------------------------------------
 
 local function BuildDetail(parent)
     local d = CreateFrame("Frame", nil, parent)
-    d:SetSize(DETAIL_W, WINDOW_H - S.headerHeight - 60)
+    d:SetSize(DETAIL_W, WINDOW_H + LIST_TOP - FOOTER)
 
     d.icon = d:CreateTexture(nil, "ARTWORK")
     d.icon:SetSize(48, 48)
     d.icon:SetPoint("TOPLEFT", 0, 0)
 
-    d.name = ns.NewText(d, S.titleFontSize, S.gold)
-    d.name:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", 8, -2)
-    d.name:SetWidth(DETAIL_W - 60)
+    d.name = Text(d, "GameFontNormalLarge")
+    d.name:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", 10, -4)
+    d.name:SetWidth(DETAIL_W - 58)
     d.name:SetJustifyV("TOP")
 
-    d.tier = ns.NewText(d, S.subFontSize, S.dim)
-    d.tier:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", 8, -24)
-    d.tier:SetWidth(DETAIL_W - 60)
+    d.tier = Text(d, "GameFontHighlightSmall")
+    d.tier:SetPoint("TOPLEFT", d.name, "BOTTOMLEFT", 0, -4)
+    d.tier:SetWidth(DETAIL_W - 58)
 
     d.rule = d:CreateTexture(nil, "ARTWORK")
-    d.rule:SetColorTexture(1, 1, 1, 0.10)
+    d.rule:SetColorTexture(1, 0.82, 0, 0.25)
     d.rule:SetPoint("TOPLEFT", d.icon, "BOTTOMLEFT", 0, -10)
     d.rule:SetSize(DETAIL_W, 1)
 
-    -- Corpo da ficha: uma pilha de blocos "rótulo em cima, texto embaixo". Aqui o
-    -- empilhamento é o certo — é texto livre de largura cheia, não campo de formulário.
+    -- A stack of "label above, text below" blocks. Stacking is right here: this is free text
+    -- the full width of the column, not a form field.
     d.blocks = {}
     for i = 1, 6 do
         local b = {}
-        b.label = ns.NewText(d, S.subFontSize, S.gold)
-        b.value = ns.NewText(d, S.rowFontSize, S.text)
+        b.label = Text(d, "GameFontNormal")
+        b.value = Text(d, "GameFontHighlight")
         b.value:SetWidth(DETAIL_W)
         b.value:SetJustifyV("TOP")
         b.value:SetSpacing(2)
@@ -144,7 +137,7 @@ local function BuildDetail(parent)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
 
-    d.empty = ns.NewText(d, S.rowFontSize, S.dim)
+    d.empty = Text(d, "GameFontDisable")
     d.empty:SetPoint("TOPLEFT", 0, -6)
     d.empty:SetWidth(DETAIL_W)
     d.empty:SetText(L["Pick a mount in the list to see how it is obtained."])
@@ -291,6 +284,7 @@ function ns.DetailBlocks(entry)
     return blocks, wp
 end
 
+
 local function FillDetail(entry)
     local d = detail
     for i = 1, #d.blocks do
@@ -323,13 +317,13 @@ local function FillDetail(entry)
         b.label:Show(); b.value:Show()
     end
 
-    -- Posiciona a pilha. Empilhado: 2 por dentro (rótulo → seu texto), 10 por fora.
-    -- Razão de 5x, que é a que a Blizzard pratica no formulário empilhado dela.
+    -- Stacked: 2 inside (label -> its text), 10 outside. The 5x ratio Blizzard uses in its one
+    -- stacked form (`CommunitiesSettings.xml`).
     local anchor, y = d.rule, -10
     for i = 1, n do
         local b = d.blocks[i]
         b.label:ClearAllPoints()
-        b.label:SetPoint("TOPLEFT", anchor, i == 1 and "BOTTOMLEFT" or "BOTTOMLEFT", 0, y)
+        b.label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y)
         b.value:ClearAllPoints()
         b.value:SetPoint("TOPLEFT", b.label, "BOTTOMLEFT", 0, -2)
         anchor, y = b.value, -10
@@ -352,174 +346,146 @@ local function FillDetail(entry)
 end
 
 --------------------------------------------------------------------------------
--- Linhas da lista
+-- The list: two kinds of element in one scroll box -- a band's header and a mount
 --------------------------------------------------------------------------------
 
-local function AcquireRow(parent, i)
-    local r = rowPool[i]
-    if r then return r end
+---A mount row, built once. The scroll box recycles frames, so everything that depends on the
+---mount goes in `FillRow`, never here.
+local function BuildRow(row)
+    if built[row] then return end
+    built[row] = true
+    row:SetSize(ROW_W, ROW_H)
 
-    r = CreateFrame("Button", nil, parent)
-    r:SetSize(ROW_W, S.rowHeight)
+    row.background = row:CreateTexture(nil, "BACKGROUND")
+    row.background:SetAllPoints()
+    row.background:SetAtlas("PetList-ButtonBackground")
 
-    r.bg = r:CreateTexture(nil, "BACKGROUND")
-    r.bg:SetAllPoints()
+    row.icon = row:CreateTexture(nil, "BORDER")
+    row.icon:SetSize(ROW_ICON, ROW_ICON)
+    row.icon:SetPoint("LEFT", -42, 0)
 
-    r.icon = r:CreateTexture(nil, "ARTWORK")
-    -- Quadrado e da altura da linha, como a referência do medidor faz. Máscara
-    -- redonda menor que a linha parece recorte colado.
-    r.icon:SetSize(ROW_ICON, ROW_ICON)
-    r.icon:SetPoint("LEFT", 2, 0)
+    row.selectedTexture = row:CreateTexture(nil, "OVERLAY")
+    row.selectedTexture:SetAllPoints()
+    row.selectedTexture:SetAtlas("PetList-ButtonSelect")
+    row.selectedTexture:Hide()
 
-    r.name = ns.NewText(r, S.rowFontSize, S.text)
-    r.name:SetPoint("TOPLEFT", r.icon, "TOPRIGHT", 8, -1)
-    r.name:SetWidth(ROW_TEXT_W)
-    r.name:SetWordWrap(false)
+    row:SetHighlightAtlas("PetList-ButtonHighlight")
 
-    r.why = ns.NewText(r, S.subFontSize, S.dim)
-    r.why:SetPoint("BOTTOMLEFT", r.icon, "BOTTOMRIGHT", 8, 1)
-    r.why:SetWidth(ROW_TEXT_W)
-    r.why:SetWordWrap(false)
+    row.name = Text(row, "GameFontNormal")
+    row.name:SetPoint("TOPLEFT", ROW_TEXT_X, -7)
+    row.name:SetWidth(ROW_TEXT_W)
+    row.name:SetWordWrap(false)
 
-    r.headline = ns.NewText(r, S.rowFontSize, S.cream, "RIGHT")
-    r.headline:SetPoint("RIGHT", -HEADLINE_INSET, 0)
-    r.headline:SetWidth(HEADLINE_W)
+    row.why = Text(row, "GameFontDisableSmall")
+    row.why:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -3)
+    row.why:SetWidth(ROW_TEXT_W)
+    row.why:SetWordWrap(false)
 
-    r:SetScript("OnEnter", function(self)
-        if self.entry ~= selected then
-            self.bg:SetColorTexture(unpack(S.rowBackgroundHl))
-        end
-        if self.entry and self.entry.description and self.entry.description ~= "" then
+    row.headline = Text(row, "GameFontHighlight", "RIGHT")
+    row.headline:SetPoint("RIGHT", -HEADLINE_INSET, 0)
+    row.headline:SetWidth(HEADLINE_W)
+
+    row:SetScript("OnEnter", function(self)
+        local e = self.entry
+        if e and e.description and e.description ~= "" then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(self.entry.name, 1, 0.82, 0)
-            GameTooltip:AddLine(self.entry.description, 1, 1, 1, true)
+            GameTooltip:SetText(e.name, 1, 0.82, 0)
+            GameTooltip:AddLine(e.description, 1, 1, 1, true)
             GameTooltip:Show()
         end
     end)
-    r:SetScript("OnLeave", function(self)
-        self:UpdateBackground()
-        GameTooltip:Hide()
-    end)
-    r:SetScript("OnClick", function(self)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnClick", function(self)
         selected = self.entry
         FillDetail(selected)
-        for _, other in ipairs(rowPool) do
-            if other.UpdateBackground then other:UpdateBackground() end
+        if list and list.ForEachFrame then
+            list:ForEachFrame(function(f)
+                -- Only mount rows have one; a band header does not. By TYPE, not truthiness.
+                if type(f.selectedTexture) == "table" then
+                    f.selectedTexture:SetShown(Same(f.entry, selected))
+                end
+            end)
         end
     end)
+end
 
-    function r:UpdateBackground()
-        if self.entry and self.entry == selected then
-            self.bg:SetColorTexture(unpack(S.rowBackgroundSel))
-        else
-            self.bg:SetColorTexture(unpack(S.rowBackground))
-        end
+local function FillRow(row, data)
+    BuildRow(row)
+    local e = data.entry
+    row.entry = e
+    row.icon:SetTexture(e.icon)
+    row.name:SetText(e.name)
+    row.why:SetText(e.why or "")
+    row.headline:SetText(e.headline or "")
+    local c = ns.TIER_COLOR[e.tier] or S.cream
+    row.headline:SetTextColor(c[1], c[2], c[3])
+    row.selectedTexture:SetShown(Same(e, selected))
+end
+
+---A band's header. It hangs left into the icon column, so the band's name lines up with the
+---icons below it rather than with the names.
+local function FillHead(head, data)
+    if not built[head] then
+        built[head] = true
+        head:SetSize(ROW_W, HEAD_H)
+        -- Explicit widths on both: without them a FontString grows as far as its text asks
+        -- and crosses the list's edge -- and these labels change length with every band.
+        head.title = Text(head, "GameFontNormal")
+        head.title:SetPoint("BOTTOMLEFT", -ROW_PAD + 4, 6)
+        head.title:SetWidth(TIER_TITLE_WIDTH)
+        head.title:SetWordWrap(false)
+
+        head.hint = Text(head, "GameFontDisableSmall")
+        head.hint:SetPoint("LEFT", head.title, "RIGHT", 8, 0)
+        head.hint:SetWidth(ROW_W + ROW_PAD - 4 - TIER_TITLE_WIDTH - 8)
+        head.hint:SetWordWrap(false)
     end
-
-    rowPool[i] = r
-    return r
+    head.title:SetText(ns.TIER_NAME[data.tier])
+    local c = ns.TIER_COLOR[data.tier] or S.gold
+    head.title:SetTextColor(c[1], c[2], c[3])
+    head.hint:SetText(ns.TIER_HINT[data.tier])
 end
 
-local function AcquireHead(parent, i)
-    local h = headPool[i]
-    if h then return h end
-
-    h = CreateFrame("Frame", nil, parent)
-    h:SetSize(ROW_W, S.sectionHeight)
-
-    -- Largura explícita nos dois: sem ela a FontString cresce até onde o texto pedir e
-    -- atravessa a borda da lista — e estes rótulos mudam de tamanho a cada faixa.
-    h.title = ns.NewText(h, S.headFontSize, S.gold)
-    h.title:SetPoint("BOTTOMLEFT", 0, 2)
-    h.title:SetWidth(TIER_TITLE_WIDTH)
-    h.title:SetWordWrap(false)
-
-    h.hint = ns.NewText(h, S.subFontSize, S.dim)
-    h.hint:SetPoint("LEFT", h.title, "RIGHT", 8, 0)
-    h.hint:SetWidth(ROW_W - TIER_TITLE_WIDTH - 8)
-    h.hint:SetWordWrap(false)
-
-    h.rule = h:CreateTexture(nil, "ARTWORK")
-    h.rule:SetColorTexture(1, 1, 1, 0.08)
-    h.rule:SetPoint("BOTTOMLEFT", 0, 0)
-    h.rule:SetSize(ROW_W, 1)
-
-    headPool[i] = h
-    return h
-end
-
---------------------------------------------------------------------------------
--- Desenho da lista
---------------------------------------------------------------------------------
-
--- (!) O TETO DE 100 LINHAS SAIU (0.10.0), e ele era a causa de *"tá faltando MUITA montaria
--- nessa lista, não tem as das expansões recentes"*.
---
--- A lista é ordenada por esforço, e montaria de expansão nova está quase sempre LONGE — pouca
--- reputação acumulada, conquista no começo. Ou seja: o corte em 100 recortava exatamente a parte
--- que o jogador mais queria conferir, e o rodapé dizendo "mostrando as 100 primeiras de 412" não
--- competia com a impressão de que a montaria simplesmente não estava lá.
---
--- O teto existia por desempenho: montar 400 linhas de frame na abertura custa caro. A resposta
--- certa não era cortar a lista, era **não montar o que não está à vista** — que é o que o
--- `ScrollBox` da Blizzard faz, e o que o RocketSwap já usa.
-local function Redraw()
-    local entries, total = ns.GetFiltered()
-    local limit = #entries
-
-    for _, r in ipairs(rowPool) do r:Hide(); r.entry = nil end
-    for _, h in ipairs(headPool) do h:Hide() end
-
-    local content = list.content
-    local y = 0
-    local ri, hi, lastTier = 0, 0, nil
-
-    for i = 1, limit do
-        local e = entries[i]
-
+---What the scroll box shows: the filtered list with a header before each band.
+function ns.ListElements(entries)
+    local items, lastTier = {}, nil
+    for _, e in ipairs(entries) do
         if e.tier ~= lastTier then
-            hi = hi + 1
-            local h = AcquireHead(content, hi)
-            h:ClearAllPoints()
-            h:SetPoint("TOPLEFT", 0, -y)
-            h.title:SetText(ns.TIER_NAME[e.tier])
-            local c = ns.TIER_COLOR[e.tier] or S.gold
-            h.title:SetTextColor(c[1], c[2], c[3])
-            h.hint:SetText(ns.TIER_HINT[e.tier])
-            h:Show()
-            y = y + SECTION_STEP
+            items[#items + 1] = { head = true, tier = e.tier }
             lastTier = e.tier
         end
-
-        ri = ri + 1
-        local r = AcquireRow(content, ri)
-        r:ClearAllPoints()
-        r:SetPoint("TOPLEFT", 0, -y)
-        r.entry = e
-        r.icon:SetTexture(e.icon)
-        r.name:SetText(e.name)
-        r.why:SetText(e.why or "")
-        r.headline:SetText(e.headline or "")
-        local c = ns.TIER_COLOR[e.tier] or S.cream
-        r.headline:SetTextColor(c[1], c[2], c[3])
-        r:UpdateBackground()
-        r:Show()
-        y = y + ROW_STEP
+        items[#items + 1] = { entry = e }
     end
+    return items
+end
 
-    content:SetHeight(math.max(y, 1))
+--------------------------------------------------------------------------------
+-- Drawing
+--------------------------------------------------------------------------------
+
+-- (!) THE 100-ROW CEILING IS GONE (0.10.0), and it was the cause of *"tá faltando MUITA
+-- montaria nessa lista"*: the list is sorted by effort, recent-expansion mounts are almost always
+-- far down, and the cut removed exactly what the player wanted to check. The ceiling existed for
+-- performance; the right answer was not to build what is not on screen -- which is what the
+-- scroll box does.
+local function Redraw()
+    local entries, total = ns.GetFiltered()
+    local provider = CreateDataProvider(ns.ListElements(entries))
+    local keep = ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition
+    list:SetDataProvider(provider, keep)
+
+    window.count:SetText(tostring(#entries))
 
     local mcl, rar = ns.ProviderStatus()
-    -- DE QUEM É ESTA LISTA. Reputação, moeda e conquista são lidas do personagem CONECTADO, e
-    -- o jogador não tem como saber disso olhando a tela — foi o segundo defeito relatado em
-    -- 21/09: *"qual char tem essa reputação?"*. O nome fica à vista o tempo todo, e cada linha
-    -- de reputação diz se o progresso é da conta ou só deste personagem.
+    -- WHOSE LIST THIS IS. Reputation, currency and achievements are read from the character
+    -- logged in, and the player cannot tell that by looking -- the second defect reported on
+    -- 21/09: *"qual char tem essa reputação?"*. The name stays in sight the whole time.
     local footer = string.format(L["%d mounts missing"], #entries)
     if #entries ~= total then
         footer = footer .. string.format(L[" (filtered from %d)"], total)
     end
-    -- BUSCA SEM RESULTADO TEM QUE DIZER ISSO. Lista vazia sem explicação parece addon quebrado,
-    -- e o primeiro palpite de quem vê é que o addon parou — não que o termo não achou nada.
+    -- A SEARCH WITH NO RESULT HAS TO SAY SO. An empty list with no explanation looks like a
+    -- broken addon.
     if ns.search and ns.search ~= "" and #entries == 0 then
         footer = string.format(L['nothing found for "%s"'], ns.search)
     end
@@ -540,27 +506,28 @@ function ns.RefreshWindow()
 end
 
 --------------------------------------------------------------------------------
--- Filtro de fonte
+-- The source filter: the journal's own filter button
 --------------------------------------------------------------------------------
 
-local function SourceMenu(owner)
-    if not _G.MenuUtil then
-        ns.Print(L["this client has no new menu; use /rmt sources."])
-        return
-    end
-    MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateTitle(L["Sources"])
-        root:CreateButton(L["All"], function()
+local function SetupFilter(dd)
+    dd:SetWidth(90)
+    -- The little "x" that resets to default, drawn by the template when this says "not default".
+    if dd.SetIsDefaultCallback then
+        dd:SetIsDefaultCallback(function() return ns.db.sources == nil end)
+        dd:SetDefaultCallback(function()
             ns.db.sources = nil
             ns.RefreshWindow()
         end)
+    end
+    dd:SetupMenu(function(_, root)
+        root:CreateTitle(L["Sources"])
         for id = 0, 11 do
             root:CreateCheckbox(ns.SOURCE_NAMES[id],
                 function() return not ns.db.sources or ns.db.sources[id] end,
                 function()
                     local t = ns.db.sources
                     if not t then
-                        -- Primeira desmarcação: parte de "todas ligadas".
+                        -- First untick: start from "all on".
                         t = {}
                         for i = 0, 11 do t[i] = true end
                         ns.db.sources = t
@@ -576,17 +543,23 @@ local function SourceMenu(owner)
 end
 
 --------------------------------------------------------------------------------
--- A janela
+-- The window
 --------------------------------------------------------------------------------
 
 local function Build()
-    window = CreateFrame("Frame", ADDON .. "Window", UIParent)
+    window = CreateFrame("Frame", ADDON .. "Window", UIParent, "ButtonFrameTemplate")
     window:SetSize(WINDOW_W, WINDOW_H)
     window:SetFrameStrata("HIGH")
     window:SetMovable(true)
     window:EnableMouse(true)
     window:SetClampedToScreen(true)
-    Backdrop(window)
+    window:RegisterForDrag("LeftButton")
+    window:SetScript("OnDragStart", window.StartMoving)
+    window:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local point, _, _, x, y = self:GetPoint()
+        ns.db.window = { point = point, x = x, y = y }
+    end)
 
     local pos = ns.db.window
     if pos then
@@ -595,63 +568,43 @@ local function Build()
         window:SetPoint("CENTER")
     end
 
-    -- Cabeçalho: faixa escura em degradê com texto dourado. É o padrão que o
-    -- rastreador de missões, o medidor nativo e o Details usam.
-    local header = CreateFrame("Frame", nil, window)
-    header:SetHeight(S.headerHeight)
-    header:SetPoint("TOPLEFT")
-    header:SetPoint("TOPRIGHT")
-    header.art = header:CreateTexture(nil, "ARTWORK")
-    header.art:SetAllPoints()
-    ns.ApplyHeaderArt(header.art)
+    if window.SetTitle then window:SetTitle(L["Rocket Mount — where to start"]) end
+    if window.SetPortraitToAsset then
+        window:SetPortraitToAsset("Interface\\Icons\\Ability_Mount_RidingHorse")
+    end
 
-    header:EnableMouse(true)
-    header:RegisterForDrag("LeftButton")
-    header:SetScript("OnDragStart", function() window:StartMoving() end)
-    header:SetScript("OnDragStop", function()
-        window:StopMovingOrSizing()
-        local point, _, _, x, y = window:GetPoint()
-        ns.db.window = { point = point, x = x, y = y }
-    end)
+    -- The counter, in the attic between the title and the inset, right of the portrait (x >= 58).
+    local counter = CreateFrame("Frame", nil, window, "InsetFrameTemplate3")
+    counter:SetSize(130, 20)
+    counter:SetPoint("TOPLEFT", 70, ATTIC_Y)
+    window.count = Text(counter, "GameFontHighlightSmall", "RIGHT")
+    window.count:SetPoint("RIGHT", -10, 0)
+    local label = Text(counter, "GameFontNormalSmall")
+    label:SetPoint("LEFT", 10, 0)
+    label:SetPoint("RIGHT", window.count, "LEFT", -3, 0)
+    label:SetText(L["Not collected"])
 
-    local title = ns.NewText(header, S.titleFontSize, S.gold)
-    title:SetPoint("LEFT", 10, 0)
-    title:SetText(L["Rocket Mount — where to start"])
+    -- The inset covers the list column only; the card sits on the window background.
+    local host = window
+    if type(window.Inset) == "table" then
+        window.Inset:ClearAllPoints()
+        window.Inset:SetPoint("TOPLEFT", window, "TOPLEFT", INSET_X, LIST_TOP)
+        window.Inset:SetPoint("BOTTOMRIGHT", window, "BOTTOMLEFT", INSET_X + LIST_W, FOOTER)
+        host = window.Inset
+    end
 
-    local close = GlyphButton(header, "Interface\\Buttons\\UI-GroupLoot-Pass-Up",
-        "common-icon-redx", 16, L["Close"])
-    close:SetPoint("RIGHT", -8, 0)
-    close:SetScript("OnClick", function() window:Hide() end)
-
-    -- Barra de filtro.
-    local bar = CreateFrame("Frame", nil, window)
-    bar:SetPoint("TOPLEFT", header, "BOTTOMLEFT", S.leftMargin, -S.padding)
-    bar:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", -S.leftMargin, -S.padding)
-    bar:SetHeight(25)
-
-    local sourceBtn = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
-    -- Combo de retail: 120x25 (Blizzard_Menu/Mainline/MenuTemplates.xml:4).
-    sourceBtn:SetSize(120, 25)
-    sourceBtn:SetPoint("LEFT")
-    sourceBtn:SetText(L["Sources"])
-    sourceBtn:SetScript("OnClick", function(self) SourceMenu(self) end)
-
-    -- A CAIXA DE BUSCA, com a arte nativa (`SearchBoxTemplate`): lupa, texto de dica e o "x"
-    -- de limpar já vêm com ela, e o jogador reconhece a forma de outras janelas do jogo.
-    local busca = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
-    busca:SetSize(220, 22)
-    busca:SetPoint("LEFT", sourceBtn, "RIGHT", 8, 0)
+    -- Search and filter inside the top of the inset, where the journal has them.
+    local busca = CreateFrame("EditBox", nil, host, "SearchBoxTemplate")
+    busca:SetSize(220, 20)
+    busca:SetPoint("TOPLEFT", host, "TOPLEFT", 15, -9)
     busca:SetAutoFocus(false)
-    -- `if busca.Instructions then` NÃO BASTA: no simulador do harness qualquer campo
-    -- desconhecido responde uma função, que é verdadeira — e aí o `:SetText` tenta indexar
-    -- função e estoura. Guardar pelo TIPO vale nos dois lados, e no jogo também protege contra
-    -- um template que mude de forma.
+    -- `if busca.Instructions then` IS NOT ENOUGH: in the harness any unknown field answers a
+    -- function, which is truthy. Guarding by TYPE works on both sides.
     if type(busca.Instructions) == "table" and busca.Instructions.SetText then
         busca.Instructions:SetText(L["name, boss, zone, vendor"])
     end
-
-    -- FILTRA A CADA TECLA, e não só no Enter: a lista respondendo enquanto se digita é o que
-    -- deixa procurar por tentativa — escreve "fyr", vê, corrige.
+    -- FILTERS ON EVERY KEY, not only on Enter: a list answering while you type is what lets
+    -- you search by trial.
     busca:SetScript("OnTextChanged", function(self, byUser)
         if not byUser then return end
         ns.search = self:GetText()
@@ -665,30 +618,46 @@ local function Build()
     end)
     window.search = busca
 
-    window.footer = ns.NewText(bar, S.subFontSize, S.dim, "RIGHT")
-    window.footer:SetPoint("RIGHT")
-    window.footer:SetWidth(WINDOW_W - 180)
+    local filter = CreateFrame("DropdownButton", nil, host, "WowStyle1FilterDropdownTemplate")
+    filter:SetPoint("TOPRIGHT", host, "TOPRIGHT", -5, -10)
+    SetupFilter(filter)
+    window.filter = filter
 
-    -- Lista, com rolagem.
-    list = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
-    list:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, -S.padding)
-    list:SetSize(LIST_W, WINDOW_H - S.headerHeight - 25 - S.padding * 3 - 6)
-    list.content = CreateFrame("Frame", nil, list)
-    list.content:SetSize(ROW_W, 1)
-    list:SetScrollChild(list.content)
+    list = CreateFrame("Frame", nil, host, "WowScrollBoxList")
+    local bar = CreateFrame("EventFrame", nil, host, "MinimalScrollBar")
+    bar:SetPoint("TOPRIGHT", host, "TOPRIGHT", -3, -SEARCH_ROW)
+    bar:SetPoint("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3, 3)
 
-    -- Separador entre a lista e a ficha.
-    local sep = window:CreateTexture(nil, "ARTWORK")
-    sep:SetColorTexture(1, 1, 1, 0.08)
-    -- A calha da barra de rolagem entra AQUI. Sem ela, a barra desenhava por cima do fio.
-    sep:SetPoint("TOPLEFT", list, "TOPRIGHT", SCROLLBAR_W + S.padding, 0)
-    sep:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", SCROLLBAR_W + S.padding, 0)
-    sep:SetWidth(1)
+    local view = CreateScrollBoxListLinearView()
+    view:SetPadding(0, 0, ROW_PAD, 0, 0)
+    view:SetElementExtentCalculator(function(_, data)
+        return data.head and HEAD_H or ROW_H
+    end)
+    view:SetElementFactory(function(factory, data)
+        if data.head then
+            factory("Frame", FillHead)
+        else
+            factory("Button", FillRow)
+        end
+    end)
+    ScrollUtil.InitScrollBoxListWithScrollBar(list, bar, view)
+    ScrollUtil.AddManagedScrollBarVisibilityBehavior(list, bar,
+        { CreateAnchor("TOPLEFT", host, "TOPLEFT", 3, -SEARCH_ROW),
+          CreateAnchor("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3 - SCROLLBAR_W, 3) },
+        { CreateAnchor("TOPLEFT", host, "TOPLEFT", 3, -SEARCH_ROW),
+          CreateAnchor("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3, 3) })
+    window.list = list
 
     detail = BuildDetail(window)
-    detail:SetPoint("TOPLEFT", sep, "TOPRIGHT", S.padding, 0)
+    detail:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
 
-    tinsert(UISpecialFrames, window:GetName())   -- Esc fecha
+    -- The footer band the template reserves.
+    window.footer = Text(window, "GameFontHighlightSmall")
+    window.footer:SetPoint("BOTTOMLEFT", 10, 8)
+    window.footer:SetWidth(WINDOW_W - 20)
+    window.footer:SetWordWrap(false)
+
+    tinsert(UISpecialFrames, window:GetName())   -- Esc closes
     window:Hide()
     ns.window = window
 end
@@ -703,4 +672,3 @@ function ns.ToggleWindow()
     Redraw()
     FillDetail(selected)
 end
-
