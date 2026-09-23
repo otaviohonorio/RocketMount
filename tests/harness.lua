@@ -1176,6 +1176,23 @@ do
     S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate2")
     check("elite fora da tabela nao avisa", #avisos, 0)
 
+    -- (!) SO NO MUNDO ABERTO. Pedido do usuario: "dentro de dungeons e raids nao precisa do
+    -- aviso". O mesmo elite, a mesma montaria faltando: dentro de instancia, silencio.
+    for _, tipo in ipairs({ "party", "raid", "scenario" }) do
+        IsInInstance = function() return true, tipo end
+        TEMPO = TEMPO + 601
+        avisos = {}
+        UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "elite" }
+        S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+        check("dentro de instancia (" .. tipo .. ") nao avisa", #avisos, 0)
+        check("  nem pelo caminho direto", S.SightVignette(5555, "Rhazul"), false)
+    end
+    IsInInstance = function() return false, "none" end
+    TEMPO = TEMPO + 601
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
+    check("  e no mundo aberto o mesmo elite avisa", #avisos, 1)
+    IsInInstance = nil
+
     -- Raro cuja unica montaria voce ja tem: silencio.
     avisos = {}
     UNIDADE = { existe = true, nome = "So coletada", guid = "Creature-0-1-2-3-300000-000", classe = "rare" }

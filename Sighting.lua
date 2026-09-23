@@ -536,7 +536,18 @@ end
 ---  npc       from a GUID: exact, and the key of the Wowhead table;
 ---  vignette  from the minimap: exact, the key of MCL's pins;
 ---  name      the fallback, and only inside the zone guard.
+---(!) OPEN WORLD ONLY. The user: "os avisos são para áreas abertas, dentro de dungeons e raids
+---não precisa do aviso". Inside an instance you already know what you came for, and a boss's
+---mount is on the dungeon journal. `IsInInstance` is true in dungeons, raids, delves,
+---scenarios, battlegrounds and arenas -- the same test SilverDragon applies (`core.lua:853`).
+function Sighting.InOpenWorld()
+    if not IsInInstance then return true end
+    local ok, dentro = pcall(IsInInstance)
+    return not (ok and dentro)
+end
+
 function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
+    if not Sighting.InOpenWorld() then return false end
     -- (!) ONLY MOUNTS YOU DO NOT HAVE. Learning a mount marks the list dirty and nothing more,
     -- so with the window closed this index kept the old list: kill a rare, loot its mount, see
     -- the next one, and the alert offered you the mount you had just learned. A dirty list is
@@ -610,6 +621,8 @@ function Sighting.OnEvent(_, event, arg1, arg2)
         return
     end
     if not ns.db or ns.db.sightings == false then return end
+    -- Checked here too, before any work: inside a raid the nameplate events never stop.
+    if not Sighting.InOpenWorld() then return end
 
     if event == "VIGNETTE_MINIMAP_UPDATED" or event == "VIGNETTES_UPDATED" then
         VarrerVinhetas()
