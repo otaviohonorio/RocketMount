@@ -12,6 +12,9 @@ missing, the panel says who the rare is, which mounts, and the chance of each â€
   fifteen rares in Harandar, not just Rhazul.
 - Rares are now identified by their creature ID, including from the minimap vignette, so the
   alert works in flight and the same rare seen two ways alerts only once.
+- A rare you already looted today stays quiet when it respawns, since it cannot drop anything
+  for you until the daily reset (the weekly one for bosses). Mounts you already own are never
+  offered, including one you learned a minute ago.
 - The chat link points the map arrow at where the rare actually is.
 
 **The addon is now called Rocket Mount** (it was *Rocket Mounts*). The folder, the saved settings

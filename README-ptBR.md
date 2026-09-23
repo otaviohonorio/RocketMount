@@ -87,7 +87,8 @@ cada uma**. No chat vem um link que aponta a seta do mapa para o raro.
 
 Não é um segundo escaneador de raros. O SilverDragon avisa que há um raro; este avisa que há
 **uma montaria que falta para você**, e qual. Raro cuja montaria você já tem não diz nada. As que
-saíram do jogo também não — isso seria provocação.
+saíram do jogo também não — isso seria provocação. E o raro que você já saqueou hoje também fica
+quieto: ele volta a nascer, mas não larga nada para você até o reset.
 
 As chances vêm das contagens de queda do Wowhead, embutidas no addon (`Data/MobDrops.lua`), então
 nenhum outro addon é necessário. São amostras, não as taxas da Blizzard: vão arredondadas em dois

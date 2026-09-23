@@ -87,7 +87,9 @@ chance of each**. A link in chat points the map arrow at the rare.
 
 It is not a second rare scanner. SilverDragon tells you a rare is there; this tells you **a mount
 you are missing** is there, and which one. A rare whose mount you already have says nothing at
-all. Mounts that left the game say nothing either — that would just be taunting.
+all, and neither does a rare you already looted today: it respawns, but it cannot drop anything
+for you until the reset. Mounts that left the game say nothing either — that would just be
+taunting.
 
 The chances come from Wowhead's drop counts, built into the addon (`Data/MobDrops.lua`), so no
 other addon is needed. They are samples, not Blizzard's rates: they are rounded to two figures,
