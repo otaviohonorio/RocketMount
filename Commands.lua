@@ -201,6 +201,28 @@ commands["debug"] = function(rest)
     end
 end
 
+-- THE DIARY, in chat. Only in development: the packaged addon has no `Log.lua` (see Core.lua).
+commands["log"] = function(rest)
+    if not ns.Log.enabled then
+        ns.Print(L["the log only exists in development builds."])
+        return
+    end
+    rest = (rest or ""):lower()
+    if rest == "clear" then
+        ns.Log.Clear()
+        ns.Print(L["log cleared."])
+    elseif rest == "on" or rest == "off" then
+        ns.db.logLive = rest == "on"
+        ns.Print(ns.db.logLive and L["log: every line is also printed in chat."]
+            or L["log: chat echo off."])
+    else
+        ns.Print(string.format(L["alert %s; last lines of the log:"],
+            ns.db.sightings == false and L["OFF"] or L["on"]))
+        for _, linha in ipairs(ns.Log.Tail(15)) do print("  " .. linha) end
+        ns.Log.PrintErrors()
+    end
+end
+
 commands["help"] = function()
     ns.Print(L["commands:"])
     print("    |cffffff00/rmt|r                  " .. L["opens and closes the list"])
@@ -219,6 +241,9 @@ commands["help"] = function()
     print("    |cffffff00/rmt i18n|r             " .. L["checks the labels taken from the game"])
     print("    |cffffff00/rmt debug|r            " .. L["what the addon managed to read"])
     print("    |cffffff00/rmt debug <name>|r     " .. L["everything it knows about one mount"])
+    if ns.Log.enabled then
+        print("    |cffffff00/rmt log [on||off||clear]|r " .. L["the development log"])
+    end
 end
 
 -- The Portuguese names this addon shipped with, kept working. One table, so adding a command

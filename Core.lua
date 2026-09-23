@@ -41,6 +41,19 @@ ns.defaults = {
     sightingPos = nil,
 }
 
+-- THE DIARY IS A DEVELOPMENT TOOL, NEVER SHIPPED. The user's rule (23/09): *"quando forem
+-- publicados não devem gerar os logs, por que vai ficar consumindo espaço e disco do usuário,
+-- apenas aqui para desenvolvimento"*. `Log.lua` and `RocketMountLogDB` sit inside `#@debug@` in
+-- the .toc, which the packager strips from every build (alpha included); `.pkgmeta` also keeps
+-- the file out of the zip.
+--
+-- This stand-in is what a player gets: every call answers nothing, so the code that writes to
+-- the diary never needs a guard, and forgetting one cannot break a release. `Log.lua`, loaded
+-- after this file in development, replaces it with the real one.
+ns.Log = setmetatable({ enabled = false }, {
+    __index = function() return function() end end,
+})
+
 function ns.Print(...)
     print("|cffff6a00Rocket|r Mount:", ...)
 end
@@ -61,6 +74,7 @@ function handlers:ADDON_LOADED(addon)
         end
     end
     ns.db = RocketMountDB
+    ns.Log.Init()
 
     if ns.SetupOptions then
         ns.SetupOptions()

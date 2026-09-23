@@ -118,6 +118,19 @@ L["All"] = "Todas"
 
 L["Rocket Mount — where to start"] = "Rocket Mount — por onde começar"
 L["Sources"] = "Fontes"
+
+-- Diário de desenvolvimento (/rmt log). Só existe fora do pacote.
+L["the log only exists in development builds."] = "o diário só existe na versão de desenvolvimento."
+L["log cleared."] = "diário apagado."
+L["log: every line is also printed in chat."] = "diário: cada linha também aparece no chat."
+L["log: chat echo off."] = "diário: fora do chat."
+L["alert %s; last lines of the log:"] = "aviso %s; últimas linhas do diário:"
+L["OFF"] = "DESLIGADO"
+L["on"] = "ligado"
+L["the development log"] = "o diário de desenvolvimento"
+L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
+L["no error captured (capture: %s)."] = "nenhum erro capturado (captura: %s)."
+L["%d error(s) captured, %d occurrence(s):"] = "%d erro(s) capturado(s), %d ocorrência(s):"
 L["name, boss, zone, vendor"] = "nome, chefe, zona, vendedor"
 L["Set map pin"] = "Marcar no mapa"
 L["Pick a mount in the list to see how it is obtained."] =
