@@ -6,9 +6,11 @@ missing, the panel says who the rare is, which mounts, and the chance of each �
 
 - The chances come from Wowhead's drop counts and are built into the addon, so no other addon is
   needed. They are samples, not official rates: rounded to two figures, with a `~` when fewer than
-  ten drops were recorded.
-- Many more creatures are recognised — rares, elites, world bosses and the trash that drops a
-  mount, such as the Qiraji tanks in Ahn'Qiraj. Rootstalker Grimlynx, for instance, drops from
+  ten drops were recorded. For a boss, the chance is the one on the difficulty the mount drops on
+  (Invincible's Reins: 1% on 25 heroic).
+- Many more creatures are recognised — rares, elites, world bosses and the elite trash that drops
+  a mount, such as the Qiraji tanks in Ahn'Qiraj. Ordinary mobs with a zone-wide drop are left
+  out on purpose: an alert on every nameplate would be noise. Rootstalker Grimlynx, for instance, drops from
   fifteen rares in Harandar, not just Rhazul.
 - Rares are now identified by their creature ID, including from the minimap vignette, so the
   alert works in flight and the same rare seen two ways alerts only once.

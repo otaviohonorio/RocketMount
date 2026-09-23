@@ -10,43 +10,76 @@ local ADDON, ns = ...
 
 ns.MobDrops = {
     [10184] = { name = "Onyxia", c = 1,
-        { item = 49636, count = 1220, outof = 83927 }, -- Reins of the Onyxian Drake
+        { item = 49636, count = 654, outof = 39251 }, -- Reins of the Onyxian Drake
     },
     [15246] = { name = "Qiraji Mindslayer", c = 1,
-        { item = 21321, count = 6307, outof = 633232 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 46762, outof = 570362 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 5417, outof = 570362 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 47362, outof = 570362 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 44185, outof = 570362 }, -- Yellow Qiraji Resonating Crystal
     },
     [15247] = { name = "Qiraji Brainwasher", c = 1,
-        { item = 21321, count = 3314, outof = 318539 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 19817, outof = 259351 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 2526, outof = 259351 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 23639, outof = 259351 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 21388, outof = 259351 }, -- Yellow Qiraji Resonating Crystal
     },
     [15249] = { name = "Qiraji Lasher", c = 1,
-        { item = 21321, count = 1121, outof = 114071 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 8167, outof = 94946 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 892, outof = 94946 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 7122, outof = 94946 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 7984, outof = 94946 }, -- Yellow Qiraji Resonating Crystal
     },
     [15250] = { name = "Qiraji Slayer", c = 1,
-        { item = 21321, count = 5940, outof = 645558 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 48320, outof = 588728 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 5103, outof = 588728 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 50258, outof = 588728 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 48394, outof = 588728 }, -- Yellow Qiraji Resonating Crystal
     },
     [15252] = { name = "Qiraji Champion", c = 1,
-        { item = 21321, count = 3154, outof = 323656 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 24718, outof = 291658 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 2755, outof = 291658 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 24228, outof = 291658 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 24108, outof = 291658 }, -- Yellow Qiraji Resonating Crystal
     },
     [15262] = { name = "Obsidian Eradicator", c = 1,
-        { item = 21321, count = 2171, outof = 229541 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 14351, outof = 169140 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 1479, outof = 169140 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 13084, outof = 169140 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 13796, outof = 169140 }, -- Yellow Qiraji Resonating Crystal
     },
     [15264] = { name = "Anubisath Sentinel", c = 1,
-        { item = 21321, count = 5897, outof = 572152 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 31568, outof = 395878 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 3960, outof = 395878 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 34309, outof = 395878 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 35918, outof = 395878 }, -- Yellow Qiraji Resonating Crystal
     },
     [15277] = { name = "Anubisath Defender", c = 1,
-        { item = 21321, count = 3513, outof = 377040 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 25818, outof = 335135 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 2984, outof = 335135 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 27016, outof = 335135 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 28776, outof = 335135 }, -- Yellow Qiraji Resonating Crystal
     },
     [15311] = { name = "Anubisath Warder", c = 1,
-        { item = 21321, count = 1498, outof = 176120 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 14401, outof = 156180 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 1160, outof = 156180 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 12331, outof = 156180 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 15098, outof = 156180 }, -- Yellow Qiraji Resonating Crystal
     },
     [15312] = { name = "Obsidian Nullifier", c = 1,
-        { item = 21321, count = 4766, outof = 350956 }, -- Red Qiraji Resonating Crystal
+        { item = 21218, count = 25073, outof = 314416 }, -- Blue Qiraji Resonating Crystal
+        { item = 21321, count = 4293, outof = 314416 }, -- Red Qiraji Resonating Crystal
+        { item = 21323, count = 25616, outof = 314416 }, -- Green Qiraji Resonating Crystal
+        { item = 21324, count = 25826, outof = 314416 }, -- Yellow Qiraji Resonating Crystal
+    },
+    [16061] = { name = "Instructor Razuvious", c = 1,
+        { item = 206585, count = 531, outof = 35435 }, -- Reins of Valiance
     },
     [16152] = { name = "Attumen the Huntsman", c = 1,
-        { item = 30480, count = 3820, outof = 346946 }, -- Fiery Warhorse's Reins
+        { item = 30480, count = 3820, outof = 346945 }, -- Fiery Warhorse's Reins
     },
     [19622] = { name = "Kael'thas Sunstrider", c = 1,
-        { item = 32458, count = 3179, outof = 187121 }, -- Ashes of Al'ar
+        { item = 32458, count = 2810, outof = 170188 }, -- Ashes of Al'ar
     },
     [23035] = { name = "Anzu", c = 1,
         { item = 32768, count = 5346, outof = 332250 }, -- Reins of the Raven Lord
@@ -58,12 +91,12 @@ ns.MobDrops = {
         { item = 44151, count = 2407, outof = 197358 }, -- Reins of the Blue Proto-Drake
     },
     [28860] = { name = "Sartharion", c = 1,
-        { item = 43954, count = 15739, outof = 36305 }, -- Reins of the Twilight Drake
-        { item = 43986, count = 10749, outof = 36305 }, -- Reins of the Black Drake
+        { item = 43954, count = 15739, outof = 20977 }, -- Reins of the Twilight Drake
+        { item = 43986, count = 10749, outof = 15328 }, -- Reins of the Black Drake
     },
     [31125] = { name = "Archavon the Stone Watcher", c = 1,
-        { item = 43959, count = 736, outof = 69331 }, -- Reins of the Grand Black War Mammoth
-        { item = 44083, count = 576, outof = 69331 }, -- Reins of the Grand Black War Mammoth
+        { item = 43959, count = 498, outof = 44134 }, -- Reins of the Grand Black War Mammoth
+        { item = 44083, count = 309, outof = 44134 }, -- Reins of the Grand Black War Mammoth
     },
     [32273] = { name = "Infinite Corruptor", c = 1,
         { item = 43951, count = 23208, outof = 25266 }, -- Reins of the Bronze Drake
@@ -72,28 +105,28 @@ ns.MobDrops = {
         { item = 44168, count = 1870, outof = 1894 }, -- Reins of the Time-Lost Proto-Drake
     },
     [33288] = { name = "Yogg-Saron", c = 1,
-        { item = 45693, count = 24, outof = 2442 }, -- Mimiron's Head
+        { item = 45693, count = 24, outof = 2028 }, -- Mimiron's Head
     },
     [33993] = { name = "Emalon the Storm Watcher", c = 1,
-        { item = 43959, count = 686, outof = 67747 }, -- Reins of the Grand Black War Mammoth
-        { item = 44083, count = 467, outof = 67747 }, -- Reins of the Grand Black War Mammoth
+        { item = 43959, count = 468, outof = 43903 }, -- Reins of the Grand Black War Mammoth
+        { item = 44083, count = 279, outof = 43903 }, -- Reins of the Grand Black War Mammoth
     },
     [35013] = { name = "Koralon the Flame Watcher", c = 1,
-        { item = 43959, count = 666, outof = 65790 }, -- Reins of the Grand Black War Mammoth
-        { item = 44083, count = 504, outof = 65790 }, -- Reins of the Grand Black War Mammoth
+        { item = 43959, count = 486, outof = 43271 }, -- Reins of the Grand Black War Mammoth
+        { item = 44083, count = 352, outof = 43271 }, -- Reins of the Grand Black War Mammoth
     },
     [36597] = { name = "The Lich King", c = 1,
-        { item = 50818, count = 2054, outof = 265761 }, -- Invincible's Reins
+        { item = 50818, count = 2054, outof = 205760 }, -- Invincible's Reins
     },
     [38433] = { name = "Toravon the Ice Watcher", c = 1,
-        { item = 43959, count = 438, outof = 54178 }, -- Reins of the Grand Black War Mammoth
-        { item = 44083, count = 427, outof = 54178 }, -- Reins of the Grand Black War Mammoth
+        { item = 43959, count = 284, outof = 35210 }, -- Reins of the Grand Black War Mammoth
+        { item = 44083, count = 300, outof = 35210 }, -- Reins of the Grand Black War Mammoth
     },
     [43214] = { name = "Slabhide", c = 1,
-        { item = 63043, count = 975, outof = 110566 }, -- Reins of the Vitreous Stone Drake
+        { item = 63043, count = 1877, outof = 238367 }, -- Reins of the Vitreous Stone Drake
     },
     [43873] = { name = "Altairus", c = 1,
-        { item = 63040, count = 1073, outof = 139155 }, -- Reins of the Drake of the North Wind
+        { item = 63040, count = 1514, outof = 175024 }, -- Reins of the Drake of the North Wind
     },
     [45412] = { name = "Lord Aurius Rivendare", c = 1,
         { item = 13335, count = 1671, outof = 193530 }, -- Deathcharger's Reins
@@ -107,6 +140,24 @@ ns.MobDrops = {
     [50245] = { name = "Dormus the Camel-Hoarder", c = 1,
         { item = 63046, count = 1169, outof = 1170 }, -- Reins of the Grey Riding Camel
     },
+    [50883] = { name = "Pathrunner", c = 2,
+        { item = 116773, count = 3883, outof = 3885 }, -- Swift Breezestrider
+    },
+    [50981] = { name = "Luk'hok", c = 2,
+        { item = 116661, count = 3318, outof = 3318 }, -- Mottled Meadowstomper
+    },
+    [50985] = { name = "Poundfist", c = 2,
+        { item = 116792, count = 2560, outof = 2564 }, -- Sunhide Gronnling
+    },
+    [50990] = { name = "Nakk the Thunderer", c = 2,
+        { item = 116659, count = 1464, outof = 1464 }, -- Bloodhoof Bull
+    },
+    [50992] = { name = "Gorok", c = 2,
+        { item = 116674, count = 3722, outof = 3723 }, -- Great Greytusk
+    },
+    [51015] = { name = "Silthide", c = 2,
+        { item = 116767, count = 2252, outof = 2252 }, -- Sapphire Riverbeast
+    },
     [52059] = { name = "High Priestess Kilnara", c = 1,
         { item = 68824, count = 2593, outof = 285605 }, -- Swift Zulian Panther
     },
@@ -114,61 +165,929 @@ ns.MobDrops = {
         { item = 68823, count = 2116, outof = 308873 }, -- Armored Razzashi Raptor
     },
     [52530] = { name = "Alysrazor", c = 1,
-        { item = 71665, count = 2643, outof = 127445 }, -- Flametalon of Alysrazor
+        { item = 71665, count = 950, outof = 53292 }, -- Flametalon of Alysrazor
     },
     [60491] = { name = "Sha of Anger", c = 1,
         { item = 87771, count = 240, outof = 87235 }, -- Reins of the Heavenly Onyx Cloud Serpent
     },
+    [62346] = { name = "Galleon", c = 1,
+        { item = 89783, count = 162, outof = 63300 }, -- Son of Galleon's Saddle
+    },
+    [64403] = { name = "Alani", c = 1,
+        { item = 90655, count = 954, outof = 954 }, -- Reins of the Thundering Ruby Cloud Serpent
+    },
+    [68476] = { name = "Horridon", c = 1,
+        { item = 93666, count = 439, outof = 11100 }, -- Spawn of Horridon
+    },
+    [69099] = { name = "Nalak", c = 1,
+        { item = 95057, count = 165, outof = 49516 }, -- Reins of the Thundering Cobalt Cloud Serpent
+    },
+    [69161] = { name = "Oondasta", c = 1,
+        { item = 94228, count = 149, outof = 38360 }, -- Reins of the Cobalt Primordial Direhorn
+    },
+    [69712] = { name = "Ji-Kun", c = 1,
+        { item = 95059, count = 1211, outof = 36146 }, -- Clutch of Ji-Kun
+    },
+    [69768] = { name = "Zandalari Warscout", c = 4,
+        { item = 94230, count = 15, outof = 298824 }, -- Reins of the Amber Primordial Direhorn
+    },
+    [69769] = { name = "Zandalari Warbringer", c = 2,
+        { item = 94229, count = 3757, outof = 93318 }, -- Reins of the Slate Primordial Direhorn
+    },
+    [69841] = { name = "Zandalari Warbringer", c = 2,
+        { item = 94230, count = 2652, outof = 54875 }, -- Reins of the Amber Primordial Direhorn
+    },
+    [69842] = { name = "Zandalari Warbringer", c = 2,
+        { item = 94231, count = 2073, outof = 52627 }, -- Reins of the Jade Primordial Direhorn
+    },
+    [71865] = { name = "Garrosh Hellscream", c = 1,
+        { item = 104253, count = 856, outof = 37132 }, -- Kor'kron Juggernaut
+    },
+    [73167] = { name = "Huolon", c = 2,
+        { item = 104269, count = 681, outof = 76296 }, -- Reins of the Thundering Onyx Cloud Serpent
+    },
+    [77325] = { name = "Blackhand", c = 1,
+        { item = 116660, count = 2730, outof = 73599 }, -- Ironhoof Destroyer
+    },
+    [81001] = { name = "Nok-Karosh", c = 1,
+        { item = 116794, count = 13745, outof = 13746 }, -- Garn Nighthowl
+    },
+    [83746] = { name = "Rukhmar", c = 1,
+        { item = 116771, count = 185, outof = 5479 }, -- Solar Spirehawk
+    },
+    [91331] = { name = "Archimonde", c = 1,
+        { item = 123890, count = 2243, outof = 29965 }, -- Felsteel Annihilator
+    },
+    [104154] = { name = "Gul'dan", c = 1,
+        { item = 137574, count = -1, outof = 7 }, -- Living Infernal Core
+        { item = 137575, count = -1, outof = 7 }, -- Fiendish Hellfire Core
+    },
+    [111022] = { name = "The Demon Within", c = 1,
+        { item = 137574, count = 168, outof = 38537 }, -- Living Infernal Core
+        { item = 137575, count = 3093, outof = 38537 }, -- Fiendish Hellfire Core
+    },
+    [114262] = { name = "Attumen the Huntsman", c = 1,
+        { item = 142236, count = 1038, outof = 78508 }, -- Midnight's Eternal Reins
+    },
+    [114637] = { name = "Spectral Sentry", c = 1,
+        { item = 142552, count = 3, outof = 11730 }, -- Smoldering Ember Wyrm
+    },
+    [114803] = { name = "Spectral Stable Hand", c = 1,
+        { item = 142236, count = 7, outof = 20551 }, -- Midnight's Eternal Reins
+    },
+    [114895] = { name = "Nightbane", c = 1,
+        { item = 142552, count = 5754, outof = 30881 }, -- Smoldering Ember Wyrm
+    },
+    [115767] = { name = "Mistress Sassz'ine", c = 1,
+        { item = 143643, count = 89, outof = 32281 }, -- Abyss Worm
+    },
+    [119629] = { name = "Lord Hel'nurath", c = 2,
+        { item = 142233, count = 8, outof = 14 }, -- Shadowy Reins of the Accursed Wrathsteed
+    },
+    [122958] = { name = "Blistermaw", c = 2,
+        { item = 152905, count = 1441, outof = 49748 }, -- Crimson Slavermaw
+    },
+    [124828] = { name = "Argus the Unmaker", c = 1,
+        { item = 152789, count = -1, outof = 19 }, -- Shackled Ur'zul
+    },
+    [126040] = { name = "Puscilla", c = 2,
+        { item = 152903, count = 389, outof = 10133 }, -- Biletooth Gnasher
+    },
+    [126187] = { name = "Corpse Bringer Yal'kar", c = 4,
+        { item = 163575, count = 26, outof = 93354 }, -- Reins of a Tamed Bloodfeaster
+    },
+    [126199] = { name = "Vrax'thul", c = 2,
+        { item = 152903, count = 1384, outof = 40874 }, -- Biletooth Gnasher
+    },
+    [126852] = { name = "Wrangler Kravos", c = 2,
+        { item = 152814, count = 1670, outof = 45811 }, -- Maddened Chaosrunner
+    },
+    [126867] = { name = "Venomtail Skyfin", c = 2,
+        { item = 152844, count = 1176, outof = 36536 }, -- Lambent Mana Ray
+    },
+    [126912] = { name = "Skreeg the Devourer", c = 2,
+        { item = 152904, count = 1050, outof = 38707 }, -- Acid Belcher
+    },
+    [126983] = { name = "Harlan Sweete", c = 1,
+        { item = 159842, count = 863, outof = 173721 }, -- Sharkbait's Favorite Crackers
+    },
+    [127288] = { name = "Houndmaster Kerrax", c = 2,
+        { item = 152790, count = 2208, outof = 63395 }, -- Vile Fiend
+    },
+    [128686] = { name = "Kamid the Trapper", c = 4,
+        { item = 163576, count = 22, outof = 48421 }, -- Captured Dune Scavenger
+    },
+    [130079] = { name = "Wagga Snarltusk", c = 4,
+        { item = 163573, count = 2, outof = 45181 }, -- Goldenmane's Reins
+    },
+    [130897] = { name = "Captain Razorspine", c = 4,
+        { item = 163573, count = 26, outof = 168858 }, -- Goldenmane's Reins
+    },
+    [131404] = { name = "Foreman Scripps", c = 4,
+        { item = 163573, count = 68, outof = 95703 }, -- Goldenmane's Reins
+    },
+    [133007] = { name = "Unbound Abomination", c = 1,
+        { item = 160829, count = 546, outof = 132843 }, -- Underrot Crawg Harness
+    },
+    [134745] = { name = "Skycarver Krakit", c = 4,
+        { item = 163576, count = 81, outof = 77872 }, -- Captured Dune Scavenger
+    },
+    [138794] = { name = "Dunegorger Kraulok", c = 2,
+        { item = 174842, count = 128, outof = 1966 }, -- Slightly Damp Pile of Fur
+    },
+    [140474] = { name = "Adherent of the Abyss", c = 2,
+        { item = 161479, count = 1326, outof = 2345 }, -- Nazjatar Blood Serpent
+    },
+    [141143] = { name = "Sister Absinthe", c = 4,
+        { item = 163573, count = 5, outof = 92777 }, -- Goldenmane's Reins
+    },
+    [141286] = { name = "Poacher Zane", c = 4,
+        { item = 163573, count = 3, outof = 84786 }, -- Goldenmane's Reins
+    },
+    [142423] = { name = "Overseer Krix", c = 2,
+        { item = 163646, count = 11676, outof = 175730 }, -- Lil' Donkey
+    },
+    [142437] = { name = "Skullripper", c = 2,
+        { item = 163645, count = 11580, outof = 186189 }, -- Skullripper
+    },
+    [142692] = { name = "Nimar the Slayer", c = 4,
+        { item = 163706, count = 11420, outof = 205547 }, -- Witherbark Direwing
+    },
+    [142709] = { name = "Beastrider Kama", c = 4,
+        { item = 163644, count = 12619, outof = 222413 }, -- Swift Albino Raptor
+    },
+    [142739] = { name = "Knight-Captain Aldrin", c = 4,
+        { item = 163578, count = 7720, outof = 115848 }, -- Broken Highland Mustang
+    },
+    [142741] = { name = "Doomrider Helgrim", c = 4,
+        { item = 163579, count = 7825, outof = 115070 }, -- Highland Mustang
+    },
+    [144796] = { name = "High Tinker Mekkatorque", c = 1,
+        { item = 166518, count = -2, outof = 9957 }, -- G.M.O.D.
+    },
+    [147701] = { name = "Moxo the Beheader", c = 4,
+        { item = 166434, count = 1569, outof = 29976 }, -- Captured Umber Nightsaber
+    },
+    [148037] = { name = "Athil Dewfire", c = 4,
+        { item = 166803, count = 3981, outof = 80017 }, -- Umber Nightsaber
+    },
+    [148787] = { name = "Alash'anir", c = 2,
+        { item = 166432, count = 4684, outof = 84132 }, -- Ashenvale Chimaera
+    },
+    [149652] = { name = "Agathe Wyrmwood", c = 4,
+        { item = 166438, count = 1102, outof = 25073 }, -- Caged Bear
+    },
+    [149655] = { name = "Croz Bloodrage", c = 4,
+        { item = 166437, count = 1176, outof = 26887 }, -- Captured Kaldorei Nightsaber
+    },
+    [149660] = { name = "Blackpaw", c = 4,
+        { item = 166428, count = 4801, outof = 80790 }, -- Blackpaw
+    },
+    [149663] = { name = "Shadowclaw", c = 4,
+        { item = 166435, count = 4329, outof = 84727 }, -- Kaldorei Nightsaber
+    },
+    [150397] = { name = "King Mechagon", c = 1,
+        { item = 168830, count = 519, outof = 8960 }, -- Aerial Unit R-21/X
+    },
+    [151329] = { name = "Warden Skoldus", c = 1,
+        { item = 188700, count = 44, outof = 18298 }, -- Sturdy Silver Mawrat Harness
+    },
+    [151331] = { name = "Cellblock Sentinel", c = 1,
+        { item = 188700, count = 38, outof = 20108 }, -- Sturdy Silver Mawrat Harness
+    },
+    [151934] = { name = "Arachnoid Harvester", c = 2,
+        { item = 168823, count = 286, outof = 88278 }, -- Rusty Mechanocrawler
+    },
+    [152182] = { name = "Rustfeather", c = 4,
+        { item = 168370, count = 405, outof = 82093 }, -- Rusted Keys to the Junkheap Drifter
+    },
+    [152290] = { name = "Soundless", c = 4,
+        { item = 169163, count = 220, outof = 14985 }, -- Silent Glider
+    },
+    [152995] = { name = "Warden of Souls", c = 1,
+        { item = 188700, count = 6, outof = 8966 }, -- Sturdy Silver Mawrat Harness
+    },
+    [153011] = { name = "Binder Baritas", c = 1,
+        { item = 188700, count = 13, outof = 9284 }, -- Sturdy Silver Mawrat Harness
+    },
+    [153165] = { name = "Custodian Thonar", c = 1,
+        { item = 188700, count = 44, outof = 18655 }, -- Sturdy Silver Mawrat Harness
+    },
+    [153174] = { name = "Watchers of Death", c = 1,
+        { item = 188700, count = 14, outof = 9302 }, -- Sturdy Silver Mawrat Harness
+    },
+    [153382] = { name = "Maw of the Maw", c = 1,
+        { item = 188700, count = 12, outof = 9215 }, -- Sturdy Silver Mawrat Harness
+    },
+    [153451] = { name = "Kosarus the Fallen", c = 1,
+        { item = 188700, count = 23, outof = 17036 }, -- Sturdy Silver Mawrat Harness
+    },
+    [154342] = { name = "Arachnoid Harvester", c = 2,
+        { item = 168823, count = 23, outof = 7063 }, -- Rusty Mechanocrawler
+    },
+    [155250] = { name = "Decayspeaker", c = 1,
+        { item = 188700, count = 18, outof = 14187 }, -- Sturdy Silver Mawrat Harness
+    },
+    [155251] = { name = "Elder Longbranch", c = 1,
+        { item = 188700, count = 15, outof = 13357 }, -- Sturdy Silver Mawrat Harness
+    },
+    [155945] = { name = "Gherus the Chained", c = 1,
+        { item = 188700, count = 24, outof = 18265 }, -- Sturdy Silver Mawrat Harness
+    },
+    [156015] = { name = "Writhing Soulmass", c = 1,
+        { item = 188700, count = 8, outof = 16757 }, -- Sturdy Silver Mawrat Harness
+    },
+    [156239] = { name = "Dark Ascended Corrus", c = 1,
+        { item = 188700, count = 16, outof = 13934 }, -- Sturdy Silver Mawrat Harness
+    },
+    [157122] = { name = "Patrician Cromwell", c = 1,
+        { item = 188700, count = 26, outof = 16473 }, -- Sturdy Silver Mawrat Harness
+    },
+    [157134] = { name = "Ishak of the Four Winds", c = 2,
+        { item = 174641, count = 456, outof = 15287 }, -- Reins of the Drake of the Four Winds
+    },
+    [157146] = { name = "Rotfeaster", c = 4,
+        { item = 174753, count = 349, outof = 10398 }, -- Waste Marauder
+    },
+    [157153] = { name = "Ha-Li", c = 2,
+        { item = 173887, count = 427, outof = 14737 }, -- Clutch of Ha-Li
+    },
+    [157160] = { name = "Houndlord Ren", c = 4,
+        { item = 174841, count = 329, outof = 11093 }, -- Ren's Stalwart Hound
+    },
+    [157309] = { name = "Violet Mistake", c = 4,
+        { item = 182079, count = 352, outof = 9476 }, -- Slime-Covered Reins of the Hulking Deathroc
+    },
+    [157466] = { name = "Anh-De the Loyal", c = 4,
+        { item = 174840, count = 325, outof = 11846 }, -- Xinlao
+    },
+    [159190] = { name = "Synod", c = 1,
+        { item = 188700, count = 27, outof = 16489 }, -- Sturdy Silver Mawrat Harness
+    },
+    [159755] = { name = "The Grand Malleare", c = 1,
+        { item = 188700, count = 26, outof = 15195 }, -- Sturdy Silver Mawrat Harness
+    },
+    [160708] = { name = "Mail Muncher", c = 4,
+        { item = 174653, count = 792, outof = 792 }, -- Mail Muncher
+    },
+    [160821] = { name = "Worldedge Gorger", c = 2,
+        { item = 180583, count = 1097, outof = 20469 }, -- Impressionable Gorger Spawn
+    },
+    [162147] = { name = "Corpse Eater", c = 4,
+        { item = 174769, count = 337, outof = 27603 }, -- Malevolent Drone
+    },
+    [162586] = { name = "Tahonta", c = 4,
+        { item = 182075, count = 299, outof = 48174 }, -- Bonehoof Tauralus
+    },
+    [162588] = { name = "Gristlebeak", c = 4,
+        { item = 184104, count = 44, outof = 20098 }, -- Blight-Touched Egg
+    },
+    [162690] = { name = "Nerissa Heartless", c = 4,
+        { item = 182084, count = 531, outof = 24361 }, -- Gorespine
+    },
+    [162741] = { name = "Gieger", c = 4,
+        { item = 182080, count = 1033, outof = 44499 }, -- Predatory Plagueroc
+    },
+    [162819] = { name = "Warbringer Mal'Korak", c = 2,
+        { item = 182085, count = 442, outof = 18182 }, -- Blisterback Bloodtusk
+    },
+    [162853] = { name = "Unbreakable Urtz", c = 1,
+        { item = 184062, count = 476, outof = 95244 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [162872] = { name = "Xantuth the Blighted", c = 1,
+        { item = 184062, count = 178, outof = 34769 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [162873] = { name = "Azmogal", c = 1,
+        { item = 184062, count = 91, outof = 16176 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [162874] = { name = "Ti'or", c = 1,
+        { item = 184062, count = 190, outof = 46322 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [162875] = { name = "Devmorta", c = 1,
+        { item = 184062, count = 84, outof = 23872 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [162880] = { name = "Mistress Dyrax", c = 1,
+        { item = 184062, count = 157, outof = 40176 }, -- Gnawed Reins of the Battle-Bound Warhound
+    },
+    [164107] = { name = "Gormtamer Tizo", c = 4,
+        { item = 180725, count = 2610, outof = 4061 }, -- Spinemaw Gladechewer
+    },
+    [165290] = { name = "Harika the Horrid", c = 4,
+        { item = 180461, count = 1437, outof = 67516 }, -- Horrid Dredwing
+    },
+    [166521] = { name = "Famu the Infinite", c = 2,
+        { item = 180582, count = 371, outof = 42414 }, -- Endmire Flyer Tether
+    },
+    [166679] = { name = "Hopecrusher", c = 2,
+        { item = 180581, count = 418, outof = 28081 }, -- Hopecrusher Gargon
+    },
     [167749] = { name = "Doomwalker", c = 1,
         { item = 43959, count = 12, outof = 14545 }, -- Reins of the Grand Black War Mammoth
         { item = 44083, count = 12, outof = 14545 }, -- Reins of the Grand Black War Mammoth
+        { item = 186469, count = 1678, outof = 14545 }, -- Illidari Doomhawk
+        { item = 208572, count = 206, outof = 14545 }, -- Azure Worldchiller
+    },
+    [168135] = { name = "Night Mare", c = 2,
+        { item = 180728, count = 1693, outof = 1977 }, -- Swift Gloomhoof
+    },
+    [168147] = { name = "Sabriel the Bonecleaver", c = 2,
+        { item = 181815, count = 186, outof = 39026 }, -- Armored Bonehoof Tauralus
+    },
+    [168216] = { name = "Galescreamer Elder", c = 1,
+        { item = 184104, count = 2, outof = 2095 }, -- Blight-Touched Egg
+    },
+    [168647] = { name = "Valfir the Unrelenting", c = 2,
+        { item = 180730, count = 270, outof = 25273 }, -- Wild Glimmerfur Prowler
+    },
+    [169859] = { name = "Observer Zelgar", c = 1,
+        { item = 188700, count = 31, outof = 16004 }, -- Sturdy Silver Mawrat Harness
+    },
+    [170418] = { name = "Goxul the Devourer", c = 1,
+        { item = 188700, count = 21, outof = 15973 }, -- Sturdy Silver Mawrat Harness
+    },
+    [171422] = { name = "Arch-Suppressor Laguas", c = 1,
+        { item = 188700, count = 22, outof = 16490 }, -- Sturdy Silver Mawrat Harness
+    },
+    [172390] = { name = "Flayedwing Fleshripper", c = 1,
+        { item = 184104, count = 142, outof = 83246 }, -- Blight-Touched Egg
     },
     [174062] = { name = "Skadi the Ruthless", c = 2,
         { item = 44151, count = 85, outof = 13717 }, -- Reins of the Blue Proto-Drake
     },
+    [174861] = { name = "Gorged Shadehound", c = 1,
+        { item = 184167, count = 365, outof = 19842 }, -- Mawsworn Soulhunter
+    },
+    [175726] = { name = "Skyja", c = 1,
+        { item = 186656, count = 57, outof = 12716 }, -- Sanctum Gloomcharger's Reins
+    },
+    [176578] = { name = "Vault Sentinel", c = 1,
+        { item = 188700, count = 67, outof = 5931 }, -- Sturdy Silver Mawrat Harness
+    },
+    [177269] = { name = "So'leah", c = 1,
+        { item = 186638, count = 102, outof = 4704 }, -- Cartel Master's Gearglider
+    },
+    [179433] = { name = "Vault Aegis", c = 1,
+        { item = 188700, count = 87, outof = 6156 }, -- Sturdy Silver Mawrat Harness
+    },
+    [179460] = { name = "Fallen Charger", c = 2,
+        { item = 186659, count = 919, outof = 8635 }, -- Fallen Charger's Reins
+    },
+    [179472] = { name = "Konthrogz the Obliterator", c = 2,
+        { item = 187183, count = 1479, outof = 62470 }, -- Rampaging Mauler
+    },
+    [179526] = { name = "Troz'igal the Oppressor", c = 1,
+        { item = 188700, count = 86, outof = 6311 }, -- Sturdy Silver Mawrat Harness
+    },
+    [179684] = { name = "Malbog", c = 4,
+        { item = 186645, count = 847, outof = 42345 }, -- Crimson Shardhide
+    },
+    [180160] = { name = "Reliwik the Defiant", c = 4,
+        { item = 186652, count = 475, outof = 18177 }, -- Garnet Razorwing
+    },
+    [180978] = { name = "Hirukon", c = 2,
+        { item = 187676, count = 620, outof = 13501 }, -- Deepstar Polyp
+    },
+    [180990] = { name = "The Jailer", c = 1,
+        { item = 190768, count = 87, outof = 9354 }, -- Fractal Cypher of the Zereth Overseer
+    },
+    [182120] = { name = "Rhuv, Gorger of Ruin", c = 1,
+        { item = 190765, count = 311, outof = 1232 }, -- Iska's Mawrat Leash
+    },
+    [195353] = { name = "Breezebiter", c = 1,
+        { item = 201440, count = 140, outof = 7002 }, -- Reins of the Liberated Slyvern
+    },
+    [199000] = { name = "Chrono-Lord Deios", c = 1,
+        { item = 208216, count = 176, outof = 7923 }, -- Reins of the Quantum Courser
+    },
+    [200537] = { name = "Gahz'raxes", c = 2,
+        { item = 192772, count = 128, outof = 17143 }, -- Ancient Salamanther
+    },
+    [200579] = { name = "Ishyra", c = 2,
+        { item = 192772, count = 139, outof = 21677 }, -- Ancient Salamanther
+    },
+    [200584] = { name = "Vraken the Hunter", c = 2,
+        { item = 192772, count = 171, outof = 24645 }, -- Ancient Salamanther
+    },
+    [200600] = { name = "Reisa the Drowned", c = 2,
+        { item = 192772, count = 129, outof = 20283 }, -- Ancient Salamanther
+    },
+    [200610] = { name = "Duzalgor", c = 2,
+        { item = 192772, count = 62, outof = 9071 }, -- Ancient Salamanther
+    },
+    [200681] = { name = "Bonesifter Marwak", c = 2,
+        { item = 192772, count = 123, outof = 15936 }, -- Ancient Salamanther
+    },
+    [200717] = { name = "Galakhad", c = 2,
+        { item = 192772, count = 114, outof = 16896 }, -- Ancient Salamanther
+    },
+    [200721] = { name = "Grugoth the Hullcrusher", c = 2,
+        { item = 192772, count = 151, outof = 20662 }, -- Ancient Salamanther
+    },
+    [200885] = { name = "Lady Shaz'ra", c = 2,
+        { item = 192772, count = 168, outof = 24280 }, -- Ancient Salamanther
+    },
+    [200904] = { name = "Veltrax", c = 2,
+        { item = 192772, count = 149, outof = 21095 }, -- Ancient Salamanther
+    },
+    [200911] = { name = "Volcanakk", c = 2,
+        { item = 192772, count = 52, outof = 6926 }, -- Ancient Salamanther
+    },
+    [200956] = { name = "Ookbeard", c = 2,
+        { item = 192772, count = 102, outof = 11821 }, -- Ancient Salamanther
+    },
+    [200960] = { name = "Warden Entrix", c = 2,
+        { item = 192772, count = 107, outof = 14015 }, -- Ancient Salamanther
+    },
+    [200978] = { name = "Pyrachniss", c = 2,
+        { item = 192772, count = 99, outof = 13647 }, -- Ancient Salamanther
+    },
+    [201013] = { name = "Wyrmslayer Angvardi", c = 2,
+        { item = 192772, count = 88, outof = 11253 }, -- Ancient Salamanther
+    },
+    [201181] = { name = "Mad-Eye Carrey", c = 2,
+        { item = 192772, count = 98, outof = 11269 }, -- Ancient Salamanther
+    },
+    [203625] = { name = "Karokta", c = 2,
+        { item = 205203, count = 217, outof = 26503 }, -- Cobalt Shalewing
+    },
+    [204931] = { name = "Fyrakk", c = 1,
+        { item = 210061, count = 68, outof = 10867 }, -- Reins of Anu'relos, Flame's Guidance
+    },
+    [205490] = { name = "Treasure Goblin", c = 2,
+        { item = 246264, count = 1, outof = 60 }, -- Inarius' Charger
+    },
+    [207802] = { name = "Beledar's Spawn", c = 2,
+        { item = 223315, count = 1346, outof = 24386 }, -- Beledar's Spawn
+    },
+    [208029] = { name = "Doomshadow", c = 1,
+        { item = 212645, count = 151, outof = 21877 }, -- Clayscale Hornstrider
+    },
+    [213119] = { name = "Void Speaker Eirich", c = 1,
+        { item = 226683, count = 78, outof = 2401 }, -- Malfunctioning Mechsuit
+    },
+    [218370] = { name = "Queen Ansurek", c = 1,
+        { item = 224147, count = 101, outof = 11314 }, -- Reins of the Sureki Skyrazor
+        { item = 224151, count = 78, outof = 543 }, -- Reins of the Ascendant Skyrazor
+    },
+    [219281] = { name = "Alunira", c = 4,
+        { item = 223270, count = 410, outof = 636 }, -- Alunira
+    },
+    [220285] = { name = "Lurker of the Deeps", c = 2,
+        { item = 223501, count = 131, outof = 2190 }, -- Regurgitated Mole Reins
+    },
+    [231075] = { name = "Chrome King Gallywix", c = 1,
+        { item = 235626, count = 20, outof = 152 }, -- Keys to the Big G
+        { item = 236960, count = 56, outof = 6944 }, -- Prototype A.S.M.R.
+    },
+    [231229] = { name = "Korgoth the Hungerer", c = 2,
+        { item = 246240, count = 3503, outof = 4650 }, -- Devoured Energy-Pod
+    },
+    [231310] = { name = "Darkfuse Precipitant", c = 2,
+        { item = 229955, count = 58, outof = 1345 }, -- Darkfuse Spy-Eye
+    },
+    [232195] = { name = "Urmag", c = 4,
+        { item = 246067, count = 655, outof = 8175 }, -- Pearlescent Krolusk
+    },
+    [233824] = { name = "Dimensius", c = 1,
+        { item = 243061, count = 15, outof = 87 }, -- Unbound Star-Eater
+    },
+    [234621] = { name = "Gallagio Garbage", c = 2,
+        { item = 229953, count = 1181, outof = 74480 }, -- Salvaged Goblin Gazillionaire's Flying Machine
+    },
+    [234845] = { name = "Sthaarbs", c = 2,
+        { item = 246160, count = 347, outof = 5070 }, -- Sthaarbs's Last Lunch
+    },
+    [234970] = { name = "Miasmawrath", c = 2,
+        { item = 246240, count = 8268, outof = 10751 }, -- Devoured Energy-Pod
+    },
+    [235087] = { name = "The Harvester", c = 2,
+        { item = 246240, count = 7333, outof = 9513 }, -- Devoured Energy-Pod
+    },
+    [235104] = { name = "The Wallbreaker", c = 2,
+        { item = 246240, count = 6478, outof = 8448 }, -- Devoured Energy-Pod
+    },
+    [237702] = { name = "Stinkstomp", c = 1,
+        { item = 255826, count = 21, outof = 512 }, -- Mysterious Skyshards
+    },
+    [237711] = { name = "Petalchomper", c = 1,
+        { item = 255826, count = 154, outof = 3369 }, -- Mysterious Skyshards
+    },
+    [237991] = { name = "Void-Scarred Gryphon", c = 1,
+        { item = 235700, count = 714, outof = 715 }, -- Reins of the Void-Scarred Gryphon
+    },
+    [238079] = { name = "Void-Forged Stallion", c = 4,
+        { item = 235705, count = 884, outof = 886 }, -- Void-Forged Stallion's Reins
+    },
+    [238145] = { name = "Void-Scarred Wyvern Matriarch", c = 1,
+        { item = 235707, count = 278, outof = 279 }, -- Reins of the Void-Scarred Windrider
+    },
+    [238498] = { name = "Territorial Voidscythe", c = 4,
+        { item = 257085, count = 4, outof = 4235 }, -- Augmented Stormray
+        { item = 260635, count = 9, outof = 4235 }, -- Sanguine Harrower
+    },
+    [238836] = { name = "Void-Scarred Wolf", c = 4,
+        { item = 235706, count = 76, outof = 76 }, -- Void-Scarred Pack Mother's Harness
+    },
+    [239581] = { name = "Nesting Swarmite", c = 4,
+        { item = 223265, count = 282, outof = 282 }, -- Nesting Swarmite
+    },
+    [240129] = { name = "Overfester Hydra", c = 4,
+        { item = 257147, count = 14, outof = 6684 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 6, outof = 6684 }, -- Cerulean Hawkstrider
+    },
+    [241443] = { name = "Tremora", c = 4,
+        { item = 257085, count = 5, outof = 3268 }, -- Augmented Stormray
+        { item = 260635, count = 6, outof = 3268 }, -- Sanguine Harrower
+    },
+    [242023] = { name = "Necrohexxer Raz'ka", c = 4,
+        { item = 257152, count = 10, outof = 8153 }, -- Amani Sharptalon
+        { item = 257200, count = 6, outof = 8153 }, -- Escaped Witherbark Pango
+    },
+    [242024] = { name = "The Snapping Scourge", c = 4,
+        { item = 257152, count = 14, outof = 7380 }, -- Amani Sharptalon
+        { item = 257200, count = 6, outof = 7380 }, -- Escaped Witherbark Pango
+    },
+    [242025] = { name = "Skullcrusher Harak", c = 4,
+        { item = 257152, count = 8, outof = 6409 }, -- Amani Sharptalon
+        { item = 257200, count = 9, outof = 6409 }, -- Escaped Witherbark Pango
+    },
+    [242026] = { name = "Elder Oaktalon", c = 4,
+        { item = 257152, count = 5, outof = 4575 }, -- Amani Sharptalon
+        { item = 257200, count = 11, outof = 4575 }, -- Escaped Witherbark Pango
+    },
+    [242027] = { name = "Depthborn Eelamental", c = 4,
+        { item = 257152, count = 7, outof = 7759 }, -- Amani Sharptalon
+        { item = 257200, count = 13, outof = 7759 }, -- Escaped Witherbark Pango
+    },
+    [242028] = { name = "Lightwood Borer", c = 4,
+        { item = 257152, count = 9, outof = 8116 }, -- Amani Sharptalon
+        { item = 257200, count = 8, outof = 8116 }, -- Escaped Witherbark Pango
+    },
+    [242031] = { name = "Spinefrill", c = 4,
+        { item = 257152, count = 8, outof = 7591 }, -- Amani Sharptalon
+        { item = 257200, count = 12, outof = 7591 }, -- Escaped Witherbark Pango
+    },
+    [242032] = { name = "Oophaga", c = 4,
+        { item = 257152, count = 8, outof = 9311 }, -- Amani Sharptalon
+        { item = 257200, count = 7, outof = 9311 }, -- Escaped Witherbark Pango
+    },
+    [242033] = { name = "Tiny Vermin", c = 4,
+        { item = 257152, count = 11, outof = 8467 }, -- Amani Sharptalon
+        { item = 257200, count = 10, outof = 8467 }, -- Escaped Witherbark Pango
+    },
+    [242034] = { name = "Voidtouched Crustacean", c = 4,
+        { item = 257152, count = 9, outof = 5250 }, -- Amani Sharptalon
+        { item = 257200, count = 7, outof = 5250 }, -- Escaped Witherbark Pango
+    },
+    [242035] = { name = "The Devouring Invader", c = 4,
+        { item = 257152, count = 6, outof = 7750 }, -- Amani Sharptalon
+        { item = 257200, count = 6, outof = 7750 }, -- Escaped Witherbark Pango
+    },
+    [243776] = { name = "Ingester Glorbus", c = 1,
+        { item = 255826, count = 14, outof = 380 }, -- Mysterious Skyshards
+    },
+    [243778] = { name = "Torbrul", c = 1,
+        { item = 255826, count = 24, outof = 541 }, -- Mysterious Skyshards
+    },
+    [244272] = { name = "Sundereth the Caller", c = 4,
+        { item = 257085, count = 12, outof = 6020 }, -- Augmented Stormray
+        { item = 260635, count = 11, outof = 6020 }, -- Sanguine Harrower
+    },
+    [244338] = { name = "Wetland Terror", c = 1,
+        { item = 255826, count = 83, outof = 1719 }, -- Mysterious Skyshards
+    },
+    [244463] = { name = "Morta'ka the Sundered Echo", c = 1,
+        { item = 255826, count = 79, outof = 1574 }, -- Mysterious Skyshards
+    },
+    [245044] = { name = "Nightbrood", c = 4,
+        { item = 257085, count = 3, outof = 5327 }, -- Augmented Stormray
+        { item = 260635, count = 2, outof = 5327 }, -- Sanguine Harrower
+    },
+    [245182] = { name = "Eruundi", c = 4,
+        { item = 257085, count = 6, outof = 2512 }, -- Augmented Stormray
+        { item = 260635, count = 2, outof = 2512 }, -- Sanguine Harrower
+    },
+    [245691] = { name = "The Decaying Diamondback", c = 2,
+        { item = 257152, count = 8, outof = 4572 }, -- Amani Sharptalon
+        { item = 257200, count = 1, outof = 4572 }, -- Escaped Witherbark Pango
+    },
+    [245692] = { name = "Ash'an the Empowered", c = 2,
+        { item = 257152, count = 11, outof = 6168 }, -- Amani Sharptalon
+        { item = 257200, count = 6, outof = 6168 }, -- Escaped Witherbark Pango
+    },
+    [245975] = { name = "Mrrlokk", c = 4,
+        { item = 257152, count = 7, outof = 6959 }, -- Amani Sharptalon
+        { item = 257200, count = 9, outof = 6959 }, -- Escaped Witherbark Pango
+    },
+    [246332] = { name = "Warden of Weeds", c = 4,
+        { item = 257147, count = 13, outof = 10122 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 12, outof = 10122 }, -- Cerulean Hawkstrider
+    },
+    [246633] = { name = "Harried Hawkstrider", c = 4,
+        { item = 257147, count = 20, outof = 10414 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 27, outof = 10414 }, -- Cerulean Hawkstrider
+    },
+    [247976] = { name = "Poacher Rav'ik", c = 4,
+        { item = 257152, count = 8, outof = 8473 }, -- Amani Sharptalon
+        { item = 257200, count = 12, outof = 8473 }, -- Escaped Witherbark Pango
+    },
+    [248068] = { name = "Nullspiral", c = 2,
+        { item = 257085, count = 10, outof = 5783 }, -- Augmented Stormray
+        { item = 260635, count = 6, outof = 5783 }, -- Sanguine Harrower
+    },
+    [248459] = { name = "The Many-Broken", c = 2,
+        { item = 257085, count = 4, outof = 4183 }, -- Augmented Stormray
+        { item = 260635, count = 4, outof = 4183 }, -- Sanguine Harrower
+    },
+    [248700] = { name = "Abysslick", c = 2,
+        { item = 257085, count = 3, outof = 2717 }, -- Augmented Stormray
+        { item = 260635, count = 4, outof = 2717 }, -- Sanguine Harrower
+    },
     [248741] = { name = "Rhazul", c = 4,
         { item = 246735, count = 7, outof = 6391 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 9, outof = 6391 }, -- Vibrant Petalwing
+        { item = 255826, count = 2198, outof = 6391 }, -- Mysterious Skyshards
+    },
+    [248791] = { name = "Voidseer Orivane", c = 2,
+        { item = 257085, count = 11, outof = 7256 }, -- Augmented Stormray
+        { item = 260635, count = 10, outof = 7256 }, -- Sanguine Harrower
+    },
+    [248823] = { name = "Blackcore", c = 2,
+        { item = 257085, count = 5, outof = 3478 }, -- Augmented Stormray
+        { item = 260635, count = 11, outof = 3478 }, -- Sanguine Harrower
+    },
+    [248986] = { name = "Malgar the Uprooter", c = 1,
+        { item = 255826, count = 15, outof = 502 }, -- Mysterious Skyshards
+    },
+    [249322] = { name = "Muckmire", c = 1,
+        { item = 255826, count = 158, outof = 3460 }, -- Mysterious Skyshards
+    },
+    [249325] = { name = "Gelatonius", c = 1,
+        { item = 255826, count = 42, outof = 538 }, -- Mysterious Skyshards
+    },
+    [249328] = { name = "Hellebora", c = 1,
+        { item = 255826, count = 28, outof = 561 }, -- Mysterious Skyshards
+    },
+    [249329] = { name = "Toadshade", c = 1,
+        { item = 255826, count = 97, outof = 2640 }, -- Mysterious Skyshards
+    },
+    [249332] = { name = "Slewstalk", c = 1,
+        { item = 255826, count = 28, outof = 668 }, -- Mysterious Skyshards
+    },
+    [249334] = { name = "Gorebarb", c = 1,
+        { item = 255826, count = 106, outof = 2198 }, -- Mysterious Skyshards
+    },
+    [249343] = { name = "Dionaea", c = 1,
+        { item = 255826, count = 68, outof = 1622 }, -- Mysterious Skyshards
+    },
+    [249400] = { name = "Stinkcap Lashroom", c = 1,
+        { item = 255826, count = 24, outof = 454 }, -- Mysterious Skyshards
+    },
+    [249409] = { name = "Vigilant Sporeglider", c = 1,
+        { item = 255826, count = 8, outof = 182 }, -- Mysterious Skyshards
+    },
+    [249412] = { name = "Surly Thornmaw", c = 1,
+        { item = 255826, count = 46, outof = 798 }, -- Mysterious Skyshards
+    },
+    [249413] = { name = "Mire Stalker", c = 1,
+        { item = 255826, count = 23, outof = 538 }, -- Mysterious Skyshards
+    },
+    [249776] = { name = "Thorm'belan", c = 1,
+        { item = 255826, count = 83, outof = 1984 }, -- Mysterious Skyshards
     },
     [249844] = { name = "Chironex", c = 4,
         { item = 246735, count = 7, outof = 5714 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 5, outof = 5714 }, -- Vibrant Petalwing
+        { item = 255826, count = 1984, outof = 5714 }, -- Mysterious Skyshards
     },
     [249849] = { name = "Ha'kalawe", c = 4,
         { item = 246735, count = 8, outof = 6653 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 13, outof = 6653 }, -- Vibrant Petalwing
+        { item = 255826, count = 2315, outof = 6653 }, -- Mysterious Skyshards
     },
     [249902] = { name = "Tallcap the Truthspreader", c = 4,
         { item = 246735, count = 9, outof = 4488 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 8, outof = 4488 }, -- Vibrant Petalwing
+        { item = 255826, count = 1611, outof = 4488 }, -- Mysterious Skyshards
     },
     [249962] = { name = "Queen Lashtongue", c = 4,
         { item = 246735, count = 12, outof = 6790 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 10, outof = 6790 }, -- Vibrant Petalwing
+        { item = 255826, count = 2409, outof = 6790 }, -- Mysterious Skyshards
     },
     [249997] = { name = "Chlorokyll", c = 4,
         { item = 246735, count = 5, outof = 4997 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 14, outof = 4997 }, -- Vibrant Petalwing
+        { item = 255826, count = 1703, outof = 4997 }, -- Mysterious Skyshards
     },
     [250086] = { name = "Stumpy", c = 2,
         { item = 246735, count = 9, outof = 5560 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 10, outof = 5560 }, -- Vibrant Petalwing
+        { item = 255826, count = 1813, outof = 5560 }, -- Mysterious Skyshards
     },
     [250180] = { name = "Serrasa", c = 4,
         { item = 246735, count = 11, outof = 5494 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 2, outof = 5494 }, -- Vibrant Petalwing
+        { item = 255826, count = 2033, outof = 5494 }, -- Mysterious Skyshards
     },
     [250226] = { name = "Mindrot", c = 4,
         { item = 246735, count = 7, outof = 5634 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 9, outof = 5634 }, -- Vibrant Petalwing
+        { item = 255826, count = 2125, outof = 5634 }, -- Mysterious Skyshards
     },
     [250231] = { name = "Dracaena", c = 4,
         { item = 246735, count = 7, outof = 5862 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 11, outof = 5862 }, -- Vibrant Petalwing
+        { item = 255826, count = 2080, outof = 5862 }, -- Mysterious Skyshards
     },
     [250246] = { name = "Treetop", c = 4,
         { item = 246735, count = 8, outof = 5193 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 11, outof = 5193 }, -- Vibrant Petalwing
+        { item = 255826, count = 1895, outof = 5193 }, -- Mysterious Skyshards
     },
     [250317] = { name = "Oro'ohna", c = 2,
         { item = 246735, count = 15, outof = 5390 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 13, outof = 5390 }, -- Vibrant Petalwing
+        { item = 255826, count = 1773, outof = 5390 }, -- Mysterious Skyshards
     },
     [250321] = { name = "Pterrock", c = 4,
         { item = 246735, count = 5, outof = 4191 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 5, outof = 4191 }, -- Vibrant Petalwing
+        { item = 255826, count = 1630, outof = 4191 }, -- Mysterious Skyshards
     },
     [250347] = { name = "Ahl'ua'huhi", c = 4,
         { item = 246735, count = 7, outof = 5881 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 6, outof = 5881 }, -- Vibrant Petalwing
+        { item = 255826, count = 2111, outof = 5881 }, -- Mysterious Skyshards
     },
     [250358] = { name = "Annulus the Worldshaker", c = 2,
         { item = 246735, count = 5, outof = 2508 }, -- Rootstalker Grimlynx
+        { item = 252012, count = 6, outof = 2508 }, -- Vibrant Petalwing
+        { item = 255826, count = 938, outof = 2508 }, -- Mysterious Skyshards
+    },
+    [250582] = { name = "Bloated Snapdragon", c = 4,
+        { item = 257147, count = 15, outof = 10870 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 15, outof = 10870 }, -- Cerulean Hawkstrider
+    },
+    [250683] = { name = "Coralfang", c = 4,
+        { item = 257147, count = 16, outof = 7571 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 7, outof = 7571 }, -- Cerulean Hawkstrider
+    },
+    [250719] = { name = "Cre'van", c = 4,
+        { item = 257147, count = 11, outof = 7837 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 5, outof = 7837 }, -- Cerulean Hawkstrider
+    },
+    [250754] = { name = "Lady Liminus", c = 4,
+        { item = 257147, count = 14, outof = 8792 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 16, outof = 8792 }, -- Cerulean Hawkstrider
+    },
+    [250780] = { name = "Waverly", c = 4,
+        { item = 257147, count = 14, outof = 7345 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 6, outof = 7345 }, -- Cerulean Hawkstrider
+    },
+    [250806] = { name = "Lost Guardian", c = 4,
+        { item = 257147, count = 15, outof = 8867 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 13, outof = 8867 }, -- Cerulean Hawkstrider
+    },
+    [250826] = { name = "Banuran", c = 4,
+        { item = 257147, count = 18, outof = 8743 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 13, outof = 8743 }, -- Cerulean Hawkstrider
+    },
+    [250841] = { name = "Bad Zed", c = 4,
+        { item = 257147, count = 8, outof = 5976 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 9, outof = 5976 }, -- Cerulean Hawkstrider
+    },
+    [250876] = { name = "Terrinor", c = 4,
+        { item = 257147, count = 6, outof = 6602 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 13, outof = 6602 }, -- Cerulean Hawkstrider
+    },
+    [251305] = { name = "Toa'mara", c = 1,
+        { item = 255826, count = 42, outof = 1096 }, -- Mysterious Skyshards
+    },
+    [251525] = { name = "Dri'hara", c = 1,
+        { item = 255826, count = 61, outof = 1479 }, -- Mysterious Skyshards
+    },
+    [251544] = { name = "Kham'dur", c = 1,
+        { item = 255826, count = 58, outof = 1522 }, -- Mysterious Skyshards
+    },
+    [252851] = { name = "Ancient Devilsaptor", c = 1,
+        { item = 255826, count = 54, outof = 1065 }, -- Mysterious Skyshards
+    },
+    [255087] = { name = "Malformed Leviathan", c = 2,
+        { item = 276803, count = 1, outof = 183 }, -- Ruby Writhe
+    },
+    [255088] = { name = "Looming Mutagenitor", c = 2,
+        { item = 276549, count = 3, outof = 2084 }, -- Topaz Skyfang
+        { item = 276803, count = 3, outof = 2084 }, -- Ruby Writhe
+    },
+    [255302] = { name = "Duskburn", c = 4,
+        { item = 257147, count = 12, outof = 9799 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 17, outof = 9799 }, -- Cerulean Hawkstrider
+    },
+    [255329] = { name = "Malfunctioning Construct", c = 4,
+        { item = 257147, count = 18, outof = 11018 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 18, outof = 11018 }, -- Cerulean Hawkstrider
+    },
+    [255348] = { name = "Dame Bloodshed", c = 4,
+        { item = 257147, count = 16, outof = 11940 }, -- Cobalt Dragonhawk
+        { item = 257156, count = 16, outof = 11940 }, -- Cerulean Hawkstrider
+    },
+    [255927] = { name = "Venom Lancer Ori'kassi", c = 2,
+        { item = 276549, count = 4, outof = 3454 }, -- Topaz Skyfang
+        { item = 276803, count = 6, outof = 3454 }, -- Ruby Writhe
+    },
+    [256234] = { name = "Ravaging Hydra", c = 1,
+        { item = 255826, count = 1, outof = 13 }, -- Mysterious Skyshards
+    },
+    [256631] = { name = "Big Mon", c = 4,
+        { item = 276549, count = 4, outof = 4442 }, -- Topaz Skyfang
+        { item = 276803, count = 5, outof = 4442 }, -- Ruby Writhe
+    },
+    [256770] = { name = "Bilemaw the Gluttonous", c = 4,
+        { item = 257085, count = 9, outof = 5857 }, -- Augmented Stormray
+        { item = 260635, count = 3, outof = 5857 }, -- Sanguine Harrower
+    },
+    [256808] = { name = "Ravengerus", c = 2,
+        { item = 257085, count = 4, outof = 2105 }, -- Augmented Stormray
+        { item = 260635, count = 2, outof = 2105 }, -- Sanguine Harrower
+    },
+    [256821] = { name = "Far'thana the Mad", c = 2,
+        { item = 257085, count = 11, outof = 6064 }, -- Augmented Stormray
+        { item = 260635, count = 6, outof = 6064 }, -- Sanguine Harrower
+    },
+    [256922] = { name = "Screammaxa the Matriarch", c = 4,
+        { item = 257085, count = 3, outof = 2227 }, -- Augmented Stormray
+        { item = 260635, count = 3, outof = 2227 }, -- Sanguine Harrower
+    },
+    [256923] = { name = "Bane of the Vilebloods", c = 4,
+        { item = 257085, count = 11, outof = 4437 }, -- Augmented Stormray
+        { item = 260635, count = 6, outof = 4437 }, -- Sanguine Harrower
+    },
+    [256924] = { name = "Aeonelle Blackstar", c = 4,
+        { item = 257085, count = 4, outof = 5191 }, -- Augmented Stormray
+        { item = 260635, count = 8, outof = 5191 }, -- Sanguine Harrower
+    },
+    [256925] = { name = "Lotus Darkblossom", c = 4,
+        { item = 257085, count = 3, outof = 2275 }, -- Augmented Stormray
+        { item = 260635, count = 9, outof = 2275 }, -- Sanguine Harrower
+    },
+    [256926] = { name = "Queen o' War", c = 4,
+        { item = 257085, count = 6, outof = 4678 }, -- Augmented Stormray
+        { item = 260635, count = 11, outof = 4678 }, -- Sanguine Harrower
+    },
+    [257027] = { name = "Rakshur the Bonegrinder", c = 4,
+        { item = 257085, count = 7, outof = 3427 }, -- Augmented Stormray
+        { item = 260635, count = 8, outof = 3427 }, -- Sanguine Harrower
+    },
+    [257199] = { name = "Hardin Steellock", c = 2,
+        { item = 257085, count = 3, outof = 1427 }, -- Augmented Stormray
+        { item = 260635, count = 2, outof = 1427 }, -- Sanguine Harrower
+    },
+    [257231] = { name = "Gar'chak Skullcleave", c = 2,
+        { item = 257085, count = 6, outof = 1368 }, -- Augmented Stormray
+        { item = 260635, count = 5, outof = 1368 }, -- Sanguine Harrower
+    },
+    [257863] = { name = "Vassti, the Exalted Broodmother", c = 2,
+        { item = 276549, count = 1, outof = 2527 }, -- Topaz Skyfang
+        { item = 276803, count = 3, outof = 2527 }, -- Ruby Writhe
+    },
+    [257906] = { name = "Coin-Eye Skully", c = 4,
+        { item = 276549, count = 1, outof = 1817 }, -- Topaz Skyfang
+        { item = 276803, count = 4, outof = 1817 }, -- Ruby Writhe
+    },
+    [258916] = { name = "Garsecg", c = 4,
+        { item = 276549, count = 7, outof = 5944 }, -- Topaz Skyfang
+        { item = 276803, count = 5, outof = 5944 }, -- Ruby Writhe
+    },
+    [258920] = { name = "Nar'zira", c = 4,
+        { item = 276549, count = 3, outof = 6327 }, -- Topaz Skyfang
+        { item = 276803, count = 4, outof = 6327 }, -- Ruby Writhe
+    },
+    [261109] = { name = "Sss'alik", c = 4,
+        { item = 276549, count = 4, outof = 4610 }, -- Topaz Skyfang
+        { item = 276803, count = 5, outof = 4610 }, -- Ruby Writhe
+    },
+    [261142] = { name = "Destra", c = 4,
+        { item = 276549, count = 2, outof = 1740 }, -- Topaz Skyfang
+        { item = 276803, count = 3, outof = 1740 }, -- Ruby Writhe
+    },
+    [263456] = { name = "Szarith the Fanged", c = 4,
+        { item = 276549, count = 1, outof = 1230 }, -- Topaz Skyfang
+    },
+    [265237] = { name = "Lockjaw", c = 4,
+        { item = 276549, count = 1, outof = 2650 }, -- Topaz Skyfang
+        { item = 276803, count = 1, outof = 2650 }, -- Ruby Writhe
+    },
+    [265262] = { name = "Hisstara", c = 4,
+        { item = 276549, count = 5, outof = 2831 }, -- Topaz Skyfang
+        { item = 276803, count = 3, outof = 2831 }, -- Ruby Writhe
+    },
+    [268049] = { name = "Siltmouth", c = 4,
+        { item = 276549, count = 1, outof = 3279 }, -- Topaz Skyfang
+        { item = 276803, count = 2, outof = 3279 }, -- Ruby Writhe
+    },
+    [268090] = { name = "Kari'zah the Forgotten", c = 4,
+        { item = 276549, count = 4, outof = 1893 }, -- Topaz Skyfang
+        { item = 276803, count = 1, outof = 1893 }, -- Ruby Writhe
     },
 }

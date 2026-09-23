@@ -45,6 +45,10 @@ local byName         -- folded name      -> { points }
 local byNpc          -- npc id           -> { points }, from Data/MobDrops.lua
 local lastSeen = {}  -- key              -> when we announced it
 local mountOfItem = {} -- item id -> mount id (false when the item is not a mount); never changes
+-- What the GAME called each creature this session. A world boss gives loot once a week, and
+-- the game says "worldboss" -- Wowhead does not help here: it files the Lich King, Kael'thas and
+-- every other boss as plain elite.
+local classeVista = {}
 local frame
 
 -- A point is one place the catalogue puts one mount's rare: `{ entry, m, x, y }`. Carrying the
@@ -168,9 +172,11 @@ local function NomeDeRaro(unit)
     -- in the drop table is recognised exactly, whatever it is -- an elite, a world boss, the
     -- trash in Ahn'Qiraj that drops the Qiraji tanks. Only the name path, which can be fooled,
     -- still demands that the game call it a rare.
-    if byNpc and byNpc[npc] then return UnitName(unit), npc end
-
     local classe = UnitClassification and UnitClassification(unit)
+    if byNpc and byNpc[npc] then
+        classeVista[npc] = classe
+        return UnitName(unit), npc
+    end
     if classe ~= "rare" and classe ~= "rareelite" then return nil end
 
     return UnitName(unit), npc
@@ -430,7 +436,6 @@ end
 --      reset. Silence is the cheap mistake here; an alert for a rare that cannot drop anything
 --      is the one the user reported.
 --------------------------------------------------------------------------------
-local WEEKLY_CLASSES = { [3] = true }   -- Wowhead class 3: boss (world bosses: once a week)
 
 local function CharKey()
     local name = UnitName and UnitName("player")
@@ -469,7 +474,7 @@ function Sighting.RecordLoot()
             local npc = Sighting.NpcOfGUID(fontes[i])
             local rec = npc and ns.MobDrops[npc]
             if rec then
-                reg[npc] = agora + SegundosAteReset(WEEKLY_CLASSES[rec.c])
+                reg[npc] = agora + SegundosAteReset(classeVista[npc] == "worldboss")
             end
         end
     end
