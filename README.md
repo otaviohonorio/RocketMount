@@ -81,15 +81,18 @@ last logged in.
 
 ## When something in front of you drops a mount
 
-Target it, mouse over it, or let it yell when it spawns, and a small panel says which mount you
-are missing can come from it — with a link in chat that marks where you were standing.
+Fly past it and see it on the minimap, target it, mouse over it, or let it yell when it spawns,
+and a small panel says who the rare is, which mounts you are missing can come from it, and **the
+chance of each**. A link in chat points the map arrow at the rare.
 
 It is not a second rare scanner. SilverDragon tells you a rare is there; this tells you **a mount
 you are missing** is there, and which one. A rare whose mount you already have says nothing at
 all. Mounts that left the game say nothing either — that would just be taunting.
 
-No new data was needed: the catalogue already records which boss drops which mount, so the addon
-just reads that index backwards. Turn it off with `/rmt warn` or the checkbox in the options.
+The chances come from Wowhead's drop counts, built into the addon (`Data/RareDrops.lua`), so no
+other addon is needed. They are samples, not Blizzard's rates: they are rounded to two figures,
+and a `~` marks the ones based on fewer than ten drops. Turn the alert off with `/rmt warn` or
+the checkbox in the options.
 
 ## Searching
 

@@ -1018,7 +1018,7 @@ do
     -- A SETA APONTA PARA O RARO, e nao para os pes do jogador -- o outro erro do mesmo relato.
     -- O link carrega a coordenada do catalogo (mapa 23, 26.8, 11.6), em decimos de milesimo.
     check("  e o link aponta para o mapa do raro",
-        avisos[1]:find("rocketmounts:23:2680:1160", 1, true) ~= nil, true)
+        avisos[1]:find("rocketmount:23:2680:1160", 1, true) ~= nil, true)
 
     limpar()
     ns.Sighting.SightName("Rhazul")
@@ -1084,6 +1084,91 @@ do
     -- O LINK DO CHAT: o prefixo tem o nome do addon para nao colidir com o de outro, e link
     -- que nao e nosso tem que passar batido.
     check("link de outro addon passa batido", ns.Sighting.HandleLink("item:1234"), false)
+end
+
+
+--------------------------------------------------------------------------------
+-- A CHANCE DE DROP, PELA TABELA DO WOWHEAD (23/09)
+--
+-- Pedido: voando pela zona, o aviso diz quem e o raro, o que ele dropa e QUAL A CHANCE. O MCL
+-- tem a chance de 5 dos 40 raros; a tabela gerada do Wowhead (`Data/RareDrops.lua`) tem por
+-- NPC, e e chaveada pelo npc id do GUID -- que nao se engana com nome.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- chance de drop pela tabela do Wowhead")
+
+    local S = ns.Sighting
+
+    -- O GUID: so criatura tem npc id, e GUID secreto nao e nem tocado.
+    check("npc id do GUID de criatura", S.NpcOfGUID("Creature-0-3767-2552-1234-248741-0000ABCDEF"), 248741)
+    check("pet de jogador nao tem npc id", S.NpcOfGUID("Pet-0-1-2-3-248741-000"), nil)
+    check("jogador nao tem npc id", S.NpcOfGUID("Player-3209-0ABCDEF1"), nil)
+    local realSecret = issecretvalue
+    issecretvalue = function() return true end
+    check("GUID secreto e recusado", S.NpcOfGUID("Creature-0-1-2-3-248741-000"), nil)
+    issecretvalue = realSecret
+
+    -- O TEXTO DA CHANCE. Duas casas significativas, porque sao amostras: 6391/7 e "1/910", e
+    -- nao um "1/913" com cara de precisao. E "~" abaixo de dez quedas vistas.
+    check("amostra pequena leva ~ e arredonda", S.ChanceText({ drop = { count = 7, outof = 6391 } }), "~1/910")
+    check("amostra de 15 nao leva ~", S.ChanceText({ drop = { count = 15, outof = 5390 } }), "1/360")
+    check("chance do MCL e exata", S.ChanceText({ entry = { chance = 100 } }), "1/100")
+    check("  e 1/2000 continua 1/2000", S.ChanceText({ entry = { chance = 2000 } }), "1/2000")
+    check("melhor que 1 em 10 vira porcentagem", S.ChanceText({ entry = { chance = 4 } }), "25%")
+    check("sem dado nenhum, sem texto", S.ChanceText({ entry = {} }), nil)
+    check("  e quem ja tem contagem do Wowhead ganha dela",
+        S.ChanceText({ entry = { chance = 100 }, drop = { count = 50, outof = 1000 } }), "1/20")
+
+    -- A TABELA. Item 9000+n e a montaria n da fixture; a 7 ja foi coletada.
+    C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
+    local realDrops = ns.RareDrops
+    ns.RareDrops = {
+        [248741] = { name = "Rhazul", { item = 9005, count = 7, outof = 6391 } },
+        [250317] = { name = "Oro'ohna",
+            { item = 9005, count = 15, outof = 5390 },
+            { item = 9007, count = 3, outof = 900 } },     -- ja coletada
+        [300000] = { name = "So coletada", { item = 9007, count = 9, outof = 90 } },
+    }
+    S.Rebuild()
+
+    local avisos = {}
+    local realPrint = ns.Print
+    ns.Print = function(...) avisos[#avisos + 1] = table.concat({ ... }, " ") end
+
+    -- (!) O NPC NAO PRECISA DE GUARDA DE ZONA: o id e exato. O jogador esta num mapa que o
+    -- catalogo nao conhece, e mesmo assim o raro de verdade avisa -- com a chance.
+    MAPA_DO_JOGADOR = 9999
+    UNIDADE = { existe = true, nome = "Rhazul", guid = "Creature-0-1-2-3-248741-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("raro da tabela avisa em qualquer mapa", #avisos, 1)
+    check("  com a montaria e a chance", (avisos[1] or ""):find("Farm longo (~1/910)", 1, true) ~= nil, true)
+
+    -- O MESMO RARO POR OUTRO CAMINHO E UM AVISO SO. Voando, a vinheta chega primeiro; depois o
+    -- jogador mira. Sao duas deteccoes do mesmo bicho, e a chave e o npc id nas duas.
+    avisos = {}
+    VINHETAS = { { vignetteID = 777, name = "Oro'ohna", objectGUID = "Creature-0-1-2-3-250317-000" } }
+    S.OnEvent(nil, "VIGNETTE_MINIMAP_UPDATED")
+    check("vinheta com GUID de criatura avisa pelo npc", #avisos, 1)
+    check("  so com o que falta (a coletada nao entra)",
+        (avisos[1] or ""):find("Farm longo (1/360)", 1, true) ~= nil
+            and (avisos[1] or ""):find("Ja coletada", 1, true) == nil, true)
+    UNIDADE = { existe = true, nome = "Oro'ohna", guid = "Creature-0-1-2-3-250317-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("  e mirar o mesmo raro depois nao repete", #avisos, 1)
+
+    -- Raro cuja unica montaria voce ja tem: silencio.
+    avisos = {}
+    UNIDADE = { existe = true, nome = "So coletada", guid = "Creature-0-1-2-3-300000-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("raro so de montaria coletada nao avisa", #avisos, 0)
+
+    UNIDADE = { existe = false }
+    VINHETAS = {}
+    ns.Print = realPrint
+    ns.RareDrops = realDrops
+    C_MountJournal.GetMountFromItem = nil
+    S.Rebuild()
 end
 
 
