@@ -606,7 +606,7 @@ end
 -- ⚑ O DEFEITO DA FENIX NEGRA (relatado em 21/09): "so sei o preco" nao e "pode pegar".
 local soPreco = porNome["So sei o preco"].e
 check("so com preco NAO e 'e so ir pegar'", soPreco.tier ~= ns.TIER.READY, true)
--- (!) A F958NIX NEGRA e de vendedor de GUILDA, e isso e um bloqueio NOMEADO, nao uma
+-- (!) A F\195\138NIX NEGRA e de vendedor de GUILDA, e isso e um bloqueio NOMEADO, nao uma
 -- duvida: pesquisado na wiki em 22/09, todas exigem guilda Exaltada e a maioria uma conquista
 -- DE GUILDA. Entao ela nao fica na faixa de "requisito desconhecido" -- ela cai no caminho longo.
 check("vendedor de guilda cai no caminho longo", soPreco.tier, ns.TIER.LONGFARM)
@@ -790,7 +790,7 @@ check("alguma montaria chega a 'pode pegar'", prontos > 0, true)
 -- Nenhuma linha pode mostrar porcentagem quando a sorte decide.
 local pctOndeNaoDeve = 0
 for _, e in ipairs(ranked) do
-    if not e.deterministic and e.headline:find("%%") and not e.headline:find("t95xm") then
+    if not e.deterministic and e.headline:find("%%") and not e.headline:find("t\195\170m") then
         pctOndeNaoDeve = pctOndeNaoDeve + 1
     end
 end
