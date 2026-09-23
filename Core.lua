@@ -105,6 +105,15 @@ function handlers:UPDATE_FACTION()
     ns.Invalidate()
 end
 
+-- THE VENDOR, the moment it opens and every time its list refreshes (items load late).
+function handlers:MERCHANT_SHOW()
+    if ns.ScanMerchant and ns.ScanMerchant() then ns.Invalidate() end
+end
+
+function handlers:MERCHANT_UPDATE()
+    if ns.ScanMerchant and ns.ScanMerchant() then ns.Invalidate() end
+end
+
 function handlers:CURRENCY_DISPLAY_UPDATE()
     ns.Invalidate()
 end
