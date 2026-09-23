@@ -321,11 +321,11 @@ end
 -- read. Clicking it still dismisses it early.
 local HOLD = 25
 
----"1/910", or a percentage when the chance is better than 1 in 10.
+---The chance as a percentage (`ns.FormatChance`, in Score.lua).
 ---
----Wowhead's numbers are samples, not Blizzard's rates, so they are rounded to two significant
----figures -- 6391/7 is "1/910", not a precise-looking "1/913" -- and marked "~" when fewer than
----ten drops were seen, which is where the estimate is roughest.
+---Wowhead's numbers are samples, not Blizzard's rates: two significant figures -- 7 in 6391 is
+---"0.11%", not a precise-looking "0.1095%" -- and "~" when fewer than ten drops were seen, which
+---is where the estimate is roughest.
 function Sighting.ChanceText(ponto)
     local n, rough
     local d = ponto and ponto.drop
@@ -336,14 +336,7 @@ function Sighting.ChanceText(ponto)
     else
         return nil
     end
-    local text
-    if n < 10 then
-        text = string.format("%d%%", math.floor(100 / n + 0.5))
-    else
-        local mag = 10 ^ (math.floor(math.log10(n)) - 1)
-        text = "1/" .. string.format("%d", math.floor(n / mag + 0.5) * mag)
-    end
-    return rough and ("~" .. text) or text
+    return ns.FormatChance(n, rough)
 end
 
 ---One point per mount. When two sources know the same mount, the one with a drop count wins

@@ -6,13 +6,15 @@ journal's row style and scroll bar, the search box and the standard filter butto
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
+- **Every drop chance is now a percentage** — in the list, on the mount's card, in the alert
+  and in chat. 1 in 200 reads 0.5%; 1 in 100 reads 1%.
 - The chat command is `/rmt` (also `/rocketmount`).
 
 ## 0.21.0
 
 **The rare alert now tells you the chance.** When you fly past a rare that drops a mount you are
 missing, the panel says who the rare is, which mounts, and the chance of each — for example
-`Rootstalker Grimlynx ~1/910`.
+`Rootstalker Grimlynx ~0.11%`.
 
 - The chances come from Wowhead's drop counts and are built into the addon, so no other addon is
   needed. They are samples, not official rates: rounded to two figures, with a `~` when fewer than
