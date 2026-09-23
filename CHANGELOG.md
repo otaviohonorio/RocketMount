@@ -1,30 +1,21 @@
-# Rocket Mounts 0.18.0
+# Rocket Mounts 0.19.0
 
-First public release, and it is an **alpha**: the ranking rules are covered by an offline test
-harness, but very little of this has been confirmed in a live client yet. Expect rough edges,
-and please report what you find.
+Still an **alpha** — most of this is covered by an offline test harness rather than confirmed in
+a live client. Please keep reporting what you find.
 
-What it does:
+**The sighting alert was wrong in four different ways, and this fixes all four.** It fired in
+Silvermoon, at the login screen, for a rare that lives in another zone entirely:
 
-- Lists the mounts you are still missing, ordered from easiest to hardest, with a card
-  explaining how each one is obtained.
-- Reads requirements from the game itself — reputation and renown, achievements, quests, vendor
-  prices, and the item's own tooltip — rather than from a hand-maintained database.
-- Says "I cannot read this" instead of treating unknown requirements as no requirement. A mount
-  gated behind something the addon cannot measure stays out of the top of the list.
-- Warns you when something in front of you drops a mount you are missing, with a chat link that
-  drops a map pin where you saw it.
-- Filters by source, expansion and faction, and searches by name, boss, zone or vendor.
-- Notes which of your characters has a legacy reputation, from a ledger written as each one
-  logs in.
-- English and Brazilian Portuguese, using the game's own words where the game provides them.
+- It matched on the rare's **name alone**. Now the minimap **vignette id** is the main key — a
+  number, identical in every language — and a name match is only accepted when you are actually
+  standing in a zone where that rare lives.
+- It trusted anything wearing the right name. Now a unit has to be a **creature** (so a hunter
+  pet named after a rare can never trigger it) **and** be classified by the game as rare or
+  rare elite.
+- The map pin landed on **your own feet**, wherever you happened to be, while the rare's real
+  coordinates went unused. The arrow now points at the rare.
+- The panel held for 12 seconds, which is not long enough to read while you are playing. It now
+  holds for 25, and still closes on a click.
 
-Known limits, stated up front:
-
-- Drop chances and map coordinates come from Mount Collection Log, and the share-of-playerbase
-  number from MountJournalEnhanced. Without those addons installed, the list still works with
-  less information, and the footer says so.
-- Guild vendor mounts cannot be fully read: no installed catalogue links a guild achievement to
-  a mount, so the card tells you that instead of guessing.
-- Expansion is derived from mount ID ranges, so a handful of late additions land one expansion
-  off. It is a way to narrow the list, not a source of truth.
+If you have **Mount Collection Log** installed, note that it has an equivalent alert of its own
+and you may see both. Turn either one off with `/rmt warn` or in MCL's options.

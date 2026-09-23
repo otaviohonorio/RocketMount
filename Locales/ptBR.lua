@@ -175,10 +175,14 @@ L["this client has no new menu; use /rmt sources."] =
 --------------------------------------------------------------------------------
 -- O aviso de bicho que larga montaria
 --------------------------------------------------------------------------------
-L["and %d more"]                        = "e mais %d"
-L["mark where I saw it"]                = "marcar onde vi"
-L["arrow pointed at where you saw it."] = "seta apontada para onde você viu."
-L["this map does not accept pins."]     = "este mapa não aceita marcação."
+L["and %d more"]                    = "e mais %d"
+L["this map does not accept pins."] = "este mapa não aceita marcação."
+
+-- ⛑ "marcar onde vi" SAIU (22/09). O link marcava os pés do jogador, e não o raro — o relato
+-- veio de Luaprata, com a seta cravada na capital para um raro de outra zona. Agora ele aponta
+-- para a coordenada que o catálogo guarda, então o rótulo passou a dizer o que ele faz.
+L["point me at this rare"] = "apontar para o raro"
+L["the rare"]              = "o raro"
 L["|cffffff00%s|r can drop: %s%s"]      = "|cffffff00%s|r pode largar: %s%s"
 
 --------------------------------------------------------------------------------
@@ -196,9 +200,9 @@ L["The button opens the list with a click and the options with a right-click. It
 
 L["Warn when you see something that drops a mount"] =
     "Avisar quando ver um bicho que larga montaria"
-L["Shows up on target, mouseover or when the rare yells — and only for a mount you do not have yet. A link comes in chat to mark where you saw it."] =
-    "Aparece ao mirar, passar o mouse ou quando o raro grita — e só para montaria que você ainda "
-    .. "não tem. No chat vem um link para marcar onde você viu."
+L["Shows up on a rare's nameplate, target or minimap pin — and only for a mount you do not have yet. A chat link points your arrow at the rare."] =
+    "Aparece na placa de nome, no alvo ou no marcador do minimapa de um raro — e só para "
+    .. "montaria que você ainda não tem. Um link no chat aponta a sua seta para o raro."
 
 L["Show the ones that left the game"] = "Mostrar as que saíram do jogo"
 L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =
