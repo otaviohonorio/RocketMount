@@ -1179,6 +1179,26 @@ do
     S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
     check("raro so de montaria coletada nao avisa", #avisos, 0)
 
+    -- (!) A MONTARIA RECEM-APRENDIDA SAI DO AVISO NA HORA. Pedido do usuario: "so avise sobre a
+    -- montaria que o usuario nao tenha ainda". O evento de montaria nova so marcava a lista como
+    -- suja; com a janela fechada, o indice do aviso seguia com a lista velha e oferecia a
+    -- montaria que o jogador acabou de ganhar.
+    local farmLongo
+    for _, m in ipairs(MOUNTS) do if m[3] == "Farm longo" then farmLongo = m end end
+    -- COM A JANELA FECHADA, que e o caso do defeito: aberta, o evento ja recalcula a lista
+    -- pelo caminho da janela, e o teste passaria sem medir nada (a sabotagem mostrou isso).
+    if ns.window then ns.window:Hide() end
+    check("  (a janela esta fechada)", ns.window == nil or not ns.window:IsShown(), true)
+    farmLongo[5] = true                      -- aprendeu
+    ns.frame.__scripts.OnEvent(ns.frame, "NEW_MOUNT_ADDED")
+    TEMPO = TEMPO + 601                      -- fora do intervalo de repeticao
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Rhazul", guid = "Creature-0-1-2-3-248741-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("montaria aprendida agora nao e mais oferecida", #avisos, 0)
+    farmLongo[5] = false
+    ns.frame.__scripts.OnEvent(ns.frame, "NEW_MOUNT_ADDED")
+
     UNIDADE = { existe = false }
     VINHETAS = {}
     ns.Print = realPrint
