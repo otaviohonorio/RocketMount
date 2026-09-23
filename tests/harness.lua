@@ -1205,7 +1205,11 @@ do
     local SAQUE = {}
     GetNumLootItems = function() return #SAQUE end
     GetLootSourceInfo = function(slot) return SAQUE[slot], 1 end
-    ns.MobDrops[15311].c = 3                         -- o elite de AQ faz as vezes de chefe
+    -- O Wowhead chama todo chefe de elite (o Lich King vem `c = 1`); quem diz "world boss" e o
+    -- jogo, na classificacao da unidade. O elite de AQ faz as vezes de world boss aqui.
+    UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "worldboss" }
+    TEMPO = TEMPO + 601
+    S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
 
     SAQUE = { "Creature-0-1-2-3-248741-000", "Creature-0-1-2-3-424242-000" }
     ns.db.sightings = false                          -- anota mesmo com o aviso desligado
@@ -1227,20 +1231,19 @@ do
     check("  e depois do reset volta a avisar", #avisos, 1)
     check("  e o registro vencido some do arquivo", ns.db.looted["Hamfarir-Azralon"][248741], nil)
 
-    -- Chefe (classe 3): o bloqueio e semanal, e nao some no reset do dia.
+    -- World boss: o bloqueio e semanal, e nao some no reset do dia.
     SAQUE = { "Creature-0-1-2-3-15311-000" }
     S.OnEvent(nil, "LOOT_OPENED")
-    check("chefe fica bloqueado ate o reset SEMANAL",
+    check("world boss fica bloqueado ate o reset SEMANAL",
         ns.db.looted["Hamfarir-Azralon"][15311], AGORA + 5 * 86400)
     AGORA = AGORA + 3601
     TEMPO = TEMPO + 601
     avisos = {}
-    UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "elite" }
+    UNIDADE = { existe = true, nome = "Anubisath Warder", guid = "Creature-0-1-2-3-15311-000", classe = "worldboss" }
     S.OnEvent(nil, "NAME_PLATE_UNIT_ADDED", "nameplate1")
     check("  e continua calado no dia seguinte", #avisos, 0)
 
     ns.db.looted = nil
-    ns.MobDrops[15311].c = 1
     time = realTime
     GetNumLootItems, GetLootSourceInfo, C_DateAndTime = nil, nil, nil
 
