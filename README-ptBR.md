@@ -89,7 +89,7 @@ Não é um segundo escaneador de raros. O SilverDragon avisa que há um raro; es
 **uma montaria que falta para você**, e qual. Raro cuja montaria você já tem não diz nada. As que
 saíram do jogo também não — isso seria provocação.
 
-As chances vêm das contagens de queda do Wowhead, embutidas no addon (`Data/RareDrops.lua`), então
+As chances vêm das contagens de queda do Wowhead, embutidas no addon (`Data/MobDrops.lua`), então
 nenhum outro addon é necessário. São amostras, não as taxas da Blizzard: vão arredondadas em dois
 algarismos, e um `~` marca as que se apoiam em menos de dez quedas. Desliga com `/rmt warn` ou pela
 caixa nas opções.

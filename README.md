@@ -89,7 +89,7 @@ It is not a second rare scanner. SilverDragon tells you a rare is there; this te
 you are missing** is there, and which one. A rare whose mount you already have says nothing at
 all. Mounts that left the game say nothing either — that would just be taunting.
 
-The chances come from Wowhead's drop counts, built into the addon (`Data/RareDrops.lua`), so no
+The chances come from Wowhead's drop counts, built into the addon (`Data/MobDrops.lua`), so no
 other addon is needed. They are samples, not Blizzard's rates: they are rounded to two figures,
 and a `~` marks the ones based on fewer than ten drops. Turn the alert off with `/rmt warn` or
 the checkbox in the options.
