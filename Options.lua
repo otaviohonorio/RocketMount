@@ -68,7 +68,7 @@ function ns.SetupOptions()
             function(value) ns.db.sightings = value end)
 
         Settings.CreateCheckbox(category, setting,
-            L["Shows up on target, mouseover or when the rare yells — and only for a mount you do not have yet. A link comes in chat to mark where you saw it."])
+            L["Shows up on a rare's nameplate, target or minimap pin — and only for a mount you do not have yet. A chat link points your arrow at the rare."])
     end
 
     do

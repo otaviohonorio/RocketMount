@@ -83,7 +83,11 @@ function CreateFrame(kind) return widget(kind) end
 -- de a string estar cravada nos dois lugares.
 function GetLocale() return "enUS" end
 function UnitFactionGroup() return "Alliance" end
-function UnitName() return "Hamfarir" end
+function UnitName(u)
+    -- Com unidade falsa montada, responde o nome dela; sem ela, o personagem.
+    if u and UNIDADE and UNIDADE.nome then return UNIDADE.nome end
+    return "Hamfarir"
+end
 function GetRealmName() return "Azralon" end
 
 -- As globais de requisito vem do CLIENTE, e o addon monta os padroes a partir delas. O stub usa
@@ -139,10 +143,37 @@ end
 
 C_Timer = { After = function(_, fn) fn() end }
 C_Texture = { GetAtlasInfo = function() return nil end }
+-- ONDE O JOGADOR ESTA, e o teste mexe nisso a vontade: a guarda de zona e o que separa "o raro
+-- esta na sua frente" de "alguem com esse nome existe em algum lugar do mundo".
+MAPA_DO_JOGADOR = 23
 C_Map = {
     GetMapInfo = function(id) return { name = "Zona " .. id } end,
     CanSetUserWaypointOnMap = function() return true end,
     SetUserWaypoint = function() end,
+    GetBestMapForUnit = function() return MAPA_DO_JOGADOR end,
+}
+UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m = m, x = x, y = y } end }
+
+-- A UNIDADE FALSA. O addon so aceita como raro o que tem GUID de criatura E classificacao de
+-- raro -- as duas guardas do SilverDragon --, entao o teste precisa poder montar cada caso:
+-- o raro de verdade, o pet de jogador com o nome do raro, e o bicho comum.
+UNIDADE = { existe = false }
+function UnitExists(u) return UNIDADE.existe and u ~= nil end
+function UnitIsPlayer() return UNIDADE.jogador == true end
+function UnitIsDead() return UNIDADE.morto == true end
+function UnitGUID() return UNIDADE.guid end
+function UnitClassification() return UNIDADE.classe end
+
+-- O RELOGIO, porque sem ele o intervalo de repeticao era sempre `0 - 0` e o teste de "nao
+-- repete" passava por acidente, medindo nada. Com o tempo controlavel da para provar as duas
+-- metades da regra: cala dentro do intervalo, volta a falar depois dele.
+TEMPO = 1000
+function GetTime() return TEMPO end
+
+VINHETAS = {}
+C_VignetteInfo = {
+    GetVignettes = function() return VINHETAS end,
+    GetVignetteInfo = function(g) return g end,
 }
 C_CurrencyInfo = {
     GetCurrencyInfo = function(id) return { quantity = 300, name = "Moeda " .. id } end,
@@ -341,7 +372,11 @@ MCL_GUIDE = {
         [1001] = { rep = { factionId = 9001, factionName = "Faccao pronta", levelName = "Exalted" } },
         [1002] = { rep = { factionId = 9002, factionName = "Faccao quase", levelName = "Exalted" } },
         [1003] = { achievementId = 555 },
-        [1004] = { chance = 100, method = "NPC", lockBossName = "Bicho", coords = { { m = 23, x = 26.8, y = 11.6 } } },
+        [1004] = { chance = 100, method = "NPC", lockBossName = "Bicho",
+        -- `n` e `v` reproduzem o registro real do MCL: nome do raro no pin e o id da
+        -- vinheta. O "Rhazul" e o caso de 22/09 -- raro de verdade, mapa 23, e o aviso
+        -- disparando com o jogador em outra zona.
+        coords = { { m = 23, x = 26.8, y = 11.6, n = "Rhazul", v = 5555 } } },
         [1005] = { chance = 2000, method = "BOSS", lockBossName = "Chefe" },
         [1009] = { rep = { factionId = 9003, factionName = "Faccao mais perto", levelName = "Exalted" } },
         [1010] = { chance = 50, method = "NPC" },
@@ -964,38 +999,90 @@ do
     ns.Sighting.Rebuild()
 
     local avisos = {}
-    local realShow = ns.Print
+    local realPrint = ns.Print
     ns.Print = function(...) avisos[#avisos + 1] = table.concat({ ... }, " ") end
+    local function limpar() avisos = {} end
 
-    -- "Bicho" e o chefe da montaria "Farm curto" na fixture.
-    ns.Sighting.Announce("Bicho")
-    check("avisa quando ve o bicho certo", #avisos, 1)
-    check("  e diz qual montaria", avisos[1]:find("Farm curto", 1, true) ~= nil, true)
+    -- (!) O DEFEITO DE 22/09, VIRADO TESTE. Relato com print: o addon anunciou "Rhazul pode
+    -- largar ..." com o jogador parado em Luaprata, na tela de login. Rhazul existe e larga
+    -- mesmo a montaria -- so que no mapa 23, e o jogador estava em outro lugar. Casar por nome
+    -- sem conferir a zona e o que produziu isso.
+    MAPA_DO_JOGADOR = 1234
+    ns.Sighting.SightName("Rhazul")
+    check("nome certo em mapa errado NAO avisa", #avisos, 0)
 
-    -- (!) UMA VEZ, E NAO A CADA PLACA DE NOME. Um raro parado na frente dispara o evento toda
-    -- vez que a placa aparece e some -- e aviso repetido vira aviso ignorado.
-    ns.Sighting.Announce("Bicho")
-    check("nao repete o mesmo bicho", #avisos, 1)
+    MAPA_DO_JOGADOR = 23
+    check("  e no mapa certo avisa", ns.Sighting.SightName("Rhazul"), true)
+    check("  dizendo qual montaria", avisos[1]:find("Farm curto", 1, true) ~= nil, true)
 
-    -- (!) MONTARIA QUE SAIU DO JOGO NAO GERA AVISO. A fixture "Saiu do jogo" tem chance de
-    -- 1/100 e chefe proprio; avisar sobre ela seria provocacao -- ninguem mais consegue pega-la.
-    ns.Sighting.Announce("Chefe sumido")
-    check("bicho de montaria sumida nao avisa", #avisos, 1)
+    -- A SETA APONTA PARA O RARO, e nao para os pes do jogador -- o outro erro do mesmo relato.
+    -- O link carrega a coordenada do catalogo (mapa 23, 26.8, 11.6), em decimos de milesimo.
+    check("  e o link aponta para o mapa do raro",
+        avisos[1]:find("rocketmounts:23:2680:1160", 1, true) ~= nil, true)
 
-    -- Bicho que nao larga nada nao gera aviso: o addon nao e um segundo escaneador de raros.
-    ns.Sighting.Announce("Javali qualquer")
-    check("bicho sem montaria nao avisa", #avisos, 1)
+    limpar()
+    ns.Sighting.SightName("Rhazul")
+    check("nao repete o mesmo raro dentro do intervalo", #avisos, 0)
+
+    -- E VOLTA A FALAR DEPOIS DELE. Sem esta metade, "nao repete" seria satisfeito por um addon
+    -- que simplesmente nunca mais avisa -- que e defeito, nao silencio educado.
+    TEMPO = TEMPO + 601
+    check("  e avisa de novo passado o intervalo", ns.Sighting.SightName("Rhazul"), true)
+
+    -- A VINHETA E A CHAVE BOA: numero, igual em todo idioma. Nao precisa de guarda de zona,
+    -- porque vinheta que voce enxerga esta perto de voce por definicao.
+    limpar()
+    MAPA_DO_JOGADOR = 1234
+    check("vinheta avisa mesmo com o mapa 'errado'",
+        ns.Sighting.SightVignette(5555, "Rhazul"), true)
+    check("  e a linha nomeia a montaria", avisos[1]:find("Farm curto", 1, true) ~= nil, true)
+
+    limpar()
+    check("vinheta desconhecida nao avisa", ns.Sighting.SightVignette(4242, "Sei la"), false)
+
+    -- Montaria que saiu do jogo nao gera aviso: avisar sobre o que ninguem mais pega e provocacao.
+    MAPA_DO_JOGADOR = 23
+    limpar()
+    ns.Sighting.SightName("Chefe sumido")
+    check("raro de montaria sumida nao avisa", #avisos, 0)
+
+    -- Bicho que nao larga nada: o addon nao e um segundo escaneador de raros.
+    ns.Sighting.SightName("Javali qualquer")
+    check("bicho sem montaria nao avisa", #avisos, 0)
+
+    -- (!) AS DUAS GUARDAS DO SILVERDRAGON, uma de cada vez.
+    --
+    -- O pet de um cacador chamado com o nome de um raro tem GUID `Pet`, e e assim que ele sai
+    -- da conta: estruturalmente, sem lista de nomes para manter. E bicho comum com o nome certo
+    -- tambem nao passa, porque quem diz que algo e raro e o jogo, nao o catalogo.
+    limpar()
+    -- "Bicho" e o `lockBossName` da mesma montaria, e nao "Rhazul": o teste acima ja gastou o
+    -- Rhazul no intervalo de repeticao, e com ele um "nao avisou" nao provaria a guarda -- so
+    -- provaria o cooldown. Nome diferente, cooldown limpo, guarda medida de verdade.
+    UNIDADE = { existe = true, nome = "Bicho", guid = "Pet-0-1-2-3-99999-000" , classe = "rare" }
+    ns.Sighting.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("pet de jogador com nome de raro NAO avisa", #avisos, 0)
+
+    UNIDADE = { existe = true, nome = "Bicho", guid = "Creature-0-1-2-3-99999-000", classe = "normal" }
+    ns.Sighting.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("criatura comum com nome de raro NAO avisa", #avisos, 0)
+
+    UNIDADE = { existe = true, nome = "Bicho", guid = "Creature-0-1-2-3-99999-000", classe = "rareelite" }
+    ns.Sighting.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("criatura raro de verdade avisa", #avisos, 1)
+    UNIDADE = { existe = false }
 
     -- E COM O AVISO DESLIGADO ELE CALA. O usuario foi explicito que nem todo mundo quer.
+    limpar()
     ns.db.sightings = false
-    ns.Sighting.Announce("Chefe")
-    check("desligado, nao avisa", #avisos, 1)
+    ns.Sighting.SightName("Chefe")
+    check("desligado, nao avisa", #avisos, 0)
     ns.db.sightings = true
 
-    ns.Print = realShow
+    ns.Print = realPrint
 
-    -- O LINK DO CHAT: clicar marca a posicao. O prefixo tem o nome do addon para nao colidir
-    -- com link de outro, e um link que nao e nosso tem que passar batido.
+    -- O LINK DO CHAT: o prefixo tem o nome do addon para nao colidir com o de outro, e link
+    -- que nao e nosso tem que passar batido.
     check("link de outro addon passa batido", ns.Sighting.HandleLink("item:1234"), false)
 end
 
