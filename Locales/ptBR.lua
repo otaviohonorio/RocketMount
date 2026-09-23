@@ -136,6 +136,19 @@ L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto 
 L["the vendor does not sell it to you yet (seen %s)"] = "o vendedor ainda não vende para você (visto em %s)"
 -- Formato curto de data para "visto em": dia/mês em português.
 L["%m/%d"] = "%d/%m"
+
+-- O mapa-múndi (MapPins.lua).
+L["Rare"] = "Raro"
+L["Rare elite"] = "Raro de elite"
+L["Elite"] = "Elite"
+L["%dd"] = "%dd"
+L["%dh"] = "%dh"
+L["%dmin"] = "%dmin"
+L["Already looted — back in %s"] = "Já saqueado — volta em %s"
+L["Already looted today"] = "Já saqueado hoje"
+L["Click: point the arrow here"] = "Clique: apontar a seta para cá"
+L["Show them on the world map"] = "Mostrar no mapa-múndi"
+L["Rares, elites and world bosses that drop a mount you do not have, with the mount and the chance when you hover them. Dimmed once looted today."] = "Raros, elites e chefes do mundo que largam montaria que você não tem, com a montaria e a chance ao passar o mouse. Ficam apagados depois de saqueados."
 L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
 L["no error captured (capture: %s)."] = "nenhum erro capturado (captura: %s)."
 L["%d error(s) captured, %d occurrence(s):"] = "%d erro(s) capturado(s), %d ocorrência(s):"

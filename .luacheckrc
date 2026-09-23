@@ -22,9 +22,13 @@ read_globals = {
     -- The window, on Blizzard's list parts (23/09).
     "CreateDataProvider", "ScrollBoxConstants", "CreateScrollBoxListLinearView", "ScrollUtil",
     "CreateAnchor", "NOT_COLLECTED", "UISpecialFrames", "tinsert",
+    -- The world-map pins (23/09).
+    "CreateFromMixins", "Mixin", "MapCanvasDataProviderMixin", "MapCanvasPinMixin", "WorldMapFrame",
+    "Enum", "UiMapPoint", "C_SuperTrack", "C_Map",
 }
 
 globals = {
     "SLASH_ROCKETMOUNT1", "SLASH_ROCKETMOUNT2",
     "RocketMountDB", "RocketMount_OnCompartmentClick",
+    "RocketMountLogDB", "RocketMountMapDataProviderMixin", "RocketMountMapPinMixin",
 }

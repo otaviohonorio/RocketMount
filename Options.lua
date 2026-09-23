@@ -72,6 +72,21 @@ function ns.SetupOptions()
     end
 
     do
+        local name = L["Show them on the world map"]
+        local variable = ADDON .. "MapPins"
+        local setting = Settings.RegisterProxySetting(category, variable,
+            Settings.VarType.Boolean, name, true,
+            function() return ns.db.mapPins ~= false end,
+            function(value)
+                ns.db.mapPins = value
+                if ns.MapPins then ns.MapPins.Refresh() end
+            end)
+
+        Settings.CreateCheckbox(category, setting,
+            L["Rares, elites and world bosses that drop a mount you do not have, with the mount and the chance when you hover them. Dimmed once looted today."])
+    end
+
+    do
         local name = L["Show the ones that left the game"]
         local variable = ADDON .. "ShowUnobtainable"
         local setting = Settings.RegisterProxySetting(category, variable,

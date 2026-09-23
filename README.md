@@ -79,6 +79,14 @@ each alt and they appear; `/rmt who` shows what is on record.
 It is a ledger, not a live reading, and it says so: everything in it was true when that character
 last logged in.
 
+## On the world map
+
+The rares, elites and world bosses that drop a mount **you** are missing show on the world map,
+with the game's own rare icons. Hover one: which mounts, and the chance of each. Click it: the
+map arrow points there. Looted today, it dims — the place is still worth knowing for tomorrow.
+Open world only, like the alert. The positions come from Wowhead's map, built into the addon;
+turn the pins off in the options.
+
 ## When something in front of you drops a mount
 
 Fly past it and see it on the minimap, target it, mouse over it, or let it yell when it spawns,

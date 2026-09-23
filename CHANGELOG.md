@@ -6,6 +6,10 @@ journal's row style and scroll bar, the search box and the standard filter butto
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
+- **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
+  missing now show on the world map, with the game's own rare icons. Hover one to see which
+  mounts it drops and the chance of each; click it to point the arrow there. Once you loot it,
+  it dims until it can drop again. Only in the open world; turn it off in the options.
 - **Mounts you can buy now come right after "just go get it".** A regular vendor mount whose
   price you already have sits in the second band, "Check with the vendor", instead of at the end
   of the list. Open the vendor once and the game settles it: if it sells to you, the mount moves
