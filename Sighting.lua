@@ -445,6 +445,13 @@ end
 ---  vignette  from the minimap: exact, the key of MCL's pins;
 ---  name      the fallback, and only inside the zone guard.
 function Sighting.Sight(npc, vignetteID, nome, mapa, onde)
+    -- (!) ONLY MOUNTS YOU DO NOT HAVE. Learning a mount marks the list dirty and nothing more,
+    -- so with the window closed this index kept the old list: kill a rare, loot its mount, see
+    -- the next one, and the alert offered you the mount you had just learned. A dirty list is
+    -- rebuilt here, before answering; `GetRanked` rebuilds this index itself via `MarkClean`.
+    if ns.IsDirty and ns.IsDirty() and ns.GetRanked then
+        pcall(ns.GetRanked)
+    end
     if not byNpc then Sighting.Rebuild() end
     local pontos = {}
     local function Somar(lista)
