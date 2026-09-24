@@ -175,7 +175,8 @@ local pendentes = {}       -- itemID -> true while waiting
 local total, feitos = 0, 0
 local aoTerminar
 local frameEv
-local TIMEOUT = 30
+-- 60, not 30: every missing mount's item is asked for at once, several hundred of them.
+local TIMEOUT = 60
 
 ---"ok" (in the cache, the tooltip can be trusted), "pending" or "failed".
 function Tooltip.State(itemID)
