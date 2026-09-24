@@ -16,8 +16,10 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   get it" only when that vendor has told this character it will sell; open the vendor once and
   the game settles it. Until then it waits in "Not confirmed", near the end of the list, with
   what is already known about it.
-- Covenant, Brawler's Guild and reputation vendor mounts that the collection data knows only by
-  vendor are now read from their item, so their requirements show up.
+- Vendor mounts that the collection data knows only by vendor are now read from their item, so
+  covenant, reputation and Archivists' Codex requirements show up. Some conditions live only at
+  the vendor — a guild achievement, a Brawler's Guild rank — and those mounts stay in "Not
+  confirmed" until the vendor itself answers.
 - Guild vendor mounts (such as the Dark Phoenix) are recognised again in every case.
 - **Every drop chance is now a percentage** — in the list, on the mount's card, in the alert
   and in chat. 1 in 200 reads 0.5%; 1 in 100 reads 1%.

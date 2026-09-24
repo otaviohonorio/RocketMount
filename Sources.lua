@@ -649,12 +649,14 @@ Vendedores = function(vi)
 end
 
 ---The item that teaches this mount, from `Data/MountItems.lua` -- only when the game agrees.
+local conferido = {}   -- mountID -> item, or false: an item never changes mount within a session
 function ns.VerifiedMountItem(mountID)
+    if conferido[mountID] ~= nil then return conferido[mountID] or nil end
     local item = ns.MountItems and ns.MountItems[mountID]
     if not (item and C_MountJournal and C_MountJournal.GetMountFromItem) then return nil end
     local ok, m = pcall(C_MountJournal.GetMountFromItem, item)
-    if ok and m == mountID then return item end
-    return nil
+    conferido[mountID] = (ok and m == mountID) and item or false
+    return conferido[mountID] or nil
 end
 
 --------------------------------------------------------------------------------
