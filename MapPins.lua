@@ -22,7 +22,13 @@ local MapPins = {}
 ns.MapPins = MapPins
 
 local TEMPLATE = "RocketMountMapPinTemplate"
-local PIN_SIZE = 20
+-- 24, up from 20 at the user's request (24/09): "um pouquinho maior". Still under the 25 of
+-- the game's own vignette highlight, so it reads as the same family.
+local PIN_SIZE = 24
+-- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
+-- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
+local NEAR = 0.035
+local TIP_ICON = 22     -- the mount's icon in the tooltip
 
 -- Wowhead's classification -> the game's own vignette art (the ones the minimap draws).
 local ATLAS = {
@@ -45,6 +51,56 @@ local function MapaAberto(mapID)
     return not (dungeon and info.mapType == dungeon)
 end
 
+--------------------------------------------------------------------------------
+-- The creature's name in the player's language
+--
+-- The table carries Wowhead's English name. The game knows the creature by id in the client's
+-- language: the tooltip of the link `unit:Creature-0-0-0-0-<npc>` starts with its name (the same
+-- API `C_TooltipInfo.GetHyperlink` that the rest of this addon uses for items). The first ask may
+-- come back empty while the client fetches it, so the map asks when it draws the pins, and the
+-- tooltip asks again when hovered.
+--------------------------------------------------------------------------------
+local nomes = {}
+
+function MapPins.NpcName(npc, fallback)
+    if nomes[npc] then return nomes[npc] end
+    if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
+        local ok, info = pcall(C_TooltipInfo.GetHyperlink, "unit:Creature-0-0-0-0-" .. npc)
+        local linha = ok and type(info) == "table" and type(info.lines) == "table" and info.lines[1]
+        local nome = type(linha) == "table" and linha.leftText
+        if type(nome) == "string" and nome ~= "" and not (issecretvalue and issecretvalue(nome))
+            and nome ~= UNKNOWNOBJECT then
+            nomes[npc] = nome
+            return nome
+        end
+    end
+    -- Seen in the world by this addon (Sighting.lua keeps it), or Wowhead's English one.
+    return ns.db and ns.db.npcNames and ns.db.npcNames[npc] or fallback
+end
+
+---A creature's ENGLISH name (MCL's `lockBossName`, "Sha of Anger") in the client's language, when
+---the drop table knows it -- the id is what lets the game answer. Unknown names come back as is.
+local porNomeIngles
+function ns.LocalizedCreature(nomeIngles)
+    if type(nomeIngles) ~= "string" then return nomeIngles end
+    if not porNomeIngles then
+        porNomeIngles = {}
+        for npc, rec in pairs(ns.MobDrops or {}) do
+            if rec.name then porNomeIngles[rec.name] = npc end
+        end
+    end
+    local npc = porNomeIngles[nomeIngles]
+    return npc and MapPins.NpcName(npc, nomeIngles) or nomeIngles
+end
+
+local function Perto(pontos, x, y)
+    for _, p in ipairs(pontos) do
+        local dx, dy = p[1] - x, p[2] - y
+        if dx * dx + dy * dy < NEAR * NEAR then return true end
+    end
+    return false
+end
+
 ---What goes on this map: one entry per point of each creature that still has a mount for you.
 function MapPins.PinsFor(mapID)
     local out = {}
@@ -57,12 +113,18 @@ function MapPins.PinsFor(mapID)
             local montarias = ns.Sighting.MountsOf(npc)
             if #montarias > 0 then
                 local preso, fonte, falta = ns.Sighting.LockedOut(npc, montarias)
+                MapPins.NpcName(npc)            -- warms the client's name cache for the tooltip
+                local postos = {}
                 for i = 1, #pontos - 1, 2 do
-                    out[#out + 1] = {
-                        npc = npc, rec = rec, mounts = montarias, mapID = mapID,
-                        x = pontos[i] / 100, y = pontos[i + 1] / 100,
-                        locked = preso, lockSource = fonte, lockLeft = falta,
-                    }
+                    local x, y = pontos[i] / 100, pontos[i + 1] / 100
+                    if not Perto(postos, x, y) then
+                        postos[#postos + 1] = { x, y }
+                        out[#out + 1] = {
+                            npc = npc, rec = rec, mounts = montarias, mapID = mapID,
+                            x = x, y = y,
+                            locked = preso, lockSource = fonte, lockLeft = falta,
+                        }
+                    end
                 end
             end
         end
@@ -115,19 +177,36 @@ local function Horas(segundos)
     return string.format(L["%dmin"], math.max(1, math.floor(segundos / 60)))
 end
 
+local function Atlas(atlas, size)
+    if CreateAtlasMarkup then
+        local ok, m = pcall(CreateAtlasMarkup, atlas, size, size)
+        if ok and m then return m .. " " end
+    end
+    return ""
+end
+
+---The tooltip, laid out like the game's own: the creature's icon and name as the title, what it
+---is underneath, then one line per mount -- its ICON, its name and the chance -- and last what
+---the pin does. Names in the client's language: the mount's from the journal, the creature's
+---from the game (NpcName).
 function MapPins.Tooltip(tooltip, data)
-    local nome = ns.db and ns.db.npcNames and ns.db.npcNames[data.npc] or data.rec.name
-    tooltip:SetText(nome, 1, 0.82, 0)
-    tooltip:AddLine(CLASS_NAME[data.rec.c] or "", 0.7, 0.7, 0.7)
+    local nome = MapPins.NpcName(data.npc, data.rec.name)
+    tooltip:SetText(Atlas(ATLAS[data.rec.c] or "VignetteKill", 18) .. nome, 1, 0.82, 0)
+    tooltip:AddLine(CLASS_NAME[data.rec.c] or "", 0.62, 0.62, 0.62)
+    tooltip:AddLine(" ")
+    tooltip:AddLine(L["Can drop:"], 1, 0.82, 0)
     for _, m in ipairs(data.mounts) do
         local chance = ns.Sighting.ChanceText(m) or "?"
-        tooltip:AddDoubleLine(m.entry.name, chance, 1, 1, 1, 1, 1, 1)
+        local icone = m.entry.icon and string.format("|T%s:%d:%d:0:0|t ", tostring(m.entry.icon), TIP_ICON, TIP_ICON) or ""
+        tooltip:AddDoubleLine(icone .. m.entry.name, chance, 1, 1, 1, 1, 0.82, 0)
     end
     if data.locked then
+        tooltip:AddLine(" ")
         local volta = Horas(data.lockLeft)
         tooltip:AddLine(volta and string.format(L["Already looted — back in %s"], volta)
             or L["Already looted today"], 1, 0.35, 0.35)
     end
+    tooltip:AddLine(" ")
     tooltip:AddLine(L["Click: point the arrow here"], 0.5, 0.8, 1)
 end
 

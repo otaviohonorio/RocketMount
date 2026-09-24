@@ -385,7 +385,9 @@ function ns.Rank(entry)
     elseif e.chance then
         e.why = string.format(L["%s chance"], ns.FormatChance(e.chance))
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
-        if e.bossName then e.why = e.why .. "  ·  " .. e.bossName end
+        if e.bossName then
+            e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(e.bossName) or e.bossName)
+        end
     elseif e.sourceText and e.sourceText ~= "" then
         -- Blizzard's text comes with line breaks; a list row wants a single line.
         e.why = (e.sourceText:gsub("[\r\n]+", "  ·  "))

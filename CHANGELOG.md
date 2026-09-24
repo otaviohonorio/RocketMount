@@ -8,7 +8,8 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
 - **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
   missing now show on the world map, with the game's own rare icons. Hover one to see which
-  mounts it drops and the chance of each; click it to point the arrow there. Once you loot it,
+  mounts it drops — with each mount's icon — and the chance of each; click it to point the
+  arrow there. Creature and mount names come in your game's language. Once you loot it,
   it dims until it can drop again. Only in the open world; turn it off in the options.
 - **Nothing reaches the top of the list without being checked.** When a character logs in, the
   addon loads every missing mount's item from the server and reads its requirements before

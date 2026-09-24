@@ -182,7 +182,9 @@ function ns.DetailBlocks(entry)
     if entry.chance and entry.chance > 0 then
         -- (Era "1 em %d" em portugues fixo no codigo: saia em portugues para quem joga em ingles.)
         local txt = ns.FormatChance(entry.chance)
-        if entry.bossName then txt = txt .. "\n" .. entry.bossName end
+        if entry.bossName then
+            txt = txt .. "\n" .. (ns.LocalizedCreature and ns.LocalizedCreature(entry.bossName) or entry.bossName)
+        end
         Block(L["Chance"], txt)
     end
 
