@@ -243,6 +243,7 @@ function WorldMapFrame:AcquirePin(template, data)
     pin.__template = template
     pin.Texture = pin:CreateTexture()
     function pin.SetAlpha(_, a) pin.__alpha = a end
+    function pin.SetSize(_, w) pin.__size = w end
     pin:OnLoad()
     pin:OnAcquired(data)
     self.__pins[#self.__pins + 1] = pin
@@ -1741,6 +1742,32 @@ do
     check("  a classe", linhas[2], "Elite")
     check("  e a montaria com a chance", texto:find("Farm longo | 0.28%", 1, true) ~= nil, true)
     check("  e ainda nao diz que foi saqueado", texto:find("looted", 1, true), nil)
+
+    -- (24/09, pedido do usuario) O BALAO BONITO E NO IDIOMA DO JOGO.
+    check("  e cada montaria leva o icone dela",
+        texto:find("|T100005:22:22:0:0|t Farm longo", 1, true) ~= nil, true)
+    -- O nome do bicho: o jogo responde pelo id (tooltip de `unit:Creature-...`), no idioma dele.
+    C_TooltipInfo = C_TooltipInfo or {}
+    local realLink = C_TooltipInfo.GetHyperlink
+    C_TooltipInfo.GetHyperlink = function(link)
+        if link == "unit:Creature-0-0-0-0-60491" then return { lines = { { leftText = "Sha da Raiva" } } } end
+    end
+    linhas = {}
+    M.Tooltip(tip, pin.data)
+    check("o nome do bicho vem do jogo, no idioma dele", linhas[1], "Sha da Raiva")
+    -- E O NOME DO CHEFE NA LISTA E NA FICHA, que o MCL so tem em ingles ("lockBossName").
+    check("chefe do catalogo em ingles sai no idioma do jogo", ns.LocalizedCreature("Sha of Anger"), "Sha da Raiva")
+    check("  e nome que a tabela nao conhece fica como veio", ns.LocalizedCreature("Bicho qualquer"), "Bicho qualquer")
+    C_TooltipInfo.GetHyperlink = realLink
+
+    -- PONTOS PERTO DEMAIS DO MESMO BICHO VIRAM UM SO. Tres pontos: dois colados e um longe.
+    ns.MobDrops[60491].where[2413] = { 47.2, 50, 47.6, 50.4, 60, 60 }
+    P:RefreshAllData()
+    check("pontos colados do mesmo bicho viram um marcador so", #WorldMapFrame.__pins, 2)
+    ns.MobDrops[60491].where[2413] = { 47.2, 50, 51.2, 45.2 }
+    P:RefreshAllData()
+    check("e o marcador ficou um pouco maior", WorldMapFrame.__pins[1].__size, 24)
+    pin = WorldMapFrame.__pins[1]
 
     -- SAQUEADO: o marcador fica apagado (continua la para amanha) e o balao diz quando volta.
     GetNumLootItems = function() return 1 end

@@ -2,7 +2,7 @@
 	<!-- The world-map pin (MapPins.lua). Same shape as Blizzard's own pin templates: a virtual
 	     frame with a mixin, acquired by the map's data provider. -->
 	<Frame name="RocketMountMapPinTemplate" mixin="RocketMountMapPinMixin" enableMouse="true" virtual="true">
-		<Size x="20" y="20"/>
+		<Size x="24" y="24"/>
 		<Layers>
 			<Layer level="ARTWORK">
 				<Texture parentKey="Texture" setAllPoints="true"/>
