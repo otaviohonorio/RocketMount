@@ -476,11 +476,6 @@ local function PassaBusca(e, termos)
     return true
 end
 
-local function PassaExpansao(e, alvo)
-    if alvo == nil then return true end
-    return e.expansion == alvo
-end
-
 ---A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
 local function MyFaction()
     return UnitFactionGroup and UnitFactionGroup("player") or nil
@@ -500,7 +495,6 @@ end
 -- A lista já ranqueada, depois dos filtros.
 function ns.GetFiltered()
     local all = ns.GetRanked()
-    local want = ns.db.sources
     local modo = ns.db.factionFilter
 
     -- Os termos são quebrados UMA vez, e não dentro do laço.
@@ -516,13 +510,151 @@ function ns.GetFiltered()
     local out = {}
     for i = 1, #all do
         local e = all[i]
-        if (not want or want[e.sourceType])
-            and PassaFaccao(e, modo)
+        -- (The old source filter and the single-expansion filter live on as the Type and
+        -- Expansion columns: `ns.PassesColumnFilters`. A filter kept but no longer shown would
+        -- hide mounts with nothing on screen saying why.)
+        if PassaFaccao(e, modo)
             and (ns.db.showUnobtainable or not e.unobtainable)
             and PassaBusca(e, termos)
-            and PassaExpansao(e, ns.db.expansionFilter) then
+            and ns.PassesColumnFilters(e) then
             out[#out + 1] = e
         end
     end
     return out, #all
+end
+
+--------------------------------------------------------------------------------
+-- THE WINDOW'S LIST: one list, tags, one number (25/09)
+--
+-- (!) The user: *"a lista com o percentual do lado confunde, por que aparece em um bloco de
+-- garantido 71% e termina com 0%, dai o proximo bloco começa com 33% que é na sorte... Melhor ser
+-- uma lista única com tags"*. The bands still exist INSIDE the addon -- they carry the certainty
+-- rules and the alert -- but the window shows one list, ordered by one number, and says WHAT each
+-- mount is with tags, filterable like columns.
+--------------------------------------------------------------------------------
+
+-- Tag keys, in the order they are shown on a row (the most telling first).
+ns.TAG_ORDER = { "raid", "dungeon", "drop", "quest", "achievement", "renown", "reputation",
+                 "vendor", "profession", "event", "petbattle", "promotion", "discovery" }
+ns.TAG_NAME = {
+    raid = L["Raid"], dungeon = L["Dungeon"], drop = L["Drop"], quest = L["Quest"],
+    achievement = L["Achievement"], renown = L["Renown"], reputation = L["Reputation"],
+    vendor = L["Vendor"], profession = L["Profession"], event = L["World Event"],
+    petbattle = L["Pet Battle"], promotion = L["Shop / promotion"], discovery = L["Discovery"],
+}
+local TAG_RANK = {}
+for i, k in ipairs(ns.TAG_ORDER) do TAG_RANK[k] = i end
+
+-- Blizzard's own source type (`C_MountJournal` source) -> tag.
+local TAG_OF_SOURCE = {
+    [1] = "drop", [2] = "quest", [3] = "vendor", [4] = "profession", [5] = "petbattle",
+    [6] = "achievement", [7] = "event", [8] = "promotion", [9] = "promotion", [10] = "promotion",
+    [11] = "discovery",
+}
+
+---What a mount IS, as a set of tags and an ordered list. Built from what the game says (source
+---type) and what the catalogue adds (reputation, renown, the group an encounter needs).
+function ns.Tags(e)
+    local set = {}
+    local function Add(k) if k then set[k] = true end end
+    Add(TAG_OF_SOURCE[e.sourceType])
+    if e.chance and e.chance > 0 then Add("drop") end
+    if e.groupSize then
+        if e.groupSize >= 10 then Add("raid") elseif e.groupSize >= 2 then Add("dungeon") end
+    end
+    if e.quest then Add("quest") end
+    if e.achievement or e.achievementReward then Add("achievement") end
+    if e.rep then Add(e.isRenown and "renown" or "reputation") end
+    if e.isVendorMount or e.cost then Add("vendor") end
+    local list = {}
+    for _, k in ipairs(ns.TAG_ORDER) do
+        if set[k] then list[#list + 1] = k end
+    end
+    return set, list
+end
+
+-- The two ways to read the number, chosen in the window (the user wanted both, to compare).
+--   "tag"   the number you can check in the game: how far the requirement is (Reputation,
+--           Achievement...) or the drop chance (Drop). The tag says which.
+--   "ease"  one score for everything: the requirement's progress, or -- for a drop -- the chance
+--           of having it after TRIES attempts, so a 1-in-3 and a 1-in-2000 end up comparable.
+ns.EASE_TRIES = 20
+
+---The row's number, 0..1, or nil when it cannot be measured (it goes last, shown as "?").
+function ns.RowPercent(e, mode)
+    if e.tier == ns.TIER.GONE or e.tier == ns.TIER.UNKNOWN or e.tier == ns.TIER.CHECK then
+        return nil
+    end
+    if e.tier == ns.TIER.READY then return 1 end
+    if e.deterministic or e.gated then
+        -- Luck that is not even unlocked: what stands in the way now is the requirement.
+        local req = e.requirement
+        if not req then return nil end
+        if e.gated and not e.deterministic and mode == "ease" and e.chance and e.chance > 0 then
+            return math.max(0, req) * (1 - (1 - 1 / e.chance) ^ ns.EASE_TRIES)
+        end
+        return math.max(0, math.min(1, req))
+    end
+    if e.chance and e.chance > 0 then
+        if mode == "ease" then return 1 - (1 - 1 / e.chance) ^ ns.EASE_TRIES end
+        return 1 / e.chance
+    end
+    return nil
+end
+
+---The number as the row shows it: a drop's chance keeps its drop format (0.28%, ~0.11%) in
+---"tag" mode; everything else is a whole percentage.
+function ns.RowPercentText(e, mode)
+    local v = ns.RowPercent(e, mode)
+    if not v then return "?" end
+    local luck = not e.deterministic and not e.gated and e.chance and e.chance > 0
+    if mode ~= "ease" and luck then return ns.FormatChance(e.chance) end
+    if v > 0 and v < 0.01 then return "<1%" end
+    return string.format("%d%%", math.floor(v * 100 + 0.5))
+end
+
+---The window's order: an optional column first (tag or expansion), then ALWAYS the number
+---(highest first, unmeasurable last), then the name.
+function ns.SortForWindow(list, mode, by)
+    local key = {}
+    for _, e in ipairs(list) do
+        local _, tags = ns.Tags(e)
+        key[e] = {
+            pct = ns.RowPercent(e, mode),
+            tag = TAG_RANK[tags[1] or ""] or 99,
+            exp = -(e.expansion or -1),
+            name = e.name or "",
+        }
+    end
+    table.sort(list, function(a, b)
+        local ka, kb = key[a], key[b]
+        if by == "tag" and ka.tag ~= kb.tag then return ka.tag < kb.tag end
+        if by == "expansion" and ka.exp ~= kb.exp then return ka.exp < kb.exp end
+        if by == "name" and ka.name ~= kb.name then return ka.name < kb.name end
+        if (ka.pct == nil) ~= (kb.pct == nil) then return ka.pct ~= nil end
+        if ka.pct and kb.pct and ka.pct ~= kb.pct then return ka.pct > kb.pct end
+        return ka.name < kb.name
+    end)
+    return list
+end
+
+---The column filters: tags (a mount passes when it has ANY chosen tag) and expansions.
+function ns.PassesColumnFilters(e)
+    local t = ns.db and ns.db.tagFilter
+    if t and next(t) then
+        local set = ns.Tags(e)
+        local ok = false
+        for k in pairs(t) do if set[k] then ok = true; break end end
+        if not ok then return false end
+    end
+    local x = ns.db and ns.db.expFilter
+    if x and next(x) and not x[e.expansion or -1] then return false end
+    return true
+end
+
+---The expansion's name in the game's language (`EXPANSION_NAME<n>`), our English as reserve.
+function ns.ExpansionLabel(id, fallback)
+    local g = id and _G["EXPANSION_NAME" .. id]
+    if type(g) == "string" and g ~= "" then return g end
+    return fallback or "?"
 end

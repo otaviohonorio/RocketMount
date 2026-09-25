@@ -18,20 +18,29 @@ The existing addons sort by rarity — the rarest first, which is the opposite o
 — and they answer per zone, when you happen to have the world map open. Rocket Mount asks the
 inverse question and answers it in one ordered list.
 
-## How the order is decided
+## How the list works
 
-Every mount falls into a band by a **stated rule**, and each row shows **the number that put it
-there**. If you disagree with the criterion, you can see why it landed where it did.
+**One list, ordered by one number**, with columns that say what each mount is:
 
-| Band | Rule |
+| Column | What it shows |
 |---|---|
-| **Guaranteed — just go get it** | a known access requirement, met, and nothing left to luck — a purchase only once the vendor confirmed it |
-| **Guaranteed — nearly unlocked** | 75% or more of the requirement |
-| **Guaranteed — halfway** | 25% or more |
-| **Luck — good odds** | unlocked, and 1% or better |
-| **Long road** | worse odds, or the requirement barely started |
-| **Not confirmed** | a purchase the vendor has not confirmed yet — open it once to settle it |
-| **No estimate** | no installed catalogue knows how to measure this one |
+| **Mount** | name, and the reason it sits where it does (what is missing, the chance, the boss) |
+| **Type** | tags: Raid, Dungeon, Drop, Quest, Achievement, Renown, Reputation, Vendor, Profession, Event… |
+| **Expansion** | in your game's language |
+| **%** | the number the list is ordered by |
+
+Click **Type** or **Expansion** to filter by them or to group the list by them — inside a group
+the list is still ordered by the number. Click **Mount** or **%** to order by name or by number.
+
+The number can be read two ways, chosen at the top of the list (the **?** explains both):
+
+- **By tag** — the number you can check in the game: how far a requirement is (reputation,
+  renown, achievement, gold), or the chance of each attempt for a drop. The tag says which.
+- **Ease** — one score for everything: a requirement's progress, or for a drop the chance of having
+  the mount after 20 attempts, so a 1-in-3 and a 1-in-2000 compare on the same scale.
+
+A mount the addon cannot measure — a purchase the vendor has not confirmed, or nothing known about
+it — shows **?** and goes last. Nothing is shown at 100% without being checked for this character.
 
 Two distinctions carry the whole thing:
 
@@ -41,8 +50,7 @@ killing a boss with a 1-in-100 chance does not. So "just go get it" requires a d
 acquisition; with any drop chance in the way, the requirement at most unlocks the farm.
 
 **Access is not price.** Gold is almost never what blocks anyone — reputation, achievements,
-guild level and rating are. A mount where the only thing we know is its price goes to "Check with
-the vendor", which promises exactly what can be proven.
+guild level and rating are. A mount where the only thing we know is its price shows "?" until the vendor itself confirms it, which promises exactly what can be proven.
 
 ## Where the data comes from
 

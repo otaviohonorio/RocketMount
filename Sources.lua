@@ -537,6 +537,8 @@ function ns.BuildList()
                     e.itemID = rec.itemId
                     e.coords = rec.coords
                     e.bossName = rec.lockBossName
+                    -- For the Raid / Dungeon tags: MCL records the group an encounter needs.
+                    e.groupSize = rec.groupSize
                     -- (!) `vendorInfo` CAN BE A LIST. For the 504 mounts it knows only from its
                     -- vendor table, MCL builds a minimal record with `vendorInfo = vendorList`
                     -- (`MCL_Guide.lua:484`). Read as one vendor, `.npc` was nil: the Dark Phoenix
@@ -583,6 +585,7 @@ function ns.BuildList()
                     -- `showUnobtainable` no `Core.lua`.
                     e.unobtainable = rec.isUnobtainable and true or false
                     e.rep = ReputationProgress(rec.rep)
+                    e.isRenown = type(rec.rep) == "table" and rec.rep.renown and true or false
                     -- DEPOIS da leitura de reputação, e não antes: ela sobrescreve `e.rep`, e
                     -- com a injeção em cima a guarda de guilda era apagada duas linhas depois
                     -- de ser escrita. O teste de ordem denunciou — a montaria continuava na
