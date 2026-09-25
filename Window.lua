@@ -35,10 +35,17 @@ local ATTIC_Y = -35           -- the counter's line, between the title and the i
 local GUTTER = 20             -- between the list and the card (MountJournal, RocketSwap)
 local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (RocketSwap)
 
--- The list column. The inset holds the search row on top (36, as in the journal) and the
--- scroll box under it, 3 in from each side; the scroll bar sits inside the inset's right side.
-local LIST_W = 460
-local SEARCH_ROW = 36
+-- The list column. The inset holds, on top, the search row (36, as in the journal) and the
+-- column headers under it; the scroll box starts below both, 3 in from each side; the scroll bar
+-- sits inside the inset's right side.
+--
+-- (!) WIDER AND WITH COLUMNS (25/09). The user: one list instead of bands, with tags, filter by
+-- expansion, *"alarga a tela para incluir mais estes elementos na linha e pode engrossar um
+-- pouco a linha"*. 460 -> 660 buys the Type and Expansion columns; the card keeps its 360.
+local LIST_W = 660
+local SEARCH_H = 36
+local HEADER_H = 26
+local SEARCH_ROW = SEARCH_H + HEADER_H   -- where the scroll box starts inside the inset
 local SCROLLBAR_W = 17        -- what `AddManagedScrollBarVisibilityBehavior` gives up (RocketSwap)
 local ROW_PAD = 44            -- the journal's left padding: room for the icon hanging off the row
 
@@ -48,32 +55,30 @@ local DETAIL_W = 360
 
 local COL_X = INSET_X + LIST_W + GUTTER
 local WINDOW_W = COL_X + DETAIL_W + RIGHT_MARGIN
-local WINDOW_H = 560
+local WINDOW_H = 580
 
--- The row. Its width is what the scroll box leaves once the scroll bar and the icon padding
--- are paid for -- derived, because the last time a number here was chosen by hand the name
--- ended 4px inside the figure on the right.
-local ROW_H = 46              -- `MountListButtonTemplate`
-local ROW_ICON = 38
+-- The row and its columns. Every x is derived from the one before it, so a column that grows
+-- pushes the next instead of sitting on it -- the geometry test checks every gap.
+local ROW_H = 54              -- 46 in the journal; "engrossar um pouco" (25/09)
+local ROW_ICON = 42
 local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
-local ROW_TEXT_X = 6          -- icon at -42, 38 wide, name 10 to its right: -42 + 38 + 10
-local HEADLINE_W = 80
-local HEADLINE_INSET = 8
-local ROW_GAP = 10            -- between the name and the figure
-local ROW_TEXT_W = ROW_W - ROW_TEXT_X - ROW_GAP - HEADLINE_W - HEADLINE_INSET
-
--- A band's header: a line of its own in the same list, spanning the icon column too.
-local HEAD_H = 30
-local TIER_TITLE_WIDTH = 230  -- the longest band name ("Guaranteed — halfway") at 12pt, ~220
+local COL_GAP = 10
+local NAME_X, NAME_W = 6, 244           -- name, and the "why" line under it
+local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 150
+local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 96
+local PCT_W, PCT_INSET = 56, 8
+local PCT_X = ROW_W - PCT_INSET - PCT_W
 
 ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
     detailW = DETAIL_W, rightMargin = RIGHT_MARGIN,
     scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD,
-    rowW = ROW_W, rowH = ROW_H, rowTextX = ROW_TEXT_X, rowTextW = ROW_TEXT_W,
-    headlineW = HEADLINE_W, headlineInset = HEADLINE_INSET, rowGap = ROW_GAP,
-    headH = HEAD_H, listTop = LIST_TOP, footer = FOOTER,
+    rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER,
+    cols = {
+        { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
+        { name = "exp", x = EXP_X, w = EXP_W }, { name = "pct", x = PCT_X, w = PCT_W },
+    },
 }
 
 local window, list, detail
@@ -305,9 +310,16 @@ local function FillDetail(entry)
     d.icon:SetTexture(entry.icon)
     d.name:SetText(entry.name)
 
-    local c = ns.TIER_COLOR[entry.tier] or S.dim
-    d.tier:SetText(ns.TIER_NAME[entry.tier])
-    d.tier:SetTextColor(c[1], c[2], c[3])
+    -- What the mount is (the row's tags) and its expansion, instead of a band name the list no
+    -- longer shows.
+    local _, tags = ns.Tags(entry)
+    local nomes = {}
+    for _, k in ipairs(tags) do nomes[#nomes + 1] = ns.TAG_NAME[k] end
+    local linha = table.concat(nomes, " · ")
+    local exp = entry.expansion and ns.ExpansionLabel(entry.expansion, entry.expansionName)
+    if exp then linha = (linha ~= "" and (linha .. "  —  ") or "") .. exp end
+    d.tier:SetText(linha)
+    d.tier:SetTextColor(S.dim[1], S.dim[2], S.dim[3])
 
     local blocks, wp = ns.DetailBlocks(entry)
     local n = math.min(#blocks, #d.blocks)
@@ -347,7 +359,7 @@ local function FillDetail(entry)
 end
 
 --------------------------------------------------------------------------------
--- The list: two kinds of element in one scroll box -- a band's header and a mount
+-- The list: one kind of row, with columns
 --------------------------------------------------------------------------------
 
 ---A mount row, built once. The scroll box recycles frames, so everything that depends on the
@@ -363,7 +375,7 @@ local function BuildRow(row)
 
     row.icon = row:CreateTexture(nil, "BORDER")
     row.icon:SetSize(ROW_ICON, ROW_ICON)
-    row.icon:SetPoint("LEFT", -42, 0)
+    row.icon:SetPoint("LEFT", -(ROW_ICON + 4), 0)
 
     row.selectedTexture = row:CreateTexture(nil, "OVERLAY")
     row.selectedTexture:SetAllPoints()
@@ -373,18 +385,30 @@ local function BuildRow(row)
     row:SetHighlightAtlas("PetList-ButtonHighlight")
 
     row.name = Text(row, "GameFontNormal")
-    row.name:SetPoint("TOPLEFT", ROW_TEXT_X, -7)
-    row.name:SetWidth(ROW_TEXT_W)
+    row.name:SetPoint("TOPLEFT", NAME_X, -10)
+    row.name:SetWidth(NAME_W)
     row.name:SetWordWrap(false)
 
     row.why = Text(row, "GameFontDisableSmall")
-    row.why:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -3)
-    row.why:SetWidth(ROW_TEXT_W)
+    row.why:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -4)
+    row.why:SetWidth(NAME_W)
     row.why:SetWordWrap(false)
 
+    -- The TAGS, in the column the header filters. Two lines at most: a mount rarely is more than
+    -- "Raid · Drop" or "Reputation · Vendor", and a third tag is in the card.
+    row.tags = Text(row, "GameFontHighlightSmall")
+    row.tags:SetPoint("LEFT", TAG_X, 0)
+    row.tags:SetWidth(TAG_W)
+    row.tags:SetJustifyV("MIDDLE")
+
+    row.exp = Text(row, "GameFontDisableSmall")
+    row.exp:SetPoint("LEFT", EXP_X, 0)
+    row.exp:SetWidth(EXP_W)
+    row.exp:SetWordWrap(false)
+
     row.headline = Text(row, "GameFontHighlight", "RIGHT")
-    row.headline:SetPoint("RIGHT", -HEADLINE_INSET, 0)
-    row.headline:SetWidth(HEADLINE_W)
+    row.headline:SetPoint("RIGHT", -PCT_INSET, 0)
+    row.headline:SetWidth(PCT_W)
 
     row:SetScript("OnEnter", function(self)
         local e = self.entry
@@ -401,7 +425,6 @@ local function BuildRow(row)
         FillDetail(selected)
         if list and list.ForEachFrame then
             list:ForEachFrame(function(f)
-                -- Only mount rows have one; a band header does not. By TYPE, not truthiness.
                 if type(f.selectedTexture) == "table" then
                     f.selectedTexture:SetShown(Same(f.entry, selected))
                 end
@@ -417,46 +440,31 @@ local function FillRow(row, data)
     row.icon:SetTexture(e.icon)
     row.name:SetText(e.name)
     row.why:SetText(e.why or "")
-    row.headline:SetText(e.headline or "")
-    local c = ns.TIER_COLOR[e.tier] or S.cream
-    row.headline:SetTextColor(c[1], c[2], c[3])
+
+    local _, tags = ns.Tags(e)
+    local nomes = {}
+    for i = 1, math.min(#tags, 2) do nomes[#nomes + 1] = ns.TAG_NAME[tags[i]] end
+    row.tags:SetText(table.concat(nomes, " · "))
+    row.exp:SetText(e.expansion and ns.ExpansionLabel(e.expansion, e.expansionName) or "")
+
+    local modo = ns.db.pctMode or "tag"
+    row.headline:SetText(ns.RowPercentText(e, modo))
+    -- White for a number, green for "ready", grey for "cannot be measured": no band colours, the
+    -- list has no bands any more.
+    if e.tier == ns.TIER.READY then
+        row.headline:SetTextColor(0.30, 0.85, 0.40)
+    elseif ns.RowPercent(e, modo) == nil then
+        row.headline:SetTextColor(S.dim[1], S.dim[2], S.dim[3])
+    else
+        row.headline:SetTextColor(1, 1, 1)
+    end
     row.selectedTexture:SetShown(Same(e, selected))
 end
 
----A band's header. It hangs left into the icon column, so the band's name lines up with the
----icons below it rather than with the names.
-local function FillHead(head, data)
-    if not built[head] then
-        built[head] = true
-        head:SetSize(ROW_W, HEAD_H)
-        -- Explicit widths on both: without them a FontString grows as far as its text asks
-        -- and crosses the list's edge -- and these labels change length with every band.
-        head.title = Text(head, "GameFontNormal")
-        head.title:SetPoint("BOTTOMLEFT", -ROW_PAD + 4, 6)
-        head.title:SetWidth(TIER_TITLE_WIDTH)
-        head.title:SetWordWrap(false)
-
-        head.hint = Text(head, "GameFontDisableSmall")
-        head.hint:SetPoint("LEFT", head.title, "RIGHT", 8, 0)
-        head.hint:SetWidth(ROW_W + ROW_PAD - 4 - TIER_TITLE_WIDTH - 8)
-        head.hint:SetWordWrap(false)
-    end
-    head.title:SetText(ns.TIER_NAME[data.tier])
-    local c = ns.TIER_COLOR[data.tier] or S.gold
-    head.title:SetTextColor(c[1], c[2], c[3])
-    head.hint:SetText(ns.TIER_HINT[data.tier])
-end
-
----What the scroll box shows: the filtered list with a header before each band.
+---What the scroll box shows: one element per mount, in the window's order.
 function ns.ListElements(entries)
-    local items, lastTier = {}, nil
-    for _, e in ipairs(entries) do
-        if e.tier ~= lastTier then
-            items[#items + 1] = { head = true, tier = e.tier }
-            lastTier = e.tier
-        end
-        items[#items + 1] = { entry = e }
-    end
+    local items = {}
+    for _, e in ipairs(entries) do items[#items + 1] = { entry = e } end
     return items
 end
 
@@ -520,6 +528,8 @@ local function Redraw()
     ns.UpdateLoading()
     if ns.ValidationDone and not ns.ValidationDone() then return end
     local entries, total = ns.GetFiltered()
+    ns.SortForWindow(entries, ns.db.pctMode or "tag", ns.db.sortBy or "pct")
+    if ns.UpdateHeaders then ns.UpdateHeaders() end
     local provider = CreateDataProvider(ns.ListElements(entries))
     local keep = ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition
     list:SetDataProvider(provider, keep)
@@ -556,40 +566,151 @@ function ns.RefreshWindow()
 end
 
 --------------------------------------------------------------------------------
--- The source filter: the journal's own filter button
+-- The column headers: sort by clicking, filter from the menu -- no grid, no table look
 --------------------------------------------------------------------------------
+local headers = {}
 
-local function SetupFilter(dd)
-    dd:SetWidth(90)
-    -- The little "x" that resets to default, drawn by the template when this says "not default".
-    if dd.SetIsDefaultCallback then
-        dd:SetIsDefaultCallback(function() return ns.db.sources == nil end)
-        dd:SetDefaultCallback(function()
-            ns.db.sources = nil
-            ns.RefreshWindow()
-        end)
+local function Menu(owner, gerar)
+    if MenuUtil and MenuUtil.CreateContextMenu then
+        MenuUtil.CreateContextMenu(owner, gerar)
     end
-    dd:SetupMenu(function(_, root)
-        root:CreateTitle(L["Sources"])
-        for id = 0, 11 do
-            root:CreateCheckbox(ns.SOURCE_NAMES[id],
-                function() return not ns.db.sources or ns.db.sources[id] end,
+end
+
+local function Contagem(t)
+    local n = 0
+    for _ in pairs(t or {}) do n = n + 1 end
+    return n
+end
+
+---The header's text: the column's name, "(n)" when filtered, and the sort arrow when it leads.
+function ns.UpdateHeaders()
+    local by = ns.db.sortBy or "pct"
+    for chave, h in pairs(headers) do
+        local nome = h.label
+        local n = chave == "tag" and Contagem(ns.db.tagFilter) or chave == "expansion" and Contagem(ns.db.expFilter) or 0
+        if n > 0 then nome = nome .. string.format(" (%d)", n) end
+        h.text:SetText(nome)
+        h.arrow:SetShown(by == chave)
+    end
+    if headers.pct then headers.pct.arrow:SetShown(true) end   -- the number always orders, at least second
+end
+
+local function TagMenu(owner)
+    Menu(owner, function(_, root)
+        root:CreateRadio(L["Group by type, then %"], function() return ns.db.sortBy == "tag" end,
+            function() ns.db.sortBy = "tag"; ns.RefreshWindow() end)
+        root:CreateDivider()
+        root:CreateTitle(L["Show"])
+        for _, k in ipairs(ns.TAG_ORDER) do
+            root:CreateCheckbox(ns.TAG_NAME[k],
+                function() return ns.db.tagFilter and ns.db.tagFilter[k] end,
                 function()
-                    local t = ns.db.sources
-                    if not t then
-                        -- First untick: start from "all on".
-                        t = {}
-                        for i = 0, 11 do t[i] = true end
-                        ns.db.sources = t
-                    end
-                    t[id] = not t[id]
-                    local any = false
-                    for i = 0, 11 do if t[i] then any = true end end
-                    if not any then ns.db.sources = nil end
+                    ns.db.tagFilter = ns.db.tagFilter or {}
+                    ns.db.tagFilter[k] = not ns.db.tagFilter[k] or nil
                     ns.RefreshWindow()
                 end)
         end
+        root:CreateButton(L["Show all"], function() ns.db.tagFilter = nil; ns.RefreshWindow() end)
     end)
+end
+
+local function ExpMenu(owner)
+    Menu(owner, function(_, root)
+        root:CreateRadio(L["Group by expansion, then %"], function() return ns.db.sortBy == "expansion" end,
+            function() ns.db.sortBy = "expansion"; ns.RefreshWindow() end)
+        root:CreateDivider()
+        root:CreateTitle(L["Show"])
+        local faixas = ns.Expansion and ns.Expansion.RANGES or {}
+        for i = #faixas, 1, -1 do
+            local id = faixas[i].id
+            root:CreateCheckbox(ns.ExpansionLabel(id, faixas[i].name),
+                function() return ns.db.expFilter and ns.db.expFilter[id] end,
+                function()
+                    ns.db.expFilter = ns.db.expFilter or {}
+                    ns.db.expFilter[id] = not ns.db.expFilter[id] or nil
+                    ns.RefreshWindow()
+                end)
+        end
+        root:CreateButton(L["Show all"], function() ns.db.expFilter = nil; ns.RefreshWindow() end)
+    end)
+end
+
+local function Header(host, chave, label, x, w, onClick, justify)
+    local h = CreateFrame("Button", nil, host)
+    h:SetSize(w, HEADER_H - 4)
+    h:SetPoint("TOPLEFT", host, "TOPLEFT", 3 + ROW_PAD + x, -SEARCH_H)
+    h.label = label
+    h.text = Text(h, "GameFontNormalSmall", justify or "LEFT")
+    h.text:SetAllPoints()
+    -- The game's own sort arrow (guild roster, who list).
+    h.arrow = h:CreateTexture(nil, "ARTWORK")
+    h.arrow:SetTexture("Interface\\Buttons\\UI-SortArrow")
+    h.arrow:SetSize(9, 8)
+    if justify == "RIGHT" then
+        h.arrow:SetPoint("RIGHT", h.text, "LEFT", -2, 0)
+    else
+        h.arrow:SetPoint("LEFT", h, "RIGHT", -8, 0)
+    end
+    h.arrow:Hide()
+    h:SetHighlightTexture("Interface\\PaperDollInfoFrame\\UI-Character-Tab-Highlight", "ADD")
+    h:SetScript("OnClick", function(self) onClick(self) end)
+    headers[chave] = h
+    return h
+end
+
+-- The two readings of the number, chosen with a pair of buttons (the user: *"um botão ou radio
+-- button só que mais bonito (...) com um ícone de ? explicando o que é cada um"*).
+local function PctModeButtons(host, busca)
+    local lbl = Text(host, "GameFontNormalSmall")
+    lbl:SetPoint("LEFT", busca, "RIGHT", 18, 0)
+    lbl:SetText(L["Percent:"])
+    local botoes = {}
+    local function Atualizar()
+        local modo = ns.db.pctMode or "tag"
+        for k, b in pairs(botoes) do
+            if k == modo then b:LockHighlight() else b:UnlockHighlight() end
+            local fs = b.GetFontString and b:GetFontString()
+            if type(fs) == "table" and fs.SetTextColor then
+                if k == modo then fs:SetTextColor(1, 0.82, 0) else fs:SetTextColor(0.7, 0.7, 0.7) end
+            end
+        end
+    end
+    local ant = lbl
+    for _, par in ipairs({ { "tag", L["By tag"] }, { "ease", L["Ease"] } }) do
+        local b = CreateFrame("Button", nil, host, "UIPanelButtonTemplate")
+        b:SetSize(84, 20)
+        b:SetPoint("LEFT", ant, "RIGHT", ant == lbl and 6 or 2, 0)
+        b:SetText(par[2])
+        b:SetScript("OnClick", function()
+            ns.db.pctMode = par[1]
+            Atualizar()
+            ns.RefreshWindow()
+        end)
+        botoes[par[1]] = b
+        ant = b
+    end
+    -- The "?" that explains both readings.
+    local ajuda = CreateFrame("Button", nil, host)
+    ajuda:SetSize(20, 20)
+    ajuda:SetPoint("LEFT", ant, "RIGHT", 4, 0)
+    ajuda.tex = ajuda:CreateTexture(nil, "ARTWORK")
+    ajuda.tex:SetAllPoints()
+    ajuda.tex:SetTexture("Interface\\Common\\help-i")
+    ajuda:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["What the percentage means"], 1, 0.82, 0)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(L["By tag"], 1, 1, 1)
+        GameTooltip:AddLine(L["The number you can check in the game. For a requirement (reputation, renown, achievement, gold) it is how far along you are; for a drop it is the chance of each attempt. The tag on the row says which."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(L["Ease"], 1, 1, 1)
+        GameTooltip:AddLine(string.format(L["One score for everything: a requirement's progress, or for a drop the chance of having the mount after %d attempts. Compares a 1 in 3 with a 1 in 2000 on the same scale."], ns.EASE_TRIES), 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."], 0.6, 0.6, 0.6, true)
+        GameTooltip:Show()
+    end)
+    ajuda:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    Atualizar()
 end
 
 --------------------------------------------------------------------------------
@@ -668,10 +789,16 @@ local function Build()
     end)
     window.search = busca
 
-    local filter = CreateFrame("DropdownButton", nil, host, "WowStyle1FilterDropdownTemplate")
-    filter:SetPoint("TOPRIGHT", host, "TOPRIGHT", -5, -10)
-    SetupFilter(filter)
-    window.filter = filter
+    PctModeButtons(host, busca)
+
+    -- The column headers, aligned with the row's columns.
+    Header(host, "name", L["Mount"], NAME_X, NAME_W,
+        function() ns.db.sortBy = "name"; ns.RefreshWindow() end)
+    Header(host, "tag", L["Type"], TAG_X, TAG_W, TagMenu)
+    Header(host, "expansion", L["Expansion"], EXP_X, EXP_W, ExpMenu)
+    Header(host, "pct", "%", PCT_X, PCT_W,
+        function() ns.db.sortBy = "pct"; ns.RefreshWindow() end, "RIGHT")
+    window.headers = headers
 
     list = CreateFrame("Frame", nil, host, "WowScrollBoxList")
     local bar = CreateFrame("EventFrame", nil, host, "MinimalScrollBar")
@@ -680,16 +807,8 @@ local function Build()
 
     local view = CreateScrollBoxListLinearView()
     view:SetPadding(0, 0, ROW_PAD, 0, 0)
-    view:SetElementExtentCalculator(function(_, data)
-        return data.head and HEAD_H or ROW_H
-    end)
-    view:SetElementFactory(function(factory, data)
-        if data.head then
-            factory("Frame", FillHead)
-        else
-            factory("Button", FillRow)
-        end
-    end)
+    view:SetElementExtentCalculator(function() return ROW_H end)
+    view:SetElementFactory(function(factory) factory("Button", FillRow) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(list, bar, view)
     ScrollUtil.AddManagedScrollBarVisibilityBehavior(list, bar,
         { CreateAnchor("TOPLEFT", host, "TOPLEFT", 3, -SEARCH_ROW),

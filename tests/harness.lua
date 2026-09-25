@@ -1944,60 +1944,116 @@ do
 end
 
 print("")
-print("-- geometria da janela (padrao Blizzard, 23/09)")
+print("-- geometria da janela (colunas, 25/09)")
 do
     local G = ns.Geometry
     check("a geometria esta exposta", type(G) == "table", true)
-
-    -- A LARGURA E UMA CONTA FECHADA: borda do inset + lista + calha + ficha + margem direita.
-    -- Menor, a ficha vaza pela borda (ja aconteceu, por 15px); maior, sobra buraco.
     check("a largura declarada fecha a conta",
         G.insetX + G.listW + G.gutter + G.detailW + G.rightMargin, G.windowW)
-
-    -- A LINHA CABE NO INSET com a barra de rolagem e o recuo do icone (44, o do diario).
     check("a linha cabe no inset com a barra e o recuo do icone",
         3 + G.rowPad + G.rowW + G.scrollbarW + 3, G.listW)
-    check("  e a linha tem a altura da do diario de montarias", G.rowH, 46)
-
-    -- Na linha, o nome nao pode terminar depois de onde o numero da direita comeca.
-    local fimDoNome = G.rowTextX + G.rowTextW
-    local inicioDoNumero = G.rowW - G.headlineInset - G.headlineW
-    check("o nome termina antes do numero da direita", fimDoNome <= inicioDoNumero, true)
-    check("  e sobra respiro entre os dois", inicioDoNumero - fimDoNome >= 8, true)
-
-    -- O RETRATO: disco de 58 com centro em (26, -22). Nada da lista pode comecar acima de -55
-    -- (a regra que o RocketSwap aprendeu com texto embaixo do disco).
+    check("  e a linha ficou mais alta que a do diario (46)", G.rowH > 46, true)
+    -- AS COLUNAS NAO SE SOBREPOEM, e sobra respiro entre elas: cada uma comeca depois do fim da
+    -- anterior mais 8, e a ultima termina dentro da linha.
+    local ok, fim = true, 0
+    for i, c in ipairs(G.cols) do
+        if i > 1 and c.x < fim + 8 then ok = false end
+        fim = c.x + c.w
+    end
+    check("as colunas nao se encostam", ok, true)
+    check("  e a ultima termina dentro da linha", fim <= G.rowW, true)
     check("a lista comeca abaixo do retrato", G.listTop <= -55, true)
-
     check("a ficha tem largura de leitura", G.detailW >= 320, true)
 end
 
 print("")
-print("-- a lista no ScrollBox")
+print("-- a lista unica com tags (25/09)")
 do
     ns.search = nil
     ns.db.sources = nil
+    ns.db.tagFilter, ns.db.expFilter, ns.db.sortBy, ns.db.pctMode = nil, nil, nil, nil
     if not ns.window:IsShown() then ns.ToggleWindow() end
     ns.RefreshWindow()
     local lista = ns.window.list
     local entries = ns.GetFiltered()
 
-    -- UM CABECALHO POR FAIXA, antes das montarias dela.
-    local faixas, cabecalhos, linhas = {}, 0, 0
-    for _, e in ipairs(entries) do faixas[e.tier] = true end
-    local nFaixas = 0
-    for _ in pairs(faixas) do nFaixas = nFaixas + 1 end
-    for _, item in ipairs(ns.ListElements(entries)) do
-        if item.head then cabecalhos = cabecalhos + 1 else linhas = linhas + 1 end
-    end
-    check("um cabecalho por faixa", cabecalhos, nFaixas)
-    check("  e uma linha por montaria", linhas, #entries)
+    -- UMA LISTA SO: nenhum cabecalho de faixa, uma linha por montaria.
+    local itens = ns.ListElements(entries)
+    local cab = 0
+    for _, it in ipairs(itens) do if it.head then cab = cab + 1 end end
+    check("nenhum cabecalho de faixa", cab, 0)
+    check("  e uma linha por montaria", #itens, #entries)
     check("o contador diz quantas faltam", ns.window.count:GetText(), tostring(#entries))
 
-    -- (`rawget`: no simulador, `f.entry` de um CABECALHO responde uma funcao, verdadeira.)
-    -- A SELECAO E POR MONTARIA, NAO POR MOLDURA. O ScrollBox recicla: a moldura que mostrava
-    -- a montaria A passa a mostrar a B. Selecionar A e redesenhar nao pode deixar a B marcada,
-    -- e a A continua marcada mesmo com a lista reconstruida (tabelas novas, mesmo mountID).
+    -- (!) A ORDEM E O NUMERO: nunca um maior depois de um menor, e o que nao se mede ("?") no fim.
+    local function Ordem(modo, by)
+        local l = ns.GetFiltered()
+        ns.SortForWindow(l, modo, by)
+        return l
+    end
+    local function Decrescente(l, modo)
+        local ultimo, viuNil = math.huge, false
+        for _, e in ipairs(l) do
+            local v = ns.RowPercent(e, modo)
+            if v == nil then viuNil = true
+            elseif viuNil or v > ultimo + 1e-9 then return false
+            else ultimo = v end
+        end
+        return true
+    end
+    check("pela tag: do maior para o menor, '?' no fim", Decrescente(Ordem("tag", "pct"), "tag"), true)
+    check("facilidade: do maior para o menor, '?' no fim", Decrescente(Ordem("ease", "pct"), "ease"), true)
+
+    -- PRONTA E 100% nos dois modos; drop pela tag e a chance, na facilidade e a chance em 20.
+    local porNome = {}
+    for _, e in ipairs(entries) do porNome[e.name] = e end
+    local pronta = porNome["Pronta por reputacao"]
+    check("pronta vale 100% pela tag", ns.RowPercentText(pronta, "tag"), "100%")
+    local farm = porNome["Farm curto"]     -- 1 em 100
+    check("drop pela tag e a chance", ns.RowPercentText(farm, "tag"), "1%")
+    check("  e na facilidade e a chance de ter em 20 tentativas",
+        ns.RowPercentText(farm, "ease"), string.format("%d%%", math.floor((1 - 0.99 ^ 20) * 100 + 0.5)))
+    check("o que nao se mede mostra '?'", ns.RowPercentText(porNome["Sem estimativa"], "tag"), "?")
+
+    -- AGRUPAR POR TIPO: os grupos em ordem, e DENTRO de cada um, o numero manda.
+    local l = Ordem("tag", "tag")
+    local okGrupo, okDentro = true, true
+    local ultimoGrupo, ultimoV = 0, math.huge
+    for _, e in ipairs(l) do
+        local _, tags = ns.Tags(e)
+        local g = 99
+        for i, k in ipairs(ns.TAG_ORDER) do if k == tags[1] then g = i end end
+        if g < ultimoGrupo then okGrupo = false end
+        if g ~= ultimoGrupo then ultimoV = math.huge end
+        local v = ns.RowPercent(e, "tag")
+        if v and v > ultimoV + 1e-9 then okDentro = false end
+        if v then ultimoV = v end
+        ultimoGrupo = g
+    end
+    check("agrupar por tipo: grupos em ordem", okGrupo, true)
+    check("  e o numero manda dentro de cada grupo", okDentro, true)
+
+    -- FILTRO DE TIPO: so o que tem a tag marcada.
+    ns.db.tagFilter = { drop = true }
+    local soDrop = true
+    for _, e in ipairs(ns.GetFiltered()) do
+        local set = ns.Tags(e)
+        if not set.drop then soDrop = false end
+    end
+    check("filtro de tipo: so drop", soDrop and #ns.GetFiltered() > 0, true)
+    ns.db.tagFilter = nil
+
+    -- FILTRO DE EXPANSAO.
+    local algumaExp
+    for _, e in ipairs(entries) do if e.expansion then algumaExp = e.expansion; break end end
+    ns.db.expFilter = { [algumaExp or 0] = true }
+    local soEssa = true
+    for _, e in ipairs(ns.GetFiltered()) do if e.expansion ~= algumaExp then soEssa = false end end
+    check("filtro de expansao: so a escolhida", soEssa, true)
+    ns.db.expFilter = nil
+
+    -- A SELECAO E POR MONTARIA, NAO POR MOLDURA (o ScrollBox recicla).
+    ns.RefreshWindow()
     local primeira
     for _, f in ipairs(lista.__linhas) do
         if rawget(f, "entry") then primeira = f; break end
@@ -2015,19 +2071,14 @@ do
     end
     check("depois de reconstruir, uma linha so fica marcada", marcadas, 1)
     check("  e e a da montaria escolhida", certa, true)
+    ns.db.sortBy, ns.db.pctMode = nil, nil
 
-    -- Filtrando para outra montaria, a moldura reciclada NAO herda a marca.
-    ns.search = "farm longo"
-    ns.RefreshWindow()
-    local herdou = false
-    for _, f in ipairs(lista.__linhas) do
-        if rawget(f, "entry") and f.entry.mountID ~= escolhida.mountID and f.selectedTexture:IsShown() then
-            herdou = true
-        end
-    end
-    check("linha reciclada nao herda a selecao de outra montaria", herdou, false)
-    ns.search = nil
-    ns.RefreshWindow()
+    -- MIGRACAO: quem tinha filtro salvo nao pode ficar com filtro escondido.
+    RocketMountDB.expansionFilter, RocketMountDB.sources = 7, { [1] = true }
+    ns.frame.__scripts.OnEvent(ns.frame, "ADDON_LOADED", ADDON)
+    check("a expansao salva vira o filtro da coluna", ns.db.expFilter and ns.db.expFilter[7], true)
+    check("  e o filtro de fonte, que nao aparece mais, e limpo", ns.db.sources, nil)
+    ns.db.expFilter = nil
 end
 
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))

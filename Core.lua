@@ -79,6 +79,14 @@ function handlers:ADDON_LOADED(addon)
         end
     end
     ns.db = RocketMountDB
+    -- The window's filters became columns (25/09): a saved single expansion becomes the
+    -- Expansion column's choice, and the old source filter -- no longer on screen -- is dropped
+    -- rather than left hiding mounts invisibly.
+    if ns.db.expansionFilter ~= nil then
+        ns.db.expFilter = { [ns.db.expansionFilter] = true }
+        ns.db.expansionFilter = nil
+    end
+    ns.db.sources = nil
     ns.Log.Init()
 
     if ns.SetupOptions then

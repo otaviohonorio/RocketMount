@@ -18,20 +18,31 @@ Os addons existentes ordenam por raridade — do mais raro primeiro, que é o op
 partida — e respondem por zona, quando você está com o mapa do mundo aberto. O Rocket Mount faz
 a pergunta inversa e responde numa lista ordenada só.
 
-## Como a ordem é decidida
+## Como a lista funciona
 
-Cada montaria cai numa faixa por uma **regra declarada**, e cada linha mostra **o número que a
-pôs ali**. Discordar do critério é possível olhando a lista.
+**Uma lista só, ordenada por um número**, com colunas que dizem o que é cada montaria:
 
-| Faixa | Regra |
+| Coluna | O que mostra |
 |---|---|
-| **Garantidas — é só ir pegar** | requisito de acesso conhecido e cumprido, e nada por sorte — compra, só depois de o vendedor confirmar |
-| **Garantidas — quase liberadas** | 75% ou mais do requisito |
-| **Garantidas — a meio caminho** | 25% ou mais |
-| **Na sorte — chance boa** | liberada, e 1% ou mais |
-| **Caminho longo** | chance pior, ou requisito ainda no começo |
-| **Sem confirmação** | compra que o vendedor ainda não confirmou — abra o vendedor uma vez para decidir |
-| **Sem estimativa** | nenhum catálogo instalado sabe medir esta |
+| **Montaria** | o nome, e o motivo de estar onde está (o que falta, a chance, o chefe) |
+| **Tipo** | tags: Raide, Masmorra, Saque, Missão, Conquista, Renome, Reputação, Vendedor, Profissão, Evento… |
+| **Expansão** | no idioma do seu jogo |
+| **%** | o número que ordena a lista |
+
+Clique em **Tipo** ou **Expansão** para filtrar por eles ou agrupar a lista por eles — dentro do
+grupo, a lista continua ordenada pelo número. Clique em **Montaria** ou **%** para ordenar por nome
+ou pelo número.
+
+O número tem duas leituras, escolhidas no topo da lista (o **?** explica as duas):
+
+- **Pela tag** — o número que você confere no jogo: o quanto andou num requisito (reputação,
+  renome, conquista, ouro), ou a chance de cada tentativa num saque. A tag diz qual é.
+- **Facilidade** — uma nota só para tudo: o progresso do requisito ou, num saque, a chance de ter a
+  montaria depois de 20 tentativas, para um 1 em 3 e um 1 em 2000 se compararem na mesma escala.
+
+Montaria que o addon não consegue medir — compra que o vendedor ainda não confirmou, ou nada se sabe
+dela — mostra **?** e vai para o fim. Nada aparece com 100% sem ter sido conferido para este
+personagem.
 
 Duas distinções sustentam tudo:
 
@@ -41,8 +52,7 @@ chance não entrega. Então "é só ir pegar" exige aquisição determinística;
 meio, o requisito no máximo libera o farm.
 
 **Acesso não é preço.** Ouro quase nunca é o que trava alguém — o que trava é reputação,
-conquista, nível de guilda, classificação. Montaria de que só se sabe o preço vai para "Confira
-no vendedor", que promete exatamente o que dá para provar.
+conquista, nível de guilda, classificação. Montaria de que só se sabe o preço mostra "?" até o próprio vendedor confirmar, o que promete exatamente o que dá para provar.
 
 ## De onde vêm os dados
 

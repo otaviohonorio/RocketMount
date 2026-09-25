@@ -6,6 +6,13 @@ journal's row style and scroll bar, the search box and the standard filter butto
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
+- **One list, with columns.** The bands are gone from the window: the list is ordered by one
+  number, and each row says what the mount is — **Type** (Raid, Dungeon, Drop, Quest,
+  Achievement, Renown, Reputation, Vendor…) and **Expansion**, both in your game's language. Click
+  a column to filter by it or group the list by it; inside a group the number still decides. The
+  number reads two ways, chosen at the top with a **?** explaining them: *By tag* (a
+  requirement's progress, or a drop's chance) or *Ease* (one score for everything). The window is
+  wider and the rows a little taller.
 - **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
   missing now show on the world map, with the game's own rare icons. Hover one to see which
   mounts it drops — with each mount's icon — and the chance of each; click it to point the

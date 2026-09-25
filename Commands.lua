@@ -36,7 +36,7 @@ end
 commands["expansion"] = function(rest)
     local arg = (ns.Fold and ns.Fold(rest or "") or (rest or ""):lower()):gsub("^%s+", ""):gsub("%s+$", "")
     if arg == "" then
-        ns.db.expansionFilter = nil
+        ns.db.expFilter = nil
         ns.Print(L["expansion: all."])
         ns.Invalidate()
         return
@@ -46,7 +46,8 @@ commands["expansion"] = function(rest)
         -- copied from MountJournalEnhanced in English, and whoever plays in another language
         -- will type what the interface shows them.
         if ns.Fold(r.name):find(arg, 1, true) or ns.Fold(L[r.name]):find(arg, 1, true) then
-            ns.db.expansionFilter = r.id
+            -- The same filter as the window's Expansion column.
+            ns.db.expFilter = { [r.id] = true }
             ns.Print(string.format(L["expansion: %s"], L[r.name]))
             ns.Invalidate()
             return
@@ -114,7 +115,8 @@ commands["who"] = function(rest)
 end
 
 commands["sources"] = function()
-    ns.db.sources = nil
+    -- The source filter is the window's Type column now.
+    ns.db.tagFilter = nil
     ns.Print(L["source filter cleared: every source is back."])
     ns.RefreshWindow()
 end

@@ -153,6 +153,33 @@ L["Already looted — back in %s"] = "Já saqueado — volta em %s"
 L["Already looted today"] = "Já saqueado hoje"
 L["Click: point the arrow here"] = "Clique: apontar a seta para cá"
 L["Can drop:"] = "Pode largar:"
+
+-- As tags da lista (Score.lua). "Drop" fica: é o termo que o jogador usa.
+L["Raid"] = "Raide"
+L["Dungeon"] = "Masmorra"
+L["Renown"] = "Renome"
+L["Reputation"] = "Reputação"
+L["Shop / promotion"] = "Loja / promoção"
+
+-- A lista com colunas (Window.lua).
+L["Mount"] = "Montaria"
+L["Type"] = "Tipo"
+L["Show"] = "Mostrar"
+L["Show all"] = "Mostrar todos"
+L["Group by type, then %"] = "Agrupar por tipo, depois %"
+L["Group by expansion, then %"] = "Agrupar por expansão, depois %"
+L["Percent:"] = "Percentual:"
+L["By tag"] = "Pela tag"
+L["Ease"] = "Facilidade"
+L["What the percentage means"] = "O que o percentual quer dizer"
+L["The number you can check in the game. For a requirement (reputation, renown, achievement, gold) it is how far along you are; for a drop it is the chance of each attempt. The tag on the row says which."] =
+    "O número que você confere no jogo. Para um requisito (reputação, renome, conquista, ouro) é o "
+    .. "quanto já andou; para um saque é a chance de cada tentativa. A tag da linha diz qual é."
+L["One score for everything: a requirement's progress, or for a drop the chance of having the mount after %d attempts. Compares a 1 in 3 with a 1 in 2000 on the same scale."] =
+    "Uma nota só para tudo: o progresso do requisito ou, para um saque, a chance de ter a montaria "
+    .. "depois de %d tentativas. Compara um 1 em 3 com um 1 em 2000 na mesma escala."
+L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."] =
+    "\"?\" quer dizer que ainda não dá para medir: abra o vendedor, ou não há dado."
 L["Show them on the world map"] = "Mostrar no mapa-múndi"
 L["Rares, elites and world bosses that drop a mount you do not have, with the mount and the chance when you hover them. Dimmed once looted today."] = "Raros, elites e chefes do mundo que largam montaria que você não tem, com a montaria e a chance ao passar o mouse. Ficam apagados depois de saqueados."
 L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
