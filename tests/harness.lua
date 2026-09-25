@@ -2033,6 +2033,15 @@ do
     check("  e a ultima termina dentro da linha", fim <= G.rowW, true)
     check("a lista comeca abaixo do retrato", G.listTop <= -55, true)
     check("a ficha tem largura de leitura", G.detailW >= 320, true)
+    -- MAIS LARGA E MAIS ALTA (25/09), mas dentro da tela do jogo: em 16:9 e escala 1 a UIParent
+    -- mede 1365 x 768 (768 de altura fixa, largura pela proporcao).
+    check("mais larga que a de antes (1064)", G.windowW > 1064, true)
+    check("  e cabe na tela do jogo em 16:9 (1365)", G.windowW <= 1365 - 40, true)
+    check("mais alta que a de antes (580)", G.windowH > 580, true)
+    check("  e cabe na altura da tela (768)", G.windowH <= 768 - 60, true)
+    local col = {}
+    for _, c in ipairs(G.cols) do col[c.name] = c end
+    check("a coluna Tipo cabe tres tags (>= 200)", col.tag.w >= 200, true)
 end
 
 print("")
