@@ -68,6 +68,8 @@ function Roster.Record()
     me.class = select(2, UnitClass("player"))
     me.seen = time and time() or 0
     me.reps = me.reps or {}
+    -- The points inside the standing too (25/09): "who is CLOSEST" needs more than the level.
+    me.standing = me.standing or {}
 
     if not (C_Reputation and C_Reputation.GetFactionDataByID) then return end
 
@@ -75,6 +77,7 @@ function Roster.Record()
         local ok, data = pcall(C_Reputation.GetFactionDataByID, factionId)
         if ok and data and data.reaction then
             me.reps[factionId] = data.reaction
+            me.standing[factionId] = data.currentStanding
         end
     end
 end
@@ -95,6 +98,8 @@ function Roster.WhoHas(factionId, targetIdx)
                 out[#out + 1] = {
                     name = c.name or key, realm = c.realm, faction = c.faction,
                     class = c.class, reaction = reaction,
+                    standing = c.standing and c.standing[factionId] or nil,
+                    seen = c.seen,
                 }
             end
         end

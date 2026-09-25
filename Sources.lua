@@ -135,7 +135,7 @@ end
 ---
 ---So it never returns nil once the catalogue says there is a requirement. Unreadable becomes
 ---`pct = 0` plus `unreadable`, and the label says why.
-local function ReputationProgress(rep)
+local function ReputationProgressHere(rep)
     if not rep or not rep.factionId then return nil end
 
     local nome = rep.factionName or "?"
@@ -245,6 +245,68 @@ local function ReputationProgress(rep)
         scope = ReputationScope(rep.factionId),
         label = string.format("%s: %s", name,
             _G["FACTION_STANDING_LABEL" .. data.reaction] or ""),
+    }
+end
+
+-- (!) THE CLOSEST OF YOUR CHARACTERS (25/09). The user: *"se um char x tiver a reputação que
+-- precisa ou que falta pouco, só avisar e atualizar esta lista, e dai a lista pega tudo
+-- independente de facção e dizer qual dos chars que está mais proximo de pegar"*. A mount is
+-- collected for the whole account, so for a LEGACY reputation (one per character) the number is
+-- the best character's, and the row names it. This reverses the rule of 22/09 ("whoever has it
+-- is another character, so it is not met") -- the user's call.
+--
+-- Only legacy standings: a Warband reputation is the same on every character, and renown and
+-- friendship are not in the ledger. The ledger is what each character had at its last login,
+-- and the label says whose number it is.
+local function BestAlt(factionId, alvo)
+    if not (ns.Roster and ns.Roster.WhoHas) then return nil end
+    local melhor
+    for _, c in ipairs(ns.Roster.WhoHas(factionId)) do
+        local pct
+        if c.reaction >= alvo then
+            pct = 1
+        elseif c.standing and STANDING_TOTAL[alvo] and c.standing >= 0 then
+            pct = math.min(1, c.standing / STANDING_TOTAL[alvo])
+        else
+            pct = math.max(0, math.min(1, (c.reaction - 1) / math.max(1, alvo - 1)))
+        end
+        if not melhor or pct > melhor.pct then
+            melhor = { name = c.name, pct = pct, standing = c.standing, reaction = c.reaction }
+        end
+    end
+    return melhor
+end
+
+local function ReputationProgress(rep)
+    local aqui = ReputationProgressHere(rep)
+    if aqui and rep and rep.factionId then aqui.factionId = aqui.factionId or rep.factionId end
+    if not (rep and rep.factionId) or rep.renown or rep.friendship then return aqui end
+    local alvo = STANDING_INDEX[rep.levelName or ""]
+    if not alvo or ReputationScope(rep.factionId) == "conta" then return aqui end
+
+    local melhor = BestAlt(rep.factionId, alvo)
+    local meu = (aqui and not aqui.unreadable and aqui.pct) or 0
+    if aqui then aqui.altPct = melhor and melhor.pct or nil end
+    if not melhor or melhor.pct <= meu then return aqui end
+
+    local nome = (aqui and aqui.factionName) or rep.factionName or "?"
+    local nivel = _G["FACTION_STANDING_LABEL" .. alvo] or rep.levelName
+    local texto
+    if melhor.pct >= 1 then
+        texto = string.format(L["%s: %s is already %s — buy it on that character"],
+            nome, melhor.name, nivel)
+    elseif melhor.standing and STANDING_TOTAL[alvo] then
+        texto = string.format(L["%s: %s is at %s of %s to %s — the closest of your characters"],
+            nome, melhor.name, BreakUpLargeNumbers(melhor.standing),
+            BreakUpLargeNumbers(STANDING_TOTAL[alvo]), nivel)
+    else
+        texto = string.format(L["%s: %s is %s — the closest of your characters"], nome,
+            melhor.name, _G["FACTION_STANDING_LABEL" .. melhor.reaction] or "?")
+    end
+    return {
+        kind = "rep", factionId = rep.factionId, factionName = nome,
+        pct = melhor.pct, char = melhor.name, outroChar = melhor.name, minePct = meu,
+        scope = "personagem", label = texto,
     }
 end
 
@@ -631,7 +693,10 @@ function ns.BuildList()
                 -- confirmed (Score.lua), and the validation (Core.lua) waits for it.
                 e.tooltipState = e.itemID and ns.Tooltip and ns.Tooltip.State(e.itemID) or nil
                 if e.tooltipState == "ok" then
-                    e.tooltipGate = ns.Tooltip.Gate(e.itemID)
+                    -- When another character holds the reputation, THIS one's red "Requires
+                    -- <faction> - Exalted" is not what stands in the way.
+                    e.tooltipGate = ns.Tooltip.Gate(e.itemID,
+                        e.rep and e.rep.char and { e.rep.factionName } or nil)
                 end
                 -- What a vendor told THIS character, when it stood in front of one.
                 e.vendorCheck = ns.VendorVerdict(mountID)

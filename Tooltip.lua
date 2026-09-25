@@ -98,7 +98,11 @@ local function LineInfo(line)
         vermelho = line.leftColor.r > 0.8 and line.leftColor.g < 0.3 and line.leftColor.b < 0.3
     end
 
-    return { texto = texto, cumprido = not vermelho }
+    -- The reputation line specifically ("Requires %s - %s"): it can be set aside when another
+    -- character is the one who holds that reputation (Sources.lua, BestAlt).
+    local repP = ToPattern(_G and _G.ITEM_REQ_REPUTATION)
+    local ehRep = repP and texto:match(repP) and true or false
+    return { texto = texto, cumprido = not vermelho, rep = ehRep }
 end
 
 ---Every line of the item's tooltip, as the game hands it, with what this addon made of it:
@@ -148,13 +152,22 @@ end
 ---`pct` é 1 quando todos estão cumpridos e 0 quando qualquer um não está -- e é 0 e não uma
 ---fração de propósito: "metade dos requisitos do tooltip" não significa nada, porque eles não
 ---são etapas de um caminho, são portas. Ou passa, ou não passa.
-function Tooltip.Gate(itemID)
+function Tooltip.Gate(itemID, ignorarRep)
     local reqs = Tooltip.Requirements(itemID)
     if not reqs or #reqs == 0 then return nil end
 
     local faltando = {}
     for _, r in ipairs(reqs) do
-        if not r.cumprido then faltando[#faltando + 1] = r.texto end
+        local daRep = false
+        if ignorarRep then
+            daRep = r.rep
+            for _, nome in ipairs(ignorarRep) do
+                if type(nome) == "string" and nome ~= "" and r.texto:find(nome, 1, true) then
+                    daRep = true
+                end
+            end
+        end
+        if not r.cumprido and not daRep then faltando[#faltando + 1] = r.texto end
     end
 
     -- (!) O TOOLTIP SÓ SERVE COMO SINAL NEGATIVO. Ele diz o que BLOQUEIA, nunca o que libera.

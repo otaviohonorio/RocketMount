@@ -209,6 +209,32 @@ commands["debug"] = function(rest)
     end
 end
 
+-- (!) "SÓ AVISAR" (25/09): on login, once the list is checked, the mounts THIS character is the
+-- closest to among all of yours -- a legacy reputation it has, or has more of than any alt.
+local avisado = false
+function ns.ClosestHereNotice(force)
+    if avisado and not force then return end
+    avisado = true
+    local achados = {}
+    for _, e in ipairs(ns.GetRanked(true)) do
+        local r = e.rep
+        if r and not r.char and r.scope == "personagem" and r.pct and r.pct > 0
+            and r.altPct ~= nil and r.pct > r.altPct then
+            achados[#achados + 1] = e
+        end
+    end
+    if #achados == 0 then return end
+    table.sort(achados, function(a, b)
+        if a.rep.pct ~= b.rep.pct then return a.rep.pct > b.rep.pct end
+        return (a.name or "") < (b.name or "")
+    end)
+    ns.Print(string.format(L["this character is the closest of yours to %d mount(s):"], #achados))
+    for i = 1, math.min(#achados, 5) do
+        local e = achados[i]
+        print(string.format("    %s  —  %s", e.name or "?", ns.RowPercentText(e)))
+    end
+end
+
 -- THE DIARY, in chat. Only in development: the packaged addon has no `Log.lua` (see Core.lua).
 commands["log"] = function(rest)
     if not ns.Log.enabled then

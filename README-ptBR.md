@@ -41,6 +41,10 @@ O número é aquilo de que a montaria depende (o **?** ao lado diz o mesmo):
   conta: critério parcial vale (546 de 600 montarias é 91%), e uma meta conquista soma o progresso
   das conquistas que a compõem.
 - **Reputação / renome** — o quanto do caminho até o nível exigido já foi feito, de 0% a 100%.
+- **Os seus outros personagens contam.** A montaria é da conta inteira, então numa reputação
+  por personagem (legada) o número é o do personagem mais perto, e a linha diz qual: *"Virki já
+  está Exaltado — compre com esse personagem"*. Cada personagem é anotado quando entra com o
+  addon; ao entrar no que está mais perto de alguma montaria, o chat avisa.
 - **Ouro** conta por último: só depois de todos os outros requisitos (reputação, conquista,
   moedas, itens) cumpridos. O ouro que falta aparece sempre na linha.
 
