@@ -1458,7 +1458,11 @@ do
     C_QuestLog.IsQuestFlaggedCompleted = realQuest
     check("  e com a diaria por fazer avisa", S.SightVignette(5555, "Rhazul"), true)
 
-    -- Fonte 2, o nosso registro: o saque aberto diz de que corpo veio.
+    -- Fonte 2, o nosso registro: o saque aberto diz de que corpo veio. E o caminho do raro SEM
+    -- missao oculta conhecida: a tabela de missoes (25/09) fica vazia neste trecho, senao a missao
+    -- real do Rhazul (91832, que o simulador nunca marca) responderia no lugar do registro.
+    local realRL = ns.RareLockout
+    ns.RareLockout = {}
     local realTime = time
     local AGORA = realTime()
     time = function() return AGORA end
@@ -1530,6 +1534,99 @@ do
     check("montaria aprendida agora nao e mais oferecida", #avisos, 0)
     farmLongo[5] = false
     ns.frame.__scripts.OnEvent(ns.frame, "NEW_MOUNT_ADDED")
+
+    -- (!) A FREQUENCIA DO SAQUE (25/09): *"posso ta indo matar o sha da raiva todo dia, mas ele
+    -- e por semana, to indo em vao"*. Com a missao oculta do raro conhecida, o JOGO responde se ja
+    -- saqueou; a frequencia vem da tabela ou e APRENDIDA vendo qual reset apaga a missao.
+    ns.RareLockout = {
+        [248741] = { q = 7700 },                 -- Rhazul: missao conhecida, frequencia nao
+        [60491] = { q = 32099, f = "weekly" },   -- Sha da Raiva: semanal pelo Wowhead
+    }
+    -- O relogio e os resets falsos de novo: o trecho de cima ja os devolveu.
+    local relogio, realDT = time, C_DateAndTime
+    time = function() return AGORA end
+    C_DateAndTime = {
+        GetSecondsUntilDailyReset = function() return 3600 end,
+        GetSecondsUntilWeeklyReset = function() return 5 * 86400 end,
+    }
+    local feitas = {}
+    local realQ = C_QuestLog.IsQuestFlaggedCompleted
+    C_QuestLog.IsQuestFlaggedCompleted = function(q) return feitas[q] == true end
+    ns.db.lockoutLearned, ns.db.lockoutWatch = nil, nil
+    local RL = function(...) return S.LockedOut(248741, {}) end
+
+    check("Sha da Raiva: 1 vez por semana (dado)", S.FrequencyText(60491), "Loot: once a week")
+    check("raro sem dado: diz que nao se sabe, sem chutar", S.FrequencyText(248741), "Loot: how often is not known yet")
+    check("missao por fazer: nao esta bloqueado, diga o registro o que disser", RL(), false)
+
+    -- Saqueou: o jogo marca a missao. Bloqueado pela missao, e comeca a vigiar o reset.
+    feitas[7700] = true
+    local preso, fonte = RL()
+    check("missao feita: bloqueado pelo proprio jogo", preso, true)
+    check("  com a missao como fonte", fonte, "q:7700")
+
+    -- APRENDER DIARIO: passou o reset diario (3600 s) e a missao sumiu.
+    AGORA = AGORA + 3700
+    feitas[7700] = nil
+    S.LearnTick()
+    check("a missao sumiu no reset diario: aprende 1 vez por dia", S.FrequencyText(248741), "Loot: once a day")
+
+    -- APRENDER SEMANAL: sobrevive ao diario, some no semanal.
+    ns.db.lockoutLearned, ns.db.lockoutWatch = nil, nil
+    feitas[7700] = true
+    RL()
+    AGORA = AGORA + 3700
+    S.LearnTick()
+    check("sobreviveu ao reset diario: ainda nao se sabe", S.FrequencyText(248741), "Loot: how often is not known yet")
+    AGORA = AGORA + 5 * 86400
+    feitas[7700] = nil
+    S.LearnTick()
+    check("  e sumiu no semanal: aprende 1 vez por semana", S.FrequencyText(248741), "Loot: once a week")
+
+    -- OS DOIS RESETS SEM NINGUEM OLHAR: nao da para saber qual apagou -- nao aprende nada.
+    ns.db.lockoutLearned, ns.db.lockoutWatch = nil, nil
+    feitas[7700] = true
+    RL()
+    AGORA = AGORA + 6 * 86400
+    feitas[7700] = nil
+    S.LearnTick()
+    check("os dois resets passaram sem olhar: nao inventa", S.FrequencyText(248741), "Loot: how often is not known yet")
+
+    -- SEM MISSAO: saqueado duas vezes dentro do que seria o bloqueio = sem limite.
+    ns.RareLockout = {}
+    ns.db.lockoutLearned, ns.db.lockoutWatch = nil, nil
+    ns.db.looted = nil
+    -- Os falsos do saque de novo: o trecho de cima ja os devolveu.
+    local realNum, realSrc = GetNumLootItems, GetLootSourceInfo
+    GetNumLootItems = function() return #SAQUE end
+    GetLootSourceInfo = function(slot) return SAQUE[slot], 1 end
+    SAQUE = { "Creature-0-1-2-3-248741-000" }
+    S.RecordLoot()
+    AGORA = AGORA + 600
+    S.RecordLoot()
+    check("sem missao, saqueado de novo no mesmo dia: sem limite", S.FrequencyText(248741), "Loot: every kill")
+    check("  e ai nao fica bloqueado", (S.LockedOut(248741, {})), false)
+    GetNumLootItems, GetLootSourceInfo = realNum, realSrc
+
+    -- A LINHA APARECE no balao do mapa e no aviso.
+    ns.RareLockout = { [248741] = { q = 7700, f = "weekly" } }
+    local linhas = {}
+    local tip = setmetatable({}, { __index = function() return function(_, t) if type(t) == "string" then linhas[#linhas + 1] = t end end end })
+    ns.MapPins.Tooltip(tip, { npc = 248741, rec = { name = "Rhazul", c = 4 }, mounts = {} })
+    local temLinha = false
+    for _, l in ipairs(linhas) do if l == "Loot: once a week" then temLinha = true end end
+    check("o balao do mapa diz a frequencia", temLinha, true)
+    ns.db.looted = nil
+    TEMPO = TEMPO + 601
+    avisos = {}
+    UNIDADE = { existe = true, nome = "Rhazul", guid = "Creature-0-1-2-3-248741-000", classe = "rare" }
+    S.OnEvent(nil, "PLAYER_TARGET_CHANGED")
+    check("o aviso no chat diz a frequencia", avisos[1] and avisos[1]:find("once a week", 1, true) ~= nil, true)
+
+    C_QuestLog.IsQuestFlaggedCompleted = realQ
+    time, C_DateAndTime = relogio, realDT
+    ns.RareLockout = realRL
+    ns.db.lockoutLearned, ns.db.lockoutWatch = nil, nil
 
     UNIDADE = { existe = false }
     VINHETAS = {}
@@ -1858,6 +1955,10 @@ end
 print("")
 print("-- o mapa-mundi (23/09)")
 do
+    -- Sem missao oculta conhecida neste bloco: ele testa o REGISTRO do addon, e a missao real do
+    -- Sha da Raiva (32099, na tabela de 25/09) nunca e marcada pelo simulador.
+    local tabelaRL = ns.RareLockout
+    ns.RareLockout = {}
     local S, M = ns.Sighting, ns.MapPins
     C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
     local realDrops = ns.MobDrops
@@ -2002,11 +2103,16 @@ do
     ns.MobDrops = realDrops
     C_MountJournal.GetMountFromItem = nil
     S.Rebuild()
+    ns.RareLockout = tabelaRL
 end
 
 print("")
 print("-- o diario de desenvolvimento")
 do
+    -- Sem missao oculta conhecida neste bloco: ele testa o REGISTRO do addon, e a missao real do
+    -- Sha da Raiva (32099, na tabela de 25/09) nunca e marcada pelo simulador.
+    local tabelaRL = ns.RareLockout
+    ns.RareLockout = {}
     local S = ns.Sighting
     check("em desenvolvimento o diario e o de verdade", ns.Log.enabled, true)
 
@@ -2104,6 +2210,7 @@ do
     ns.MobDrops = realDrops
     C_MountJournal.GetMountFromItem = nil
     S.Rebuild()
+    ns.RareLockout = tabelaRL
 end
 
 print("")

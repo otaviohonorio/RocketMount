@@ -337,3 +337,11 @@ L["options"]                               = "opções"
 L["checks the labels taken from the game"] = "confere os rótulos que vêm do jogo"
 L["what the addon managed to read"]        = "o que o addon conseguiu ler"
 L["everything it knows about one mount"]   = "tudo que ele sabe de uma montaria"
+
+-- Frequência do saque dos raros (Sighting.lua, 25/09)
+L["Loot: once a day"] = "Saque: 1 vez por dia"
+L["Loot: once a week"] = "Saque: 1 vez por semana"
+L["Loot: every kill"] = "Saque: sem limite (a cada morte)"
+L["Loot: once per character"] = "Saque: 1 vez por personagem"
+L["Loot: how often is not known yet"] = "Saque: frequência ainda não conhecida"
+L["Already looted this week"] = "Já saqueado nesta semana"
