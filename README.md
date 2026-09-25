@@ -72,6 +72,7 @@ guild level and rating are. A mount where the only thing we know is its price sh
 | Whether the quest that grants it is done | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **What the game says is required** | the mount item's own tooltip, via `C_TooltipInfo` |
 | Drop rate, coordinates, required faction | `MCL_GUIDE` (from the MCL addon) |
+| How often a rare's loot comes back | the rare's hidden quest (SilverDragon, MCL), Wowhead's daily/weekly flag, and what the addon learns in game |
 | Share of players who own the mount | `MountsRarity-2.0` (inside MountJournalEnhanced) |
 
 The last two are **optional dependencies**: without them the window still opens and the footer

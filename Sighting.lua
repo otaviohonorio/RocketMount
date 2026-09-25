@@ -376,7 +376,7 @@ local function PorMontaria(pontos)
     return lista
 end
 
-local function Show(nome, montarias)
+local function Show(nome, montarias, frequencia)
     Build()
     frame.icon:SetTexture(montarias[1] and montarias[1].entry.icon)
     frame.who:SetText(nome)
@@ -396,6 +396,17 @@ local function Show(nome, montarias)
             row.odds:SetText("")
         end
     end
+    -- How often its loot comes back, under the mounts (Sighting.FrequencyText).
+    -- `rawget`: the harness's simulator answers any unknown field with a function.
+    if not rawget(frame, "freq") then
+        frame.freq = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.dim or ns.Skin.text)
+        frame.freq:SetWidth(WIDTH - TEXT_X - PAD)
+        frame.freq:SetWordWrap(false)
+    end
+    frame.freq:ClearAllPoints()
+    frame.freq:SetPoint("TOPLEFT", frame, "TOPLEFT", TEXT_X, -PAD - 20 - linhas * ROW_STEP)
+    frame.freq:SetText(frequencia or "")
+    if frequencia and frequencia ~= "" then linhas = linhas + 1 end
     frame:SetHeight(math.max(64, PAD + 20 + ROW_STEP * linhas + PAD))
 
     frame:Show()
@@ -496,6 +507,90 @@ local function SegundosAteReset(semanal)
     return ok and type(s) == "number" and s or 24 * 3600
 end
 
+--------------------------------------------------------------------------------
+-- HOW OFTEN A RARE'S LOOT COMES BACK (25/09)
+--
+-- The user: *"posso tá indo matar o sha da raiva todo dia, mas ele é por semana, to indo em vão"*.
+-- `Data/RareLockout.lua` has, for 140 rares, the hidden quest the game marks when you get the loot
+-- (SilverDragon, MCL) -- and for 9 of them how often it resets (Wowhead's quest flag, MCL's
+-- per-day credit). Nothing in the client says how often a quest resets, so the rest is LEARNED:
+-- the quest is watched after a kill, and the reset that clears it gives the answer -- the daily
+-- one means daily, surviving the daily and clearing at the weekly means weekly. What is learned is
+-- written account-wide, so one character's kill teaches every other.
+--
+-- A rare with no known quest can still be learned "unlimited": looted twice inside what would have
+-- been its lockout. Nothing known stays "not known yet" on screen -- never a guess.
+--------------------------------------------------------------------------------
+local function Aprendido()
+    if not ns.db then return nil end
+    ns.db.lockoutLearned = ns.db.lockoutLearned or {}
+    return ns.db.lockoutLearned
+end
+
+local function Vigias()
+    if not ns.db then return nil end
+    local chave = CharKey()
+    if not chave then return nil end
+    ns.db.lockoutWatch = ns.db.lockoutWatch or {}
+    ns.db.lockoutWatch[chave] = ns.db.lockoutWatch[chave] or {}
+    return ns.db.lockoutWatch[chave]
+end
+
+---"daily", "weekly", "unlimited", "once" or nil, and where it came from ("data" or "learned").
+function Sighting.LootFrequency(npc)
+    local rl = npc and ns.RareLockout and ns.RareLockout[npc]
+    if rl and rl.f then return rl.f, "data" end
+    local ap = ns.db and ns.db.lockoutLearned
+    if ap then
+        if rl and ap[rl.q] then return ap[rl.q], "learned" end
+        if npc and ap["npc:" .. npc] then return ap["npc:" .. npc], "learned" end
+    end
+    return nil
+end
+
+---The line the map tooltip and the alert show.
+function Sighting.FrequencyText(npc)
+    local f = Sighting.LootFrequency(npc)
+    if f == "daily" then return L["Loot: once a day"] end
+    if f == "weekly" then return L["Loot: once a week"] end
+    if f == "unlimited" then return L["Loot: every kill"] end
+    if f == "once" then return L["Loot: once per character"] end
+    return L["Loot: how often is not known yet"]
+end
+
+---Start watching a tracking quest this character just completed, to learn its reset.
+local function Vigiar(q)
+    local ap, vig = Aprendido(), Vigias()
+    if not (ap and vig) or ap[q] or vig[q] then return end
+    local agora = time and time() or 0
+    vig[q] = { d = agora + SegundosAteReset(false), w = agora + SegundosAteReset(true) }
+end
+
+---Looks at every watched quest: the first look after a reset decides. Runs at login, on a timer
+---and after a loot.
+function Sighting.LearnTick()
+    local ap, vig = Aprendido(), Vigias()
+    if not (ap and vig and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted) then return end
+    local agora = time and time() or 0
+    for q, w in pairs(vig) do
+        local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, q)
+        if ok then
+            if not w.passouDia and agora >= w.d then
+                if agora >= w.w then
+                    vig[q] = nil          -- both resets went by unseen: cannot tell, watch again
+                elseif not feito then
+                    ap[q] = "daily"; vig[q] = nil
+                else
+                    w.passouDia = true    -- survived the daily reset: weekly or longer
+                end
+            elseif w.passouDia and agora >= w.w then
+                ap[q] = feito and "once" or "weekly"
+                vig[q] = nil
+            end
+        end
+    end
+end
+
 ---Write down what this loot window came from. Only creatures in the drop table: recording every
 ---boar the player skins would grow the saved file for nothing.
 function Sighting.RecordLoot()
@@ -515,13 +610,24 @@ function Sighting.RecordLoot()
             local rec = npc and ns.MobDrops[npc]
             if rec and not anotados[npc] then
                 anotados[npc] = true
+                local rl = ns.RareLockout and ns.RareLockout[npc]
+                local ap = Aprendido()
+                -- LOOTED AGAIN inside what was taken for its lockout, and no quest to say
+                -- otherwise: this rare gives loot on every kill.
+                if not rl and ap and reg[npc] and agora < reg[npc] then
+                    ap["npc:" .. npc] = "unlimited"
+                end
+                if rl then Vigiar(rl.q) end
                 local semanal = classeVista[npc] == "worldboss"
+                    or Sighting.LootFrequency(npc) == "weekly"
                 reg[npc] = agora + SegundosAteReset(semanal)
+                if Sighting.LootFrequency(npc) == "unlimited" then reg[npc] = nil end
                 if ns.Log then
                     pcall(ns.Log.Add, "loot", {
                         npc = npc, name = rec.name, class = classeVista[npc] or "unseen",
                         lockout = semanal and "weekly" or "daily",
-                        untilIn = reg[npc] - agora,
+                        untilIn = reg[npc] and (reg[npc] - agora) or 0,
+                        frequency = Sighting.LootFrequency(npc) or "unknown",
                     })
                 end
             end
@@ -541,6 +647,20 @@ end
 
 ---@return boolean locked, string|nil source ("dq:<quest>" or "loot"), number|nil secondsLeft
 function Sighting.LockedOut(npc, pontos)
+    -- THE RARE'S OWN QUEST, when known: the game answers, for any frequency. Not done means the
+    -- loot is there, whatever this addon wrote down at the last kill.
+    local rl = npc and ns.RareLockout and ns.RareLockout[npc]
+    if rl and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, rl.q)
+        if ok then
+            if not feito then return false end
+            Vigiar(rl.q)
+            local f = Sighting.LootFrequency(npc)
+            local falta = (f == "daily" and SegundosAteReset(false))
+                or (f == "weekly" and SegundosAteReset(true)) or nil
+            return true, "q:" .. rl.q, falta
+        end
+    end
     for _, p in ipairs(pontos or {}) do
         if p.dq and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
             local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, p.dq)
@@ -560,7 +680,7 @@ function Sighting.LockedOut(npc, pontos)
 end
 
 ---@return boolean announced, string|nil reason, number|nil secondsAgo
-local function Announce(chave, nome, pontos, onde)
+local function Announce(chave, nome, pontos, onde, npc)
     if not ns.db or ns.db.sightings == false then return false, "off" end
     if not pontos or #pontos == 0 then return false, "no-missing-mount" end
 
@@ -571,7 +691,8 @@ local function Announce(chave, nome, pontos, onde)
     lastSeen[chave] = agora
 
     local montarias = PorMontaria(pontos)
-    Show(nome, montarias)
+    local frequencia = Sighting.FrequencyText(npc)
+    Show(nome, montarias, frequencia)
 
     local partes = {}
     for i = 1, math.min(#montarias, MAX_ROWS) do
@@ -589,7 +710,7 @@ local function Announce(chave, nome, pontos, onde)
     end
     local link = ChatLink(alvo)
     ns.Print(string.format(L["|cffffff00%s|r can drop: %s%s"], nome,
-        table.concat(partes, ", "), link and ("  " .. link) or ""))
+        table.concat(partes, ", "), "  ·  " .. frequencia .. (link and ("  " .. link) or "")))
     return true
 end
 
@@ -651,7 +772,7 @@ function Sighting.Sight(npc, vignetteID, nome, mapa, onde, via)
         return false
     end
 
-    local ok, motivo, haQuanto = Announce(chave, nome or "?", pontos, onde)
+    local ok, motivo, haQuanto = Announce(chave, nome or "?", pontos, onde, npc)
     if base then
         if ok then
             local ms = {}
@@ -754,6 +875,10 @@ function Sighting.Enable()
     if frame and frame.__events then return end
     Build()
     frame.__events = CreateFrame("Frame", ADDON .. "SightingEvents")
+    -- The watched tracking quests are looked at now and every five minutes: the answer is the
+    -- first look after a reset, and a player can sit through one without any event of ours.
+    Sighting.LearnTick()
+    if C_Timer and C_Timer.NewTicker then C_Timer.NewTicker(300, Sighting.LearnTick) end
     for _, event in ipairs({
         "NAME_PLATE_UNIT_ADDED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED",
         "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_EMOTE",

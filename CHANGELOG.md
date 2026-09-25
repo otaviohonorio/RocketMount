@@ -27,6 +27,12 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   them, secret achievements included, and the ones whose reward line names an item instead of
   the mount (Glory of the Firelands Raider, the Gladiator mounts…). Only your faction's
   achievement counts.
+- **How often a rare's loot comes back.** The map tooltip, the on-screen alert and the chat line
+  say whether a rare can be looted once a day, once a week or on every kill — so nobody camps a
+  weekly world boss every day. Where no source says, the addon learns it from the game: after
+  your kill it watches which reset clears the rare's hidden quest, and remembers the answer for
+  the whole account. Until then it says plainly that it is not known yet. "Already looted" now
+  comes from the game itself for the 140 rares whose hidden quest is known.
 - **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
   missing now show on the world map, with the game's own rare icons. Hover one to see which
   mounts it drops — with each mount's icon — and the chance of each; click it to point the

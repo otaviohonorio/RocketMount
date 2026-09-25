@@ -263,11 +263,14 @@ function MapPins.Tooltip(tooltip, data)
         local icone = m.entry.icon and string.format("|T%s:%d:%d:0:0|t ", tostring(m.entry.icon), TIP_ICON, TIP_ICON) or ""
         tooltip:AddDoubleLine(icone .. m.entry.name, chance, 1, 1, 1, 1, 0.82, 0)
     end
+    -- How often its loot comes back: daily, weekly, every kill -- or plainly not known yet.
+    tooltip:AddLine(ns.Sighting.FrequencyText(data.npc), 0.62, 0.62, 0.62)
     if data.locked then
         tooltip:AddLine(" ")
         local volta = Horas(data.lockLeft)
+        local semanal = ns.Sighting.LootFrequency(data.npc) == "weekly"
         tooltip:AddLine(volta and string.format(L["Already looted — back in %s"], volta)
-            or L["Already looted today"], 1, 0.35, 0.35)
+            or (semanal and L["Already looted this week"]) or L["Already looted today"], 1, 0.35, 0.35)
     end
     tooltip:AddLine(" ")
     tooltip:AddLine(L["Click: point the arrow here"], 0.5, 0.8, 1)

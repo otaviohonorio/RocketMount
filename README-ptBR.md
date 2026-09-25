@@ -74,6 +74,7 @@ conquista, nível de guilda, classificação. Montaria de que só se sabe o pre�
 | Se a missão que dá a montaria foi feita | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **O que o jogo diz que é exigido** | o tooltip do próprio item, via `C_TooltipInfo` |
 | Taxa de queda, coordenada, facção exigida | `MCL_GUIDE` (do addon MCL) |
+| De quanto em quanto tempo o saque do raro volta | a missão oculta do raro (SilverDragon, MCL), a marca diária/semanal do Wowhead e o que o addon aprende no jogo |
 | Percentual de jogadores que têm a montaria | `MountsRarity-2.0` (dentro do MountJournalEnhanced) |
 
 Os dois últimos são **dependências opcionais**: sem eles a janela abre igual e o rodapé diz em

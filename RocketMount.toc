@@ -23,6 +23,7 @@ Data\MobDrops.lua
 Data\MountItems.lua
 Data\AchievementMounts.lua
 Data\MountReputation.lua
+Data\RareLockout.lua
 Core.lua
 #@debug@
 Log.lua
