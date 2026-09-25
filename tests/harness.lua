@@ -2184,6 +2184,38 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- (!) A REPUTACAO DO VENDEDOR (25/09): o Predador Dourado pede Exaltado com os Ascendidos, e nem o
+-- MCL nem os dados do item dizem isso -- e condicao do vendedor, que o Wowhead registra. O
+-- "So ouro, sem guilda" tem o formato exato: vendedor, preco, nenhuma reputacao no MCL.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- reputacao do vendedor pela tabela")
+    local function Achar(nome)
+        for _, e in ipairs(ns.GetRanked(true)) do
+            if e.name == nome then return e end
+        end
+    end
+    local real = ns.MountReputation
+    ns.MountReputation = {
+        [18] = { factionId = 9002, factionName = "Os Ascendidos", levelName = "Exalted" },
+        -- A 17 ja tem reputacao no MCL: a do MCL vale, a da tabela nao entra por cima.
+        [17] = { factionId = 9001, factionName = "Outra", levelName = "Exalted" },
+    }
+    ns.Invalidate()
+    local e = Achar("So ouro, sem guilda")
+    check("vendedor sem reputacao no MCL ganha a da tabela", e and e.rep and e.rep.pct, 0.8)
+    check("  e ela vira o numero da linha (80%)", e and ns.RowPercentText(e), "80%")
+    local tags = e and ns.Tags(e) or {}
+    check("  e a tag Reputacao", tags.reputation, true)
+    local r17 = Achar("Rep que nunca vi")
+    check("a reputacao do MCL vale mais que a da tabela", r17 and r17.rep and r17.rep.pct, 0)
+    ns.MountReputation = real
+    ns.Invalidate()
+    check("a tabela real carregou", type(ns.MountReputation), "table")
+end
+
+--------------------------------------------------------------------------------
 -- `/rmt debug` MOSTRA AS LINHAS DO TOOLTIP (25/09): o Predador Dourado traz "Requires Exalted
 -- with The Ascended." fora do formato `ITEM_REQ_REPUTATION`, e so o cliente diz o tipo e a cor.
 --------------------------------------------------------------------------------
