@@ -29,15 +29,22 @@ end
 
 -- Only the factions some mount actually asks for. Recording every faction in the game would
 -- triple the saved file for data no row will ever read.
+-- MCL's list AND ours (`Data/MountReputation.lua`, 25/09): the vendor's reputations MCL does not
+-- know -- The Ascended for the Gilded Prowler -- were never written down, so no alt could be
+-- named for them.
 local function WantedFactions()
     local wanted = {}
     local rep = _G.MCL_GUIDE_REP_DATA
-    if type(rep) ~= "table" then return wanted end
-    for _, entrada in pairs(rep) do
-        local r = (type(entrada) == "table" and entrada[1]) or entrada
-        if type(r) == "table" and r.factionId then
-            wanted[r.factionId] = true
+    if type(rep) == "table" then
+        for _, entrada in pairs(rep) do
+            local r = (type(entrada) == "table" and entrada[1]) or entrada
+            if type(r) == "table" and r.factionId then
+                wanted[r.factionId] = true
+            end
         end
+    end
+    for _, r in pairs(ns.MountReputation or {}) do
+        if type(r) == "table" and r.factionId then wanted[r.factionId] = true end
     end
     return wanted
 end

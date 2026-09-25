@@ -2210,6 +2210,8 @@ do
         [18] = { factionId = 9002, factionName = "Os Ascendidos", levelName = "Exalted" },
         -- A 17 ja tem reputacao no MCL: a do MCL vale, a da tabela nao entra por cima.
         [17] = { factionId = 9001, factionName = "Outra", levelName = "Exalted" },
+        -- So a tabela conhece esta faccao (o MCL de teste nao): e o caso dos Ascendidos.
+        [16] = { factionId = 9555, factionName = "So na tabela", levelName = "Exalted" },
     }
     ns.Invalidate()
     local e = Achar("So ouro, sem guilda")
@@ -2219,6 +2221,19 @@ do
     check("  e a tag Reputacao", tags.reputation, true)
     local r17 = Achar("Rep que nunca vi")
     check("a reputacao do MCL vale mais que a da tabela", r17 and r17.rep and r17.rep.pct, 0)
+    -- O LIVRO-CAIXA DOS PERSONAGENS anota tambem as faccoes da tabela, nao so as do MCL: senao
+    -- nenhum alt podia ser citado para os Ascendidos do Predador.
+    local realGet = C_Reputation.GetFactionDataByID
+    C_Reputation.GetFactionDataByID = function(fid)
+        if fid == 9555 then return { name = "So na tabela", reaction = 8 } end
+        return realGet(fid)
+    end
+    ns.Roster.Record()
+    local eu
+    for _, c in pairs(ns.db.chars or {}) do eu = c end
+    check("o livro-caixa anota a faccao que so a tabela conhece", eu and eu.reps and eu.reps[9555], 8)
+    C_Reputation.GetFactionDataByID = realGet
+
     ns.MountReputation = real
     ns.Invalidate()
     check("a tabela real carregou", type(ns.MountReputation), "table")
