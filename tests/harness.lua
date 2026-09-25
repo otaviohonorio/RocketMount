@@ -1802,6 +1802,33 @@ do
     check("mapa de masmorra nao ganha marcador", #WorldMapFrame.__pins, 0)
     C_Map.GetMapInfo = realInfo
 
+    -- (25/09) O RARO QUE O WOWHEAD NAO REGISTROU, MAS O MCL POSICIONA. No mapa 23 o MCL poe o
+    -- "Rhazul" (montaria "Farm curto", 1 em 100, diaria 92191), e a tabela nao o tem ali.
+    MAPA_DO_MUNDI = 23
+    P:RefreshAllData()
+    local doCatalogo
+    for _, p in ipairs(WorldMapFrame.__pins) do
+        if p.data.fromCatalogue and p.data.rec.name == "Rhazul" then doCatalogo = p end
+    end
+    check("raro so do MCL aparece no mapa", doCatalogo ~= nil, true)
+    linhas = {}
+    if doCatalogo then M.Tooltip(tip, doCatalogo.data) end
+    check("  com a montaria e a chance do MCL",
+        table.concat(linhas, "\n"):find("Farm curto | 1%", 1, true) ~= nil, true)
+    -- E NAO DUPLICA o que a tabela ja desenhou: com o Rhazul na tabela (nome curto), o do MCL some.
+    ns.MobDrops[248741] = { name = "Rhazul", c = 4, { item = 9004, count = 7, outof = 6391 },
+                            where = { [23] = { 26.8, 11.6 } } }
+    C_MountJournal.GetMountFromItem = function(item) return item > 9000 and item - 9000 or nil end
+    S.Rebuild()
+    P:RefreshAllData()
+    local dup = 0
+    for _, p in ipairs(WorldMapFrame.__pins) do
+        if (p.data.rec.name or ""):find("Rhazul", 1, true) then dup = dup + 1 end
+    end
+    check("  e raro que a tabela ja desenhou nao aparece duas vezes", dup, 1)
+    ns.MobDrops[248741] = nil
+    S.Rebuild()
+
     -- E A OPCAO DESLIGA.
     MAPA_DO_MUNDI = 2413
     ns.db.mapPins = false

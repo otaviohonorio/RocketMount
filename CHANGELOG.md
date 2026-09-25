@@ -9,7 +9,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
   missing now show on the world map, with the game's own rare icons. Hover one to see which
   mounts it drops — with each mount's icon — and the chance of each; click it to point the
-  arrow there. Creature and mount names come in your game's language. Once you loot it,
+  arrow there. Creature and mount names come in your game's language. Every known spawn point
+  is on the map (Beledar's Spawn has 20), and rares Wowhead has no drop recorded for are filled
+  in from Mount Collection Log when it is installed. Once you loot it,
   it dims until it can drop again. Only in the open world; turn it off in the options.
 - **Nothing reaches the top of the list without being checked.** When a character logs in, the
   addon loads every missing mount's item from the server and reads its requirements before
