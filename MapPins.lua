@@ -129,7 +129,69 @@ function MapPins.PinsFor(mapID)
             end
         end
     end
+    MapPins.AddCatalogueRares(out, mapID)
     return out
+end
+
+---(!) THE RARES WOWHEAD DOES NOT KNOW (25/09). The user: *"até os raros de midnight, tem alguns
+---faltando (...) confere em mais de uma fonte"*. Checked against SilverDragon and MCL: every rare
+---in our table sits where they put it -- but some rares that DO drop a mount have no drop recorded
+---on Wowhead yet (Farthik the Plunderer; Image of Astalor Bloodsworn, whose mount has no source
+---on Wowhead at all), so they were not in the table. MCL knows them, with map, position and the
+---daily lockout quest, and the addon already reads MCL at run time -- nothing copied. A rare the
+---table already drew on this map is not drawn twice ("Lockjaw" there is "Lockjaw the Snapper"
+---here: the names are matched by prefix).
+function MapPins.AddCatalogueRares(out, mapID)
+    if not (ns.GetRanked and mapID) then return end
+    local desenhados = {}
+    for _, pin in ipairs(out) do
+        desenhados[#desenhados + 1] = (pin.rec.name or ""):lower()
+    end
+    local function JaTem(nome)
+        nome = nome:lower()
+        for _, d in ipairs(desenhados) do
+            if nome == d or nome:sub(1, #d + 1) == d .. " " or nome:sub(1, #d + 1) == d .. ","
+                or d:sub(1, #nome + 1) == nome .. " " then
+                return true
+            end
+        end
+        return false
+    end
+    local ok, lista = pcall(ns.GetRanked)
+    if not ok or type(lista) ~= "table" then return end
+    local porNome = {}
+    for _, e in ipairs(lista) do
+        local criatura = e.method == "NPC" or e.method == "BOSS"
+        if not e.unobtainable and e.coords then
+            for _, wp in ipairs(e.coords) do
+                -- A creature, in the open world: not an instance pin (`i`), not a one-time
+                -- treasure (`q`), and a rare's daily quest (`dq`) or a creature method.
+                if wp.m == mapID and wp.x and wp.y and wp.n and not wp.i and not wp.q
+                    and (criatura or wp.dq) and not JaTem(wp.n) then
+                    local r = porNome[wp.n]
+                    if not r then
+                        r = { rec = { name = wp.n, c = 4 }, mounts = {}, pontos = {}, dq = {} }
+                        porNome[wp.n] = r
+                    end
+                    local jaMontaria = false
+                    for _, m in ipairs(r.mounts) do if m.entry == e then jaMontaria = true end end
+                    if not jaMontaria then r.mounts[#r.mounts + 1] = { entry = e } end
+                    if wp.dq then r.dq[#r.dq + 1] = { dq = wp.dq } end
+                    local x, y = wp.x / 100, wp.y / 100
+                    if not Perto(r.pontos, x, y) then r.pontos[#r.pontos + 1] = { x, y } end
+                end
+            end
+        end
+    end
+    for _, r in pairs(porNome) do
+        local preso, fonte, falta = ns.Sighting.LockedOut(nil, r.dq)
+        for _, xy in ipairs(r.pontos) do
+            out[#out + 1] = {
+                npc = nil, rec = r.rec, mounts = r.mounts, mapID = mapID, x = xy[1], y = xy[2],
+                locked = preso, lockSource = fonte, lockLeft = falta, fromCatalogue = true,
+            }
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -190,7 +252,8 @@ end
 ---the pin does. Names in the client's language: the mount's from the journal, the creature's
 ---from the game (NpcName).
 function MapPins.Tooltip(tooltip, data)
-    local nome = MapPins.NpcName(data.npc, data.rec.name)
+    local nome = data.npc and MapPins.NpcName(data.npc, data.rec.name)
+        or (ns.LocalizedCreature and ns.LocalizedCreature(data.rec.name)) or data.rec.name
     tooltip:SetText(Atlas(ATLAS[data.rec.c] or "VignetteKill", 18) .. nome, 1, 0.82, 0)
     tooltip:AddLine(CLASS_NAME[data.rec.c] or "", 0.62, 0.62, 0.62)
     tooltip:AddLine(" ")
