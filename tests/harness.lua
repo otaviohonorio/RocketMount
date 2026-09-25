@@ -1045,6 +1045,23 @@ do
     check("alt a 90% do Exaltado: a linha vale 90%", nuncaVi2.rep.pct, 0.9)
     check("  e fala em 'o mais perto'", nuncaVi2.rep.label:find("Ottozinho", 1, true) ~= nil, true)
 
+    -- (!) "80% SIM, MAS COM ALGO QUE INDIQUE QUE E EM OUTRO CHAR" (25/09): o circulo de classe
+    -- do alt ao lado do numero, e "em <nome>" na linha de baixo.
+    CLASS_ICON_TCOORDS = { SHAMAN = { 0.25, 0.49609375, 0.25, 0.5 } }
+    check("o numero leva o circulo de classe do alt",
+        ns.AltMark(nuncaVi2):find("UI-Classes-Circles", 1, true) ~= nil, true)
+    -- A linha de baixo ja traz o nome quando o motivo e a reputacao; quando o motivo mostrado e
+    -- OUTRO (o ouro), o nome do alt tem que ir na frente.
+    local porOuro = { why = "3000g", rep = { pct = 1, char = "Ottozinho" } }
+    check("  e a linha de baixo comeca com o nome dele", ns.RowWhy(porOuro):sub(1, 12), "on Ottozinho")
+    check("  sem repetir quando ja esta la", ns.RowWhy(nuncaVi2):find("on Ottozinho", 1, true), nil)
+    local proprio = { rep = { pct = 0.9 }, requirementFrom = "rep", deterministic = true }
+    check("reputacao do proprio personagem nao leva marca", ns.AltMark(proprio), "")
+    local sorte = { rep = { pct = 1, char = "Ottozinho", charClass = "SHAMAN" },
+                    requirementFrom = "rep", deterministic = false, chance = 3 }
+    check("numero que e chance de saque nao leva a marca do alt", ns.AltMark(sorte), "")
+    CLASS_ICON_TCOORDS = nil
+
     -- O CONECTADO MELHOR QUE O ALT: continua o dele, e o aviso de login o cita.
     ns.db.chars["Ottozinho-Azralon"].reps[9002] = 6
     ns.db.chars["Ottozinho-Azralon"].standing[9002] = 12000
