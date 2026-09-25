@@ -176,6 +176,12 @@ commands["debug"] = function(rest)
                 print("    vendor: " .. tostring(e.vendor and e.vendor.npc)
                     .. "   guild vendor: " .. tostring(e.vendorGuilda))
                 print("    game text: " .. tostring(e.sourceText))
+                print("    percent: " .. ns.RowPercentText(e)
+                    .. "   tooltip gate: " .. tostring(e.tooltipGate and e.tooltipGate.label))
+                print("    item: " .. tostring(e.itemID) .. "   tooltip: " .. tostring(e.tooltipState))
+                for _, linha in ipairs(e.itemID and ns.Tooltip.Dump(e.itemID) or {}) do
+                    print("      " .. linha)
+                end
             end
         end
         if achou == 0 then

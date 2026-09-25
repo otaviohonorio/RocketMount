@@ -40,6 +40,8 @@ The number is what the mount depends on (the **?** beside it says the same):
   partial criteria count (546 of 600 mounts is 91%), and a meta achievement counts the progress
   of the achievements inside it.
 - **Reputation / renown** — how far you are on the road to the standing asked for, 0 to 100%.
+- **Gold** counts last: only once every other requirement (reputation, achievement, currencies,
+  items) is met. The gold still missing is always listed in the row.
 
 A mount the addon cannot measure — a purchase the vendor has not confirmed, or nothing known about
 it — shows **?** and goes last. Nothing is shown at 100% without being checked for this character.
