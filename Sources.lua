@@ -400,20 +400,12 @@ local function AchievementProgress(achID)
         return { pct = 1, label = string.format(L["Achievement completed: %s"], name) }
     end
 
-    local num = GetAchievementNumCriteria and GetAchievementNumCriteria(achID) or 0
-    if num and num > 0 then
-        local done = 0
-        for i = 1, num do
-            local ok2, _, _, criteriaCompleted = pcall(GetAchievementCriteriaInfo, achID, i)
-            if ok2 and criteriaCompleted then done = done + 1 end
-        end
-        return {
-            pct = done / num,
-            label = string.format(L["%s: %d of %d"], name, done, num),
-        }
-    end
-
-    return { pct = 0, label = name }
+    -- Partial criteria count (Almost Completed Achievements' formula: Achievements.lua).
+    local pct = ns.AchievementCompletion and ns.AchievementCompletion(achID) or 0
+    return {
+        pct = pct,
+        label = string.format(L["%s: %d%% done"], name, math.floor(pct * 100)),
+    }
 end
 
 --------------------------------------------------------------------------------
@@ -608,7 +600,7 @@ function ns.BuildList()
                 -- A conquista que o JOGO diz que dá esta montaria. Fecha o buraco das 126
                 -- marcadas "SPECIAL" no catálogo, que não tinham requisito nenhum.
                 if ns.Achievements then
-                    e.achievementReward = ns.Achievements.Gate(e.name)
+                    e.achievementReward = ns.Achievements.Gate(e.name, mountID)
                 end
 
                 -- The item, when the catalogue does not have it: our table, but only where

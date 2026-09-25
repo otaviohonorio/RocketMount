@@ -32,12 +32,14 @@ inverse question and answers it in one ordered list.
 Click **Type** or **Expansion** to filter by them or to group the list by them — inside a group
 the list is still ordered by the number. Click **Mount** or **%** to order by name or by number.
 
-The number can be read two ways, chosen at the top of the list (the **?** explains both):
+The number is what the mount depends on (the **?** beside it says the same):
 
-- **By tag** — the number you can check in the game: how far a requirement is (reputation,
-  renown, achievement, gold), or the chance of each attempt for a drop. The tag says which.
-- **Ease** — one score for everything: a requirement's progress, or for a drop the chance of having
-  the mount after 20 attempts, so a 1-in-3 and a 1-in-2000 compare on the same scale.
+- **Drop** — the chance of each attempt: a 1-in-3 cache is 33%, even when a reputation still
+  stands between you and the cache.
+- **Achievement** — how much of it is done, counted the way *Almost Completed Achievements* does:
+  partial criteria count (546 of 600 mounts is 91%), and a meta achievement counts the progress
+  of the achievements inside it.
+- **Reputation / renown** — how far you are on the road to the standing asked for, 0 to 100%.
 
 A mount the addon cannot measure — a purchase the vendor has not confirmed, or nothing known about
 it — shows **?** and goes last. Nothing is shown at 100% without being checked for this character.
@@ -59,7 +61,8 @@ guild level and rating are. A mount where the only thing we know is its price sh
 | What is missing, source type, the game's own "how to get" text | `C_MountJournal` |
 | Reputation and renown progress | `C_Reputation`, `C_MajorFactions` |
 | Currency, gold and items you hold | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
-| Partial achievement progress | `GetAchievementCriteriaInfo` |
+| Partial achievement progress, meta achievements included | `GetAchievementCriteriaInfo` |
+| Which achievement gives which mount, secret ones included | the game's data tables, built into the addon |
 | Whether the quest that grants it is done | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **What the game says is required** | the mount item's own tooltip, via `C_TooltipInfo` |
 | Drop rate, coordinates, required faction | `MCL_GUIDE` (from the MCL addon) |

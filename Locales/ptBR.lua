@@ -168,16 +168,14 @@ L["Show"] = "Mostrar"
 L["Show all"] = "Mostrar todos"
 L["Group by type, then %"] = "Agrupar por tipo, depois %"
 L["Group by expansion, then %"] = "Agrupar por expansão, depois %"
-L["Percent:"] = "Percentual:"
-L["By tag"] = "Pela tag"
-L["Ease"] = "Facilidade"
 L["What the percentage means"] = "O que o percentual quer dizer"
-L["The number you can check in the game. For a requirement (reputation, renown, achievement, gold) it is how far along you are; for a drop it is the chance of each attempt. The tag on the row says which."] =
-    "O número que você confere no jogo. Para um requisito (reputação, renome, conquista, ouro) é o "
-    .. "quanto já andou; para um saque é a chance de cada tentativa. A tag da linha diz qual é."
-L["One score for everything: a requirement's progress, or for a drop the chance of having the mount after %d attempts. Compares a 1 in 3 with a 1 in 2000 on the same scale."] =
-    "Uma nota só para tudo: o progresso do requisito ou, para um saque, a chance de ter a montaria "
-    .. "depois de %d tentativas. Compara um 1 em 3 com um 1 em 2000 na mesma escala."
+L["It is what the mount depends on, and the list is ordered by it."] = "É aquilo de que a montaria depende, e a lista é ordenada por ele."
+L["the chance of each attempt"] = "a chance de cada tentativa"
+L["how much of it is done"] = "o quanto já está feito"
+L["how far to the standing asked for"] = "o caminho até o nível exigido"
+L["how far to the renown level asked for"] = "o caminho até o renome exigido"
+L['Achievement "%s": %d%% done'] = 'Conquista "%s": %d%% feita'
+L["%s: %d%% done"] = "%s: %d%% feita"
 L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."] =
     "\"?\" quer dizer que ainda não dá para medir: abra o vendedor, ou não há dado."
 L["Show them on the world map"] = "Mostrar no mapa-múndi"

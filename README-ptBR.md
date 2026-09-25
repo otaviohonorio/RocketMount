@@ -33,12 +33,14 @@ Clique em **Tipo** ou **Expansão** para filtrar por eles ou agrupar a lista por
 grupo, a lista continua ordenada pelo número. Clique em **Montaria** ou **%** para ordenar por nome
 ou pelo número.
 
-O número tem duas leituras, escolhidas no topo da lista (o **?** explica as duas):
+O número é aquilo de que a montaria depende (o **?** ao lado diz o mesmo):
 
-- **Pela tag** — o número que você confere no jogo: o quanto andou num requisito (reputação,
-  renome, conquista, ouro), ou a chance de cada tentativa num saque. A tag diz qual é.
-- **Facilidade** — uma nota só para tudo: o progresso do requisito ou, num saque, a chance de ter a
-  montaria depois de 20 tentativas, para um 1 em 3 e um 1 em 2000 se compararem na mesma escala.
+- **Saque** — a chance de cada tentativa: um baú de 1 em 3 é 33%, mesmo que ainda falte uma
+  reputação para chegar ao baú.
+- **Conquista** — o quanto dela já está feito, contado como o *Almost Completed Achievements*
+  conta: critério parcial vale (546 de 600 montarias é 91%), e uma meta conquista soma o progresso
+  das conquistas que a compõem.
+- **Reputação / renome** — o quanto do caminho até o nível exigido já foi feito, de 0% a 100%.
 
 Montaria que o addon não consegue medir — compra que o vendedor ainda não confirmou, ou nada se sabe
 dela — mostra **?** e vai para o fim. Nada aparece com 100% sem ter sido conferido para este
@@ -61,7 +63,8 @@ conquista, nível de guilda, classificação. Montaria de que só se sabe o pre�
 | O que falta, tipo de fonte, o texto do próprio jogo sobre como pega | `C_MountJournal` |
 | Progresso de reputação e renome | `C_Reputation`, `C_MajorFactions` |
 | Moeda, ouro e item no bolso | `C_CurrencyInfo`, `C_Item`, `GetMoney` |
-| Progresso parcial de conquista | `GetAchievementCriteriaInfo` |
+| Progresso parcial de conquista, meta conquistas incluídas | `GetAchievementCriteriaInfo` |
+| Qual conquista dá qual montaria, as secretas incluídas | as tabelas de dados do jogo, embutidas no addon |
 | Se a missão que dá a montaria foi feita | `C_QuestLog.IsQuestFlaggedCompleted` |
 | **O que o jogo diz que é exigido** | o tooltip do próprio item, via `C_TooltipInfo` |
 | Taxa de queda, coordenada, facção exigida | `MCL_GUIDE` (do addon MCL) |

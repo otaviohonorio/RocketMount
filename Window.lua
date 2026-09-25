@@ -447,13 +447,12 @@ local function FillRow(row, data)
     row.tags:SetText(table.concat(nomes, " · "))
     row.exp:SetText(e.expansion and ns.ExpansionLabel(e.expansion, e.expansionName) or "")
 
-    local modo = ns.db.pctMode or "tag"
-    row.headline:SetText(ns.RowPercentText(e, modo))
+    row.headline:SetText(ns.RowPercentText(e))
     -- White for a number, green for "ready", grey for "cannot be measured": no band colours, the
     -- list has no bands any more.
     if e.tier == ns.TIER.READY then
         row.headline:SetTextColor(0.30, 0.85, 0.40)
-    elseif ns.RowPercent(e, modo) == nil then
+    elseif ns.RowPercent(e) == nil then
         row.headline:SetTextColor(S.dim[1], S.dim[2], S.dim[3])
     else
         row.headline:SetTextColor(1, 1, 1)
@@ -528,7 +527,7 @@ local function Redraw()
     ns.UpdateLoading()
     if ns.ValidationDone and not ns.ValidationDone() then return end
     local entries, total = ns.GetFiltered()
-    ns.SortForWindow(entries, ns.db.pctMode or "tag", ns.db.sortBy or "pct")
+    ns.SortForWindow(entries, ns.db.sortBy or "pct")
     if ns.UpdateHeaders then ns.UpdateHeaders() end
     local provider = CreateDataProvider(ns.ListElements(entries))
     local keep = ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition
@@ -658,59 +657,29 @@ local function Header(host, chave, label, x, w, onClick, justify)
     return h
 end
 
--- The two readings of the number, chosen with a pair of buttons (the user: *"um botão ou radio
--- button só que mais bonito (...) com um ícone de ? explicando o que é cada um"*).
-local function PctModeButtons(host, busca)
-    local lbl = Text(host, "GameFontNormalSmall")
-    lbl:SetPoint("LEFT", busca, "RIGHT", 18, 0)
-    lbl:SetText(L["Percent:"])
-    local botoes = {}
-    local function Atualizar()
-        local modo = ns.db.pctMode or "tag"
-        for k, b in pairs(botoes) do
-            if k == modo then b:LockHighlight() else b:UnlockHighlight() end
-            local fs = b.GetFontString and b:GetFontString()
-            if type(fs) == "table" and fs.SetTextColor then
-                if k == modo then fs:SetTextColor(1, 0.82, 0) else fs:SetTextColor(0.7, 0.7, 0.7) end
-            end
-        end
-    end
-    local ant = lbl
-    for _, par in ipairs({ { "tag", L["By tag"] }, { "ease", L["Ease"] } }) do
-        local b = CreateFrame("Button", nil, host, "UIPanelButtonTemplate")
-        b:SetSize(84, 20)
-        b:SetPoint("LEFT", ant, "RIGHT", ant == lbl and 6 or 2, 0)
-        b:SetText(par[2])
-        b:SetScript("OnClick", function()
-            ns.db.pctMode = par[1]
-            Atualizar()
-            ns.RefreshWindow()
-        end)
-        botoes[par[1]] = b
-        ant = b
-    end
-    -- The "?" that explains both readings.
+-- The "?" beside the % header: what the number is, in one place (the user asked for the
+-- explanation to stay once the two readings became one).
+local function PctHelp(host, pctHeader)
     local ajuda = CreateFrame("Button", nil, host)
-    ajuda:SetSize(20, 20)
-    ajuda:SetPoint("LEFT", ant, "RIGHT", 4, 0)
+    ajuda:SetSize(16, 16)
+    ajuda:SetPoint("RIGHT", pctHeader, "LEFT", -14, 0)
     ajuda.tex = ajuda:CreateTexture(nil, "ARTWORK")
     ajuda.tex:SetAllPoints()
     ajuda.tex:SetTexture("Interface\\Common\\help-i")
     ajuda:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["What the percentage means"], 1, 0.82, 0)
+        GameTooltip:AddLine(L["It is what the mount depends on, and the list is ordered by it."], 0.9, 0.9, 0.9, true)
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(L["By tag"], 1, 1, 1)
-        GameTooltip:AddLine(L["The number you can check in the game. For a requirement (reputation, renown, achievement, gold) it is how far along you are; for a drop it is the chance of each attempt. The tag on the row says which."], 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(L["Ease"], 1, 1, 1)
-        GameTooltip:AddLine(string.format(L["One score for everything: a requirement's progress, or for a drop the chance of having the mount after %d attempts. Compares a 1 in 3 with a 1 in 2000 on the same scale."], ns.EASE_TRIES), 0.8, 0.8, 0.8, true)
+        GameTooltip:AddDoubleLine(L["Drop"], L["the chance of each attempt"], 1, 1, 1, 0.8, 0.8, 0.8)
+        GameTooltip:AddDoubleLine(L["Achievement"], L["how much of it is done"], 1, 1, 1, 0.8, 0.8, 0.8)
+        GameTooltip:AddDoubleLine(L["Reputation"], L["how far to the standing asked for"], 1, 1, 1, 0.8, 0.8, 0.8)
+        GameTooltip:AddDoubleLine(L["Renown"], L["how far to the renown level asked for"], 1, 1, 1, 0.8, 0.8, 0.8)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine(L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."], 0.6, 0.6, 0.6, true)
         GameTooltip:Show()
     end)
     ajuda:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    Atualizar()
 end
 
 --------------------------------------------------------------------------------
@@ -789,15 +758,14 @@ local function Build()
     end)
     window.search = busca
 
-    PctModeButtons(host, busca)
-
     -- The column headers, aligned with the row's columns.
     Header(host, "name", L["Mount"], NAME_X, NAME_W,
         function() ns.db.sortBy = "name"; ns.RefreshWindow() end)
     Header(host, "tag", L["Type"], TAG_X, TAG_W, TagMenu)
     Header(host, "expansion", L["Expansion"], EXP_X, EXP_W, ExpMenu)
-    Header(host, "pct", "%", PCT_X, PCT_W,
+    local pctHeader = Header(host, "pct", "%", PCT_X, PCT_W,
         function() ns.db.sortBy = "pct"; ns.RefreshWindow() end, "RIGHT")
+    PctHelp(host, pctHeader.text)
     window.headers = headers
 
     list = CreateFrame("Frame", nil, host, "WowScrollBoxList")
