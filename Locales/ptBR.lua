@@ -117,7 +117,7 @@ L["on %s"] = "em %s"
 L["%s: %s is already %s — buy it on that character"] = "%s: %s já está %s — compre com esse personagem"
 L["%s: %s is at %s of %s to %s — the closest of your characters"] = "%s: %s está em %s de %s para %s — o mais perto entre os seus personagens"
 L["%s: %s is %s — the closest of your characters"] = "%s: %s está %s — o mais perto entre os seus personagens"
-L["this character is the closest of yours to %d mount(s):"] = "este personagem é o mais perto, entre os seus, de %d montaria(s):"
+L["on this character, little is left for %d mount(s):"] = "com este personagem, falta pouco para %d montaria(s):"
 L["%s has it (%s) and %d more"] = "%s tem (%s) e mais %d"
 
 --------------------------------------------------------------------------------
