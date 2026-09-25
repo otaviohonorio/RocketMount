@@ -2150,5 +2150,61 @@ do
     ns.db.expFilter = nil
 end
 
+--------------------------------------------------------------------------------
+-- (!) O OURO CONTA POR ULTIMO (25/09): *"o quanto falta de gold so pode ser considerado no
+-- percentual quando todos os outros requisitos forem cumpridos"*.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- ouro so conta quando o resto esta cumprido")
+    local function Linha(campos)
+        local e = { name = "Teste de ouro", sourceType = 3, mountID = 990000 }
+        for k, v in pairs(campos) do e[k] = v end
+        ns.Rank(e)
+        return e
+    end
+    local ouro10 = { pct = 0.1, goldPct = 0.1, label = "ouro" }
+    check("reputacao em 80%, ouro em 10%: vale a reputacao",
+        Linha({ rep = { pct = 0.8, label = "rep" }, cost = ouro10 }).requirement, 0.8)
+    check("reputacao cumprida: agora o ouro conta",
+        Linha({ rep = { pct = 1, label = "rep" }, cost = ouro10 }).requirement, 0.1)
+    check("moeda em 50% e ouro em 10%, sem outro requisito: vale a moeda",
+        Linha({ cost = { pct = 0.1, goldPct = 0.1, otherPct = 0.5, label = "c" } }).price, 0.5)
+    check("moeda cumprida: o ouro conta",
+        Linha({ cost = { pct = 0.1, goldPct = 0.1, otherPct = 1, label = "c" } }).price, 0.1)
+    check("moeda atras da reputacao continua valendo (nao e ouro)",
+        Linha({ rep = { pct = 0.8, label = "rep" },
+                cost = { pct = 0.3, otherPct = 0.3, label = "c" } }).requirement, 0.3)
+    check("so ouro, nada mais conhecido: o ouro conta",
+        Linha({ cost = ouro10 }).price, 0.1)
+    local e = Linha({ rep = { pct = 0.8, label = "rep" }, cost = ouro10 })
+    local temOuro = false
+    for _, r in ipairs(e.requisitos) do if r.key == "cost" then temOuro = true end end
+    check("  e o ouro que falta continua na lista de requisitos", temOuro, true)
+end
+
+--------------------------------------------------------------------------------
+-- `/rmt debug` MOSTRA AS LINHAS DO TOOLTIP (25/09): o Predador Dourado traz "Requires Exalted
+-- with The Ascended." fora do formato `ITEM_REQ_REPUTATION`, e so o cliente diz o tipo e a cor.
+--------------------------------------------------------------------------------
+do
+    print("")
+    print("-- /rmt debug com as linhas do tooltip")
+    local d = ns.Tooltip.Dump(7015)
+    check("o despejo traz cada linha", d and #d, 2)
+    check("  com tipo, cor e o que o addon concluiu",
+        d and d[2]:find("type=12 color=1.00,0.13,0.13 req=UNMET", 1, true) ~= nil, true)
+    check("  e item sem tooltip nao quebra", ns.Tooltip.Dump(424242), nil)
+    -- O comando inteiro roda sem erro de Lua, em todas as montarias (o nome "a" casa com quase
+    -- todas). A saida vai para o chat, que aqui e o print -- calado durante a chamada.
+    local realPrint = print
+    local linhas = 0
+    print = function() linhas = linhas + 1 end
+    local ok, erro = pcall(SlashCmdList["ROCKETMOUNT"], "debug a")
+    print = realPrint
+    check("/rmt debug roda sem erro de Lua", ok and true or tostring(erro), true)
+    check("  e escreve alguma coisa", linhas > 0, true)
+end
+
 print(falhas == 0 and "FIM — tudo certo" or ("FIM — " .. falhas .. " falha(s)"))
 os.exit(falhas == 0 and 0 or 1)

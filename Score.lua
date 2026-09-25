@@ -201,10 +201,18 @@ local function Access(e)
     return worst, from
 end
 
+-- (!) GOLD COUNTS LAST (25/09). The user: *"o quanto falta de gold só pode ser considerado no
+-- percentual quando todos os outros requisitos forem cumpridos"*. Gold is the easy part and the
+-- last step -- a mount at 80% of its reputation and 10% of its gold is 80% along, not 10%.
+-- Currencies and items stay requirements like any other (2,000 crystals is a grind).
+
+---The cost's share of the number: currencies and items; gold only once they are all met.
 local function Price(e)
     local p = e.cost
-    if p and p.pct then return p.pct end
-    return nil
+    if not (p and p.pct) then return nil end
+    if p.goldPct == nil and p.otherPct == nil then return p.pct end
+    if p.otherPct and p.otherPct < 1 then return p.otherPct end
+    return p.goldPct or p.otherPct
 end
 
 function ns.Rank(entry)
@@ -222,11 +230,15 @@ function ns.Rank(entry)
     local access, from = Access(e)
     local price = Price(e)
 
-    -- The requirement the row shows is the further behind of the two: whoever has the
-    -- reputation but not the gold is stuck on the gold, and the other way round.
+    -- The requirement the row shows is the one furthest behind -- except gold, which counts only
+    -- once everything else is met (`Price` above holds it back from the currencies too).
     local req = access
     if price and (not req or price < req) then
-        req, from = price, "cost"
+        local soOuro = e.cost.goldPct ~= nil and price == e.cost.goldPct
+            and not (e.cost.otherPct and e.cost.otherPct < 1)
+        if not soOuro or not req or req >= 1 then
+            req, from = price, "cost"
+        end
     end
 
     -- (!) TODOS OS REQUISITOS, e não só o pior (defeito de 22/09).

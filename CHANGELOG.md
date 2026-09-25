@@ -13,7 +13,8 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   window is wider and the rows a little taller.
 - **One number, and it means what the mount depends on.** A drop shows its chance (a 1-in-3
   cache is 33%, even while a reputation still stands in the way); an achievement shows how much
-  of it is done; a reputation shows how far you are to the standing asked for.
+  of it is done; a reputation shows how far you are to the standing asked for. Gold counts
+  last: only once every other requirement is met.
 - **Achievements count like Almost Completed Achievements.** Partial criteria count — 546 of 600
   mounts is 91%, not 0% — and a meta achievement counts the progress of the achievements inside
   it (Worldsoul-Searching, Light Up the Night, A World Awoken…).

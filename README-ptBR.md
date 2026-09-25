@@ -41,6 +41,8 @@ O número é aquilo de que a montaria depende (o **?** ao lado diz o mesmo):
   conta: critério parcial vale (546 de 600 montarias é 91%), e uma meta conquista soma o progresso
   das conquistas que a compõem.
 - **Reputação / renome** — o quanto do caminho até o nível exigido já foi feito, de 0% a 100%.
+- **Ouro** conta por último: só depois de todos os outros requisitos (reputação, conquista,
+  moedas, itens) cumpridos. O ouro que falta aparece sempre na linha.
 
 Montaria que o addon não consegue medir — compra que o vendedor ainda não confirmou, ou nada se sabe
 dela — mostra **?** e vai para o fim. Nada aparece com 100% sem ter sido conferido para este

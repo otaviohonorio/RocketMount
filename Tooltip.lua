@@ -101,6 +101,26 @@ local function LineInfo(line)
     return { texto = texto, cumprido = not vermelho }
 end
 
+---Every line of the item's tooltip, as the game hands it, with what this addon made of it:
+---for `/rmt debug`. Written for the Gilded Prowler (25/09): its "Requires Exalted with The
+---Ascended." is not in the `ITEM_REQ_REPUTATION` format, and whether the game types it as a
+---requirement, or paints it red, is something only the client can say.
+function Tooltip.Dump(itemID)
+    if type(itemID) ~= "number" or not (C_TooltipInfo and C_TooltipInfo.GetItemByID) then return nil end
+    local ok, data = pcall(C_TooltipInfo.GetItemByID, itemID)
+    if not ok or type(data) ~= "table" or type(data.lines) ~= "table" then return nil end
+    local out = {}
+    for i, line in ipairs(data.lines) do
+        local c = type(line.leftColor) == "table" and line.leftColor
+        local info = LineInfo(line)
+        out[#out + 1] = string.format("%d type=%s color=%s req=%s  %s", i, tostring(line.type),
+            c and string.format("%.2f,%.2f,%.2f", c.r or 0, c.g or 0, c.b or 0) or "-",
+            info and (info.cumprido and "met" or "UNMET") or "no",
+            tostring(line.leftText))
+    end
+    return out
+end
+
 ---Os requisitos que o tooltip do item declara.
 ---
 ---@return table|nil lista `{ { texto, cumprido }, ... }`, ou nil quando não há item ou o

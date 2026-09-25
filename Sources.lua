@@ -264,7 +264,10 @@ local function CostProgress(spellID, itemID)
     if not list then return nil end
     if type(list[1]) ~= "table" then list = { list } end
 
+    -- Gold apart from the rest (currencies, items): the percentage holds gold back until every
+    -- other requirement is met (Score.lua, `Price`).
     local precos, faltas, worst = {}, {}, 1
+    local goldPct, otherPct
     for _, c in ipairs(list) do
         local have, need, preco, falta = nil, c.amount, nil, nil
 
@@ -302,6 +305,11 @@ local function CostProgress(spellID, itemID)
         if have and need and need > 0 and preco then
             local pct = math.min(1, have / need)
             if pct < worst then worst = pct end
+            if c.type == "gold" then
+                goldPct = math.min(goldPct or 1, pct)
+            else
+                otherPct = math.min(otherPct or 1, pct)
+            end
             precos[#precos + 1] = preco
             if falta then faltas[#faltas + 1] = falta end
         end
@@ -313,6 +321,8 @@ local function CostProgress(spellID, itemID)
     local falta = #faltas > 0 and table.concat(faltas, " + ") or nil
     return {
         pct = worst,
+        goldPct = goldPct,
+        otherPct = otherPct,
         price = preco,
         gap = falta,
         -- A frase completa, para a ficha: o preço primeiro, a falta depois, e nunca os dois
