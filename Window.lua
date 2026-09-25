@@ -42,7 +42,8 @@ local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (Roc
 -- (!) WIDER AND WITH COLUMNS (25/09). The user: one list instead of bands, with tags, filter by
 -- expansion, *"alarga a tela para incluir mais estes elementos na linha e pode engrossar um
 -- pouco a linha"*. 460 -> 660 buys the Type and Expansion columns; the card keeps its 360.
-local LIST_W = 660
+-- 660 -> 840 (25/09): *"um pouco mais larga (...) para o conteudo de cada coluna caber melhor"*.
+local LIST_W = 840
 local SEARCH_H = 36
 local HEADER_H = 26
 local SEARCH_ROW = SEARCH_H + HEADER_H   -- where the scroll box starts inside the inset
@@ -55,7 +56,7 @@ local DETAIL_W = 360
 
 local COL_X = INSET_X + LIST_W + GUTTER
 local WINDOW_W = COL_X + DETAIL_W + RIGHT_MARGIN
-local WINDOW_H = 580
+local WINDOW_H = 660           -- 580 -> 660 with the width: more rows on screen
 
 -- The row and its columns. Every x is derived from the one before it, so a column that grows
 -- pushes the next instead of sitting on it -- the geometry test checks every gap.
@@ -63,10 +64,10 @@ local ROW_H = 54              -- 46 in the journal; "engrossar um pouco" (25/09)
 local ROW_ICON = 42
 local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
 local COL_GAP = 10
-local NAME_X, NAME_W = 6, 244           -- name, and the "why" line under it
-local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 150
-local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 96
-local PCT_W, PCT_INSET = 56, 8
+local NAME_X, NAME_W = 6, 320           -- name, and the "why" line under it
+local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 210   -- three tags
+local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 130
+local PCT_W, PCT_INSET = 64, 8
 local PCT_X = ROW_W - PCT_INSET - PCT_W
 
 ns.Geometry = {
@@ -443,7 +444,7 @@ local function FillRow(row, data)
 
     local _, tags = ns.Tags(e)
     local nomes = {}
-    for i = 1, math.min(#tags, 2) do nomes[#nomes + 1] = ns.TAG_NAME[tags[i]] end
+    for i = 1, math.min(#tags, 3) do nomes[#nomes + 1] = ns.TAG_NAME[tags[i]] end
     row.tags:SetText(table.concat(nomes, " · "))
     row.exp:SetText(e.expansion and ns.ExpansionLabel(e.expansion, e.expansionName) or "")
 

@@ -10,7 +10,7 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   number, and each row says what the mount is — **Type** (Raid, Dungeon, Drop, Quest,
   Achievement, Renown, Reputation, Vendor…) and **Expansion**, both in your game's language. Click
   a column to filter by it or group the list by it; inside a group the number still decides. The
-  window is wider and the rows a little taller.
+  window is wider and taller (1244×660), the rows a little taller, and the Type column shows up to three tags.
 - **One number, and it means what the mount depends on.** A drop shows its chance (a 1-in-3
   cache is 33%, even while a reputation still stands in the way); an achievement shows how much
   of it is done; a reputation shows how far you are to the standing asked for. Gold counts
