@@ -18,6 +18,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **Achievements count like Almost Completed Achievements.** Partial criteria count — 546 of 600
   mounts is 91%, not 0% — and a meta achievement counts the progress of the achievements inside
   it (Worldsoul-Searching, Light Up the Night, A World Awoken…).
+- **Your closest character counts.** For a character-bound reputation, the list uses whichever
+  of your characters is closest and names it; logging in on that character, the chat tells you
+  which mounts it is the closest to. Characters are noted as they log in.
 - **Reputations that only the vendor asks for are known**: 171 mounts, 76 of them new — like
   the Gilded Prowler, which asks for Exalted with The Ascended although its item does not say so.
 - **Every achievement that gives a mount is known**, from the game's own data: about 260 of

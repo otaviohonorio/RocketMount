@@ -40,6 +40,10 @@ The number is what the mount depends on (the **?** beside it says the same):
   partial criteria count (546 of 600 mounts is 91%), and a meta achievement counts the progress
   of the achievements inside it.
 - **Reputation / renown** — how far you are on the road to the standing asked for, 0 to 100%.
+- **Your other characters count.** A mount is collected for the whole account, so for a
+  character-bound (legacy) reputation the number is your closest character's, and the row says
+  who: *"Virki is already Exalted — buy it on that character"*. Each character is noted when it
+  logs in with the addon; when you log in on the one closest to some mount, the chat says so.
 - **Gold** counts last: only once every other requirement (reputation, achievement, currencies,
   items) is met. The gold still missing is always listed in the row.
 

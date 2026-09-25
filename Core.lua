@@ -230,6 +230,7 @@ function ns.StartValidation()
         ns.Log.Add("validate", { phase = "items", items = #ids })
         ns.Tooltip.Preload(ids, function()
             ns.validation.state = "done"
+            if ns.ClosestHereNotice then ns.ClosestHereNotice() end
             local feitos, total = ns.Tooltip.Progress()
             ns.Log.Add("validate", { phase = "done", loaded = feitos, requested = total })
             ns.Invalidate()

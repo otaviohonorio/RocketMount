@@ -1029,8 +1029,58 @@ do
     end
     check("a montaria aponta o alt que tem", nuncaVi2.rep.outroChar ~= nil, true)
     check("  nomeando ele", nuncaVi2.rep.label:find("Ottozinho", 1, true) ~= nil, true)
-    -- MAS CONTINUA NAO CUMPRIDA: quem tem e outro personagem, e a montaria e por personagem.
-    check("  e mesmo assim o requisito NAO esta cumprido", nuncaVi2.rep.pct, 0)
+    -- (!) REGRA NOVA (25/09), decisao do usuario: a montaria e da CONTA, entao o numero e o do
+    -- personagem mais adiantado -- *"a lista pega tudo independente de faccao e dizer qual dos
+    -- chars que esta mais proximo"*. (Ate 25/09 este teste dizia o contrario.)
+    check("  e o numero passa a ser o do alt (Exaltado = 100%)", nuncaVi2.rep.pct, 1)
+    check("  e a linha diz com quem comprar", nuncaVi2.rep.char, "Ottozinho")
+
+    -- Alt NO MEIO do caminho: 37.800 de 42.000 = 90%, e o conectado nunca viu a faccao.
+    ns.db.chars["Ottozinho-Azralon"].reps[9999] = 7
+    ns.db.chars["Ottozinho-Azralon"].standing = { [9999] = 37800 }
+    ns.Invalidate()
+    for _, e in ipairs(ns.GetRanked(true)) do
+        if e.name == "Rep que nunca vi" then nuncaVi2 = e end
+    end
+    check("alt a 90% do Exaltado: a linha vale 90%", nuncaVi2.rep.pct, 0.9)
+    check("  e fala em 'o mais perto'", nuncaVi2.rep.label:find("Ottozinho", 1, true) ~= nil, true)
+
+    -- O CONECTADO MELHOR QUE O ALT: continua o dele, e o aviso de login o cita.
+    ns.db.chars["Ottozinho-Azralon"].reps[9002] = 6
+    ns.db.chars["Ottozinho-Azralon"].standing[9002] = 12000
+    ns.Invalidate()
+    local quase
+    for _, e in ipairs(ns.GetRanked(true)) do
+        if e.rep and e.rep.factionId == 9002 then quase = e end
+    end
+    check("conectado a 80%, alt a 29%: fica o do conectado", quase and quase.rep.char, nil)
+    check("  e guarda o do alt para comparar", quase and quase.rep.altPct ~= nil, true)
+    local realPrint, dito = print, {}
+    print = function(...) dito[#dito + 1] = table.concat({ ... }, " ") end
+    -- `true`: o aviso sai uma vez por login, e o harness ja passou pela validacao antes daqui.
+    ns.ClosestHereNotice(true)
+    print = realPrint
+    local citou = false
+    for _, l in ipairs(dito) do if quase and l:find(quase.name, 1, true) then citou = true end end
+    check("o aviso de login cita a montaria em que este e o mais perto", citou, true)
+
+    -- REPUTACAO DA BRIGADA e igual em todos: o alt nao entra. 9003 vale para a conta e o
+    -- conectado esta a 95%; um alt anotado em Exaltado (anotacao velha) nao pode passar na frente.
+    ns.db.chars["Ottozinho-Azralon"].reps[9003] = 8
+    ns.Invalidate()
+    local conta
+    for _, e in ipairs(ns.GetRanked(true)) do
+        if e.rep and e.rep.factionId == 9003 then conta = e end
+    end
+    check("reputacao da Brigada nao olha alt", conta ~= nil and conta.rep.char, nil)
+    check("  (a montaria da Brigada existe no teste)", conta ~= nil, true)
+
+    -- O TOOLTIP DESTE personagem diz "Requires X - Exalted" em vermelho; com o alt tendo a
+    -- reputacao, essa linha nao e o que falta.
+    local g = ns.Tooltip.Gate(7017, { "Maruuk Centaur" })
+    check("linha de reputacao do tooltip sai quando o alt a tem", g, nil)
+    check("  e continua valendo sem alt", ns.Tooltip.Gate(7017) ~= nil, true)
+    ns.db.chars["Ottozinho-Azralon"].reps[9999] = 8
 
     -- O FILTRO DE FACCAO. Com `hideUnavailable` ligado a montaria da outra faccao nem entra na
     -- lista, entao o filtro so tem o que fazer com ele desligado -- que e justamente o modo de
