@@ -602,6 +602,16 @@ function ns.BuildList()
                     e.quest = QuestProgress(mountID)
                 end
 
+                -- (!) THE VENDOR'S REPUTATION, when MCL has none (25/09). The Gilded Prowler asks
+                -- for Exalted with The Ascended, and neither MCL nor the item's data says so: it
+                -- is the vendor's condition, which Wowhead records. `Data/MountReputation.lua`
+                -- holds it for every mount, in MCL's shape; MCL's own record wins when it exists.
+                if not e.rep and ns.MountReputation and ns.MountReputation[mountID] then
+                    local r = ns.MountReputation[mountID]
+                    e.rep = ReputationProgress(r)
+                    e.isRenown = r.renown and true or false
+                end
+
                 e.cost = CostProgress(spellID, e.itemID)
 
                 -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a

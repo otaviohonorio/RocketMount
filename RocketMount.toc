@@ -22,6 +22,7 @@ Locales\ptBR.lua
 Data\MobDrops.lua
 Data\MountItems.lua
 Data\AchievementMounts.lua
+Data\MountReputation.lua
 Core.lua
 #@debug@
 Log.lua
