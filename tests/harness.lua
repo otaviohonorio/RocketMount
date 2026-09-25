@@ -1067,8 +1067,10 @@ do
     ns.db.chars["Ottozinho-Azralon"].standing[9002] = 12000
     ns.Invalidate()
     local quase
+    -- Pelo NOME: a faccao 9002 tambem trava uma montaria de SAQUE ("Queda ainda trancada"), e
+    -- saque nao entra no aviso -- o numero dela e a chance, nao o quanto falta.
     for _, e in ipairs(ns.GetRanked(true)) do
-        if e.rep and e.rep.factionId == 9002 then quase = e end
+        if e.name == "Quase la por reputacao" then quase = e end
     end
     check("conectado a 80%, alt a 29%: fica o do conectado", quase and quase.rep.char, nil)
     check("  e guarda o do alt para comparar", quase and quase.rep.altPct ~= nil, true)
@@ -1080,6 +1082,31 @@ do
     local citou = false
     for _, l in ipairs(dito) do if quase and l:find(quase.name, 1, true) then citou = true end end
     check("o aviso de login cita a montaria em que este e o mais perto", citou, true)
+    local sorteCitada = false
+    for _, l in ipairs(dito) do if l:find("Queda ainda trancada", 1, true) then sorteCitada = true end end
+    check("  e nao cita o saque de 33% (abaixo da linha de perto)", sorteCitada, false)
+
+    -- (!) "O QUE TIVER 0% NAO E O MAIS PERTO" (25/09): reputacao adiantada nao basta. Com uma
+    -- conquista a 0% no caminho, o numero da linha e 0% -- e a montaria nao entra no aviso.
+    local realGate = ns.Achievements.Gate
+    ns.Achievements.Gate = function(nome, mid)
+        if quase and nome == quase.name then
+            return { kind = "achievementReward", pct = 0, label = "conquista a 0%" }
+        end
+        return realGate(nome, mid)
+    end
+    ns.Invalidate()
+    ns.GetRanked(true)
+    dito = {}
+    print = function(...) dito[#dito + 1] = table.concat({ ... }, " ") end
+    ns.ClosestHereNotice(true)
+    print = realPrint
+    local citou0 = false
+    for _, l in ipairs(dito) do if quase and l:find(quase.name, 1, true) then citou0 = true end end
+    check("montaria com o numero da linha em 0% nao entra no aviso", citou0, false)
+    check("  e sem nada perto, o aviso fica calado", #dito, 0)
+    ns.Achievements.Gate = realGate
+    ns.Invalidate()
 
     -- REPUTACAO DA BRIGADA e igual em todos: o alt nao entra. 9003 vale para a conta e o
     -- conectado esta a 95%; um alt anotado em Exaltado (anotacao velha) nao pode passar na frente.

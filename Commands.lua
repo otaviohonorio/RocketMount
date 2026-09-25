@@ -209,8 +209,21 @@ commands["debug"] = function(rest)
     end
 end
 
--- (!) "SÓ AVISAR" (25/09): on login, once the list is checked, the mounts THIS character is the
--- closest to among all of yours -- a legacy reputation it has, or has more of than any alt.
+-- (!) "SÓ AVISAR" (25/09): on login, once the list is checked, the mounts that are REALLY close on
+-- THIS character -- or nothing at all.
+--
+-- The first version listed every mount where this character had more of the reputation than any
+-- alt, and printed the row's number beside it. The user: *"o que tiver 0% de pegar não é o mais
+-- perto, é nada isso (...) ou diz nada ou mostra o que realmente tá proximo de pegar"*. Having
+-- more reputation than the alts is not being close: the row's number is the requirement furthest
+-- behind, and a mount with the reputation half-way and an achievement at 0% is at 0%.
+--
+-- So a mount is named only when:
+--   * the row's OWN number (the one the list shows) is at the list's "close" line or above --
+--     a drop at 33% per attempt stays out, a nearly sure one would come in, same as in the list;
+--   * and this character is the one ahead on its reputation (otherwise another character is
+--     where to go, and the row already says so).
+local CLOSE = 0.75           -- the list's own "close" line (Score.lua, the CLOSE tier)
 local avisado = false
 function ns.ClosestHereNotice(force)
     if avisado and not force then return end
@@ -218,19 +231,20 @@ function ns.ClosestHereNotice(force)
     local achados = {}
     for _, e in ipairs(ns.GetRanked(true)) do
         local r = e.rep
-        if r and not r.char and r.scope == "personagem" and r.pct and r.pct > 0
-            and r.altPct ~= nil and r.pct > r.altPct then
-            achados[#achados + 1] = e
+        local v = ns.RowPercent(e)
+        if r and not r.char and r.scope == "personagem" and r.altPct ~= nil and r.pct > r.altPct
+            and v and v >= CLOSE then
+            achados[#achados + 1] = { e = e, v = v }
         end
     end
-    if #achados == 0 then return end
+    if #achados == 0 then return end          -- nothing close: say nothing
     table.sort(achados, function(a, b)
-        if a.rep.pct ~= b.rep.pct then return a.rep.pct > b.rep.pct end
-        return (a.name or "") < (b.name or "")
+        if a.v ~= b.v then return a.v > b.v end
+        return (a.e.name or "") < (b.e.name or "")
     end)
-    ns.Print(string.format(L["this character is the closest of yours to %d mount(s):"], #achados))
+    ns.Print(string.format(L["on this character, little is left for %d mount(s):"], #achados))
     for i = 1, math.min(#achados, 5) do
-        local e = achados[i]
+        local e = achados[i].e
         print(string.format("    %s  —  %s", e.name or "?", ns.RowPercentText(e)))
     end
 end
