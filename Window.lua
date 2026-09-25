@@ -434,13 +434,44 @@ local function BuildRow(row)
     end)
 end
 
+-- (!) THE NUMBER IS ANOTHER CHARACTER'S (25/09). The user: *"tem que estar 80% sim, mas com
+-- alguma coisa que indique que é em outro char"*. Two signals: that character's class circle
+-- beside the number -- the game's own art (`UI-Classes-Circles` + `CLASS_ICON_TCOORDS`, what every
+-- installed addon uses), which names a character without inventing a colour -- and "on <name>" at
+-- the head of the line under the name, for whoever does not read the icon.
+local CLASS_CIRCLES = "Interface\\TargetingFrame\\UI-Classes-Circles"
+
+---The inline class circle of the character the row's number belongs to, or "".
+function ns.AltMark(e)
+    local r = e and e.rep
+    if not (r and r.char) then return "" end
+    -- Only when the number shown IS that reputation: a drop shows its chance, and a requirement
+    -- further behind is somebody else's number.
+    local luck = not e.deterministic and e.chance and e.chance > 0
+    if luck or e.requirementFrom ~= "rep" then return "" end
+    local c = r.charClass and _G.CLASS_ICON_TCOORDS and _G.CLASS_ICON_TCOORDS[r.charClass]
+    if not c then return "" end
+    return string.format("|T%s:14:14:0:0:256:256:%d:%d:%d:%d|t ", CLASS_CIRCLES,
+        c[1] * 256, c[2] * 256, c[3] * 256, c[4] * 256)
+end
+
+---The line under the name, led by the character when the reputation is another one's.
+function ns.RowWhy(e)
+    local why = e.why or ""
+    local char = e.rep and e.rep.char
+    if char and not why:find(char, 1, true) then
+        why = string.format(L["on %s"], char) .. "  ·  " .. why
+    end
+    return why
+end
+
 local function FillRow(row, data)
     BuildRow(row)
     local e = data.entry
     row.entry = e
     row.icon:SetTexture(e.icon)
     row.name:SetText(e.name)
-    row.why:SetText(e.why or "")
+    row.why:SetText(ns.RowWhy(e))
 
     local _, tags = ns.Tags(e)
     local nomes = {}
@@ -448,7 +479,7 @@ local function FillRow(row, data)
     row.tags:SetText(table.concat(nomes, " · "))
     row.exp:SetText(e.expansion and ns.ExpansionLabel(e.expansion, e.expansionName) or "")
 
-    row.headline:SetText(ns.RowPercentText(e))
+    row.headline:SetText(ns.AltMark(e) .. ns.RowPercentText(e))
     -- White for a number, green for "ready", grey for "cannot be measured": no band colours, the
     -- list has no bands any more.
     if e.tier == ns.TIER.READY then

@@ -271,7 +271,8 @@ local function BestAlt(factionId, alvo)
             pct = math.max(0, math.min(1, (c.reaction - 1) / math.max(1, alvo - 1)))
         end
         if not melhor or pct > melhor.pct then
-            melhor = { name = c.name, pct = pct, standing = c.standing, reaction = c.reaction }
+            melhor = { name = c.name, class = c.class, pct = pct, standing = c.standing,
+                reaction = c.reaction }
         end
     end
     return melhor
@@ -305,7 +306,8 @@ local function ReputationProgress(rep)
     end
     return {
         kind = "rep", factionId = rep.factionId, factionName = nome,
-        pct = melhor.pct, char = melhor.name, outroChar = melhor.name, minePct = meu,
+        pct = melhor.pct, char = melhor.name, charClass = melhor.class,
+        outroChar = melhor.name, minePct = meu,
         scope = "personagem", label = texto,
     }
 end
