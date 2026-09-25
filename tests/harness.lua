@@ -1606,6 +1606,17 @@ do
     S.RecordLoot()
     check("sem missao, saqueado de novo no mesmo dia: sem limite", S.FrequencyText(248741), "Loot: every kill")
     check("  e ai nao fica bloqueado", (S.LockedOut(248741, {})), false)
+
+    -- (!) CREDITO DIARIO NAO E MONTARIA DIARIA (25/09, o Huolon): a missao 33311 e diaria, mas a
+    -- montaria cai na segunda morte do dia. Com a frequencia "sem limite" da nota do MCL, a missao
+    -- feita NAO apaga o marcador nem cala o aviso.
+    ns.RareLockout = { [73167] = { q = 33311, f = "unlimited" }, [212345] = { q = 7701, f = "firstbest" } }
+    feitas[33311], feitas[7701] = true, true
+    check("Huolon com a diaria feita continua valendo a pena", (S.LockedOut(73167, {})), false)
+    check("  e o balao diz sem limite", S.FrequencyText(73167), "Loot: every kill")
+    check("melhor na 1a morte do dia: tambem nao bloqueia", (S.LockedOut(212345, {})), false)
+    check("  e o balao diz isso", S.FrequencyText(212345), "Loot: every kill, best chance on the day's first")
+    feitas[33311], feitas[7701] = nil, nil
     GetNumLootItems, GetLootSourceInfo = realNum, realSrc
 
     -- A LINHA APARECE no balao do mapa e no aviso.

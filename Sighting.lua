@@ -554,6 +554,7 @@ function Sighting.FrequencyText(npc)
     if f == "daily" then return L["Loot: once a day"] end
     if f == "weekly" then return L["Loot: once a week"] end
     if f == "unlimited" then return L["Loot: every kill"] end
+    if f == "firstbest" then return L["Loot: every kill, best chance on the day's first"] end
     if f == "once" then return L["Loot: once per character"] end
     return L["Loot: how often is not known yet"]
 end
@@ -651,6 +652,11 @@ function Sighting.LockedOut(npc, pontos)
     -- loot is there, whatever this addon wrote down at the last kill.
     local rl = npc and ns.RareLockout and ns.RareLockout[npc]
     if rl and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        -- A MOUNT THAT DROPS ON EVERY KILL is never "already looted", whatever the rare's daily
+        -- credit says: Huolon's quest 33311 is daily, and his mount drops on the second kill of the
+        -- day (Data/RareLockout.lua, tools/coletar_lockout.py).
+        local f0 = Sighting.LootFrequency(npc)
+        if f0 == "unlimited" or f0 == "firstbest" then return false end
         local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, rl.q)
         if ok then
             if not feito then return false end
