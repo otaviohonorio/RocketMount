@@ -10,9 +10,17 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   number, and each row says what the mount is — **Type** (Raid, Dungeon, Drop, Quest,
   Achievement, Renown, Reputation, Vendor…) and **Expansion**, both in your game's language. Click
   a column to filter by it or group the list by it; inside a group the number still decides. The
-  number reads two ways, chosen at the top with a **?** explaining them: *By tag* (a
-  requirement's progress, or a drop's chance) or *Ease* (one score for everything). The window is
-  wider and the rows a little taller.
+  window is wider and the rows a little taller.
+- **One number, and it means what the mount depends on.** A drop shows its chance (a 1-in-3
+  cache is 33%, even while a reputation still stands in the way); an achievement shows how much
+  of it is done; a reputation shows how far you are to the standing asked for.
+- **Achievements count like Almost Completed Achievements.** Partial criteria count — 546 of 600
+  mounts is 91%, not 0% — and a meta achievement counts the progress of the achievements inside
+  it (Worldsoul-Searching, Light Up the Night, A World Awoken…).
+- **Every achievement that gives a mount is known**, from the game's own data: about 260 of
+  them, secret achievements included, and the ones whose reward line names an item instead of
+  the mount (Glory of the Firelands Raider, the Gladiator mounts…). Only your faction's
+  achievement counts.
 - **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
   missing now show on the world map, with the game's own rare icons. Hover one to see which
   mounts it drops — with each mount's icon — and the chance of each; click it to point the

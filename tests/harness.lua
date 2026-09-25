@@ -1469,9 +1469,78 @@ do
     check("recompensa que nao e montaria nao entra", ns.Achievements.For("Nada a ver"), nil)
 
     local gate = ns.Achievements.Gate("Metodo a parte")
-    check("conquista nao concluida bloqueia", gate and gate.pct, 0)
+    -- Nao concluida: bloqueia (abaixo de 100%) e diz O QUANTO falta -- 2 de 4 criterios = 50%.
+    check("conquista nao concluida bloqueia, com o progresso dela", gate and gate.pct, 0.5)
+
+    -- (!) O EXEMPLO DO USUARIO (25/09): a conquista das 600 montarias, que da uma montaria --
+    -- UM criterio, com quantidade (546 de 600). O calculo antigo so contava criterio completo e
+    -- ficava em 0% ate a ultima montaria; o do Almost Completed Achievements da 91%.
+    local realNum, realCrit = GetAchievementNumCriteria, GetAchievementCriteriaInfo
+    GetAchievementNumCriteria = function() return 1 end
+    GetAchievementCriteriaInfo = function() return "Montarias", 0, false, 546, 600 end
+    check("criterio com quantidade conta o parcial (546 de 600 = 91%)",
+        math.floor(ns.AchievementCompletion(9999) * 100), 91)
+    GetAchievementNumCriteria, GetAchievementCriteriaInfo = realNum, realCrit
     check("  e a linha nomeia a conquista",
         gate and gate.label:find("Achievement", 1, true) ~= nil, true)
+
+    -- (!) META CONQUISTA (25/09): os criterios dela sao OUTRAS conquistas (tipo 8, o id do filho
+    -- em `assetID`), e o jogo diz 0 de 1 ate o filho fechar. "Worldsoul-Searching" com todos os
+    -- filhos pela metade dava 0%. Como o ACA (`Meta.lua`): desce nos filhos.
+    local realInfo0 = GetAchievementInfo
+    local FILHOS = {
+        [7000] = { { tipo = 8, asset = 7001, feito = true }, { tipo = 8, asset = 7002 } },
+        [7002] = { { tipo = 8, asset = 7003 }, { qty = 1, req = 2 } },       -- meta dentro de meta
+        [7003] = { { qty = 546, req = 600 } },
+        [7004] = { { tipo = 8, asset = 7004 } },                              -- aponta para si
+    }
+    GetAchievementNumCriteria = function(id) return FILHOS[id] and #FILHOS[id] or 0 end
+    GetAchievementCriteriaInfo = function(id, i)
+        local c = FILHOS[id][i]
+        return "c", c.tipo or 0, c.feito or false, c.qty or 0, c.req or 1, nil, 0, c.asset or 0
+    end
+    -- 7003 = 0,91; 7002 = (0,91 + 0,5) / 2 = 0,705; 7000 = (1 + 0,705) / 2 = 0,8525
+    check("meta conta o progresso dos filhos, em qualquer profundidade",
+        math.floor(ns.AchievementCompletion(7000) * 1000), 852)
+    check("  e um ciclo nao trava nem passa de 0", ns.AchievementCompletion(7004), 0)
+
+    -- "Light Up the Night" (62386): os criterios dela nao nomeiam os filhos, e o ACA crava os
+    -- quatro (`META_CHILD_OVERRIDES`). Dois feitos, dois sem nada = 50%.
+    GetAchievementInfo = function(a, b)
+        if b then return realInfo0(a, b) end
+        return a, "Conquista " .. a, 10, a == 62261 or a == 61453
+    end
+    check("Light Up the Night conta os quatro filhos do ACA", ns.AchievementCompletion(62386), 0.5)
+    GetAchievementInfo = realInfo0
+    GetAchievementNumCriteria, GetAchievementCriteriaInfo = realNum, realCrit
+
+    -- (!) A TABELA FIXA, POR ID DE MONTARIA (25/09): a varredura das categorias nao ve conquista
+    -- SECRETA nem recompensa que nomeia o ITEM em vez da montaria. A tabela sai dos dados do jogo.
+    local tabelaReal = ns.AchievementMounts
+    ns.AchievementMounts = {
+        { 7100, 99901 },                     -- secreta: nenhuma categoria lista
+        { 7101, 99902, "Horde" },            -- so da Horda; o personagem do teste e da Alianca
+        { 7102, 99903 }, { 7103, 99903 },    -- a mesma montaria por duas conquistas
+    }
+    local secreta = ns.Achievements.Gate("Montaria de conquista secreta", 99901)
+    check("conquista secreta vem da tabela, pelo id", secreta and secreta.achID, 7100)
+    check("  e com o progresso dela", secreta and secreta.pct, 0.5)
+    check("conquista da outra faccao nao conta", ns.Achievements.Gate("So da Horda", 99902), nil)
+    GetAchievementInfo = function(a, b)
+        if b then return realInfo0(a, b) end
+        return a, "Conquista " .. a, 10, a == 7103
+    end
+    check("qualquer uma das conquistas feita: nao bloqueia", ns.Achievements.Gate("Duas", 99903), nil)
+    GetAchievementInfo = realInfo0
+    ns.AchievementMounts = tabelaReal
+
+    -- E a tabela gerada tem o que o usuario citou: a meta de The War Within (Worldsoul-Searching,
+    -- 61451 -> Geargrinder Mk. 11) e a das 600 montarias.
+    local tem = {}
+    for _, t in ipairs(ns.AchievementMounts) do tem[t[1]] = true end
+    check("a tabela traz a meta de The War Within (61451)", tem[61451], true)
+    check("  e a de Midnight (62386, Light Up the Night)", tem[62386], true)
+    check("  e tem mais de 250 ligacoes", #ns.AchievementMounts > 250, true)
 
     -- (!) SINAL NEGATIVO, como todas as fontes: conquista CONCLUIDA nao devolve "liberado".
     -- Concluida nao prova que a montaria ainda e obtenivel -- foi assim que o tooltip promoveu
@@ -1971,7 +2040,7 @@ print("-- a lista unica com tags (25/09)")
 do
     ns.search = nil
     ns.db.sources = nil
-    ns.db.tagFilter, ns.db.expFilter, ns.db.sortBy, ns.db.pctMode = nil, nil, nil, nil
+    ns.db.tagFilter, ns.db.expFilter, ns.db.sortBy = nil, nil, nil
     if not ns.window:IsShown() then ns.ToggleWindow() end
     ns.RefreshWindow()
     local lista = ns.window.list
@@ -1985,38 +2054,38 @@ do
     check("  e uma linha por montaria", #itens, #entries)
     check("o contador diz quantas faltam", ns.window.count:GetText(), tostring(#entries))
 
-    -- (!) A ORDEM E O NUMERO: nunca um maior depois de um menor, e o que nao se mede ("?") no fim.
-    local function Ordem(modo, by)
+    -- (!) UM NUMERO SO, E A ORDEM E ELE (25/09): nunca um maior depois de um menor, "?" no fim.
+    local function Ordem(by)
         local l = ns.GetFiltered()
-        ns.SortForWindow(l, modo, by)
+        ns.SortForWindow(l, by)
         return l
     end
-    local function Decrescente(l, modo)
-        local ultimo, viuNil = math.huge, false
-        for _, e in ipairs(l) do
-            local v = ns.RowPercent(e, modo)
-            if v == nil then viuNil = true
-            elseif viuNil or v > ultimo + 1e-9 then return false
-            else ultimo = v end
-        end
-        return true
+    local ultimo, viuNil, decrescente = math.huge, false, true
+    for _, e in ipairs(Ordem("pct")) do
+        local v = ns.RowPercent(e)
+        if v == nil then viuNil = true
+        elseif viuNil or v > ultimo + 1e-9 then decrescente = false
+        else ultimo = v end
     end
-    check("pela tag: do maior para o menor, '?' no fim", Decrescente(Ordem("tag", "pct"), "tag"), true)
-    check("facilidade: do maior para o menor, '?' no fim", Decrescente(Ordem("ease", "pct"), "ease"), true)
+    check("do maior para o menor, '?' no fim", decrescente, true)
 
-    -- PRONTA E 100% nos dois modos; drop pela tag e a chance, na facilidade e a chance em 20.
     local porNome = {}
     for _, e in ipairs(entries) do porNome[e.name] = e end
-    local pronta = porNome["Pronta por reputacao"]
-    check("pronta vale 100% pela tag", ns.RowPercentText(pronta, "tag"), "100%")
-    local farm = porNome["Farm curto"]     -- 1 em 100
-    check("drop pela tag e a chance", ns.RowPercentText(farm, "tag"), "1%")
-    check("  e na facilidade e a chance de ter em 20 tentativas",
-        ns.RowPercentText(farm, "ease"), string.format("%d%%", math.floor((1 - 0.99 ^ 20) * 100 + 0.5)))
-    check("o que nao se mede mostra '?'", ns.RowPercentText(porNome["Sem estimativa"], "tag"), "?")
+    check("pronta vale 100%", ns.RowPercentText(porNome["Pronta por reputacao"]), "100%")
+    check("drop e a chance: 1 em 100 = 1%", ns.RowPercentText(porNome["Farm curto"]), "1%")
+    -- A CHANCE MANDA MESMO COM O REQUISITO TRANCANDO: "se a chance de drop de algo e 33% entao
+    -- e 33% mesmo que seja de paragon de reputacao". O bau de 1 em 3 com reputacao a pronta.
+    check("  e 1 em 3 = 33%, mesmo com reputacao no caminho",
+        ns.RowPercentText(porNome["Bau com reputacao pronta"]), "33%")
+    local trancada = porNome["Queda ainda trancada"]
+    check("  e drop trancado pelo requisito ainda mostra a chance",
+        ns.RowPercent(trancada), 1 / trancada.chance)
+    check("reputacao: o caminho ate o nivel (Quase la por reputacao, 80%)",
+        ns.RowPercentText(porNome["Quase la por reputacao"]), "80%")
+    check("o que nao se mede mostra '?'", ns.RowPercentText(porNome["Sem estimativa"]), "?")
 
     -- AGRUPAR POR TIPO: os grupos em ordem, e DENTRO de cada um, o numero manda.
-    local l = Ordem("tag", "tag")
+    local l = Ordem("tag")
     local okGrupo, okDentro = true, true
     local ultimoGrupo, ultimoV = 0, math.huge
     for _, e in ipairs(l) do
@@ -2025,7 +2094,7 @@ do
         for i, k in ipairs(ns.TAG_ORDER) do if k == tags[1] then g = i end end
         if g < ultimoGrupo then okGrupo = false end
         if g ~= ultimoGrupo then ultimoV = math.huge end
-        local v = ns.RowPercent(e, "tag")
+        local v = ns.RowPercent(e)
         if v and v > ultimoV + 1e-9 then okDentro = false end
         if v then ultimoV = v end
         ultimoGrupo = g
@@ -2071,7 +2140,7 @@ do
     end
     check("depois de reconstruir, uma linha so fica marcada", marcadas, 1)
     check("  e e a da montaria escolhida", certa, true)
-    ns.db.sortBy, ns.db.pctMode = nil, nil
+    ns.db.sortBy = nil
 
     -- MIGRACAO: quem tinha filtro salvo nao pode ficar com filtro escondido.
     RocketMountDB.expansionFilter, RocketMountDB.sources = 7, { [1] = true }

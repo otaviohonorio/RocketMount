@@ -573,54 +573,50 @@ function ns.Tags(e)
     return set, list
 end
 
--- The two ways to read the number, chosen in the window (the user wanted both, to compare).
---   "tag"   the number you can check in the game: how far the requirement is (Reputation,
---           Achievement...) or the drop chance (Drop). The tag says which.
---   "ease"  one score for everything: the requirement's progress, or -- for a drop -- the chance
---           of having it after TRIES attempts, so a 1-in-3 and a 1-in-2000 end up comparable.
-ns.EASE_TRIES = 20
+-- (!) ONE NUMBER, AND IT IS WHAT THE MOUNT DEPENDS ON (25/09). Two readings were offered and
+-- the user tried both: *"nem um nem outro (...) se a chance de drop de algo é 33% então é 33% mesmo
+-- que seja de paragon de reputação ou de drop, se for de alguma conquista depende de quantas já
+-- fez e falta, de reputação é o que falta da reputação, de 0% a 100%"*.
+--
+--   luck         the drop chance -- a rare's, a paragon cache's, a boss's -- even while a
+--                requirement still locks it: the number is what the mount itself costs you
+--   achievement  how much of it is done, criteria partial included (Almost Completed
+--                Achievements' formula, the addon that inspired this number)
+--   reputation   the whole road to the standing asked for, 0 to 100% (renown: levels)
+--   ready        100%
+--   ?            what cannot be measured: an unconfirmed purchase, or no data at all
 
 ---The row's number, 0..1, or nil when it cannot be measured (it goes last, shown as "?").
-function ns.RowPercent(e, mode)
+function ns.RowPercent(e)
     if e.tier == ns.TIER.GONE or e.tier == ns.TIER.UNKNOWN or e.tier == ns.TIER.CHECK then
         return nil
     end
-    if e.tier == ns.TIER.READY then return 1 end
-    if e.deterministic or e.gated then
-        -- Luck that is not even unlocked: what stands in the way now is the requirement.
-        local req = e.requirement
-        if not req then return nil end
-        if e.gated and not e.deterministic and mode == "ease" and e.chance and e.chance > 0 then
-            return math.max(0, req) * (1 - (1 - 1 / e.chance) ^ ns.EASE_TRIES)
-        end
-        return math.max(0, math.min(1, req))
-    end
-    if e.chance and e.chance > 0 then
-        if mode == "ease" then return 1 - (1 - 1 / e.chance) ^ ns.EASE_TRIES end
+    if not e.deterministic and e.chance and e.chance > 0 then
         return 1 / e.chance
     end
+    if e.tier == ns.TIER.READY then return 1 end
+    if e.requirement then return math.max(0, math.min(1, e.requirement)) end
     return nil
 end
 
----The number as the row shows it: a drop's chance keeps its drop format (0.28%, ~0.11%) in
----"tag" mode; everything else is a whole percentage.
-function ns.RowPercentText(e, mode)
-    local v = ns.RowPercent(e, mode)
+---As the row shows it: a drop keeps the chance format (33%, 1%, 0.05%, ~0.11%), the rest is a
+---whole percentage.
+function ns.RowPercentText(e)
+    local v = ns.RowPercent(e)
     if not v then return "?" end
-    local luck = not e.deterministic and not e.gated and e.chance and e.chance > 0
-    if mode ~= "ease" and luck then return ns.FormatChance(e.chance) end
+    if not e.deterministic and e.chance and e.chance > 0 then return ns.FormatChance(e.chance) end
     if v > 0 and v < 0.01 then return "<1%" end
     return string.format("%d%%", math.floor(v * 100 + 0.5))
 end
 
 ---The window's order: an optional column first (tag or expansion), then ALWAYS the number
 ---(highest first, unmeasurable last), then the name.
-function ns.SortForWindow(list, mode, by)
+function ns.SortForWindow(list, by)
     local key = {}
     for _, e in ipairs(list) do
         local _, tags = ns.Tags(e)
         key[e] = {
-            pct = ns.RowPercent(e, mode),
+            pct = ns.RowPercent(e),
             tag = TAG_RANK[tags[1] or ""] or 99,
             exp = -(e.expansion or -1),
             name = e.name or "",
