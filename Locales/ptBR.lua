@@ -346,3 +346,9 @@ L["Loot: every kill, best chance on the day's first"] = "Saque: sem limite (melh
 L["Loot: once per character"] = "Saque: 1 vez por personagem"
 L["Loot: how often is not known yet"] = "Saque: frequência ainda não conhecida"
 L["Already looted this week"] = "Já saqueado nesta semana"
+
+-- Contadores da coleção (Window.lua, 26/09)
+L["Collected"] = "Coletadas"
+L["%d of %d mounts"] = "%d de %d montarias"
+L["Only mounts this character can use count toward it."] = "Só contam as montarias que este personagem pode usar."
+L["done"] = "concluída"

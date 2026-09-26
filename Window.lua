@@ -555,6 +555,21 @@ function ns.UpdateLoading()
         or L["waiting for the collection data"])
 end
 
+---The two collection boxes beside "Not collected".
+function ns.UpdateCollectionBoxes()
+    if not window or not window.collected then return end
+    local n = ns.CollectedMountCount()
+    window.collected.value:SetText(n and tostring(n) or "?")
+    local a = ns.MountCountAchievement()
+    window.achievement.data = a
+    window.achievement:SetShown(a ~= nil)
+    if a then
+        window.achievement.label:SetText(a.name)
+        window.achievement.value:SetText(a.done and string.format("%d/%d  |cff33ff99%s|r", a.req, a.req, L["done"])
+            or string.format("%d/%d", a.qty or 0, a.req or 0))
+    end
+end
+
 local function Redraw()
     ns.UpdateLoading()
     if ns.ValidationDone and not ns.ValidationDone() then return end
@@ -566,6 +581,7 @@ local function Redraw()
     list:SetDataProvider(provider, keep)
 
     window.count:SetText(tostring(#entries))
+    ns.UpdateCollectionBoxes()
 
     local mcl, rar = ns.ProviderStatus()
     -- WHOSE LIST THIS IS. Reputation, currency and achievements are read from the character
@@ -755,6 +771,36 @@ local function Build()
     label:SetPoint("LEFT", 10, 0)
     label:SetPoint("RIGHT", window.count, "LEFT", -3, 0)
     label:SetText(L["Not collected"])
+
+    -- COLLECTED, and the "Obtain N mounts" achievement (26/09): two more boxes in the same row,
+    -- the journal's own look. The achievement box explains, on hover, why its number is not the
+    -- collected one.
+    local function Caixa(largura, x, rotulo)
+        local c = CreateFrame("Frame", nil, window, "InsetFrameTemplate3")
+        c:SetSize(largura, 20)
+        c:SetPoint("TOPLEFT", x, ATTIC_Y)
+        c.value = Text(c, "GameFontHighlightSmall", "RIGHT")
+        c.value:SetPoint("RIGHT", -10, 0)
+        c.label = Text(c, "GameFontNormalSmall")
+        c.label:SetPoint("LEFT", 10, 0)
+        c.label:SetPoint("RIGHT", c.value, "LEFT", -3, 0)
+        if c.label.SetWordWrap then c.label:SetWordWrap(false) end
+        if rotulo then c.label:SetText(rotulo) end
+        return c
+    end
+    window.collected = Caixa(130, 70 + 130 + 10, L["Collected"])
+    window.achievement = Caixa(290, 70 + 2 * (130 + 10))
+    window.achievement:EnableMouse(true)
+    window.achievement:SetScript("OnEnter", function(self)
+        local a = self.data
+        if not a then return end
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(a.name, 1, 0.82, 0)
+        GameTooltip:AddLine(string.format(L["%d of %d mounts"], a.qty or 0, a.req or 0), 1, 1, 1)
+        GameTooltip:AddLine(L["Only mounts this character can use count toward it."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    window.achievement:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- The inset covers the list column only; the card sits on the window background.
     local host = window
