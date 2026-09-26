@@ -164,6 +164,75 @@ function ns.AchievementCompletion(achID)
     return math.max(0, math.min(1, Completion(achID, 0, { [achID] = true })))
 end
 
+--------------------------------------------------------------------------------
+-- THE COLLECTION COUNTERS (26/09)
+--
+-- The user: *"tem a quantidade de não coletadas, poderia ter a quantidade de coletadas e a
+-- quantidade que conta para conquistar de x montarias, como a que estou quase chegando de 600"*.
+-- Two different numbers, and both are shown because they differ: the journal's "collected" and
+-- what the "Obtain N mounts" achievements count -- mounts USABLE BY THIS CHARACTER, so the other
+-- faction's do not count.
+--------------------------------------------------------------------------------
+
+---Collected mounts, counted exactly as the Mount Journal counts them
+---(`Blizzard_MountCollection.lua`, wow-ui-source: `isCollected and hideOnChar ~= true`).
+function ns.CollectedMountCount()
+    if not (C_MountJournal and C_MountJournal.GetMountIDs and C_MountJournal.GetMountInfoByID) then
+        return nil
+    end
+    local n = 0
+    for _, id in ipairs(C_MountJournal.GetMountIDs() or {}) do
+        local ok, _, _, _, _, _, _, _, _, _, hideOnChar, isCollected = pcall(C_MountJournal.GetMountInfoByID, id)
+        if ok and isCollected and hideOnChar ~= true then n = n + 1 end
+    end
+    return n
+end
+
+-- The "Obtain N mounts (usable by a single character)" series, from the game's Achievement table
+-- (DB2, 25/09): from 100 on there is one per faction (Faction 1 = Alliance, 0 = Horde).
+local MOUNT_COUNT_SERIES = {
+    { 10, 2141, 2141 }, { 25, 2142, 2142 }, { 50, 2143, 2143 }, { 100, 2536, 2537 },
+    { 150, 7860, 7862 }, { 200, 8304, 8302 }, { 250, 9598, 9599 }, { 300, 10356, 10355 },
+    { 350, 12932, 12931 }, { 400, 12933, 12934 }, { 500, 15834, 15833 }, { 600, 62103, 62096 },
+}
+
+local function Passo(id, n)
+    local okI, _, nome, _, feito = pcall(GetAchievementInfo, id)
+    if not (okI and nome) then return nil end
+    local qty, req
+    if GetAchievementCriteriaInfo then
+        local okC, _, _, _, q, r = pcall(GetAchievementCriteriaInfo, id, 1)
+        if okC and type(q) == "number" and type(r) == "number" and r > 0 then qty, req = q, r end
+    end
+    req = req or n
+    return { id = id, name = nome, done = feito and true or false,
+             qty = feito and req or qty, req = req, count = n }
+end
+
+---The next "Obtain N mounts" achievement for this character, with the game's own progress on it
+---(its criterion: 546 of 600); when every known one is done, the last one, marked done.
+function ns.MountCountAchievement()
+    if not GetAchievementInfo then return nil end
+    local horda = UnitFactionGroup and UnitFactionGroup("player") == "Horde"
+    local ultimo
+    for _, s in ipairs(MOUNT_COUNT_SERIES) do
+        local p = Passo(horda and s[3] or s[2], s[1])
+        if p then
+            if not p.done then return p end
+            ultimo = p
+        end
+    end
+    -- A step added after this table (700?): the game's own chain goes on from the last one.
+    if ultimo and GetNextAchievement then
+        local ok, prox = pcall(GetNextAchievement, ultimo.id)
+        if ok and prox then
+            local p = Passo(prox, nil)
+            if p and p.req then return p end
+        end
+    end
+    return ultimo
+end
+
 ---True once the scan went through every category (the validation waits for it).
 function Achievements.IsDone()
     return byMount ~= nil and not scanning

@@ -6,6 +6,9 @@ journal's row style and scroll bar, the search box and the standard filter butto
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
+- **Collected, and the next mount-count achievement.** Beside "Not collected", the window shows
+  how many mounts you have and the next "Obtain N mounts" achievement with the game's own
+  progress on it (546/600) — which only counts mounts this character can use.
 - **One list, with columns.** The bands are gone from the window: the list is ordered by one
   number, and each row says what the mount is — **Type** (Raid, Dungeon, Drop, Quest,
   Achievement, Renown, Reputation, Vendor…) and **Expansion**, both in your game's language. Click

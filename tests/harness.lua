@@ -2225,6 +2225,35 @@ do
 end
 
 print("")
+print("-- contadores da colecao (26/09)")
+do
+    -- COLETADAS como o Diario conta: isCollected e nao hideOnChar.
+    local esperado = 0
+    for _, m in ipairs(MOUNTS) do if m[5] then esperado = esperado + 1 end end
+    check("coletadas contam como o Diario de Montarias", ns.CollectedMountCount(), esperado)
+
+    -- A CONQUISTA DAS 600: a proxima da serie, com o progresso do CRITERIO dela (546/600).
+    local realInfo, realCrit = GetAchievementInfo, GetAchievementCriteriaInfo
+    GetAchievementInfo = function(a, b)
+        if b then return realInfo(a, b) end
+        local feitas = { [2141] = true, [2142] = true, [2143] = true, [2536] = true, [7860] = true,
+            [8304] = true, [9598] = true, [10356] = true, [12932] = true, [12933] = true, [15834] = true }
+        return a, "Conquista " .. a, 10, feitas[a] or false
+    end
+    GetAchievementCriteriaInfo = function(id) if id == 62103 then return "Montarias", 0, false, 546, 600 end end
+    local c = ns.MountCountAchievement()
+    check("a proxima conquista da serie e a das 600 (Alianca)", c and c.id, 62103)
+    check("  com o progresso do jogo: 546 de 600", c and (c.qty .. "/" .. c.req), "546/600")
+    -- Horda: a versao dela.
+    local realFac = UnitFactionGroup
+    UnitFactionGroup = function() return "Horde" end
+    GetAchievementCriteriaInfo = function(id) if id == 62096 then return "Montarias", 0, false, 546, 600 end end
+    local h = ns.MountCountAchievement()
+    check("  e na Horda e a versao da Horda", h and h.id ~= 62103, true)
+    UnitFactionGroup = realFac
+    GetAchievementInfo, GetAchievementCriteriaInfo = realInfo, realCrit
+end
+
 print("-- geometria da janela (colunas, 25/09)")
 do
     local G = ns.Geometry
@@ -2265,6 +2294,9 @@ do
     if not ns.window:IsShown() then ns.ToggleWindow() end
     ns.RefreshWindow()
     local lista = ns.window.list
+    -- AS CAIXAS NOVAS aparecem na janela, com os numeros.
+    check("a janela mostra as coletadas", ns.window.collected.value:GetText(), tostring(ns.CollectedMountCount()))
+    check("  e a conquista de montarias, quando ha", ns.window.achievement.label:GetText() ~= nil, true)
     local entries = ns.GetFiltered()
 
     -- UMA LISTA SO: nenhum cabecalho de faixa, uma linha por montaria.
