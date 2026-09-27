@@ -316,6 +316,15 @@ function ns.Rank(entry)
     if e.tier == ns.TIER.READY and (e.tooltipState == "pending" or e.tooltipState == "failed") then
         e.tier = ns.TIER.CHECK
     end
+    -- (!) THE JOURNAL'S PRICE IS A REQUIREMENT, NEVER A PERMISSION (27/09). It names the first
+    -- part of a price that may have several (Great Red Elekk: 500 gold written, and the vendor
+    -- also asks for 5 Champion's Seals), and it can be plainly wrong (Blessed Amani Burrower:
+    -- 1,600 written, 6,400 charged). Short of it, the mount is short; holding it proves nothing.
+    -- The same for a vendor's price the addon could only read in part.
+    e.priceUnconfirmed = e.cost and (e.cost.from == "journal" or e.cost.partial) and true or false
+    if e.tier == ns.TIER.READY and e.priceUnconfirmed then
+        e.tier = ns.TIER.CHECK
+    end
 
     if e.deterministic then
         -- decided in the block above
@@ -381,6 +390,8 @@ function ns.Rank(entry)
         e.why = doJogo or ns.SOURCE_NAMES[e.sourceType]
         if e.vendorGuilda then
             e.why = e.why .. L["  ·  guild vendor: asks for reputation and an achievement OF THE GUILD, which I cannot read"]
+        elseif e.priceUnconfirmed and (e.access or 0) >= 1 then
+            e.why = e.why .. L["  ·  the price is the journal's: the vendor may charge more"]
         else
             e.why = e.why .. L["  ·  there may be a requirement I cannot read"]
         end

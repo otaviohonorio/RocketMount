@@ -143,6 +143,8 @@ L["the development log"] = "o diário de desenvolvimento"
 
 -- O veredito do próprio vendedor (Sources.lua).
 L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto em %s)"
+L["  ·  the price is the journal's: the vendor may charge more"] =
+    "  ·  o preço é o do diário: o vendedor pode cobrar mais"
 L["the vendor does not sell it to you yet (seen %s)"] = "o vendedor ainda não vende para você (visto em %s)"
 -- Formato curto de data para "visto em": dia/mês em português.
 L["%m/%d"] = "%d/%m"

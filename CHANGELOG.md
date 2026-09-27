@@ -68,6 +68,13 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   and the ones the journal still lists under a quest that is gone (the Delver's mounts, now
   sold by Reno Jackson). On the world map, a rare that drops two mounts with the same tip
   shows it once, under the list.
+- **A mount you cannot pay for is no longer shown at 100%.** The price used to come from
+  another addon's table; alone, RocketMount knew no price, and a vendor mount costing a
+  currency you did not have could read "100%, all requirements met". The price now comes from
+  the game: what the vendor charges, read when you open the vendor, and before that what the
+  mount journal states. The journal's price only ever counts against you — it often names
+  just the first part of a price — so such a mount waits in "check with the vendor" until a
+  vendor has been seen.
 - **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
   20 across, it was 25), so a zone full of rares covers less of the map.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the

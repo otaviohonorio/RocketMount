@@ -312,6 +312,78 @@ local function ReputationProgress(rep)
     }
 end
 
+--------------------------------------------------------------------------------
+-- WHERE THE PRICE COMES FROM
+--
+-- (!) Reported on 27/09 with a screenshot, standing at Elianna (Emerald Dream): *"Montaria
+-- apontando 100% mas sem a moeda para comprar"*. Garrant costs 1 Dream Infusion, the character
+-- held none, and the list said 100%, "the vendor sells it to you", "Requirements -- all met".
+-- The footer of the same screenshot: "without MCL". The price used to come from MCL's table and
+-- from nowhere else, so without the catalogue the addon knew NO price at all -- and the vendor's
+-- verdict is about requirements, not about money (the game does not tint red what you cannot
+-- afford, `MerchantFrame.lua`). No price known was read as nothing to pay: the same family of
+-- defect, for the seventh time, and this one reaches everybody who installs the addon alone.
+--
+-- Three sources now, the most certain first:
+--   vendor      what the vendor CHARGES, read with the vendor open (`ns.ScanMerchant`). It is the
+--               game charging, so it wins. Kept for the account: a price is not per character.
+--   catalogue   MCL's table, when it is installed.
+--   journal     the game's own source text, which carries the price as a link:
+--               `Cost: |r1|Hcurrency:2777|h|T...|t`. Always there, in every language.
+--
+-- Measured on 27/09 against the client's table (515 mounts with a price somewhere): the journal
+-- and MCL agree on 338, the journal alone has 16, and where they differ the journal is usually
+-- SHORT -- it names the first part of a price made of several (Great Red Elekk: 500 gold, and
+-- MCL adds 5 Champion's Seals). So the journal comes last, and it can only ever say "at least
+-- this much": a requirement, never a permission. And it can be wrong (Blessed Amani Burrower:
+-- 1,600 written, 6,400 charged), which is why the vendor, once seen, replaces it.
+--------------------------------------------------------------------------------
+
+---A number as the journal writes it: `1600`, `5,000,000`, `5.000.000`. Prices are whole numbers.
+local function Inteiro(s)
+    local n = tonumber((tostring(s or ""):gsub("[%.,]", "")))
+    return n
+end
+
+---The price the journal's source text states, in MCL's shape.
+---
+---The text is one block per vendor, separated by an empty line, and a mount sold by two vendors
+---(one per faction) states its price twice: the first block that has a price is the price.
+---A price with an icon and no link (honour, a holiday's token) names nothing the game can count,
+---and is left out rather than guessed.
+---@return table[]|nil `{ { type = "currency"|"item"|"gold", id = number, amount = number }, ... }`
+function ns.JournalCost(sourceText)
+    if type(sourceText) ~= "string" or sourceText == "" then return nil end
+    if issecretvalue and issecretvalue(sourceText) then return nil end
+    local NL = string.char(10)
+    local texto = sourceText:gsub("|n", NL)
+    texto = texto .. NL .. NL
+    for bloco in texto:gmatch("(.-)" .. NL .. "%s*" .. NL) do
+        local out = {}
+        -- `|r<number>` then a link, then the icon -- or the icon alone, for gold.
+        for numero, resto in bloco:gmatch("|r%s*(%d[%d%.,]*)%s*(|[HT][^" .. NL .. "]*)") do
+            local quanto = Inteiro(numero)
+            local tipo, id = resto:match("^|H(%a+):(%d+)")
+            if quanto and quanto > 0 then
+                if tipo == "currency" or tipo == "item" then
+                    out[#out + 1] = { type = tipo, id = tonumber(id), amount = quanto }
+                elseif not tipo and resto:upper():find("^|T[^|]*UI%-GOLDICON") then
+                    out[#out + 1] = { type = "gold", id = 0, amount = quanto * 10000 }
+                end
+            end
+        end
+        if #out > 0 then return out end
+    end
+    return nil
+end
+
+---What the vendor charged for this mount the last time one was open, in MCL's shape.
+local function VendorCost(mountID)
+    local v = mountID and ns.db and type(ns.db.vendorCost) == "table" and ns.db.vendorCost[mountID]
+    if type(v) == "table" and #v > 0 then return v end
+    return nil
+end
+
 ---What it costs, and whether you can pay -- as TWO separate facts.
 ---
 ---(!) They used to be one string, and the player called it out: *"a linha onde aparece valores
@@ -321,13 +393,7 @@ end
 ---
 ---So `price` is the number the row shows, and `gap` is a short clause that only exists when
 ---something is missing. What you already hold is not printed unless it matters.
-local function CostProgress(spellID, itemID)
-    local data = _G.MCL_GUIDE_CURRENCY_DATA
-    if not data then return nil end
-    local list = data[spellID] or (itemID and data[itemID])
-    if not list then return nil end
-    if type(list[1]) ~= "table" then list = { list } end
-
+local function CostOf(list)
     -- Gold apart from the rest (currencies, items): the percentage holds gold back until every
     -- other requirement is met (Score.lua, `Price`).
     local precos, faltas, worst = {}, {}, 1
@@ -407,6 +473,33 @@ local function CostProgress(spellID, itemID)
         label = falta and string.format(L["%s  ·  %s missing"], preco, falta)
             or string.format(L["%s  ·  you have it"], preco),
     }
+end
+
+---The price from the most certain source that has one (see "WHERE THE PRICE COMES FROM").
+---A source whose entries cannot be counted (MCL has prices with amount 0) gives way to the next.
+local function CostProgress(spellID, itemID, mountID, sourceText)
+    local fontes = {}
+    local visto = VendorCost(mountID)
+    if visto then fontes[#fontes + 1] = { "vendor", visto } end
+    local data = _G.MCL_GUIDE_CURRENCY_DATA
+    local list = type(data) == "table" and (data[spellID] or (itemID and data[itemID])) or nil
+    if type(list) == "table" then
+        if type(list[1]) ~= "table" then list = { list } end
+        fontes[#fontes + 1] = { "catalogue", list }
+    end
+    local ok, doDiario = pcall(ns.JournalCost, sourceText)
+    if ok and doDiario then fontes[#fontes + 1] = { "journal", doDiario } end
+
+    for _, f in ipairs(fontes) do
+        local okC, custo = pcall(CostOf, f[2])
+        if okC and custo then
+            custo.from = f[1]
+            -- The vendor charged something the addon could not read: what is here is part of it.
+            custo.partial = f[1] == "vendor" and f[2].partial or nil
+            return custo
+        end
+    end
+    return nil
 end
 
 --------------------------------------------------------------------------------
@@ -692,7 +785,7 @@ function ns.BuildList()
                     e.isRenown = r.renown and true or false
                 end
 
-                e.cost = CostProgress(spellID, e.itemID)
+                e.cost = CostProgress(spellID, e.itemID, mountID, source)
 
                 -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a
                 -- Fênix Negra abriu: o catálogo não sabe da conquista de guilda, e o tooltip do
@@ -797,6 +890,39 @@ function ns.VendorVerdict(mountID)
     return { pct = 0, label = string.format(L["the vendor does not sell it to you yet (seen %s)"], quando) }
 end
 
+---What the vendor charges for the item at `index`, in MCL's shape: gold from `price` (copper),
+---the rest from the extended cost (`GetMerchantItemCostItem`, the call Blizzard's own frame makes
+---to draw the price, `MerchantFrame.lua:479` in 12.1.0). `partial` when a part could not be read.
+---@return table|nil
+local function MerchantCost(index, info)
+    local out = {}
+    local preco = tonumber(info.price) or 0
+    if preco > 0 then out[#out + 1] = { type = "gold", id = 0, amount = preco } end
+    if info.hasExtendedCost and GetMerchantItemCostInfo and GetMerchantItemCostItem then
+        local okN, n = pcall(GetMerchantItemCostInfo, index)
+        for j = 1, math.min(okN and tonumber(n) or 0, MAX_ITEM_COST or 3) do
+            local ok, textura, quanto, link = pcall(GetMerchantItemCostItem, index, j)
+            if not ok then
+                out.partial = true
+            elseif textura then
+                local tipo, id
+                if type(link) == "string" and not (issecretvalue and issecretvalue(link)) then
+                    tipo, id = link:match("|H(%a+):(%d+)")
+                end
+                quanto = tonumber(quanto)
+                if (tipo == "currency" or tipo == "item") and quanto and quanto > 0 then
+                    out[#out + 1] = { type = tipo, id = tonumber(id), amount = quanto }
+                else
+                    out.partial = true
+                end
+            end
+        end
+    end
+    if #out == 0 and not out.partial then return nil end
+    out.t = time and time() or 0
+    return out
+end
+
 ---Reads the open vendor. Called on MERCHANT_SHOW and MERCHANT_UPDATE.
 ---@return boolean changed whether any verdict is new or different
 function ns.ScanMerchant()
@@ -823,9 +949,26 @@ function ns.ScanMerchant()
                 local antes = reg[mountID]
                 if not antes or antes.ok ~= ok then mudou = true end
                 reg[mountID] = { ok = ok, t = time and time() or 0 }
+                -- And what it CHARGES: the verdict above is about requirements, not money.
+                local okC, custo = pcall(MerchantCost, i, info)
+                local escrito = ""
+                if okC and custo then
+                    ns.db.vendorCost = ns.db.vendorCost or {}
+                    local era = ns.db.vendorCost[mountID]
+                    if type(era) ~= "table" or #era ~= #custo then mudou = true end
+                    for j, c in ipairs(custo) do
+                        escrito = escrito .. (j > 1 and " + " or "") .. c.amount .. " " .. c.type .. ":" .. c.id
+                        local a = type(era) == "table" and era[j]
+                        if not a or a.type ~= c.type or a.id ~= c.id or a.amount ~= c.amount then
+                            mudou = true
+                        end
+                    end
+                    ns.db.vendorCost[mountID] = custo
+                end
                 ns.Log.Add("merchant", {
                     mount = mountID, item = itemID, name = info.name,
                     purchasable = info.isPurchasable, usable = info.isUsable, verdict = ok,
+                    cost = escrito, partial = okC and custo and custo.partial or false,
                 })
             end
         end
