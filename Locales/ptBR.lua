@@ -187,6 +187,10 @@ L["Raid and dungeon entrances too"] = "Também entradas de raide e masmorra"
 L["The mounts that drop inside, at the entrance. The marker steps aside so the game's own entrance icon stays visible."] =
     "As montarias que caem lá dentro, na entrada. O marcador se afasta para o ícone de entrada do próprio jogo continuar visível."
 L["Name the source under each marker"] = "Escrever o tipo sob cada marcador"
+L["Draw the route of a creature that walks"] = "Traçar a rota da criatura que anda"
+L["%d route(s), drawn with %d dash(es)"] = "%d rota(s), desenhada(s) com %d traço(s)"
+L["A rare that patrols gets one marker and a dashed line along where it was seen. The route is an estimate from players' sightings. Unchecked, only the marker is drawn."] =
+    "O raro que patrulha ganha um marcador só e uma linha tracejada por onde ele foi visto. A rota é uma estimativa, feita dos avistamentos dos jogadores. Desmarcada, só o marcador é desenhado."
 L["Rare, Vendor, Quest, Raid… under the mount's icon. Unchecked, the small symbol on the marker still says it."] =
     "Raro, Vendedor, Missão, Raide… sob o ícone da montaria. Desmarcada, o símbolo pequeno no marcador continua dizendo."
 L["World map"] = "Mapa-múndi"

@@ -273,6 +273,9 @@ commands["pins"] = function()
     end
     table.sort(tipos)
     if #tipos > 0 then print("    " .. table.concat(tipos, "  ·  ")) end
+    if (u.routes or 0) > 0 then
+        print("    " .. string.format(L["%d route(s), drawn with %d dash(es)"], u.routes, u.dashes or 0))
+    end
     if u.err then print(string.format(L["    first failure: %s"], u.err)) end
 end
 

@@ -233,6 +233,28 @@ local function Gasto(wp)
     return ok and feito and true or false
 end
 
+---The routes of the table that pass through one marker: a creature that walks has one marker
+---per route, ON the route (tools/rotas.py puts it at the point where it was seen most).
+---@return table|nil `{ { loop = boolean, { x, y }, ... }, ... }`, in fractions of the map
+local function RotasDe(rec, mapID, px, py)
+    local lista = type(rec.route) == "table" and rec.route[mapID]
+    if type(lista) ~= "table" then return nil end
+    local out
+    for _, r in ipairs(lista) do
+        local passa = false
+        for i = 1, #r - 1, 2 do
+            if math.abs(r[i] - px) < 0.05 and math.abs(r[i + 1] - py) < 0.05 then passa = true end
+        end
+        if passa and #r >= 4 then
+            local caminho = { loop = r.loop and true or false }
+            for i = 1, #r - 1, 2 do caminho[#caminho + 1] = { r[i] / 100, r[i + 1] / 100 } end
+            out = out or {}
+            out[#out + 1] = caminho
+        end
+    end
+    return out
+end
+
 local function Construir()
     local idx = {}
     local function Lista(m)
@@ -258,6 +280,7 @@ local function Construir()
                                     kind = KIND_OF_CLASS[rec.c] or "rare",
                                     npc = npc, rec = rec, name = rec.name, mounts = montarias,
                                     mapID = m, x = x, y = y, first = #postos == 1,
+                                    routes = RotasDe(rec, m, pontos[i], pontos[i + 1]),
                                 }
                             end
                         end
@@ -444,14 +467,94 @@ function MapPins.PinsFor(mapID)
                         preso, fonte, falta = ns.Sighting.LockedOut(p.npc, p.npc and p.mounts or p.dq)
                         if p.npc then MapPins.NpcName(p.npc) end   -- warms the name for the tooltip
                     end
+                    -- The road, on the map being viewed. Not on a continent (a zone's roads
+                    -- there are scribbles), and whole or not at all: a road with a point
+                    -- the game cannot place would be drawn cut.
+                    local rotas
+                    if p.routes and not continente and not (ns.db and ns.db.mapRoutes == false) then
+                        for _, r in ipairs(p.routes) do
+                            local caminho, inteiro = {}, true
+                            for i, v in ipairs(r) do
+                                local rx, ry = MapPins.Project(m, v[1], v[2], mapID)
+                                if rx then caminho[i] = { rx, ry } else inteiro = false end
+                            end
+                            if inteiro and #caminho >= 2 then
+                                rotas = rotas or {}
+                                rotas[#rotas + 1] = { path = caminho, loop = r.loop, locked = preso and true or false }
+                            end
+                        end
+                    end
                     out[#out + 1] = {
                         kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
-                        mounts = p.mounts, fromCatalogue = p.fromCatalogue,
+                        mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
                         -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
                         x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
                         locked = preso, lockSource = fonte, lockLeft = falta,
                     }
                 end
+            end
+        end
+    end
+    return out
+end
+
+--------------------------------------------------------------------------------
+-- The route of a creature that walks
+--
+-- (!) ONE MARKER AND ITS ROUTE (28/09). The user's screenshot of the Timeless Isle had the same
+-- rare elite drawn seven times around the island, with the road drawn over it by hand: *"Reduzir
+-- o número de icones quando o raro fizer uma rota, ou seja, deixa um icone apenas e faça uma
+-- marcação tracejando a rota, apenas repita icones quando o spawn do raro for diferente e não
+-- houver rota"*. The table says which creature walks and through where (`route`, from
+-- tools/rotas.py); here the road is drawn.
+--
+-- THE LINE IS THE GAME'S: `_UI-Taxi-Line-horizontal`, the art of the flight paths, on a `Line`
+-- of a frame of the map's canvas -- how Blizzard draws them (`FM_FlightPathDataProvider.lua`,
+-- `FlightMap_BackgroundFlightLineTemplate`). The game has no dashed line, so the dashes are
+-- short lines with a gap between them.
+--
+-- Sizes are in SCREEN points and divided by the canvas scale when drawn, so that a dash is the
+-- same on the screen whatever the zoom -- a line of the canvas grows and shrinks with it.
+--------------------------------------------------------------------------------
+local ROUTE = {
+    ATLAS = "_UI-Taxi-Line-horizontal",
+    THICK = 18,             -- of the art, which carries its own glow: the core is about a quarter
+    DASH = 10, GAP = 7,
+    ALPHA = 0.9, ALPHA_LOCKED = 0.35,
+    MAX_DASHES = 400,       -- per route: a canvas scale that came wrong cannot ask for thousands
+}
+MapPins.Route = ROUTE
+
+---The dashes of a path: `{ { x1, y1, x2, y2 }, ... }`, in the units the path came in.
+---The pattern runs along the whole path, so a dash that meets a corner bends there (two lines).
+---@param path table `{ { x, y }, ... }`
+---@param loop boolean|nil the path closes on its first point
+function MapPins.Dashes(path, loop, dash, gap)
+    local out = {}
+    if type(path) ~= "table" or #path < 2 then return out end
+    if type(dash) ~= "number" or dash <= 0 then return out end
+    gap = (type(gap) == "number" and gap > 0) and gap or 0
+    local pontos = {}
+    for _, p in ipairs(path) do pontos[#pontos + 1] = p end
+    if loop and #pontos > 2 then pontos[#pontos + 1] = pontos[1] end
+
+    local tinta, resta = true, dash
+    for i = 1, #pontos - 1 do
+        local ax, ay, bx, by = pontos[i][1], pontos[i][2], pontos[i + 1][1], pontos[i + 1][2]
+        local len = math.sqrt((bx - ax) ^ 2 + (by - ay) ^ 2)
+        local pos = 0
+        while len - pos > 1e-9 do
+            local passo = math.min(resta, len - pos)
+            if tinta then
+                if #out >= ROUTE.MAX_DASHES then return out end
+                local a, b = pos / len, (pos + passo) / len
+                out[#out + 1] = { ax + (bx - ax) * a, ay + (by - ay) * a,
+                                  ax + (bx - ax) * b, ay + (by - ay) * b }
+            end
+            pos, resta = pos + passo, resta - passo
+            if resta <= 1e-9 then
+                tinta = (gap == 0) or not tinta
+                resta = tinta and dash or gap
             end
         end
     end
@@ -465,7 +568,67 @@ RocketMountMapDataProviderMixin = CreateFromMixins(MapCanvasDataProviderMixin)
 
 function RocketMountMapDataProviderMixin:RemoveAllData()
     self:GetMap():RemoveAllPinsByTemplate(TEMPLATE)
+    self.routes = nil
+    self:LayoutRoutes()
 end
+
+---Draws `self.routes` on the canvas as it is now. Called when the pins are drawn and whenever
+---the canvas changes scale or size: the dashes are sized for the screen (see ROUTE).
+---@return number lines drawn
+function RocketMountMapDataProviderMixin:LayoutRoutes()
+    self.routeLines = self.routeLines or {}
+    local usadas = 0
+    local ok = pcall(function()
+        local map = self:GetMap()
+        local canvas = map and map.GetCanvas and map:GetCanvas()
+        if not (canvas and self.routes and #self.routes > 0) then return end
+        local w, h = canvas:GetSize()
+        local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
+        if not (w and h and w > 0 and h > 0) or not escala or escala <= 0 then return end
+
+        if not self.routeFrame then
+            self.routeFrame = CreateFrame("Frame", nil, canvas)
+            self.routeFrame:SetAllPoints(canvas)
+            -- Under our own pins: the marker sits ON its road.
+            local gerente = map.GetPinFrameLevelsManager and map:GetPinFrameLevelsManager()
+            if gerente and gerente.GetValidFrameLevel then
+                local okN, nivel = pcall(gerente.GetValidFrameLevel, gerente, "PIN_FRAME_LEVEL_VIGNETTE")
+                if okN and type(nivel) == "number" and nivel > 1 then
+                    self.routeFrame:SetFrameLevel(nivel - 1)
+                end
+            end
+        end
+        self.routeFrame:Show()
+
+        for _, rota in ipairs(self.routes) do
+            local pontos = {}
+            for i, p in ipairs(rota.path) do pontos[i] = { p[1] * w, p[2] * h } end
+            local tracos = MapPins.Dashes(pontos, rota.loop, ROUTE.DASH / escala, ROUTE.GAP / escala)
+            for _, t in ipairs(tracos) do
+                usadas = usadas + 1
+                local linha = self.routeLines[usadas]
+                if not linha then
+                    linha = self.routeFrame:CreateLine(nil, "ARTWORK")
+                    linha:SetAtlas(ROUTE.ATLAS)
+                    self.routeLines[usadas] = linha
+                end
+                linha:SetThickness(ROUTE.THICK / escala)
+                linha:SetStartPoint("TOPLEFT", canvas, t[1], -t[2])
+                linha:SetEndPoint("TOPLEFT", canvas, t[3], -t[4])
+                linha:SetAlpha(rota.locked and ROUTE.ALPHA_LOCKED or ROUTE.ALPHA)
+                linha:SetDesaturated(rota.locked and true or false)
+                linha:Show()
+            end
+        end
+    end)
+    for i = usadas + 1, #self.routeLines do self.routeLines[i]:Hide() end
+    if self.routeFrame and usadas == 0 then self.routeFrame:Hide() end
+    self.routeError = not ok
+    return usadas
+end
+
+function RocketMountMapDataProviderMixin:OnCanvasScaleChanged() self:LayoutRoutes() end
+function RocketMountMapDataProviderMixin:OnCanvasSizeChanged() self:LayoutRoutes() end
 
 -- What the last drawing asked for and got, for `/rmt pins` and the diary.
 local ultimo = { map = nil, asked = 0, drawn = 0, failed = 0, err = nil }
@@ -475,8 +638,11 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     local map = self:GetMap()
     local mapID = map:GetMapID()
     local lista = MapPins.PinsFor(mapID)
-    ultimo = { map = mapID, asked = #lista, drawn = 0, failed = 0, err = nil, kinds = {} }
+    ultimo = { map = mapID, asked = #lista, drawn = 0, failed = 0, err = nil, kinds = {},
+               routes = 0, dashes = 0 }
+    self.routes = {}
     for _, data in ipairs(lista) do
+        for _, r in ipairs(data.routes or {}) do self.routes[#self.routes + 1] = r end
         -- (!) ONE PIN THAT FAILS DOES NOT TAKE THE REST WITH IT. For four days an assert inside
         -- `AcquirePin` stopped this loop at the first NEW pin, and the map showed whatever pins
         -- earlier openings had left in the pool (MapPins.xml tells the story). The cause is gone;
@@ -490,9 +656,13 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
             ultimo.err = ultimo.err or tostring(err)
         end
     end
+    ultimo.routes = #self.routes
+    ultimo.dashes = self:LayoutRoutes()
+    if self.routeError then ultimo.err = ultimo.err or "routes" end
     -- One line per drawing that has something to say: pins asked for, or a failure.
     if ultimo.asked > 0 or ultimo.failed > 0 then
         ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
+                             routes = ultimo.routes, dashes = ultimo.dashes,
                              failed = ultimo.failed, error = ultimo.err })
     end
 end

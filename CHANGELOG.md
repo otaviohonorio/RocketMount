@@ -81,6 +81,11 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   is marked with "~". A creature that drops the mount nearly every time — a rare that is hard
   to find, a boss you have to summon — shows no chance at all, and the row says why: the kill
   is certain, reaching it is the task.
+- **A rare that patrols is one marker and its route.** A creature seen along a road used to be
+  drawn at every point of it — seven markers around the Timeless Isle for one rare. Now it has
+  one marker, where it is seen most, and a dashed line along the rest. A rare that appears at
+  several separate places keeps one marker at each. The route is an estimate made from
+  players' sightings; it can be turned off in the options.
 - **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
   20 across, it was 25), so a zone full of rares covers less of the map.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
