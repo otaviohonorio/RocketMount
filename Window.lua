@@ -76,7 +76,7 @@ local PCT_X = ROW_W - PCT_INSET - PCT_W
 ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
-    detailW = DETAIL_W, rightMargin = RIGHT_MARGIN,
+    detailW = DETAIL_W, rightMargin = RIGHT_MARGIN, listTopY = LIST_TOP,
     scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD,
     rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
@@ -104,11 +104,60 @@ end
 
 --------------------------------------------------------------------------------
 -- The card (right column)
+--
+-- (!) A DESCRIPTION, NOT A RECORD (27/09). The user, with MCL's map tooltip on screen -- the
+-- mount's flavour line, who sells it and where, and a paragraph on how to farm the currency:
+-- *"com uma boa descrição tanto na popup quanto na janela do addon, fazer parecido"*.
+--
+-- MCL's paragraph is its author's own text, in English, kept in the addon's PRIVATE table
+-- (`MCLcore.mountNotes`): it cannot be read while the game runs, and copying it into this addon
+-- would be shipping somebody else's writing. What CAN be said, and in the player's language,
+-- is what the game itself says:
+--
+--   the mount's flavour text                    `GetMountInfoExtraByID`
+--   how it is obtained                          the journal's own source text
+--   what the currency or item it costs IS       `GetCurrencyInfo().description`, the item's
+--                                               flavour text (where it comes from, who takes it)
+--   what the achievement asks, and what is left `GetAchievementInfo`, the criteria not yet done
+--   on which difficulty it drops                `GetDifficultyInfo`
+--
+-- plus what this addon already knew: every place, each requirement met or not, the chance, how
+-- often the loot comes back. `ns.DetailBlocks` builds it once; the card draws it and the map
+-- tooltip quotes it (MapPins.Tooltip), so the two cannot say different things.
 --------------------------------------------------------------------------------
 
+-- How many of an achievement's missing criteria are listed before "and N more".
+local MAX_CRITERIA = 6
+-- And how many places.
+local MAX_PLACES = 4
+-- The scroll bar of the card sits in the window's right margin: 6 of air, then the bar, which
+-- is 8 wide (`MinimalScrollBar.xml`).
+local CARD_BAR_GAP = 6
+local CARD_BAR_W = 8
+local CARD_H = WINDOW_H + LIST_TOP - FOOTER - 6
+ns.Geometry.cardBarGap, ns.Geometry.cardBarW, ns.Geometry.cardH = CARD_BAR_GAP, CARD_BAR_W, CARD_H
+
 local function BuildDetail(parent)
-    local d = CreateFrame("Frame", nil, parent)
-    d:SetSize(DETAIL_W, WINDOW_H + LIST_TOP - FOOTER)
+    -- (!) THE CARD SCROLLS. It used to have six slots and drop the rest: "Where" was the ninth
+    -- block of a vendor mount behind a reputation and never reached the screen. The game's own
+    -- scroll box and bar (the list beside it uses the same pair), as Baganator builds a scrolling
+    -- panel (`ItemViewCommon/Utilities.lua`, AddScrollBar).
+    local box = CreateFrame("Frame", nil, parent, "WowScrollBox")
+    box:SetSize(DETAIL_W, CARD_H)
+    local bar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
+    bar:SetPoint("TOPLEFT", box, "TOPRIGHT", CARD_BAR_GAP, 0)
+    bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", CARD_BAR_GAP, 0)
+
+    local d = CreateFrame("Frame", nil, box)
+    d.scrollable = true
+    d:SetSize(DETAIL_W, CARD_H)
+    d.box, d.bar = box, bar
+    if ScrollUtil and ScrollUtil.InitScrollBoxWithScrollBar and CreateScrollBoxLinearView then
+        ScrollUtil.InitScrollBoxWithScrollBar(box, bar, CreateScrollBoxLinearView())
+        if ScrollUtil.AddManagedScrollBarVisibilityBehavior then
+            ScrollUtil.AddManagedScrollBarVisibilityBehavior(box, bar)
+        end
+    end
 
     d.icon = d:CreateTexture(nil, "ARTWORK")
     d.icon:SetSize(48, 48)
@@ -128,18 +177,9 @@ local function BuildDetail(parent)
     d.rule:SetPoint("TOPLEFT", d.icon, "BOTTOMLEFT", 0, -10)
     d.rule:SetSize(DETAIL_W, 1)
 
-    -- A stack of "label above, text below" blocks. Stacking is right here: this is free text
-    -- the full width of the column, not a form field.
+    -- A stack of "label above, text below" blocks, made as they are needed. Stacking is right
+    -- here: this is free text the full width of the column, not a form field.
     d.blocks = {}
-    for i = 1, 6 do
-        local b = {}
-        b.label = Text(d, "GameFontNormal")
-        b.value = Text(d, "GameFontHighlight")
-        b.value:SetWidth(DETAIL_W)
-        b.value:SetJustifyV("TOP")
-        b.value:SetSpacing(2)
-        d.blocks[i] = b
-    end
 
     d.waypoint = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
     d.waypoint:SetSize(160, 22)
@@ -154,19 +194,102 @@ local function BuildDetail(parent)
     return d
 end
 
-local function ZoneLine(entry)
-    if not entry.coords or not entry.coords[1] then return nil, nil end
-    local wp = entry.coords[1]
-    local zone
-    if wp.m and C_Map and C_Map.GetMapInfo then
-        local info = C_Map.GetMapInfo(wp.m)
-        zone = info and info.name
+local function Block(d, i)
+    local b = d.blocks[i]
+    if b then return b end
+    b = {}
+    b.label = Text(d, "GameFontNormal")
+    b.label:SetWidth(DETAIL_W)
+    b.label:SetJustifyV("TOP")
+    b.value = Text(d, "GameFontHighlight")
+    b.value:SetWidth(DETAIL_W)
+    b.value:SetJustifyV("TOP")
+    b.value:SetSpacing(2)
+    d.blocks[i] = b
+    return b
+end
+
+---Every place the mount is known to come from: who, in which zone, where on its map.
+---@return table list of `{ name, zone, m, x, y, instance, text }`
+function ns.Places(entry)
+    local out, vistos = {}, {}
+    local function Add(nome, m, x, y, zonaEscrita, entrada)
+        if not (m or zonaEscrita or nome) then return end
+        local chave = tostring(m) .. ":" .. (x and math.floor(x + 0.5) or "?") .. ":"
+            .. (y and math.floor(y + 0.5) or "?") .. ":" .. (m and "" or tostring(nome))
+        if vistos[chave] then return end
+        vistos[chave] = true
+        local zona
+        if m and C_Map and C_Map.GetMapInfo then
+            local ok, info = pcall(C_Map.GetMapInfo, m)
+            zona = ok and type(info) == "table" and info.name or nil
+        end
+        zona = zona or zonaEscrita
+        if zona == "" then zona = nil end
+        local texto = zona or ""
+        if x and y then texto = string.format("%s  %.1f, %.1f", texto, x, y) end
+        if nome and nome ~= "" then
+            texto = texto ~= "" and (nome .. " — " .. texto) or nome
+        end
+        if texto == "" then return end
+        out[#out + 1] = { name = nome, zone = zona, m = m, x = x, y = y, instance = entrada, text = texto }
     end
-    if not zone then return nil, wp end
-    if wp.x and wp.y then
-        return string.format("%s  %.1f, %.1f%s", zone, wp.x, wp.y, wp.n and (" — " .. wp.n) or ""), wp
+    for _, v in ipairs(entry.vendors or {}) do
+        Add(v.npc, v.m, v.x, v.y, v.zone)
     end
-    return zone, wp
+    for _, wp in ipairs(entry.coords or {}) do
+        local nome = wp.n
+        if nome and ns.LocalizedCreature then nome = ns.LocalizedCreature(nome) end
+        Add(nome, wp.m, wp.x, wp.y, nil, wp.i)
+    end
+    return out
+end
+
+---What an achievement asks and what is still missing of it, in the game's words.
+---@return string|nil name, string|nil text
+local function AchievementDetail(achID)
+    if not (achID and GetAchievementInfo) then return nil end
+    local ok, _, nome, _, completo, _, _, _, descricao = pcall(GetAchievementInfo, achID)
+    if not ok or type(nome) ~= "string" or completo then return nil end
+    local linhas = {}
+    if type(descricao) == "string" and descricao ~= "" then linhas[#linhas + 1] = descricao end
+    local faltam = {}
+    if GetAchievementNumCriteria and GetAchievementCriteriaInfo then
+        local okN, num = pcall(GetAchievementNumCriteria, achID)
+        for i = 1, (okN and type(num) == "number" and num or 0) do
+            local okC, texto, _, feito, qty, req = pcall(GetAchievementCriteriaInfo, achID, i)
+            if okC and not feito and type(texto) == "string" and texto ~= "" then
+                if type(qty) == "number" and type(req) == "number" and req > 1 then
+                    texto = string.format("%s (%s/%s)", texto, BreakUpLargeNumbers(qty),
+                        BreakUpLargeNumbers(req))
+                end
+                faltam[#faltam + 1] = texto
+            end
+        end
+    end
+    for i = 1, math.min(#faltam, MAX_CRITERIA) do
+        linhas[#linhas + 1] = "|cffff5a52x|r  " .. faltam[i]
+    end
+    if #faltam > MAX_CRITERIA then
+        linhas[#linhas + 1] = string.format(L["and %d more"], #faltam - MAX_CRITERIA)
+    end
+    if #linhas == 0 then return nil end
+    return nome, table.concat(linhas, string.char(10))
+end
+
+---The difficulties a mount drops on, by the names the game gives them.
+local function Difficulties(ids)
+    if type(ids) ~= "table" or not GetDifficultyInfo then return nil end
+    local nomes, vistos = {}, {}
+    for _, id in ipairs(ids) do
+        local ok, nome = pcall(GetDifficultyInfo, id)
+        if ok and type(nome) == "string" and nome ~= "" and not vistos[nome] then
+            vistos[nome] = true
+            nomes[#nomes + 1] = nome
+        end
+    end
+    if #nomes == 0 then return nil end
+    return table.concat(nomes, ", ")
 end
 
 -- (!) O CONTEÚDO DA FICHA SE MONTA FORA DO DESENHO.
@@ -175,26 +298,57 @@ end
 -- olhar para ela. Foi assim que a mesma informação chegou a aparecer três vezes na ficha
 -- sem nenhum teste reclamar. Separada, esta é uma função pura: entra a montaria, sai a
 -- lista de blocos, e o teste lê a lista.
----@return table blocos `{ { label, value }, ... }`, na ordem da ficha
+---@return table blocos `{ { key, label, value }, ... }`, na ordem da ficha; o de `key = "flavor"`
+---não tem rótulo
 ---@return table|nil wp o ponto do mapa, para o botão de seta
 function ns.DetailBlocks(entry)
     local blocks = {}
-    local function Block(label, value)
+    local function Add(key, label, value)
         if not value or value == "" then return end
-        blocks[#blocks + 1] = { label = label, value = value }
+        blocks[#blocks + 1] = { key = key, label = label, value = value }
+    end
+
+    -- THE FLAVOUR LINE, in quotes, the way the game writes one on an item.
+    if type(entry.description) == "string" and entry.description ~= "" then
+        Add("flavor", nil, '"' .. entry.description .. '"')
     end
 
     -- O texto da própria Blizzard. É o melhor "como pega" que existe, e já vem traduzido.
-    Block(L["How to get it"], entry.sourceText and entry.sourceText ~= "" and entry.sourceText
+    Add("howto", L["How to get it"], entry.sourceText and entry.sourceText ~= "" and entry.sourceText
         or ns.SOURCE_NAMES[entry.sourceType])
+
+    -- WHERE, right under how: every place, not the first one. A vendor mount the catalogue
+    -- knows only by its vendor has no `coords` at all, and its card said nothing about where.
+    local lugares = ns.Places(entry)
+    local wp
+    for _, p in ipairs(lugares) do
+        if p.m and p.x and p.y then wp = wp or p end
+    end
+    if #lugares > 0 then
+        local linhas = {}
+        for i = 1, math.min(#lugares, MAX_PLACES) do linhas[#linhas + 1] = lugares[i].text end
+        if #lugares > MAX_PLACES then
+            linhas[#linhas + 1] = string.format(L["and %d more"], #lugares - MAX_PLACES)
+        end
+        Add("where", L["Where"], table.concat(linhas, string.char(10)))
+    end
 
     if entry.chance and entry.chance > 0 then
         -- (Era "1 em %d" em portugues fixo no codigo: saia em portugues para quem joga em ingles.)
-        local txt = ns.FormatChance(entry.chance)
+        local linhas = { ns.FormatChance(entry.chance) }
         if entry.bossName then
-            txt = txt .. "\n" .. (ns.LocalizedCreature and ns.LocalizedCreature(entry.bossName) or entry.bossName)
+            linhas[#linhas + 1] = ns.LocalizedCreature and ns.LocalizedCreature(entry.bossName)
+                or entry.bossName
         end
-        Block(L["Chance"], txt)
+        local dificuldades = Difficulties(entry.difficulties)
+        if dificuldades then linhas[#linhas + 1] = dificuldades end
+        -- How often the loot comes back, only when it IS known: "not known yet" belongs to the
+        -- map's creature, not to a card about the mount.
+        local npc = entry.bossName and ns.CreatureId and ns.CreatureId(entry.bossName)
+        if npc and ns.Sighting and ns.Sighting.LootFrequency(npc) then
+            linhas[#linhas + 1] = ns.Sighting.FrequencyText(npc)
+        end
+        Add("chance", L["Chance"], table.concat(linhas, string.char(10)))
     end
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
@@ -202,13 +356,13 @@ function ns.DetailBlocks(entry)
     -- A EXPANSÃO, no alto da ficha: é a primeira coisa que situa a montaria, e sem ela o
     -- jogador lê "Vendedor em Valdrakken" sem saber de que época aquilo é.
     if entry.expansionName then
-        Block(L["Expansion"], entry.expansionName)
+        Add("expansion", L["Expansion"], entry.expansionName)
     end
 
     if entry.factionOnly then
         -- FACÇÃO É INFORMAÇÃO, e antes ela só servia para esconder a montaria. Quem planeja o
         -- outro lado precisa saber que ela existe e de quem ela é.
-        Block(L["Faction"], entry.factionOnly == "Horde" and L["Horde only"] or L["Alliance only"])
+        Add("faction", L["Faction"], entry.factionOnly == "Horde" and L["Horde only"] or L["Alliance only"])
     end
 
     -- (!) A FICHA LISTA TODOS OS REQUISITOS, um por linha, com o estado de cada um.
@@ -223,10 +377,37 @@ function ns.DetailBlocks(entry)
             linhas[#linhas + 1] = (r.cumprido and "|cff55dd66+|r  " or "|cffff5a52x|r  ")
                 .. (r.label or "?")
         end
-        Block(entry.faltando > 0
+        Add("requirements", entry.faltando > 0
             and string.format(L["Requirements — %d of %d missing"], entry.faltando, #entry.requisitos)
             or L["Requirements — all met"],
             table.concat(linhas, string.char(10)))
+    end
+
+    -- WHAT IT COSTS, IN THE GAME'S WORDS. One block per currency or item of the price, under its
+    -- own name: what it is, where it comes from, who takes it. Gold needs no introduction.
+    local nomes = {}
+    for _, parte in ipairs(entry.cost and entry.cost.parts or {}) do
+        local sobre = parte.about
+        if (not sobre or sobre == "") and parte.type == "item" and ns.Tooltip and ns.Tooltip.Flavor then
+            sobre = ns.Tooltip.Flavor(parte.id)
+        end
+        if type(sobre) == "string" and sobre ~= "" and parte.name and not nomes[parte.name] then
+            nomes[parte.name] = true
+            local icone = parte.icon and string.format("|T%s:14:14:0:0|t ", tostring(parte.icon)) or ""
+            Add("about", icone .. parte.name, sobre)
+        end
+    end
+
+    -- WHAT THE ACHIEVEMENT ASKS, and what is left of it. The requirement line above says how far
+    -- along it is; this says what to go and do.
+    local conquistas = {}
+    for _, chave in ipairs({ "achievement", "achievementReward" }) do
+        local a = entry[chave]
+        if a and a.achID and (a.pct or 0) < 1 and not conquistas[a.achID] then
+            conquistas[a.achID] = true
+            local nome, texto = AchievementDetail(a.achID)
+            if nome then Add("achievement", string.format(L["Achievement: %s"], nome), texto) end
+        end
     end
 
     -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
@@ -241,7 +422,7 @@ function ns.DetailBlocks(entry)
                 linhas[#linhas + 1] = string.format("%s — %s", c.name,
                     _G["FACTION_STANDING_LABEL" .. c.reaction] or "?")
             end
-            Block(L["Who has it, from what was recorded"],
+            Add("who", L["Who has it, from what was recorded"],
                 table.concat(linhas, string.char(10)))
         end
     end
@@ -258,7 +439,7 @@ function ns.DetailBlocks(entry)
     -- (`CostProgress` monta esse texto, e é lá que ele vive).
 
     if entry.gated and not entry.deterministic then
-        Block(L["Heads up"],
+        Add("headsup", L["Heads up"],
             L["The requirement above only UNLOCKS the attempt. Once met, the mount still depends on luck."])
     end
 
@@ -277,35 +458,42 @@ function ns.DetailBlocks(entry)
                 texto = texto .. L[" Not even the catalogue knows which vendor this one has."]
             end
         end
-        Block(L["Why check"], texto)
+        Add("why", L["Why check"], texto)
     end
 
-    local zone, wp = ZoneLine(entry)
-    if zone then Block(L["Where"], zone) end
-
     if entry.ownedByPct then
-        Block(L["How many players own it"], string.format(L["%.1f%% of the playerbase"], entry.ownedByPct))
+        Add("owned", L["How many players own it"], string.format(L["%.1f%% of the playerbase"], entry.ownedByPct))
     end
 
     if entry.blackMarket then
-        Block(L["Also shows up at"], L["Black Market"])
+        Add("bmah", L["Also shows up at"], L["Black Market"])
     end
 
     return blocks, wp
 end
 
+---A FontString's height once its text is set. In the game it is a number; the harness answers
+---every unknown method with a table, and a rough count of the lines stands in for it there.
+local function Altura(fs, texto, porLinha)
+    local h = fs.GetStringHeight and fs:GetStringHeight()
+    if type(h) == "number" and h > 0 then return h end
+    local _, quebras = tostring(texto or ""):gsub(string.char(10), "")
+    return (quebras + 1) * (porLinha or 14)
+end
 
 local function FillDetail(entry)
     local d = detail
-    for i = 1, #d.blocks do
-        d.blocks[i].label:Hide()
-        d.blocks[i].value:Hide()
+    for _, b in ipairs(d.blocks) do
+        b.label:Hide()
+        b.value:Hide()
     end
     d.waypoint:Hide()
 
     if not entry then
         d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
         d.empty:Show()
+        d:SetHeight(CARD_H)
+        if d.box.FullUpdate then d.box:FullUpdate(ScrollBoxConstants and ScrollBoxConstants.UpdateImmediately) end
         return
     end
     d.empty:Hide()
@@ -326,28 +514,36 @@ local function FillDetail(entry)
     d.tier:SetTextColor(S.dim[1], S.dim[2], S.dim[3])
 
     local blocks, wp = ns.DetailBlocks(entry)
-    local n = math.min(#blocks, #d.blocks)
-    for i = 1, n do
-        local b = d.blocks[i]
-        b.label:SetText(blocks[i].label)
-        b.value:SetText(blocks[i].value)
-        b.label:Show(); b.value:Show()
-    end
 
     -- Stacked: 2 inside (label -> its text), 10 outside. The 5x ratio Blizzard uses in its one
-    -- stacked form (`CommunitiesSettings.xml`).
+    -- stacked form (`CommunitiesSettings.xml`). The flavour line has no label: it is the one
+    -- piece of the card that is not an answer to a question.
     local anchor, y = d.rule, -10
-    for i = 1, n do
-        local b = d.blocks[i]
+    local total = 48 + 10 + 1
+    for i, bloco in ipairs(blocks) do
+        local b = Block(d, i)
         b.label:ClearAllPoints()
-        b.label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y)
         b.value:ClearAllPoints()
-        b.value:SetPoint("TOPLEFT", b.label, "BOTTOMLEFT", 0, -2)
-        anchor, y = b.value, -10
+        if bloco.label then
+            b.label:SetText(bloco.label)
+            b.label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y)
+            b.label:Show()
+            b.value:SetText(bloco.value)
+            b.value:SetPoint("TOPLEFT", b.label, "BOTTOMLEFT", 0, -2)
+            b.value:Show()
+            total = total - y + Altura(b.label, bloco.label, 14) + 2 + Altura(b.value, bloco.value, 14)
+            anchor, y = b.value, -10
+        else
+            -- In the label's font: the game writes flavour text in its gold.
+            b.label:SetText(bloco.value)
+            b.label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y)
+            b.label:Show()
+            total = total - y + Altura(b.label, bloco.value, 14)
+            anchor, y = b.label, -10
+        end
     end
 
-    if wp and wp.m and wp.x and wp.y and C_Map and C_Map.CanSetUserWaypointOnMap
-        and C_Map.CanSetUserWaypointOnMap(wp.m) then
+    if wp and C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(wp.m) then
         d.waypoint:ClearAllPoints()
         d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
         d.waypoint:SetScript("OnClick", function()
@@ -359,6 +555,15 @@ local function FillDetail(entry)
             ns.Print(string.format(L["arrow pointed at %s."], entry.name or L["the mount"]))
         end)
         d.waypoint:Show()
+        total = total + 14 + 22
+    end
+
+    -- The card is as tall as what it says, and the scroll box is told: a short card has no bar.
+    d.contentHeight = total + 10
+    d:SetHeight(math.max(CARD_H, d.contentHeight))
+    if d.box.FullUpdate then
+        d.box:FullUpdate(ScrollBoxConstants and ScrollBoxConstants.UpdateImmediately)
+        if d.box.ScrollToBegin then d.box:ScrollToBegin() end
     end
 end
 
@@ -875,7 +1080,8 @@ local function Build()
     BuildLoading(host)
 
     detail = BuildDetail(window)
-    detail:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
+    detail.box:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
+    window.detail = detail
 
     -- The footer band the template reserves.
     -- "Support the project" (27/09): a line of its own at the very bottom (Donate.lua).

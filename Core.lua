@@ -224,8 +224,16 @@ function ns.StartValidation()
     local function Itens()
         local ids = {}
         local ok, lista = pcall(ns.GetRanked, true)
+        local vistos = {}
         for _, e in ipairs(ok and lista or {}) do
             if e.itemID then ids[#ids + 1] = e.itemID end
+            -- The items a mount COSTS, too: the card quotes what the game says about them.
+            for _, p in ipairs(e.cost and e.cost.parts or {}) do
+                if p.type == "item" and p.id and not vistos[p.id] then
+                    vistos[p.id] = true
+                    ids[#ids + 1] = p.id
+                end
+            end
         end
         ns.Log.Add("validate", { phase = "items", items = #ids })
         ns.Tooltip.Preload(ids, function()

@@ -147,15 +147,21 @@ end
 ---A creature's ENGLISH name (MCL's `lockBossName`, "Sha of Anger") in the client's language, when
 ---the drop table knows it -- the id is what lets the game answer. Unknown names come back as is.
 local porNomeIngles
-function ns.LocalizedCreature(nomeIngles)
-    if type(nomeIngles) ~= "string" then return nomeIngles end
+---The npc id the drop table has for a creature's English name, or nil.
+function ns.CreatureId(nomeIngles)
+    if type(nomeIngles) ~= "string" then return nil end
     if not porNomeIngles then
         porNomeIngles = {}
         for npc, rec in pairs(ns.MobDrops or {}) do
             if rec.name then porNomeIngles[rec.name] = npc end
         end
     end
-    local npc = porNomeIngles[nomeIngles]
+    return porNomeIngles[nomeIngles]
+end
+
+function ns.LocalizedCreature(nomeIngles)
+    if type(nomeIngles) ~= "string" then return nomeIngles end
+    local npc = ns.CreatureId(nomeIngles)
     return npc and MapPins.NpcName(npc, nomeIngles) or nomeIngles
 end
 
@@ -580,6 +586,45 @@ local HEADER = {
     vendor = L["Sells:"], quest = L["Rewards:"], other = L["Mounts here:"],
 }
 
+-- What of the mount's card the tooltip quotes, and in which order. "Where" stays out: the pin IS
+-- where. The chance stays out at a creature, whose line already carries the chance THERE.
+local TIP_BLOCKS = { flavor = 1, howto = 2, chance = 3, requirements = 4, about = 5, achievement = 6 }
+
+---A text the game or the card wrote in several lines, one tooltip line each: the journal's
+---source text separates them with `|n`, ours with a line break.
+local function Linhas(texto)
+    local out = {}
+    texto = tostring(texto or ""):gsub("|n", string.char(10))
+    for linha in (texto .. string.char(10)):gmatch("(.-)" .. string.char(10)) do
+        if linha:gsub("%s", "") ~= "" then out[#out + 1] = linha end
+    end
+    return out
+end
+
+---(!) THE DESCRIPTION, for a place with ONE mount (27/09). The user, with MCL's tooltip on
+---screen: *"com uma boa descrição tanto na popup quanto na janela do addon"*. It is the card's
+---own text (`ns.DetailBlocks`), quoted: the mount's flavour line in the gold the game writes
+---flavour in, then each block under its title. A place with several mounts keeps the list --
+---six descriptions in one tooltip is a wall -- and the card has each of them.
+local function Descricao(tooltip, e, criatura)
+    if not ns.DetailBlocks then return end
+    local ok, blocos = pcall(ns.DetailBlocks, e)
+    if not ok or type(blocos) ~= "table" then return end
+    for _, b in ipairs(blocos) do
+        if TIP_BLOCKS[b.key] and not (criatura and b.key == "chance") then
+            tooltip:AddLine(" ")
+            if b.label then
+                Linha(tooltip, b.label, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+                for _, l in ipairs(Linhas(b.value)) do
+                    Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+                end
+            else
+                Linha(tooltip, b.value, "NORMAL_FONT_COLOR", 1, 0.82, 0, true)
+            end
+        end
+    end
+end
+
 function MapPins.PlaceName(data)
     local kind = KindDe(data)
     if data.npc then return MapPins.NpcName(data.npc, data.rec and data.rec.name or data.name) end
@@ -615,7 +660,8 @@ function MapPins.Tooltip(tooltip, data)
         local icone = e.icon and string.format("|T%s:%d:%d:0:0|t ", tostring(e.icon), TIP_ICON, TIP_ICON) or ""
         tooltip:AddDoubleLine(icone .. e.name, numero, wr, wg, wb, gr, gg, gb)
         -- Why that number, when there is room to say it: what is asked, the price, the boss.
-        if not criatura and total <= 3 then
+        -- (One mount alone gets the whole description instead, below.)
+        if not criatura and total > 1 and total <= 3 then
             local porque = ns.RowWhy and ns.RowWhy(e) or e.why
             if kind.group == "instance" and e.bossName then
                 porque = ns.LocalizedCreature(e.bossName)
@@ -629,8 +675,10 @@ function MapPins.Tooltip(tooltip, data)
         Linha(tooltip, string.format(L["and %d more"], total - TIP_MOUNTS),
             "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
     end
+    if total == 1 then Descricao(tooltip, data.mounts[1].entry, criatura) end
 
     if criatura then
+        if total == 1 then tooltip:AddLine(" ") end
         -- How often its loot comes back: daily, weekly, every kill -- or plainly not known yet.
         Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
         if data.locked then

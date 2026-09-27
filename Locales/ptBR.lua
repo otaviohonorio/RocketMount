@@ -166,6 +166,8 @@ L["Other"] = "Outra fonte"
 L["Sells:"] = "Vende:"
 L["Rewards:"] = "Recompensa:"
 L["Mounts here:"] = "Montarias daqui:"
+-- A descrição da ficha e do balão (27/09).
+L["Achievement: %s"] = "Conquista: %s"
 L["Vendors, quests and treasures too"] = "Também vendedores, missões e tesouros"
 L["Every place the collection data knows for a mount you do not have: who sells it, who gives the quest, where the treasure is."] =
     "Todo lugar que os dados da coleção conhecem para uma montaria que você não tem: quem vende, quem entrega a missão, onde está o tesouro."

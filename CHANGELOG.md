@@ -48,6 +48,14 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   point is on the map (Beledar's Spawn has 20). Once you loot a rare, it dims until it can
   drop again. Vendors, quests, treasures and entrances come from Mount Collection Log when
   it is installed. Only in the open world; each family can be turned off in the options.
+- **A real description of how to get each mount**, on the card and on the map. The card opens
+  with the mount's flavour line and then says, in your game's language: how the game says it
+  is obtained; **where** — who sells or drops it, in which zone, at which coordinates, every
+  place and not just the first; the chance, the boss, the difficulty it drops on and how often
+  the loot comes back; every requirement, met or not; **what the currency or item it costs
+  is**, in the game's own words (where it comes from, who takes it); and **what the
+  achievement asks**, with the criteria you still have to do. The card scrolls, so nothing is
+  left out. On the world map, a marker with a single mount shows the same description.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
   rare is, the mount you are likeliest to get and its chance, and how often the loot comes
   back. Hover it for every mount and each chance; click it to point the map arrow at the

@@ -332,8 +332,13 @@ local function CostProgress(spellID, itemID)
     -- other requirement is met (Score.lua, `Price`).
     local precos, faltas, worst = {}, {}, 1
     local goldPct, otherPct
+    -- What each part of the price is, for the card's "where it comes from" (27/09): the name and
+    -- what the GAME says about it. A currency carries its description; an item's is its flavour
+    -- text, read from its tooltip when the card is drawn (it may not be in the cache yet).
+    local partes = {}
     for _, c in ipairs(list) do
         local have, need, preco, falta = nil, c.amount, nil, nil
+        local parte
 
         if c.type == "gold" then
             have = GetMoney and GetMoney() or 0
@@ -352,6 +357,8 @@ local function CostProgress(spellID, itemID)
                 if have < need then
                     falta = string.format("%s %s", BreakUpLargeNumbers(need - have), info.name or "?")
                 end
+                parte = { type = "currency", id = c.id, name = info.name, icon = info.iconFileID,
+                          about = info.description }
             end
         elseif c.type == "item" and C_Item and C_Item.GetItemCount then
             local ok, n = pcall(C_Item.GetItemCount, c.id, true)
@@ -363,7 +370,12 @@ local function CostProgress(spellID, itemID)
                 if have < need then
                     falta = string.format("%d x %s", need - have, iname)
                 end
+                parte = { type = "item", id = c.id, name = iname }
             end
+        end
+        if parte then
+            parte.have, parte.need = have, need
+            partes[#partes + 1] = parte
         end
 
         if have and need and need > 0 and preco then
@@ -389,6 +401,7 @@ local function CostProgress(spellID, itemID)
         otherPct = otherPct,
         price = preco,
         gap = falta,
+        parts = partes,
         -- A frase completa, para a ficha: o preço primeiro, a falta depois, e nunca os dois
         -- números grudados um no outro.
         label = falta and string.format(L["%s  ·  %s missing"], preco, falta)
@@ -471,13 +484,13 @@ local function AchievementProgress(achID)
     local ok, _, name, _, completed = pcall(GetAchievementInfo, achID)
     if not ok or not name then return nil end
     if completed then
-        return { pct = 1, label = string.format(L["Achievement completed: %s"], name) }
+        return { pct = 1, achID = achID, label = string.format(L["Achievement completed: %s"], name) }
     end
 
     -- Partial criteria count (Almost Completed Achievements' formula: Achievements.lua).
     local pct = ns.AchievementCompletion and ns.AchievementCompletion(achID) or 0
     return {
-        pct = pct,
+        pct = pct, achID = achID,
         label = string.format(L["%s: %d%% done"], name, math.floor(pct * 100)),
     }
 end
@@ -605,6 +618,9 @@ function ns.BuildList()
                     e.bossName = rec.lockBossName
                     -- For the Raid / Dungeon tags: MCL records the group an encounter needs.
                     e.groupSize = rec.groupSize
+                    -- The difficulties the mount drops on, as the game's own ids: the card names
+                    -- them with `GetDifficultyInfo`, in the player's language.
+                    e.difficulties = rec.instanceDifficulties
                     -- (!) `vendorInfo` CAN BE A LIST. For the 504 mounts it knows only from its
                     -- vendor table, MCL builds a minimal record with `vendorInfo = vendorList`
                     -- (`MCL_Guide.lua:484`). Read as one vendor, `.npc` was nil: the Dark Phoenix

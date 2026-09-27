@@ -125,6 +125,34 @@ function Tooltip.Dump(itemID)
     return out
 end
 
+---What the game says an item IS: its flavour text, the line in quotes at the foot of its
+---tooltip. For a currency item it is usually where it comes from and who takes it -- "Solidified
+---motes of energy slipping into Azeroth from the Emerald Dream. Celestine of the Harvest near
+---Dreamsurge Investigations will trade for these." -- already in the player's language.
+---
+---The line is recognised by the TYPE the game gives it (`Enum.TooltipDataLineType.FlavorText`),
+---never by its look. An item not in the cache yet is asked for and answers nil this time.
+---@return string|nil text, without the quotes
+function Tooltip.Flavor(itemID)
+    if type(itemID) ~= "number" or itemID <= 0 then return nil end
+    if not (C_TooltipInfo and C_TooltipInfo.GetItemByID) then return nil end
+    if Tooltip.State(itemID) ~= "ok" then
+        if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, itemID) end
+        return nil
+    end
+    local tipo = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.FlavorText
+    if not tipo then return nil end
+    local ok, data = pcall(C_TooltipInfo.GetItemByID, itemID)
+    if not ok or type(data) ~= "table" or type(data.lines) ~= "table" then return nil end
+    for _, line in ipairs(data.lines) do
+        local texto = type(line) == "table" and line.type == tipo and line.leftText
+        if type(texto) == "string" and not (issecretvalue and issecretvalue(texto)) and texto ~= "" then
+            return (texto:gsub('^"', ""):gsub('"$', ""))
+        end
+    end
+    return nil
+end
+
 ---Os requisitos que o tooltip do item declara.
 ---
 ---@return table|nil lista `{ { texto, cumprido }, ... }`, ou nil quando não há item ou o
