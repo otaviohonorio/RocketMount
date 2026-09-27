@@ -251,38 +251,87 @@ local function NoMapaCerto(pontos, mapa)
 end
 
 --------------------------------------------------------------------------------
--- The panel
+-- The alert
+--
+-- (!) THE GAME'S OWN TOAST (27/09). This was a panel painted by hand -- a flat dark backdrop with
+-- a one-pixel gold edge -- and the user, with MCL's "rare spotted" banner beside it: *"deixar algo
+-- semelhante mas com skin da blizzard"*. What Blizzard shows when a mount is concerned is the
+-- new-mount alert (`NewMountAlertFrameTemplate`, AlertFrameSystems.xml, 12.1.0): the leather
+-- band, the icon in the item border of its quality, a small gold line and the name under it.
+-- This is that frame, piece by piece and number by number, with our content in it:
+--
+--   the gold line   who is in front of you
+--   the name        the mount that is likeliest to drop from it, in the colour of its quality
+--   the last line   the chance, how many more it can drop, how often the loot comes back
+--
+-- The whole list -- every mount, each chance, the lockout -- is one mouse-over away, in the
+-- game's tooltip: the same one the world-map pin shows (MapPins.Tooltip), so the alert and the
+-- map cannot say different things. A click points the map arrow at the rare, as MCL's does; the
+-- right button sends the alert away.
+--
+-- The template itself cannot be inherited: it is a `ContainedAlertFrame`, owned by the game's
+-- alert queue, which shows and hides it on its own schedule. The parts are created here.
 --------------------------------------------------------------------------------
--- The panel's geometry. Every row hangs from the panel's TOP, so the mount name and its chance
--- use the same arithmetic and cannot drift apart as the panel grows.
-local WIDTH      = 300
-local PAD        = 8
-local ICON       = 48
-local TEXT_X     = PAD + ICON + 10
-local ROW_STEP   = 14
-local MAX_ROWS   = 3                      -- plus one for "and N more"
-local ODDS_WIDTH = 56
-local NAME_WIDTH = WIDTH - TEXT_X - PAD - ODDS_WIDTH - 6
+-- ItemAlertFrameTemplate: the frame, the icon at LEFT 23,-2, its border, the two text lines.
+local TOAST_W, TOAST_H = 276, 96
+local ICON, ICON_X, ICON_Y = 52, 23, -2
+local BORDER = 60
+local TEXT_W = 167
+local LABEL_X, LABEL_Y, LABEL_H = 7, 5, 16       -- from the icon's TOPRIGHT
+local NAME_X, NAME_Y, NAME_H = 10, -16, 16
+-- Ours: Blizzard's name box is 33 tall, for a name that wraps to two lines. A mount's name is
+-- kept to one, and the second line of that box carries the numbers.
+local SUB_Y, SUB_H = -33, 14
+
+Sighting.Geometry = {
+    WIDTH = TOAST_W, HEIGHT = TOAST_H, ICON = ICON, ICON_X = ICON_X, BORDER = BORDER,
+    TEXT = TEXT_W, TEXT_X = NAME_X, TEXT_TOP = LABEL_Y, TEXT_BOTTOM = SUB_Y - SUB_H,
+    -- Blizzard's own text box: the label starts 5 above the icon, the name box ends 49 below
+    -- its top (16 + 33). Ours has to stay inside it.
+    NATIVE_TOP = 5, NATIVE_BOTTOM = -49,
+}
+
+-- (!) TWENTY-FIVE SECONDS, NOT TWELVE. The player's words: *"o aviso, o quadro, sai muito
+-- rapido"* -- he could not even get a screenshot of it. Twelve seconds assumes you are looking
+-- at the panel when it opens; in practice it opens while you are fighting, flying or loading
+-- into the world, and a good part of the twelve is gone before you glance at it.
+--
+-- It still goes away on its own, because an alert that stays becomes scenery and stops being
+-- read. The mouse over it holds it (the game's own alerts do the same), and it leaves a little
+-- after the mouse does.
+local HOLD = 25
+local HOLD_AFTER_HOVER = 6
+
+-- Mounts have no quality of their own and the game always shows them as epic
+-- (`NewMountAlertFrameMixin:SetUp`).
+local EPIC_BORDER = "loottoast-itemborder-purple"
+local EPIC_HEX = "|cffa335ee"
+
+local function CancelHide()
+    local t = rawget(frame, "__hide")
+    if type(t) == "table" and t.Cancel then t:Cancel() end
+    frame.__hide = nil
+end
+
+local function HideLater(segundos)
+    CancelHide()
+    if C_Timer and C_Timer.NewTimer then
+        frame.__hide = C_Timer.NewTimer(segundos, function() frame:Hide() end)
+    end
+end
 
 local function Build()
     if frame then return frame end
 
-    frame = CreateFrame("Frame", ADDON .. "Sighting", UIParent, "BackdropTemplate")
-    frame:SetSize(WIDTH, 64)
+    frame = CreateFrame("Button", ADDON .. "Sighting", UIParent)
+    frame:SetSize(TOAST_W, TOAST_H)
     frame:SetFrameStrata("HIGH")
+    frame:SetToplevel(true)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
+    frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     frame:SetClampedToScreen(true)
-
-    if frame.SetBackdrop then
-        frame:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1,
-        })
-        frame:SetBackdropColor(0.04, 0.04, 0.05, 0.92)
-        frame:SetBackdropBorderColor(1, 0.82, 0, 0.6)
-    end
 
     local pos = ns.db and ns.db.sightingPos
     if pos then
@@ -298,48 +347,63 @@ local function Build()
         if ns.db then ns.db.sightingPos = { point = point, x = x, y = y } end
     end)
 
-    frame.icon = frame:CreateTexture(nil, "ARTWORK")
-    frame.icon:SetSize(ICON, ICON)
-    frame.icon:SetPoint("TOPLEFT", PAD, -PAD)
-    frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    frame.Background = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+    frame.Background:SetAtlas("MountToast-Background", true)
+    frame.Background:SetPoint("CENTER")
 
-    frame.who = ns.NewText(frame, ns.Skin.rowFontSize, ns.Skin.gold)
-    frame.who:SetPoint("TOPLEFT", frame.icon, "TOPRIGHT", 10, -2)
-    frame.who:SetWidth(WIDTH - TEXT_X - PAD)
-    frame.who:SetWordWrap(false)
+    frame.Icon = frame:CreateTexture(nil, "BORDER")
+    frame.Icon:SetSize(ICON, ICON)
+    frame.Icon:SetPoint("LEFT", ICON_X, ICON_Y)
 
-    -- One row per mount: the name on the left, the chance right-aligned. Two single-line
-    -- strings per row rather than two multi-line blocks side by side: a long name that wrapped
-    -- in one block would push every chance in the other out of line with its mount.
-    frame.rows = {}
-    for i = 1, MAX_ROWS + 1 do
-        local y = -PAD - 20 - (i - 1) * ROW_STEP
-        local name = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.text)
-        name:SetPoint("TOPLEFT", frame, "TOPLEFT", TEXT_X, y)
-        name:SetWidth(NAME_WIDTH)
-        name:SetWordWrap(false)
-        name:SetJustifyH("LEFT")
-        local odds = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.text)
-        odds:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -PAD, y)
-        odds:SetWidth(ODDS_WIDTH)
-        odds:SetWordWrap(false)
-        odds:SetJustifyH("RIGHT")
-        frame.rows[i] = { name = name, odds = odds }
-    end
+    frame.IconBorder = frame:CreateTexture(nil, "ARTWORK")
+    frame.IconBorder:SetAtlas(EPIC_BORDER)
+    frame.IconBorder:SetSize(BORDER, BORDER)
+    frame.IconBorder:SetPoint("CENTER", frame.Icon, "CENTER", 0, 0)
 
-    frame:SetScript("OnMouseUp", function(self) self:Hide() end)
+    frame.Label = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    frame.Label:SetSize(TEXT_W, LABEL_H)
+    frame.Label:SetJustifyH("LEFT")
+    frame.Label:SetWordWrap(false)
+    frame.Label:SetPoint("TOPLEFT", frame.Icon, "TOPRIGHT", LABEL_X, LABEL_Y)
+
+    frame.Name = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalMed3")
+    frame.Name:SetSize(TEXT_W, NAME_H)
+    frame.Name:SetJustifyH("LEFT")
+    frame.Name:SetWordWrap(false)
+    frame.Name:SetPoint("TOPLEFT", frame.Icon, "TOPRIGHT", NAME_X, NAME_Y)
+
+    frame.Sub = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    frame.Sub:SetSize(TEXT_W, SUB_H)
+    frame.Sub:SetJustifyH("LEFT")
+    frame.Sub:SetWordWrap(false)
+    frame.Sub:SetPoint("TOPLEFT", frame.Icon, "TOPRIGHT", NAME_X, SUB_Y)
+
+    frame:SetScript("OnEnter", function(self)
+        CancelHide()
+        local d = rawget(self, "data")
+        if d and ns.MapPins and GameTooltip then
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            ns.MapPins.Tooltip(GameTooltip, d)
+            GameTooltip:Show()
+        end
+    end)
+    frame:SetScript("OnLeave", function()
+        if GameTooltip then GameTooltip:Hide() end
+        HideLater(HOLD_AFTER_HOVER)
+    end)
+    frame:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then
+            self:Hide()
+            return
+        end
+        Sighting.PointAt(rawget(self, "target"))
+    end)
+    frame:SetScript("OnHide", function()
+        if GameTooltip then GameTooltip:Hide() end
+    end)
     frame:Hide()
     return frame
 end
-
--- (!) TWENTY-FIVE SECONDS, NOT TWELVE. The player's words: *"o aviso, o quadro, sai muito
--- rapido"* -- he could not even get a screenshot of it. Twelve seconds assumes you are looking
--- at the panel when it opens; in practice it opens while you are fighting, flying or loading
--- into the world, and a good part of the twelve is gone before you glance at it.
---
--- It still goes away on its own, because an alert that stays becomes scenery and stops being
--- read. Clicking it still dismisses it early.
-local HOLD = 25
 
 ---The chance as a percentage (`ns.FormatChance`, in Score.lua).
 ---
@@ -376,47 +440,55 @@ local function PorMontaria(pontos)
     return lista
 end
 
-local function Show(nome, montarias, frequencia)
-    Build()
-    frame.icon:SetTexture(montarias[1] and montarias[1].entry.icon)
-    frame.who:SetText(nome)
+---How likely a mount is from this creature, as a number, to put the likeliest first.
+local function Chance(m)
+    local d = m.drop
+    if d and d.count and d.outof and d.outof > 0 then return d.count / d.outof end
+    local c = m.entry and m.entry.chance
+    return (c and c > 0) and (1 / c) or 0
+end
 
-    local linhas = math.min(#montarias, MAX_ROWS)
-    for i, row in ipairs(frame.rows) do
-        local m = montarias[i]
-        if i <= math.min(#montarias, MAX_ROWS) then
-            row.name:SetText(m.entry.name)
-            row.odds:SetText(Sighting.ChanceText(m) or "")
-        elseif i == MAX_ROWS + 1 and #montarias > MAX_ROWS then
-            row.name:SetText(string.format(L["and %d more"], #montarias - MAX_ROWS))
-            row.odds:SetText("")
-            linhas = linhas + 1
-        else
-            row.name:SetText("")
-            row.odds:SetText("")
-        end
-    end
-    -- How often its loot comes back, under the mounts (Sighting.FrequencyText).
-    -- `rawget`: the harness's simulator answers any unknown field with a function.
-    if not rawget(frame, "freq") then
-        frame.freq = ns.NewText(frame, ns.Skin.subFontSize, ns.Skin.dim or ns.Skin.text)
-        frame.freq:SetWidth(WIDTH - TEXT_X - PAD)
-        frame.freq:SetWordWrap(false)
-    end
-    frame.freq:ClearAllPoints()
-    frame.freq:SetPoint("TOPLEFT", frame, "TOPLEFT", TEXT_X, -PAD - 20 - linhas * ROW_STEP)
-    frame.freq:SetText(frequencia or "")
-    if frequencia and frequencia ~= "" then linhas = linhas + 1 end
-    frame:SetHeight(math.max(64, PAD + 20 + ROW_STEP * linhas + PAD))
+---@param nome string the creature, in the player's language
+---@param montarias table list of `{ entry, drop }`
+---@param frequencia string|nil how often the loot comes back, as the tooltip says it
+---@param npc number|nil
+---@param alvo table|nil `{ m, x, y }` in the catalogue's 0-100 scale: where a click points
+local function Show(nome, montarias, frequencia, npc, alvo)
+    Build()
+    local lista = {}
+    for i, m in ipairs(montarias) do lista[i] = m end
+    table.sort(lista, function(a, b)
+        local ca, cb = Chance(a), Chance(b)
+        if ca ~= cb then return ca > cb end
+        return (a.entry.name or "") < (b.entry.name or "")
+    end)
+    local primeira = lista[1]
+
+    frame.Icon:SetTexture(primeira and primeira.entry.icon)
+    frame.Label:SetText(nome)
+    frame.Name:SetText(primeira and (EPIC_HEX .. (primeira.entry.name or "?") .. "|r") or "")
+
+    -- The numbers, in the order they matter: the chance of the one named, how many more this
+    -- creature can drop, how often it can be looted. Each part only when there is one.
+    local partes = {}
+    local chance = primeira and Sighting.ChanceText(primeira)
+    if chance then partes[#partes + 1] = chance end
+    if #lista > 1 then partes[#partes + 1] = string.format(L["and %d more"], #lista - 1) end
+    if frequencia and frequencia ~= "" then partes[#partes + 1] = frequencia end
+    frame.Sub:SetText(table.concat(partes, "  ·  "))
+
+    -- What the tooltip and the click need.
+    frame.target = alvo
+    frame.data = {
+        npc = npc, name = nome, mounts = lista,
+        rec = (npc and type(ns.MobDrops) == "table" and ns.MobDrops[npc]) or { name = nome, c = 4 },
+    }
 
     frame:Show()
-    -- Guarded BY TYPE: in the harness's simulator any unknown field answers a function, which
-    -- is truthy, and then `:Cancel()` tries to index a function.
-    if type(frame.__hide) == "table" and frame.__hide.Cancel then frame.__hide:Cancel() end
-    if C_Timer and C_Timer.NewTimer then
-        frame.__hide = C_Timer.NewTimer(HOLD, function() frame:Hide() end)
-    end
+    HideLater(HOLD)
 end
+
+function Sighting.GetPanel() return frame end
 
 --------------------------------------------------------------------------------
 -- The chat link
@@ -442,12 +514,7 @@ local function ChatLink(ponto)
         math.floor(ponto.x * 100), math.floor(ponto.y * 100), L["point me at this rare"])
 end
 
-function Sighting.HandleLink(link)
-    if type(link) ~= "string" then return false end
-    local mapID, x, y = link:match("^" .. LINK_PREFIX .. ":(%d+):(%d+):(%d+)$")
-    if not mapID then return false end
-    mapID, x, y = tonumber(mapID), tonumber(x) / 10000, tonumber(y) / 10000
-
+local function Apontar(mapID, x, y)
     if C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(mapID) then
         C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(mapID, x, y))
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
@@ -457,6 +524,22 @@ function Sighting.HandleLink(link)
     else
         ns.Print(L["this map does not accept pins."])
     end
+end
+
+function Sighting.HandleLink(link)
+    if type(link) ~= "string" then return false end
+    local mapID, x, y = link:match("^" .. LINK_PREFIX .. ":(%d+):(%d+):(%d+)$")
+    if not mapID then return false end
+    Apontar(tonumber(mapID), tonumber(x) / 10000, tonumber(y) / 10000)
+    return true
+end
+
+---The click on the alert: the arrow goes to where the rare is (or spawns).
+---@param ponto table|nil `{ m, x, y }` in the catalogue's 0-100 scale
+---@return boolean pointed
+function Sighting.PointAt(ponto)
+    if not (ponto and ponto.m and ponto.x and ponto.y) then return false end
+    Apontar(ponto.m, ponto.x / 100, ponto.y / 100)
     return true
 end
 
@@ -698,21 +781,27 @@ local function Announce(chave, nome, pontos, onde, npc)
 
     local montarias = PorMontaria(pontos)
     local frequencia = Sighting.FrequencyText(npc)
-    Show(nome, montarias, frequencia)
-
-    local partes = {}
-    for i = 1, math.min(#montarias, MAX_ROWS) do
-        local m = montarias[i]
-        local chance = Sighting.ChanceText(m)
-        partes[#partes + 1] = chance and string.format("%s (%s)", m.entry.name, chance) or m.entry.name
-    end
     -- Where the rare IS beats where the catalogue says it spawns: a live vignette position
-    -- first, the catalogue's point second.
+    -- first, the catalogue's point second, the drop table's first place on this map last.
     local alvo = onde
     if not alvo then
         for _, m in ipairs(montarias) do
             if m.m then alvo = m; break end
         end
+    end
+    if not alvo and npc and type(ns.MobDrops) == "table" and ns.MobDrops[npc] then
+        local mapa = MapaAtual()
+        local pts = mapa and ns.MobDrops[npc].where and ns.MobDrops[npc].where[mapa]
+        if pts and pts[1] and pts[2] then alvo = { m = mapa, x = pts[1], y = pts[2] } end
+    end
+    Show(nome, montarias, frequencia, npc, alvo)
+
+    -- The chat line names up to three; the alert's tooltip has them all.
+    local partes = {}
+    for i = 1, math.min(#montarias, 3) do
+        local m = montarias[i]
+        local chance = Sighting.ChanceText(m)
+        partes[#partes + 1] = chance and string.format("%s (%s)", m.entry.name, chance) or m.entry.name
     end
     local link = ChatLink(alvo)
     ns.Print(string.format(L["|cffffff00%s|r can drop: %s%s"], nome,

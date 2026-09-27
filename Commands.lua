@@ -249,6 +249,29 @@ function ns.ClosestHereNotice(force)
     end
 end
 
+-- WHAT THE MAP DREW. For four days the map showed a part of its pins and nothing said so: the
+-- failure was inside Blizzard's `AcquirePin`, and "a rare is missing" looked like missing data.
+-- With the world map open on a zone, this answers how many places were asked for, how many
+-- became a pin, of which kinds, and the first failure if there was one.
+commands["pins"] = function()
+    local u = ns.MapPins and ns.MapPins.LastDraw()
+    if not (u and u.map) then
+        ns.Print(L["open the world map on a zone first."])
+        return
+    end
+    local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(u.map)
+    ns.Print(string.format(L["map %s (%d): %d place(s) asked for, %d drawn, %d failed."],
+        info and info.name or "?", u.map, u.asked, u.drawn, u.failed))
+    local tipos = {}
+    for kind, n in pairs(u.kinds or {}) do
+        local k = ns.MapPins.KIND[kind]
+        tipos[#tipos + 1] = string.format("%s %d", k and k.label or kind, n)
+    end
+    table.sort(tipos)
+    if #tipos > 0 then print("    " .. table.concat(tipos, "  ·  ")) end
+    if u.err then print(string.format(L["    first failure: %s"], u.err)) end
+end
+
 -- THE DIARY, in chat. Only in development: the packaged addon has no `Log.lua` (see Core.lua).
 commands["log"] = function(rest)
     if not ns.Log.enabled then
@@ -289,6 +312,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt i18n|r             " .. L["checks the labels taken from the game"])
     print("    |cffffff00/rmt debug|r            " .. L["what the addon managed to read"])
     print("    |cffffff00/rmt debug <name>|r     " .. L["everything it knows about one mount"])
+    print("    |cffffff00/rmt pins|r             " .. L["what the world map drew, and what failed"])
     if ns.Log.enabled then
         print("    |cffffff00/rmt log [on||off||clear]|r " .. L["the development log"])
     end
@@ -306,6 +330,7 @@ local ALIASES = {
     quem = "who",
     fontes = "sources",
     ajuda = "help",
+    marcadores = "pins",
 }
 
 SLASH_ROCKETMOUNT1 = "/rmt"

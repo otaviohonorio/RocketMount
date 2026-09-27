@@ -158,6 +158,30 @@ L["Already looted — back in %s"] = "Já saqueado — volta em %s"
 L["Already looted today"] = "Já saqueado hoje"
 L["Click: point the arrow here"] = "Clique: apontar a seta para cá"
 L["Can drop:"] = "Pode largar:"
+-- O tipo de cada lugar no mapa (27/09). São os rótulos sob o marcador e a segunda linha do balão.
+L["Boss"] = "Chefe"
+L["Treasure"] = "Tesouro"
+L["Fishing"] = "Pesca"
+L["Other"] = "Outra fonte"
+L["Sells:"] = "Vende:"
+L["Rewards:"] = "Recompensa:"
+L["Mounts here:"] = "Montarias daqui:"
+L["Vendors, quests and treasures too"] = "Também vendedores, missões e tesouros"
+L["Every place the collection data knows for a mount you do not have: who sells it, who gives the quest, where the treasure is."] =
+    "Todo lugar que os dados da coleção conhecem para uma montaria que você não tem: quem vende, quem entrega a missão, onde está o tesouro."
+L["Raid and dungeon entrances too"] = "Também entradas de raide e masmorra"
+L["The mounts that drop inside, at the entrance. The marker steps aside so the game's own entrance icon stays visible."] =
+    "As montarias que caem lá dentro, na entrada. O marcador se afasta para o ícone de entrada do próprio jogo continuar visível."
+L["Name the source under each marker"] = "Escrever o tipo sob cada marcador"
+L["Rare, Vendor, Quest, Raid… under the mount's icon. Unchecked, the small symbol on the marker still says it."] =
+    "Raro, Vendedor, Missão, Raide… sob o ícone da montaria. Desmarcada, o símbolo pequeno no marcador continua dizendo."
+L["World map"] = "Mapa-múndi"
+L["Every source of a mount you do not have, on the world map: the mount's icon, what kind of source it is, and the chance or how much is left when you hover it. A looted rare goes dim."] =
+    "Toda fonte de montaria que você não tem, no mapa-múndi: o ícone da montaria, o tipo da fonte e, ao passar o mouse, a chance ou o quanto falta. Raro já saqueado fica apagado."
+L["open the world map on a zone first."] = "abra o mapa-múndi numa zona primeiro."
+L["map %s (%d): %d place(s) asked for, %d drawn, %d failed."] = "mapa %s (%d): %d lugar(es) pedidos, %d desenhados, %d com falha."
+L["    first failure: %s"] = "    primeira falha: %s"
+L["what the world map drew, and what failed"] = "o que o mapa-múndi desenhou, e o que falhou"
 
 -- As tags da lista (Score.lua). "Drop" fica: é o termo que o jogador usa.
 L["Raid"] = "Raide"

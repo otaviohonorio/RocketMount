@@ -36,13 +36,22 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   your kill it watches which reset clears the rare's hidden quest, and remembers the answer for
   the whole account. Until then it says plainly that it is not known yet. "Already looted" now
   comes from the game itself for the 140 rares whose hidden quest is known.
-- **Rares on the world map.** The rares, elites and world bosses that drop a mount you are
-  missing now show on the world map, with the game's own rare icons. Hover one to see which
-  mounts it drops — with each mount's icon — and the chance of each; click it to point the
-  arrow there. Creature and mount names come in your game's language. Every known spawn point
-  is on the map (Beledar's Spawn has 20), and rares Wowhead has no drop recorded for are filled
-  in from Mount Collection Log when it is installed. Once you loot it,
-  it dims until it can drop again. Only in the open world; turn it off in the options.
+- **Every source on the world map.** Each place a mount you are missing comes from is a
+  marker: the rares, elites and world bosses that drop it, the vendor, the quest giver, the
+  treasure, the raid or dungeon entrance. The marker is the **mount's icon** inside the game's
+  own map marker, with a small symbol for the kind of source and the word under it (which you
+  can turn off); elites wear the game's dragon frame. Hover one to see every mount you are
+  missing there — with each mount's icon — and the chance or how far along you are; click it
+  to point the arrow there. Names come in your game's language. A vendor with several mounts
+  is one marker; a marker on an entrance steps aside so the game's entrance icon stays
+  visible; a rare inside a cave or sub-zone shows on the zone's map too. Every known spawn
+  point is on the map (Beledar's Spawn has 20). Once you loot a rare, it dims until it can
+  drop again. Vendors, quests, treasures and entrances come from Mount Collection Log when
+  it is installed. Only in the open world; each family can be turned off in the options.
+- **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
+  rare is, the mount you are likeliest to get and its chance, and how often the loot comes
+  back. Hover it for every mount and each chance; click it to point the map arrow at the
+  rare; right-click to dismiss it.
 - **Nothing reaches the top of the list without being checked.** When a character logs in, the
   addon loads every missing mount's item from the server and reads its requirements before
   showing the list — a loading bar shows the progress. A mount bought from a vendor is "just go

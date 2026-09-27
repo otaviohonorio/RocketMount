@@ -1,18 +1,79 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
-	<!-- The world-map pin (MapPins.lua). Same shape as Blizzard's own pin templates: a virtual
-	     frame with a mixin, acquired by the map's data provider. -->
+	<!-- The world-map pin (MapPins.lua), built the way Blizzard builds a world-quest pin: the
+	     marker disc, what it is about inside it, an underlay for an elite, a small glyph at the
+	     lower right. Every piece is the game's own art (tools/ver_atlas.py shows each one).
+
+	     (!) NO SCRIPTS HERE, AND THAT IS THE RULE OF THE MAP (27/09). This template used to carry
+	     OnLoad, OnEnter, OnLeave and OnMouseUp. `MapCanvasMixin:AcquirePin` asserts that a NEW pin
+	     has no OnEnter and no OnLeave (Blizzard_MapCanvas.lua:280, 12.1.0) - the map sets them
+	     itself, from the mixin's OnMouseEnter / OnMouseLeave - and the assert broke our loop on
+	     every new pin: each time the map opened one more pin was born and the rest never were.
+	     The map also calls OnLoad on its own, and routes the click to OnMouseClickAction.
+
+	     The numbers, measured on the art (worldquest-questmarker-epic is 64 wide, its ring 40):
+	     drawn at 40 the ring is 25 across and the dark disc inside it 22, so the mount's icon is
+	     a circle of 21. The glyph sits where Blizzard puts the clock of a world quest
+	     (WorldQuestDataProvider.xml: CENTER, x 9, y -9). -->
 	<Frame name="RocketMountMapPinTemplate" mixin="RocketMountMapPinMixin" enableMouse="true" virtual="true">
-		<Size x="24" y="24"/>
+		<Size x="26" y="26"/>
 		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Underlay" atlas="worldquest-questmarker-dragon" hidden="true">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND">
+				<Texture parentKey="Disc" atlas="worldquest-questmarker-epic">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
 			<Layer level="ARTWORK">
-				<Texture parentKey="Texture" setAllPoints="true"/>
+				<Texture parentKey="Icon">
+					<Size x="21" y="21"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+				<MaskTexture parentKey="IconMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Icon"/>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Icon"/>
+					</Anchors>
+					<MaskedTextures>
+						<MaskedTexture childKey="Icon"/>
+					</MaskedTextures>
+				</MaskTexture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture parentKey="Badge">
+					<Size x="15" y="15"/>
+					<Anchors>
+						<Anchor point="CENTER" x="9" y="-9"/>
+					</Anchors>
+				</Texture>
+				<FontString parentKey="Label" inherits="GameFontNormalSmallOutline" justifyH="CENTER" wordwrap="false" hidden="true">
+					<Anchors>
+						<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="-2"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="HIGHLIGHT">
+				<!-- The glow Blizzard lights inside a quest marker under the mouse
+				     (POIButton.lua, POIButton_GetAtlasInfoHighlight). Same nominal size as the
+				     disc: in both arts the ring is 40 of 64, and the glow sits just inside it. -->
+				<Texture parentKey="Highlight" atlas="UI-QuestPoi-InnerGlow" alphaMode="ADD">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
 			</Layer>
 		</Layers>
-		<Scripts>
-			<OnLoad method="OnLoad"/>
-			<OnEnter method="OnMouseEnter"/>
-			<OnLeave method="OnMouseLeave"/>
-			<OnMouseUp method="OnMouseUp"/>
-		</Scripts>
 	</Frame>
 </Ui>
