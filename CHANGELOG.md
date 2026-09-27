@@ -102,5 +102,5 @@ Silvermoon, at the login screen, for a rare that lives in another zone entirely:
 
 If you have **Mount Collection Log** installed, note that it has an equivalent alert of its own
 and you may see both. Turn either one off with `/rmt warn` or in MCL's options.
-- **Support the project**: a row at the end of the addon's options panel opens the PayPal link ready to copy — in reais when the game
+- **Support the project**: a small link with the PayPal logo in the window's footer (and a row at the end of the options panel) opens the PayPal link ready to copy — in reais when the game
   is in Portuguese, in dollars otherwise.

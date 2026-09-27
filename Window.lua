@@ -868,9 +868,14 @@ local function Build()
     detail:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
 
     -- The footer band the template reserves.
+    -- "Support the project" (27/09): the right end of the footer band (Donate.lua), like the other
+    -- Rocket windows -- the user: *"ficar abaixo na janela como um rodapé"*.
+    window.donate = ns.DonateLink(window)
+    window.donate:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -12, 7)
+
     window.footer = Text(window, "GameFontHighlightSmall")
     window.footer:SetPoint("BOTTOMLEFT", 10, 8)
-    window.footer:SetWidth(WINDOW_W - 20)
+    window.footer:SetPoint("RIGHT", window.donate, "LEFT", -12, 0)
     window.footer:SetWordWrap(false)
 
     tinsert(UISpecialFrames, window:GetName())   -- Esc closes
