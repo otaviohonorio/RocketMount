@@ -56,9 +56,14 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   is**, in the game's own words (where it comes from, who takes it); and **what the
   achievement asks**, with the criteria you still have to do. The card scrolls, so nothing is
   left out. On the world map, a marker with a single mount shows the same description.
-- **Players' tips** (a first handful of mounts): where the game's own text is not enough — a
-  secret, a long chain, a currency nobody explains — the card adds a short tip written from
-  what players reported, with the year it was reported. Names in it come from your game.
+- **Players' tips**: where the game's own text is not enough — a secret, a long chain, a
+  currency nobody explains — the card adds a short tip written from what players reported,
+  checked against other sources, with the year it was reported. Names in it come from your
+  game. The first batch covers the Midnight mounts that need one: the treasures with steps
+  (Untainted Grove Crawler, Ancestral War Bear, Hexed Vilefeather Eagle, Insatiable
+  Shredclaw), Echo of Aln'sharan, the ritual site mounts, the mounts that drop from a zone's
+  rares, Hexflame Reaver, Spirit of Tok'jara, and a price the journal gets wrong (Blessed
+  Amani Burrower).
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
   rare is, the mount you are likeliest to get and its chance, and how often the loot comes
   back. Hover it for every mount and each chance; click it to point the map arrow at the

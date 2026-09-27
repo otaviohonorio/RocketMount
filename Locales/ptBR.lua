@@ -169,24 +169,13 @@ L["Mounts here:"] = "Montarias daqui:"
 -- A descrição da ficha e do balão (27/09).
 L["Achievement: %s"] = "Conquista: %s"
 
--- AS DICAS DE JOGADORES (Data/MountTips.lua, piloto de 27/09). A chave é a frase inteira em
--- inglês, com os `{tipo:id|reserva}` no lugar: o nome vem do jogo pelo id, e a reserva (depois da
--- barra) é o que aparece quando o jogo não responde -- por isso ela vai em português aqui.
+-- AS DICAS DE JOGADORES (27/09). Aqui ficam só os rótulos; o texto de cada dica em português
+-- está em `Locales/ptBR_Tips.lua`, que é GERADO (tools/gerar_dicas.py) junto com o inglês.
 L["Players' tip"] = "Dica de jogadores"
 L["Reported by players in %d. The game may have changed since."] =
     "Relatado por jogadores em %d. O jogo pode ter mudado desde então."
 L["Reported by players. The game may have changed since."] =
     "Relatado por jogadores. O jogo pode ter mudado desde então."
-L["{item:207026|Dreamsurge Coalescence} comes from the green orbs scattered over the zone where the Dreamsurge is active, and from the creatures killed there. {npc:210608|Celestine of the Harvest} is at the Dreamsurge symbol on the map."] =
-    "{item:207026|Coalescência do Surto Onírico} vem dos orbes verdes espalhados pela zona em que o Surto Onírico está ativo, e das criaturas mortas ali. {npc:210608|Celestine da Colheita} fica no símbolo do Surto Onírico no mapa."
-L["A chain, most of it fishing.\n1. Get one {item:199340|Gold Coin of the Isles}: fished in the Dragon Isles, or 75 {item:199338|Copper Coin of the Isles} traded up with {npc:191608|The Great Swog}.\n2. Buy {item:202102|Immaculate Sac of Swog Treasures} from him with it. Most of the time it has {item:202042|Aquatic Shades}; when it does not, it takes another coin.\n3. Wearing the shades, dance for 5 minutes on the dance floor of the underwater bar in {map:2022|The Waking Shores}, at 19.6, 36.5.\n4. Pick up the {item:202061|Empty Fish Barrel} and fill it: 100 {item:202072|Frigid Floe Fish} (open water around Iskaara), 25 {item:202073|Calamitous Carp} (lava around the Obsidian Citadel) and 1 {item:202074|Kingfin, the Wise Whiskerfish} (water around Algeth'ar Academy).\n5. Take the barrel back to where you danced: Otto offers {quest:72738|The Way to an Otto's Heart}."] =
-    "Uma cadeia, quase toda de pesca.\n1. Consiga uma {item:199340|Moeda de Ouro das Ilhas}: pescada nas Ilhas do Dragão, ou 75 {item:199338|Moeda de Cobre das Ilhas} trocadas com {npc:191608|O Grande Zapo}.\n2. Compre dele, com ela, o {item:202102|Saco de Tesouros do Zapo Imaculado}. Na maioria das vezes ele traz os {item:202042|Óculos Aquáticos}; quando não traz, é outra moeda.\n3. Com os óculos, dance por 5 minutos na pista do bar debaixo d'água em {map:2022|Costa Desperta}, em 19.6, 36.5.\n4. Pegue o {item:202061|Barril de Peixe Vazio} e encha: 100 {item:202072|Peixe de Banquisa Frígido} (água aberta em volta de Iskaara), 25 {item:202073|Carpa Calamitosa} (lava em volta da Cidadela Obsidiana) e 1 {item:202074|Reibatana, o Sábio Peixe-de-bigode} (água em volta da Academia Algeth'ar).\n5. Leve o barril de volta para onde você dançou: Otto oferece {quest:72738|O caminho para o coração de um Otto}."
-L["Five Ephemeral Crystals appear at the same time at random spots of {map:630|Azsuna}, many of them inside caves. Touching the first one starts 8 hours to touch the other four; dying loses the count. Other players are after the same crystals, and when somebody finishes they all vanish until the next round."] =
-    "Cinco Cristais Efêmeros aparecem ao mesmo tempo em pontos sorteados de {map:630|Azsuna}, muitos dentro de cavernas. Tocar o primeiro dá 8 horas para tocar os outros quatro; morrer zera a contagem. Outros jogadores estão atrás dos mesmos cristais, e quando alguém termina todos somem até a rodada seguinte."
-L["Sold by the guild vendors to a character Exalted with a guild that has {achievement:4988|Guild Glory of the Cataclysm Raider}. Joining a guild that already has it works, but the reputation with a new guild starts over. Once learnt, the mount is yours whatever guild you are in."] =
-    "Vendida pelos vendedores de guilda a personagem Exaltado com uma guilda que tenha {achievement:4988|Glória da Guilda do Aventureiro do Cataclismo}. Entrar numa guilda que já a tem serve, mas a reputação com guilda nova começa do zero. Depois de aprendida, a montaria é sua em qualquer guilda."
-L["Reach Renown 25 with {faction:2507|Dragonscale Expedition}. From then on it has a small chance to be inside every Expedition Scout's Pack."] =
-    "Chegue a Renome 25 com {faction:2507|Expedição Dragoscama}. Daí em diante ela tem uma chance pequena de vir em cada Mochila do Batedor da Expedição."
 L["Vendors, quests and treasures too"] = "Também vendedores, missões e tesouros"
 L["Every place the collection data knows for a mount you do not have: who sells it, who gives the quest, where the treasure is."] =
     "Todo lugar que os dados da coleção conhecem para uma montaria que você não tem: quem vende, quem entrega a missão, onde está o tesouro."

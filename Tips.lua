@@ -60,9 +60,10 @@ end
 function Tips.For(mountID)
     local t = mountID and type(ns.MountTips) == "table" and ns.MountTips[mountID]
     if type(t) ~= "table" or type(t.text) ~= "string" then return nil end
-    -- The translation is looked up by the WHOLE English sentence, placeholders and all: the
-    -- translator moves them to where they belong in the other language.
-    local texto = Tips.Resolve(L[t.text])
+    -- The player's language when there is one for this mount (`Locales/ptBR_Tips.lua`, written
+    -- by the same generator as the English), English otherwise.
+    local local_ = type(ns.MountTipsLocal) == "table" and ns.MountTipsLocal[mountID]
+    local texto = Tips.Resolve(type(local_) == "string" and local_ or t.text)
     local nota = t.year and string.format(L["Reported by players in %d. The game may have changed since."], t.year)
         or L["Reported by players. The game may have changed since."]
     return texto, nota
