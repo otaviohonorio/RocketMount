@@ -212,6 +212,8 @@ end
 
 ---What kind of source one point of the catalogue is.
 local function KindOf(e, wp)
+    -- A point of our own table says what it is (Sources.lua, `ns.OwnPlaces`).
+    if wp and wp.kind and KIND[wp.kind] then return wp.kind end
     if wp and wp.i then
         return (e.groupSize and e.groupSize >= 10) and "raid" or "dungeon"
     end
@@ -339,6 +341,11 @@ local function Construir()
         end
         lugar.mounts[#lugar.mounts + 1] = { entry = e }
         if wp and wp.dq then lugar.dq[#lugar.dq + 1] = { dq = wp.dq } end
+        -- Who or what the place is, by id: the name comes from the game, in its language.
+        if wp then
+            lugar.nameNpc = lugar.nameNpc or wp.npcId
+            lugar.nameQuest = lugar.nameQuest or wp.questId
+        end
         -- A vendor is "Reputation" only while EVERY mount there is behind one.
         if grupo == "vendor" and kind == "vendor" then lugar.kind = "vendor" end
     end
@@ -358,7 +365,8 @@ local function Construir()
             end
             for _, v in ipairs(e.vendors or {}) do
                 if v.m and v.x and v.y then
-                    Juntar(e.rep and "reputation" or "vendor", v.m, v.x / 100, v.y / 100, v.npc, e, nil)
+                    Juntar(e.rep and "reputation" or "vendor", v.m, v.x / 100, v.y / 100, v.npc, e,
+                        v.npcId and { npcId = v.npcId } or nil)
                 end
             end
         end
@@ -487,6 +495,7 @@ function MapPins.PinsFor(mapID)
                     out[#out + 1] = {
                         kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
                         mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
+                        nameNpc = p.nameNpc, nameQuest = p.nameQuest,
                         -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
                         x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
                         locked = preso, lockSource = fonte, lockLeft = falta,
@@ -806,6 +815,14 @@ end
 function MapPins.PlaceName(data)
     local kind = KindDe(data)
     if data.npc then return MapPins.NpcName(data.npc, data.rec and data.rec.name or data.name) end
+    if data.nameNpc then return MapPins.NpcName(data.nameNpc, data.name) end
+    if data.nameQuest and C_QuestLog and C_QuestLog.GetTitleForQuestID then
+        local ok, titulo = pcall(C_QuestLog.GetTitleForQuestID, data.nameQuest)
+        if ok and type(titulo) == "string" and titulo ~= ""
+            and not (issecretvalue and issecretvalue(titulo)) then
+            return titulo
+        end
+    end
     if kind.group == "creature" and data.name then return ns.LocalizedCreature(data.name) end
     if data.name and data.name ~= "" then return data.name end
     -- A place the catalogue did not name: one mount, its boss; several, what kind of place it is.

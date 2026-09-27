@@ -143,6 +143,7 @@ L["the development log"] = "o diário de desenvolvimento"
 
 -- O veredito do próprio vendedor (Sources.lua).
 L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto em %s)"
+L["inside %s"] = "dentro de %s"
 L["  ·  %s drops it nearly every time: getting to it is the task"] =
     "  ·  %s a deixa cair quase sempre: a tarefa é chegar até a criatura"
 L["  ·  the price is the journal's: the vendor may charge more"] =

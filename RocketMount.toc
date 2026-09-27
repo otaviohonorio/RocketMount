@@ -20,12 +20,14 @@
 Locales\enUS.lua
 Locales\ptBR.lua
 Locales\ptBR_Tips.lua
+Locales\ptBR_Places.lua
 Data\MobDrops.lua
 Data\MountItems.lua
 Data\AchievementMounts.lua
 Data\MountReputation.lua
 Data\RareLockout.lua
 Data\MountTips.lua
+Data\MountPlaces.lua
 Core.lua
 Donate.lua
 #@debug@

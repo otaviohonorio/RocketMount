@@ -333,6 +333,9 @@ function ns.Rank(entry)
         e.tier = ns.TIER.LONGFARM
     elseif e.chance and e.chance > 0 then
         e.tier = (e.chance <= SHORT_FARM_CHANCE) and ns.TIER.SHORTFARM or ns.TIER.LONGFARM
+        -- The chance of a bag or a trove says how often the mount is INSIDE; how often the bag
+        -- comes, nobody told the addon (Sources.lua). Not knowing pushes down, never up.
+        if e.chanceIndirect then e.tier = ns.TIER.LONGFARM end
     else
         -- Aqui cai o método "à parte" (`SPECIAL`) sem chance: não é determinístico, não tem
         -- requisito e não tem sorte medida — sobra "sem estimativa", que é a verdade.
@@ -410,6 +413,9 @@ function ns.Rank(entry)
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then
             e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(e.bossName) or e.bossName)
+        end
+        if e.box and e.dropName then
+            e.why = e.why .. "  ·  " .. string.format(L["inside %s"], e.dropName)
         end
     elseif e.sourceText and e.sourceText ~= "" then
         -- Blizzard's text comes with line breaks; a list row wants a single line.

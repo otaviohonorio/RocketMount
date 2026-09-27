@@ -387,6 +387,90 @@ function ns.OwnChance(itemID)
 end
 
 --------------------------------------------------------------------------------
+-- WHERE IT IS GOT, FROM OUR OWN TABLE
+--
+-- (!) The user, 28/09: *"falta os pontos no mapa como mostrei em prints de vendedores, missão e
+-- etc"*. The map took vendors, treasures and quest givers from MCL, read at run time; alone, it
+-- had the rares and nothing else -- and no addon of ours depends on another one.
+-- `Data/MountPlaces.lua` (tools/coletar_lugares.py) holds, for each mount, who sells it, the
+-- chest it is in and the quest that rewards it, each with its place on the map.
+--
+-- What comes out has the shape the rest of the addon already reads (it was MCL's): `vendors`
+-- and `coords`, in the map's own scale. A vendor or a quest of the OTHER faction is left out.
+--------------------------------------------------------------------------------
+local function DoMeuLado(ficha)
+    if type(ficha) ~= "table" then return false end
+    if not ficha.side then return true end
+    local meu = UnitFactionGroup and UnitFactionGroup("player") or nil
+    return not meu or ficha.side == meu
+end
+
+---A table's `where`, as a list in a fixed order (the map's id, then the order of the table).
+local function Pontos(where)
+    local mapas, out = {}, {}
+    for mapa in pairs(type(where) == "table" and where or {}) do mapas[#mapas + 1] = mapa end
+    table.sort(mapas)
+    for _, mapa in ipairs(mapas) do
+        local pts = where[mapa]
+        for i = 1, #pts - 1, 2 do
+            out[#out + 1] = { m = mapa, x = pts[i], y = pts[i + 1] }
+        end
+    end
+    return out
+end
+
+---The name of an object in the player's language: the game has no way to ask it by id, so the
+---translation is ours (`Locales/ptBR_Places.lua`) and English is what is left.
+local function NomeDoObjeto(id, ingles)
+    local t = ns.PlaceNamesLocal and ns.PlaceNamesLocal.object
+    local nome = type(t) == "table" and t[id]
+    return type(nome) == "string" and nome or ingles
+end
+
+---@return table|nil `{ vendors, coords, quests, box }`
+function ns.OwnPlaces(mountID)
+    local T = ns.MountPlaces
+    local m = type(T) == "table" and type(T.mount) == "table" and T.mount[mountID]
+    if type(m) ~= "table" then return nil end
+    local out = { vendors = {}, coords = {}, quests = {}, box = type(m.box) == "table" and m.box or nil }
+
+    for _, id in ipairs(type(m.npc) == "table" and m.npc or {}) do
+        local v = type(T.npc) == "table" and T.npc[id]
+        if DoMeuLado(v) then
+            local pts = Pontos(v.where)
+            for _, p in ipairs(pts) do
+                out.vendors[#out.vendors + 1] = { npc = v.name, npcId = id, m = p.m, x = p.x, y = p.y }
+            end
+            -- A vendor nobody has placed is still a vendor: the card names it.
+            if #pts == 0 then out.vendors[#out.vendors + 1] = { npc = v.name, npcId = id } end
+        end
+    end
+    for _, id in ipairs(type(m.object) == "table" and m.object or {}) do
+        local o = type(T.object) == "table" and T.object[id]
+        if type(o) == "table" then
+            for _, p in ipairs(Pontos(o.where)) do
+                out.coords[#out.coords + 1] = {
+                    m = p.m, x = p.x, y = p.y, n = NomeDoObjeto(id, o.name), kind = "treasure", objectId = id,
+                }
+            end
+        end
+    end
+    for _, id in ipairs(type(m.quest) == "table" and m.quest or {}) do
+        local q = type(T.quest) == "table" and T.quest[id]
+        if DoMeuLado(q) then
+            out.quests[#out.quests + 1] = { id = id, name = q.name }
+            for _, p in ipairs(Pontos(q.where)) do
+                -- `q` is what the map reads to know the point is spent: the quest done.
+                out.coords[#out.coords + 1] = {
+                    m = p.m, x = p.x, y = p.y, n = q.name, kind = "quest", questId = id, q = id,
+                }
+            end
+        end
+    end
+    return out
+end
+
+--------------------------------------------------------------------------------
 -- WHERE THE PRICE COMES FROM
 --
 -- (!) Reported on 27/09 with a screenshot, standing at Elianna (Emerald Dream): *"Montaria
@@ -594,10 +678,22 @@ end
 ---
 ---Então aqui se diz o que dá para provar: feita, ou não feita. "Não feita" já responde a pergunta
 ---que importa — tem coisa no caminho — sem fingir saber quantos passos faltam.
-local function QuestProgress(mountID)
-    local data = _G.MCL_GUIDE_QUEST_DATA
-    if not data or not mountID then return nil end
-    local q = data[mountID]
+local function QuestProgress(mountID, nossas)
+    local q
+    -- OURS FIRST (28/09): the quests of `Data/MountPlaces.lua`. A mount with a quest for each
+    -- faction has one left here (`ns.OwnPlaces` drops the other side's); with more than one, the
+    -- one already done counts, and otherwise the first.
+    if type(nossas) == "table" and #nossas > 0 then
+        q = { questId = nossas[1].id, quest = nossas[1].name }
+        for _, n in ipairs(nossas) do
+            local ok, feita = pcall(C_QuestLog.IsQuestFlaggedCompleted, n.id)
+            if ok and feita then q = { questId = n.id, quest = n.name }; break end
+        end
+    else
+        local data = _G.MCL_GUIDE_QUEST_DATA
+        if not data or not mountID then return nil end
+        q = data[mountID]
+    end
     if type(q) ~= "table" then return nil end
 
     local questID = q.questId
@@ -859,6 +955,35 @@ function ns.BuildList()
                     e.isRenown = r.renown and true or false
                 end
 
+                -- (!) WHERE IT IS GOT: OURS FIRST (28/09). Vendors, chests and quests from
+                -- `Data/MountPlaces.lua`. Of the catalogue's points only what ours does not have
+                -- yet is kept: the entrances of instances.
+                local okP, nosso = pcall(ns.OwnPlaces, mountID)
+                if okP and type(nosso) == "table" then
+                    if #nosso.vendors > 0 then
+                        e.vendors = nosso.vendors
+                        e.vendor = e.vendors[1]
+                        for _, v in ipairs(e.vendors) do
+                            if v.m and v.x then e.vendor = v; break end
+                        end
+                        e.vendorVago = not (e.vendor.m and e.vendor.x)
+                        e.isVendorMount = true
+                        e.placesFrom = "own"
+                    end
+                    if #nosso.coords > 0 then
+                        for _, wp in ipairs(e.coords or {}) do
+                            if type(wp) == "table" and wp.i then nosso.coords[#nosso.coords + 1] = wp end
+                        end
+                        e.coords = nosso.coords
+                        e.placesFrom = "own"
+                    end
+                    if #nosso.quests > 0 then
+                        local okQ, missao = pcall(QuestProgress, mountID, nosso.quests)
+                        if okQ and missao then e.quest = missao end
+                    end
+                    e.box = nosso.box
+                end
+
                 e.cost = CostProgress(spellID, e.itemID, mountID, source)
 
                 -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a
@@ -884,6 +1009,31 @@ function ns.BuildList()
                     end
                     e.chanceFrom = "own"
                     e.dropNpc, e.dropName, e.dropCreatures = nossa.npc, nossa.name, nossa.creatures
+                elseif e.box and tonumber(e.box.count) and tonumber(e.box.outof)
+                    and e.box.count > 0 and e.box.outof > 0 then
+                    -- THE CONTAINER (28/09): a chest, a bag, a reputation's trove. The same two
+                    -- rules of the creatures: nearly every time is not a chance, and a small
+                    -- sample is rough.
+                    local taxa = e.box.count / e.box.outof
+                    local nome = e.box.name
+                    if e.box.kind == "object" then
+                        nome = NomeDoObjeto(e.box.id, nome)
+                    elseif C_Item and C_Item.GetItemNameByID then
+                        local okN, n = pcall(C_Item.GetItemNameByID, e.box.id)
+                        if okN and type(n) == "string" and n ~= "" then nome = n end
+                    end
+                    if taxa >= SURE_DROP then
+                        e.chance, e.sureDrop = nil, { name = nome, box = true }
+                    else
+                        e.chance, e.chanceRough = 1 / taxa, e.box.count < ENOUGH_DROPS
+                    end
+                    e.chanceFrom = "own"
+                    e.dropName = nome
+                    -- (!) A BAG OR A TROVE IS NOT AN ATTEMPT YOU MAKE WHEN YOU WANT. A kill is;
+                    -- a chest standing in the world is. How a bag is earned -- a weekly quest,
+                    -- a reputation filled again and again -- is not in this table, and a 25%
+                    -- trove that takes weeks to come is no short farm (Score.lua).
+                    e.chanceIndirect = e.box.kind == "item"
                 elseif e.chance then
                     e.chanceFrom = "catalogue"
                 end
