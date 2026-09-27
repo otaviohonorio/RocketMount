@@ -30,7 +30,10 @@ local S = ns.Skin
 -- The template's anatomy (`PANEL_INSET_*`, `SharedUIPanelTemplates.lua:4-9`; RocketSwap UI.lua).
 local INSET_X = 4             -- the inset's left edge
 local LIST_TOP = -60          -- top of the inset: below the portrait (disc of 58 at (26, -22))
-local FOOTER = 26             -- the band the template reserves at the bottom
+-- The band the template reserves at the bottom (26), plus the support line below it (Donate.lua,
+-- `DONATE_ROW`, 27/09).
+local DONATE_ROW = ns.DONATE_ROW or 0
+local FOOTER = 26 + DONATE_ROW
 local ATTIC_Y = -35           -- the counter's line, between the title and the inset
 local GUTTER = 20             -- between the list and the card (MountJournal, RocketSwap)
 local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (RocketSwap)
@@ -56,7 +59,7 @@ local DETAIL_W = 360
 
 local COL_X = INSET_X + LIST_W + GUTTER
 local WINDOW_W = COL_X + DETAIL_W + RIGHT_MARGIN
-local WINDOW_H = 660           -- 580 -> 660 with the width: more rows on screen
+local WINDOW_H = 660 + DONATE_ROW   -- 580 -> 660 with the width; + the support line, same list
 
 -- The row and its columns. Every x is derived from the one before it, so a column that grows
 -- pushes the next instead of sitting on it -- the geometry test checks every gap.
@@ -75,7 +78,7 @@ ns.Geometry = {
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
     detailW = DETAIL_W, rightMargin = RIGHT_MARGIN,
     scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD,
-    rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER,
+    rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
         { name = "exp", x = EXP_X, w = EXP_W }, { name = "pct", x = PCT_X, w = PCT_W },
@@ -868,14 +871,12 @@ local function Build()
     detail:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
 
     -- The footer band the template reserves.
-    -- "Support the project" (27/09): the right end of the footer band (Donate.lua), like the other
-    -- Rocket windows -- the user: *"ficar abaixo na janela como um rodapé"*.
-    window.donate = ns.DonateLink(window)
-    window.donate:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -12, 7)
+    -- "Support the project" (27/09): a line of its own at the very bottom (Donate.lua).
+    window.donate = ns.DonateFooter(window)
 
     window.footer = Text(window, "GameFontHighlightSmall")
-    window.footer:SetPoint("BOTTOMLEFT", 10, 8)
-    window.footer:SetPoint("RIGHT", window.donate, "LEFT", -12, 0)
+    window.footer:SetPoint("BOTTOMLEFT", 10, 8 + DONATE_ROW)
+    window.footer:SetWidth(WINDOW_W - 20)
     window.footer:SetWordWrap(false)
 
     tinsert(UISpecialFrames, window:GetName())   -- Esc closes
