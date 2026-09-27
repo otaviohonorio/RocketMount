@@ -588,7 +588,8 @@ local HEADER = {
 
 -- What of the mount's card the tooltip quotes, and in which order. "Where" stays out: the pin IS
 -- where. The chance stays out at a creature, whose line already carries the chance THERE.
-local TIP_BLOCKS = { flavor = 1, howto = 2, chance = 3, requirements = 4, about = 5, achievement = 6 }
+local TIP_BLOCKS = { flavor = 1, howto = 2, chance = 3, requirements = 4, about = 5, achievement = 6,
+                     tip = 7 }
 
 ---A text the game or the card wrote in several lines, one tooltip line each: the journal's
 ---source text separates them with `|n`, ours with a line break.

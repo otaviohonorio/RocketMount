@@ -25,6 +25,7 @@ Data\MountItems.lua
 Data\AchievementMounts.lua
 Data\MountReputation.lua
 Data\RareLockout.lua
+Data\MountTips.lua
 Core.lua
 Donate.lua
 #@debug@
@@ -35,6 +36,7 @@ Expansion.lua
 Tooltip.lua
 Achievements.lua
 Roster.lua
+Tips.lua
 Sources.lua
 Score.lua
 Window.lua

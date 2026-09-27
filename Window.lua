@@ -410,6 +410,15 @@ function ns.DetailBlocks(entry)
         end
     end
 
+    -- WHAT PLAYERS FOUND OUT, in our words (Data/MountTips.lua). After everything the game says,
+    -- and signed: it was true when somebody wrote it down, and the line under it says when.
+    if ns.Tips then
+        local dica, nota = ns.Tips.For(entry.mountID)
+        if dica then
+            Add("tip", L["Players' tip"], dica .. string.char(10) .. "|cff808080" .. nota .. "|r")
+        end
+    end
+
     -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
     -- escrito quando cada personagem entra. Por isso ela diz "pelo que ficou anotado" — uma
     -- anotação velha se passando por leitura ao vivo seria pior que anotação nenhuma.
