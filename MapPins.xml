@@ -34,11 +34,15 @@
 				</Texture>
 			</Layer>
 			<Layer level="ARTWORK">
+				<!-- Every icon of the game carries its own square frame in the outer 8%. A
+				     round mask touches the square at the middle of each side, so without the
+				     crop four slivers of that frame show inside the ring. -->
 				<Texture parentKey="Icon">
 					<Size x="21" y="21"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
+					<TexCoords left="0.08" right="0.92" top="0.08" bottom="0.92"/>
 				</Texture>
 				<MaskTexture parentKey="IconMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
 					<Anchors>
