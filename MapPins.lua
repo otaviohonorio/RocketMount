@@ -35,8 +35,14 @@ ns.MapPins = MapPins
 local TEMPLATE = "RocketMountMapPinTemplate"
 
 -- The same numbers as MapPins.xml, for the harness to check the two against each other. The ring
--- of `worldquest-questmarker-epic` is 40 of the art's 64: drawn at 40 it is 25 across.
-MapPins.Geometry = { PIN = 26, DISC = 40, ICON = 21, RING = 25, BADGE = 15, BADGE_X = 9, BADGE_Y = -9 }
+-- of `worldquest-questmarker-epic` is 40 of the art's 64: drawn at 32 it is 20 across.
+--
+-- (!) THE SIZE IS THE GAME'S QUEST PIN (27/09). It was born the size of a world-quest pin (disc
+-- at 40, ring of 25) and the user asked for smaller: *"pode reduzir um pouco o tamanho dos icones
+-- do mapa?"*. The game's own quest marker is a button of 20 with its art at 32
+-- (`POIButton.xml`, POIButtonTemplate), which is 80% of what we had -- so that is the size, and
+-- every other number went down by the same 80%.
+MapPins.Geometry = { PIN = 20, DISC = 32, ICON = 17, RING = 20, BADGE = 12, BADGE_X = 7, BADGE_Y = -7 }
 
 -- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
 -- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
@@ -61,19 +67,19 @@ local ENTRANCE_NEAR = 0.04
 -- vendor: same glyph as the vendor, its own label.
 --------------------------------------------------------------------------------
 local KIND = {
-    rare       = { atlas = "VignetteKill",              size = 15, label = L["Rare"],       group = "creature" },
-    rareelite  = { atlas = "VignetteKill",              size = 15, label = L["Rare elite"], group = "creature", dragon = true },
-    elite      = { atlas = "VignetteKill",              size = 15, label = L["Elite"],      group = "creature", dragon = true },
-    boss       = { atlas = "worldquest-icon-boss",      size = 14, label = L["Boss"],       group = "creature", dragon = true },
-    raid       = { atlas = "Raid",                      size = 20, label = L["Raid"],       group = "instance" },
-    dungeon    = { atlas = "Dungeon",                   size = 20, label = L["Dungeon"],    group = "instance" },
-    vendor     = { atlas = "auctioneer",                size = 15, label = L["Vendor"],     group = "vendor" },
-    reputation = { atlas = "auctioneer",                size = 15, label = L["Reputation"], group = "vendor" },
-    quest      = { atlas = "QuestNormal",               size = 18, label = L["Quest"],      group = "quest" },
-    treasure   = { atlas = "VignetteLoot",              size = 15, label = L["Treasure"],   group = "treasure" },
-    loot       = { atlas = "VignetteLoot",              size = 15, label = L["Drop"],       group = "loot" },
-    fishing    = { atlas = "professions_tracking_fish", size = 15, label = L["Fishing"],    group = "fishing" },
-    other      = { atlas = "worldquest-icon",           size = 14, label = L["Other"],      group = "other" },
+    rare       = { atlas = "VignetteKill",              size = 12, label = L["Rare"],       group = "creature" },
+    rareelite  = { atlas = "VignetteKill",              size = 12, label = L["Rare elite"], group = "creature", dragon = true },
+    elite      = { atlas = "VignetteKill",              size = 12, label = L["Elite"],      group = "creature", dragon = true },
+    boss       = { atlas = "worldquest-icon-boss",      size = 11, label = L["Boss"],       group = "creature", dragon = true },
+    raid       = { atlas = "Raid",                      size = 16, label = L["Raid"],       group = "instance" },
+    dungeon    = { atlas = "Dungeon",                   size = 16, label = L["Dungeon"],    group = "instance" },
+    vendor     = { atlas = "auctioneer",                size = 12, label = L["Vendor"],     group = "vendor" },
+    reputation = { atlas = "auctioneer",                size = 12, label = L["Reputation"], group = "vendor" },
+    quest      = { atlas = "QuestNormal",               size = 14, label = L["Quest"],      group = "quest" },
+    treasure   = { atlas = "VignetteLoot",              size = 12, label = L["Treasure"],   group = "treasure" },
+    loot       = { atlas = "VignetteLoot",              size = 12, label = L["Drop"],       group = "loot" },
+    fishing    = { atlas = "professions_tracking_fish", size = 12, label = L["Fishing"],    group = "fishing" },
+    other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
 }
 MapPins.KIND = KIND
 

@@ -65,6 +65,8 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   rares, Hexflame Reaver, Spirit of Tok'jara, and a price the journal gets wrong (Blessed
   Amani Burrower). On the world map, a rare that drops two mounts with the same tip shows it
   once, under the list.
+- **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
+  20 across, it was 25), so a zone full of rares covers less of the map.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
   rare is, the mount you are likeliest to get and its chance, and how often the loot comes
   back. Hover it for every mount and each chance; click it to point the map arrow at the

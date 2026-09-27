@@ -10,16 +10,18 @@
 	     every new pin: each time the map opened one more pin was born and the rest never were.
 	     The map also calls OnLoad on its own, and routes the click to OnMouseClickAction.
 
-	     The numbers, measured on the art (worldquest-questmarker-epic is 64 wide, its ring 40):
-	     drawn at 40 the ring is 25 across and the dark disc inside it 22, so the mount's icon is
-	     a circle of 21. The glyph sits where Blizzard puts the clock of a world quest
-	     (WorldQuestDataProvider.xml: CENTER, x 9, y -9). -->
+	     The numbers, measured on the art (worldquest-questmarker-epic is 64 wide, its ring 40,
+	     the dark disc inside it 35). The size is the game's own quest marker (POIButton.xml: a
+	     button of 20 with the art at 32): drawn at 32 the ring is 20 across and the dark disc
+	     17.5, so the mount's icon is a circle of 17. The glyph sits where Blizzard puts the
+	     clock of a world quest (WorldQuestDataProvider.xml: CENTER, x 9, y -9), brought down
+	     with the rest: x 7, y -7. -->
 	<Frame name="RocketMountMapPinTemplate" mixin="RocketMountMapPinMixin" enableMouse="true" virtual="true">
-		<Size x="26" y="26"/>
+		<Size x="20" y="20"/>
 		<Layers>
 			<Layer level="BACKGROUND" textureSubLevel="-1">
 				<Texture parentKey="Underlay" atlas="worldquest-questmarker-dragon" hidden="true">
-					<Size x="40" y="40"/>
+					<Size x="32" y="32"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
@@ -27,7 +29,7 @@
 			</Layer>
 			<Layer level="BACKGROUND">
 				<Texture parentKey="Disc" atlas="worldquest-questmarker-epic">
-					<Size x="40" y="40"/>
+					<Size x="32" y="32"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
@@ -38,7 +40,7 @@
 				     round mask touches the square at the middle of each side, so without the
 				     crop four slivers of that frame show inside the ring. -->
 				<Texture parentKey="Icon">
-					<Size x="21" y="21"/>
+					<Size x="17" y="17"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
@@ -56,9 +58,9 @@
 			</Layer>
 			<Layer level="OVERLAY">
 				<Texture parentKey="Badge">
-					<Size x="15" y="15"/>
+					<Size x="12" y="12"/>
 					<Anchors>
-						<Anchor point="CENTER" x="9" y="-9"/>
+						<Anchor point="CENTER" x="7" y="-7"/>
 					</Anchors>
 				</Texture>
 				<FontString parentKey="Label" inherits="GameFontNormalSmallOutline" justifyH="CENTER" wordwrap="false" hidden="true">
@@ -72,7 +74,7 @@
 				     (POIButton.lua, POIButton_GetAtlasInfoHighlight). Same nominal size as the
 				     disc: in both arts the ring is 40 of 64, and the glow sits just inside it. -->
 				<Texture parentKey="Highlight" atlas="UI-QuestPoi-InnerGlow" alphaMode="ADD">
-					<Size x="40" y="40"/>
+					<Size x="32" y="32"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
