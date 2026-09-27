@@ -360,7 +360,7 @@ function ns.Rank(entry)
             e.headline = "—"
         end
     elseif e.chance and e.chance > 0 then
-        e.headline = ns.FormatChance(e.chance)
+        e.headline = ns.FormatChance(e.chance, e.chanceRough)
     elseif e.ownedByPct then
         e.headline = string.format(L["%.0f%% own it"], e.ownedByPct)
     else
@@ -406,7 +406,7 @@ function ns.Rank(entry)
             e.why = e.why .. string.format(L["  ·  and %d more requirement(s)"], e.faltando - 1)
         end
     elseif e.chance then
-        e.why = string.format(L["%s chance"], ns.FormatChance(e.chance))
+        e.why = string.format(L["%s chance"], ns.FormatChance(e.chance, e.chanceRough))
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
         if e.bossName then
             e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(e.bossName) or e.bossName)
@@ -414,6 +414,17 @@ function ns.Rank(entry)
     elseif e.sourceText and e.sourceText ~= "" then
         -- Blizzard's text comes with line breaks; a list row wants a single line.
         e.why = (e.sourceText:gsub("[\r\n]+", "  ·  "))
+        -- No chance number for a creature that drops it nearly every time (Sources.lua): the
+        -- row says so, or "no estimate" would read as "nothing is known".
+        if e.sureDrop then
+            local quem = e.sureDrop.name or "?"
+            if ns.MapPins and ns.MapPins.NpcName and e.sureDrop.npc then
+                local ok, nome = pcall(ns.MapPins.NpcName, e.sureDrop.npc, quem)
+                if ok and type(nome) == "string" and nome ~= "" then quem = nome end
+            end
+            e.why = e.why .. string.format(
+                L["  ·  %s drops it nearly every time: getting to it is the task"], quem)
+        end
     else
         e.why = ns.SOURCE_NAMES[e.sourceType]
     end

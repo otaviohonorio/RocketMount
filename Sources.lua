@@ -313,6 +313,80 @@ local function ReputationProgress(rep)
 end
 
 --------------------------------------------------------------------------------
+-- THE DROP CHANCE, FROM OUR OWN TABLE
+--
+-- (!) No addon of ours depends on another one (the user, 27/09). The list took the chance from
+-- MCL and from nowhere else -- the window's footer said so in red -- while `Data/MobDrops.lua`
+-- (Wowhead's "Dropped by", keyed by creature) sat in the addon feeding only the rare alert and
+-- the map. It knows 158 mounts; MCL knows the chance of 192, and 102 are the same ones.
+--
+-- Which number, when several creatures drop the mount: THE BEST creature's, among those with at
+-- least ten drops seen. The player goes where it drops most, and a pooled average is dragged
+-- down by whoever is killed most (Amber Primordial Direhorn: 1 in 21 from the Warbringers, 1 in
+-- 133 pooled with the scouts that almost never drop it). With no creature at ten drops, the
+-- pool of all of them, marked rough.
+--
+-- (!) A CREATURE THAT DROPS IT NEARLY EVERY TIME IS NOT A FARM. Measured against MCL on 27/09:
+-- Mail Muncher is "1 in 1" on Wowhead and 1 in 100 in MCL; Grey Riding Camel, Alunira, the
+-- Void-Scarred Gryphon the same. The kill is certain -- finding, summoning or unlocking the
+-- creature is the whole task, and no drop table measures that. Shown as a chance it would put
+-- those mounts on top of the farms. So from half the kills up there is NO chance number: the
+-- mount stays without an estimate, and the row says why.
+--------------------------------------------------------------------------------
+local SURE_DROP = 0.5     -- from here up the kill is not where the luck is
+local ENOUGH_DROPS = 10   -- Wowhead's sample below this is a rough estimate
+local porItem             -- item -> { n, rough, npc, name, sure, creatures }
+local indexadoDe          -- the table `porItem` was built from
+
+local function IndexarChance()
+    porItem = {}
+    if type(ns.MobDrops) ~= "table" then return end
+    local soma = {}
+    for npc, rec in pairs(ns.MobDrops) do
+        if type(rec) == "table" then
+            for _, d in ipairs(rec) do
+                local c, o = tonumber(d.count), tonumber(d.outof)
+                if d.item and c and o and c > 0 and o > 0 then
+                    local s = soma[d.item] or { count = 0, outof = 0, creatures = 0 }
+                    soma[d.item] = s
+                    s.count, s.outof, s.creatures = s.count + c, s.outof + o, s.creatures + 1
+                    local taxa = c / o
+                    if c >= ENOUGH_DROPS and (not s.melhor or taxa > s.melhor) then
+                        s.melhor, s.npc, s.name = taxa, npc, rec.name
+                    end
+                    if not s.qualquer or taxa > s.qualquer then
+                        s.qualquer, s.npcQualquer, s.nomeQualquer = taxa, npc, rec.name
+                    end
+                end
+            end
+        end
+    end
+    for item, s in pairs(soma) do
+        local taxa = s.melhor or (s.count / s.outof)
+        porItem[item] = {
+            n = 1 / taxa,
+            rough = not s.melhor,
+            npc = s.npc or s.npcQualquer,
+            name = s.name or s.nomeQualquer,
+            sure = taxa >= SURE_DROP,
+            creatures = s.creatures,
+        }
+    end
+end
+
+---The chance of the mount this item teaches, from our own table.
+---@return table|nil `{ n = 1-in-n, rough, npc, name, sure, creatures }`
+function ns.OwnChance(itemID)
+    if not itemID then return nil end
+    -- The table is swapped in tests and never in game: indexed again when it is another one.
+    if not porItem or indexadoDe ~= ns.MobDrops then
+        IndexarChance()
+        indexadoDe = ns.MobDrops
+    end
+    return porItem[itemID]
+end
+
+--------------------------------------------------------------------------------
 -- WHERE THE PRICE COMES FROM
 --
 -- (!) Reported on 27/09 with a screenshot, standing at Elianna (Emerald Dream): *"Montaria
@@ -799,6 +873,20 @@ function ns.BuildList()
                 -- The item, when the catalogue does not have it: our table, but only where
                 -- the GAME agrees the item teaches this mount.
                 if not e.itemID then e.itemID = ns.VerifiedMountItem(mountID) end
+                -- The chance: ours first, the catalogue's only where ours knows nothing (see
+                -- "THE DROP CHANCE, FROM OUR OWN TABLE").
+                local okCh, nossa = pcall(ns.OwnChance, e.itemID)
+                if okCh and nossa then
+                    if nossa.sure then
+                        e.chance, e.sureDrop = nil, nossa
+                    else
+                        e.chance, e.chanceRough = nossa.n, nossa.rough
+                    end
+                    e.chanceFrom = "own"
+                    e.dropNpc, e.dropName, e.dropCreatures = nossa.npc, nossa.name, nossa.creatures
+                elseif e.chance then
+                    e.chanceFrom = "catalogue"
+                end
                 -- (!) READ ONLY WHAT ARRIVED. An item out of the cache answers with an empty
                 -- tooltip, and empty is not "no requirement". Until it loads, the mount cannot be
                 -- confirmed (Score.lua), and the validation (Core.lua) waits for it.

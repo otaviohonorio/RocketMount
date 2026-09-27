@@ -814,7 +814,8 @@ local function Redraw()
         footer = string.format(L['nothing found for "%s"'], ns.search)
     end
     if not mcl then
-        footer = footer .. L["  |cffcc6666· without MCL, there is no drop chance|r"]
+        -- Our own table knows the creatures; the chests and some bosses are still to come.
+        footer = footer .. L["  |cff888888· the chance of some chests and bosses is not known yet|r"]
     elseif not rar then
         footer = footer .. L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"]
     end

@@ -143,6 +143,8 @@ L["the development log"] = "o diário de desenvolvimento"
 
 -- O veredito do próprio vendedor (Sources.lua).
 L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto em %s)"
+L["  ·  %s drops it nearly every time: getting to it is the task"] =
+    "  ·  %s a deixa cair quase sempre: a tarefa é chegar até a criatura"
 L["  ·  the price is the journal's: the vendor may charge more"] =
     "  ·  o preço é o do diário: o vendedor pode cobrar mais"
 L["the vendor does not sell it to you yet (seen %s)"] = "o vendedor ainda não vende para você (visto em %s)"
@@ -271,8 +273,8 @@ L["Next in line:"]          = "Próxima da fila:"
 L["Click to open · right-click for options"] = "Clique para abrir · botão direito para as opções"
 L[" (filtered from %d)"]    = " (filtrado de %d)"
 L['nothing found for "%s"'] = 'nada encontrado para "%s"'
-L["  |cffcc6666· without MCL, there is no drop chance|r"] =
-    "  |cffcc6666· sem o MCL, não há a chance de saque|r"
+L["  |cff888888· the chance of some chests and bosses is not known yet|r"] =
+    "  |cff888888· a chance de alguns baús e chefes ainda não é conhecida|r"
 L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"] =
     "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
 L["this client has no new menu; use /rmt sources."] =

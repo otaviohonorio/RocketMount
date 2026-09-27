@@ -75,6 +75,12 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   mount journal states. The journal's price only ever counts against you — it often names
   just the first part of a price — so such a mount waits in "check with the vendor" until a
   vendor has been seen.
+- **The drop chance comes from the addon itself.** The list used to take it from another
+  addon; now it reads the table built into RocketMount (Wowhead's counts, 158 mounts). When
+  several creatures drop a mount, the number is the best creature's; an estimate from few drops
+  is marked with "~". A creature that drops the mount nearly every time — a rare that is hard
+  to find, a boss you have to summon — shows no chance at all, and the row says why: the kill
+  is certain, reaching it is the task.
 - **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
   20 across, it was 25), so a zone full of rares covers less of the map.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the

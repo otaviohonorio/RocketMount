@@ -104,8 +104,10 @@ local function IndexarMobDrops(lista)
         if e.mountID and not e.unobtainable then porMontaria[e.mountID] = e end
     end
     for npc, rec in pairs(ns.MobDrops) do
-        for _, d in ipairs(rec) do
-            local e = d.count and d.count > 0 and porMontaria[MountOfItem(d.item)]
+        -- A line that is not what the collector writes is skipped, not tripped over.
+        for _, d in ipairs(type(rec) == "table" and rec or {}) do
+            local n = type(d) == "table" and tonumber(d.count)
+            local e = n and n > 0 and d.item and porMontaria[MountOfItem(d.item)]
             if e then Push(byNpc, npc, { entry = e, drop = d }) end
         end
     end
