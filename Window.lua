@@ -741,6 +741,13 @@ local function Build()
     window = CreateFrame("Frame", ADDON .. "Window", UIParent, "ButtonFrameTemplate")
     window:SetSize(WINDOW_W, WINDOW_H)
     window:SetFrameStrata("HIGH")
+    -- IN FRONT WHEN OPENED OR CLICKED (27/09). Every Rocket window shares the HIGH strata, and
+    -- inside a strata the order is the frame LEVEL: without this, the rows of a window opened
+    -- earlier (deeper children, higher levels) drew over the background of the one opened on
+    -- top -- the user's print had RocketMount's list showing through RocketSwap. `toplevel`
+    -- raises on click; `Raise` on show. Same pair as Chattynator (`CustomiseDialog/Main.lua:841,846`).
+    window:SetToplevel(true)
+    window:HookScript("OnShow", function(self) self:Raise() end)
     window:SetMovable(true)
     window:EnableMouse(true)
     window:SetClampedToScreen(true)
