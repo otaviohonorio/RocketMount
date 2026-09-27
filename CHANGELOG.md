@@ -63,7 +63,8 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   (Untainted Grove Crawler, Ancestral War Bear, Hexed Vilefeather Eagle, Insatiable
   Shredclaw), Echo of Aln'sharan, the ritual site mounts, the mounts that drop from a zone's
   rares, Hexflame Reaver, Spirit of Tok'jara, and a price the journal gets wrong (Blessed
-  Amani Burrower).
+  Amani Burrower). On the world map, a rare that drops two mounts with the same tip shows it
+  once, under the list.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
   rare is, the mount you are likeliest to get and its chance, and how often the loot comes
   back. Hover it for every mount and each chance; click it to point the map arrow at the

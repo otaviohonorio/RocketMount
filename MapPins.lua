@@ -606,7 +606,8 @@ end
 ---screen: *"com uma boa descrição tanto na popup quanto na janela do addon"*. It is the card's
 ---own text (`ns.DetailBlocks`), quoted: the mount's flavour line in the gold the game writes
 ---flavour in, then each block under its title. A place with several mounts keeps the list --
----six descriptions in one tooltip is a wall -- and the card has each of them.
+---six descriptions in one tooltip is a wall -- and the card has each of them. The exception is
+---the players' tip the mounts of the place SHARE (`Tips.Shared`), which is one text.
 local function Descricao(tooltip, e, criatura)
     if not ns.DetailBlocks then return end
     local ok, blocos = pcall(ns.DetailBlocks, e)
@@ -676,7 +677,21 @@ function MapPins.Tooltip(tooltip, data)
         Linha(tooltip, string.format(L["and %d more"], total - TIP_MOUNTS),
             "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
     end
-    if total == 1 then Descricao(tooltip, data.mounts[1].entry, criatura) end
+    if total == 1 then
+        Descricao(tooltip, data.mounts[1].entry, criatura)
+    elseif ns.Tips and ns.Tips.Shared then
+        -- Several mounts, ONE tip (the two a zone's rares drop): said once, under the list.
+        local ok, dica, nota = pcall(ns.Tips.Shared, data.mounts)
+        if ok and dica then
+            tooltip:AddLine(" ")
+            Linha(tooltip, L["Players' tip"], "NORMAL_FONT_COLOR", 1, 0.82, 0)
+            for _, l in ipairs(Linhas(dica)) do
+                Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+            end
+            if nota then Linha(tooltip, nota, "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5, true) end
+            if criatura then tooltip:AddLine(" ") end
+        end
+    end
 
     if criatura then
         if total == 1 then tooltip:AddLine(" ") end

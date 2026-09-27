@@ -68,3 +68,20 @@ function Tips.For(mountID)
         or L["Reported by players. The game may have changed since."]
     return texto, nota
 end
+
+---The tip SEVERAL mounts have in common, for a place on the map that gives more than one: the two
+---mounts of a zone's rares, the six a vendor trades for one saddle. Nothing when any of them has
+---no tip or has another one -- a tooltip with a tip per mount is a wall, and the card has each.
+---@param entries table[] -- what a marker holds in `mounts`: `{ entry = { mountID = ... } }`
+---@return string|nil text, string|nil note
+function Tips.Shared(entries)
+    if type(entries) ~= "table" or #entries < 2 then return nil end
+    local texto, nota
+    for _, m in ipairs(entries) do
+        local e = type(m) == "table" and m.entry
+        local t, n = Tips.For(type(e) == "table" and e.mountID or nil)
+        if not t or (texto and t ~= texto) then return nil end
+        texto, nota = t, n
+    end
+    return texto, nota
+end
