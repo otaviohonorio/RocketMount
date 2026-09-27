@@ -103,5 +103,17 @@ function ns.SetupOptions()
             L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."])
     end
 
+    -- "Donate" (26/09): the game's own button row, at the end of the panel (Donate.lua).
+    if SettingsPanel and SettingsPanel.GetLayout and CreateSettingsButtonInitializer then
+        local layout = SettingsPanel:GetLayout(category)
+        if layout and layout.AddInitializer then
+            if CreateSettingsListSectionHeaderInitializer then
+                layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Support"]))
+            end
+            layout:AddInitializer(CreateSettingsButtonInitializer(L["Support the development"], L["Donate"],
+                function() ns.ShowDonate() end, L["Opens the donation link, ready to copy."], true))
+        end
+    end
+
     Settings.RegisterAddOnCategory(category)
 end

@@ -352,3 +352,11 @@ L["Collected"] = "Coletadas"
 L["%d of %d mounts"] = "%d de %d montarias"
 L["Only mounts this character can use count toward it."] = "Só contam as montarias que este personagem pode usar."
 L["done"] = "concluída"
+
+-- Doação (Donate.lua, 26/09)
+L["Donate"] = "Doar"
+L["Link copied — paste it in your browser."] = "Link copiado — cole no navegador."
+L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Obrigado por apoiar o Rocket Mount! Aperte Ctrl+C para copiar o link e cole no navegador."
+L["Support"] = "Apoio"
+L["Support the development"] = "Apoiar o desenvolvimento"
+L["Opens the donation link, ready to copy."] = "Abre o link de doação, pronto para copiar."

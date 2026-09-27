@@ -16,6 +16,7 @@
 ## AllowAddOnTableAccess: 1
 ## OptionalDeps: MCL, MountJournalEnhanced
 ## AddonCompartmentFunc: RocketMount_OnCompartmentClick
+## X-Donate: PayPal:https://www.paypal.com/donate/?business=HH4PHH48DPG9J&no_recurring=0&currency_code=USD
 
 Locales\enUS.lua
 Locales\ptBR.lua
@@ -25,6 +26,7 @@ Data\AchievementMounts.lua
 Data\MountReputation.lua
 Data\RareLockout.lua
 Core.lua
+Donate.lua
 #@debug@
 Log.lua
 #@end-debug@
