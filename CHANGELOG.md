@@ -63,8 +63,11 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   (Untainted Grove Crawler, Ancestral War Bear, Hexed Vilefeather Eagle, Insatiable
   Shredclaw), Echo of Aln'sharan, the ritual site mounts, the mounts that drop from a zone's
   rares, Hexflame Reaver, Spirit of Tok'jara, and a price the journal gets wrong (Blessed
-  Amani Burrower). On the world map, a rare that drops two mounts with the same tip shows it
-  once, under the list.
+  Amani Burrower). The second covers The War Within: Alunira, Siesbarg, Thrayir, the mounts
+  of the Horrific Visions, the Stonevault Mechsuit, the mounts of Undermine and of K'aresh,
+  and the ones the journal still lists under a quest that is gone (the Delver's mounts, now
+  sold by Reno Jackson). On the world map, a rare that drops two mounts with the same tip
+  shows it once, under the list.
 - **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
   20 across, it was 25), so a zone full of rares covers less of the map.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
