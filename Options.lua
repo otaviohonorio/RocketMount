@@ -110,7 +110,7 @@ function ns.SetupOptions()
             if CreateSettingsListSectionHeaderInitializer then
                 layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Support"]))
             end
-            layout:AddInitializer(CreateSettingsButtonInitializer(L["Support the development"], L["Donate"],
+            layout:AddInitializer(CreateSettingsButtonInitializer(L["Support the project"], L["Open link"],
                 function() ns.ShowDonate() end, L["Opens the donation link, ready to copy."], true))
         end
     end
