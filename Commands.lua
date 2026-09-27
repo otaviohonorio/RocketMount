@@ -271,10 +271,6 @@ commands["log"] = function(rest)
     end
 end
 
--- `/rmt doar` (or `donate`): the donation link (Donate.lua).
-commands["donate"] = function() ns.ShowDonate() end
-commands["doar"] = commands["donate"]
-
 commands["help"] = function()
     ns.Print(L["commands:"])
     print("    |cffffff00/rmt|r                  " .. L["opens and closes the list"])
