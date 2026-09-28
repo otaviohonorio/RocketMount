@@ -104,12 +104,35 @@ commands["who"] = function(rest)
     -- "which of mine has it", and has to say so.
     local n = ns.Roster and ns.Roster.Count() or 0
     ns.Print(string.format(L["%d character(s) recorded. The ledger is written as each one logs in — log in with your alts once so they show up here."], n))
-    if not (ns.db and ns.db.chars) then return end
-    for _, c in pairs(ns.db.chars) do
-        local quantas = 0
-        for _ in pairs(c.reps or {}) do quantas = quantas + 1 end
-        print(string.format(L["    %s%s  —  %d reputation(s) recorded"],
-            c.name or "?", c.faction and (" (" .. c.faction .. ")") or "", quantas))
+    -- The one seen last first, each with the day it was seen: a character that was deleted is
+    -- the one that stopped being seen.
+    for _, c in ipairs(ns.Roster and ns.Roster.List() or {}) do
+        local quando = c.seen and c.seen > 0 and date and date(L["%m/%d/%Y"], c.seen) or "?"
+        print(string.format(L["    %s%s  —  %d reputation(s) recorded, seen on %s"],
+            c.key, c.faction and (" (" .. c.faction .. ")") or "", c.reps, quando))
+    end
+    if n > 1 then
+        print("    " .. L["A character that no longer exists: /rmt forget Name"])
+    end
+end
+
+-- A character that was deleted, renamed or moved goes on in the ledger until the player says
+-- so: the game does not tell.
+commands["forget"] = function(rest)
+    local chave, porque = ns.Roster.Find(rest)
+    if not chave then
+        if porque == "several" then
+            ns.Print(string.format(L["more than one character is called %s: write it with the realm, Name-Realm."], rest))
+        else
+            ns.Print(L["which character? /rmt who lists them; then /rmt forget Name"])
+        end
+        return
+    end
+    if ns.Roster.Forget(chave) then
+        ns.Print(string.format(L["%s is out of the records: reputations, rares looted and what the vendors said."], chave))
+        ns.RefreshWindow()
+    else
+        ns.Print(string.format(L["%s is the character you are playing: it would be recorded again right away."], chave))
     end
 end
 
@@ -323,6 +346,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt search <text>|r    " .. L["searches by name, boss, zone or vendor"])
     print("    |cffffff00/rmt expansion [name]|r " .. L["filters by expansion"])
     print("    |cffffff00/rmt who|r              " .. L["the characters recorded and how many reputations each one has"])
+    print("    |cffffff00/rmt forget <name>|r    " .. L["takes a character that no longer exists out of the records"])
     print("    |cffffff00/rmt minimap|r          " .. L["shows or hides the minimap button"])
     print("    |cffffff00/rmt config|r           " .. L["options"])
     print("    |cffffff00/rmt i18n|r             " .. L["checks the labels taken from the game"])
@@ -344,6 +368,7 @@ local ALIASES = {
     sumidas = "gone",
     faccao = "faction", ["facção"] = "faction",
     quem = "who",
+    esquecer = "forget",
     fontes = "sources",
     ajuda = "help",
     marcadores = "pins",

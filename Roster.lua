@@ -114,6 +114,75 @@ function Roster.Line(factionId, targetIdx)
     return string.format(L["%s has it (%s) and %d more"], primeiro.name, nivel, #quem - 1)
 end
 
+---The characters of the ledger, the one seen last first: `{ key, name, realm, faction, class,
+---seen, reps, me }`. For `/rmt who`, which is where a character that no longer exists is found.
+function Roster.List()
+    local out = {}
+    local eu = CharKey()
+    for key, c in pairs(ns.db and type(ns.db.chars) == "table" and ns.db.chars or {}) do
+        if type(c) == "table" then
+            local reps = 0
+            for _ in pairs(type(c.reps) == "table" and c.reps or {}) do reps = reps + 1 end
+            out[#out + 1] = {
+                key = key, name = c.name or key, realm = c.realm, faction = c.faction, class = c.class,
+                seen = tonumber(c.seen), reps = reps, me = key == eu,
+            }
+        end
+    end
+    table.sort(out, function(a, b)
+        if (a.seen or 0) ~= (b.seen or 0) then return (a.seen or 0) > (b.seen or 0) end
+        return a.key < b.key
+    end)
+    return out
+end
+
+-- (!) THE CHARACTER THAT WAS DELETED (28/09). The user: *"eu exclui personagem que ele apontava
+-- como o mais perto de conseguir, tem como ajustar?"*. The ledger is written as each character
+-- logs in, and nothing in the game says that one was deleted: the list of the account's
+-- characters belongs to the login screen, not to the game. So the ledger went on naming, as the
+-- closest to a mount, a character that no longer exists. The player says which one is gone.
+--
+-- Everything the addon kept OF THAT CHARACTER goes with it: its reputations, the rares it
+-- looted, what the vendors told it.
+local PER_CHARACTER = { "chars", "looted", "lockoutWatch", "vendorSeen" }
+
+---Which character of the ledger a name is: "Name" or "Name-Realm", as it is written or without
+---minding the case. Two characters of the same name on two realms are told apart by the realm.
+---@return string|nil key, string|nil why `"none"`, `"several"` (then `key` is nil)
+function Roster.Find(texto)
+    texto = type(texto) == "string" and texto:match("^%s*(.-)%s*$") or ""
+    if texto == "" then return nil, "none" end
+    local chars = ns.db and type(ns.db.chars) == "table" and ns.db.chars or {}
+    if chars[texto] then return texto end
+    local baixo = texto:lower()
+    local achados = {}
+    for key, c in pairs(chars) do
+        local nome = type(c) == "table" and c.name or key:match("^(.-)%-") or key
+        if key:lower() == baixo or nome == texto or nome:lower() == baixo then
+            achados[#achados + 1] = key
+        end
+    end
+    if #achados == 1 then return achados[1] end
+    return nil, #achados == 0 and "none" or "several"
+end
+
+---Takes a character out of everything the addon keeps per character.
+---@return boolean removed false for the character that is logged in: it would be written again
+function Roster.Forget(key)
+    if not (ns.db and type(key) == "string" and key ~= "") then return false end
+    if key == CharKey() then return false end
+    local tinha = false
+    for _, tabela in ipairs(PER_CHARACTER) do
+        local t = ns.db[tabela]
+        if type(t) == "table" and t[key] ~= nil then
+            t[key] = nil
+            tinha = true
+        end
+    end
+    if tinha and ns.Invalidate then ns.Invalidate() end
+    return tinha
+end
+
 ---How many characters the ledger knows. The window says it, because a ledger with one character
 ---in it cannot answer "which of mine has it" and should not look like it can.
 function Roster.Count()

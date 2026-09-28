@@ -356,7 +356,18 @@ L["faction: %s"] = "facção: %s"
 L["%d character(s) recorded. The ledger is written as each one logs in — log in with your alts once so they show up here."] =
     "%d personagem(ns) anotado(s). O livro-caixa se escreve quando cada um entra no jogo — entre "
     .. "com os alts uma vez para eles aparecerem aqui."
-L["    %s%s  —  %d reputation(s) recorded"] = "    %s%s  —  %d reputações anotadas"
+L["    %s%s  —  %d reputation(s) recorded, seen on %s"] = "    %s%s  —  %d reputações anotadas, visto em %s"
+L["%m/%d/%Y"] = "%d/%m/%Y"
+L["A character that no longer exists: /rmt forget Name"] = "Personagem que não existe mais: /rmt esquecer Nome"
+L["more than one character is called %s: write it with the realm, Name-Realm."] =
+    "mais de um personagem se chama %s: escreva com o reino, Nome-Reino."
+L["which character? /rmt who lists them; then /rmt forget Name"] =
+    "qual personagem? /rmt quem lista todos; depois /rmt esquecer Nome"
+L["%s is out of the records: reputations, rares looted and what the vendors said."] =
+    "%s saiu dos registros: reputações, raros saqueados e o que os vendedores disseram."
+L["%s is the character you are playing: it would be recorded again right away."] =
+    "%s é o personagem com que você está jogando: seria anotado de novo na hora."
+L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
 
 L["source filter cleared: every source is back."] =
     "filtro de fonte limpo: todas as fontes voltam a aparecer."

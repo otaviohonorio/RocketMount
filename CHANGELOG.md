@@ -114,6 +114,11 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **A character you deleted can be taken out of the records.** The list names the character of
+  yours that is closest to a mount, from what each one had when it last logged in — and the
+  game does not tell an addon that a character was deleted. `/rmt who` now lists every
+  character with the day it was last seen, and `/rmt forget Name` takes one out, with
+  everything the addon kept of it.
 - **The black square on the portal markers is gone.** The glyph of a portal was cut from the
   wrong part of the art.
 - **The broken mirrors of Revendreth, the ones that are on.** The Battle Gargon Silessa is
