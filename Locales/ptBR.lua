@@ -369,6 +369,8 @@ L["%s is the character you are playing: it would be recorded again right away."]
     "%s é o personagem com que você está jogando: seria anotado de novo na hora."
 L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
 L["%s no longer exists"] = "%s não existe mais"
+L['Quest "%s": %d of the %d quests that lead to it done'] = 'Missão "%s": %d das %d missões que levam a ela feitas'
+L['  ·  next: "%s"'] = '  ·  a próxima: "%s"'
 L["By difficulty, as players measured it:"] = "Por dificuldade, como os jogadores mediram:"
 L["Chests of a difficulty not identified: %s"] = "Baús de dificuldade não identificada: %s"
 L["%s to %s"] = "%s a %s"

@@ -134,6 +134,12 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   reaches 50 and again at 100; only a Gigantic Dreamseed of yours gives the other six. What is
   of all of them comes once, at the end: only a seed is planted, the bar is of everybody who
   gave, and where the gigantic seed comes from. The chance is a rate for each cache.
+- **A quest that is the end of a chain counts the chain.** A mount from a quest showed 0% until
+  the quest was done, even when that quest is the last of five, twenty-three days after the
+  first. For the 22 quests whose chain is known, the number is how far along it you are, and the
+  line names the quest that comes next: "2 of the 5 quests that lead to it done".
+- **Ochre Dreamtalon**: a tip with the 23 days of its chain, where the sprout is, and what goes
+  wrong on the way.
 - **A chance is a rate, in every tip.** "About 1 kill in 18 gives the mount" read as a promise;
   it is now "about 5.5% of the kills give the mount". Sixteen tips changed.
 - **Korthia's covenant mounts and Undermine's cartel troves, mount by mount.** Each mount says

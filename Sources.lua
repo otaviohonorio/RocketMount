@@ -768,7 +768,10 @@ function ns.OwnPlaces(mountID, sourceType)
         if DoMeuLado(q) then
             local pts = Pontos(q.where)
             -- `m` is where the quest is taken, for the card to name the zone.
-            out.quests[#out.quests + 1] = { id = id, name = q.name, m = pts[1] and pts[1].m or nil }
+            out.quests[#out.quests + 1] = {
+                id = id, name = q.name, m = pts[1] and pts[1].m or nil,
+                chain = type(q.chain) == "table" and q.chain or nil,
+            }
             for _, p in ipairs(pts) do
                 -- `q` is what the map reads to know the point is spent: the quest done.
                 out.coords[#out.coords + 1] = {
@@ -1128,10 +1131,10 @@ local function QuestProgress(nossas)
     -- here (`ns.OwnPlaces` drops the other side's); with more than one, the one already done
     -- counts, and otherwise the first.
     if type(nossas) ~= "table" or #nossas == 0 then return nil end
-    local q = { questId = nossas[1].id, quest = nossas[1].name, m = nossas[1].m }
+    local q = { questId = nossas[1].id, quest = nossas[1].name, m = nossas[1].m, chain = nossas[1].chain }
     for _, n in ipairs(nossas) do
         local ok, feita = pcall(C_QuestLog.IsQuestFlaggedCompleted, n.id)
-        if ok and feita then q = { questId = n.id, quest = n.name, m = n.m }; break end
+        if ok and feita then q = { questId = n.id, quest = n.name, m = n.m, chain = n.chain }; break end
     end
 
     local questID = q.questId
@@ -1176,6 +1179,42 @@ local function QuestProgress(nossas)
 
     -- FEITA EM OUTRO PERSONAGEM é informação, e não requisito cumprido: a montaria é deste.
     local extra = naConta and L["  —  already done on another character"] or ""
+
+    -- (!) THE CHAIN (28/09). The user, with the Ochre Dreamtalon at 0%: *"Montaria de missão com 0
+    -- porcento, verifica se esta correto isso"*. The quest of the mount is the last of five, and
+    -- "the last one is not done" is true from the first day to the twenty-third. The game tells
+    -- whether each quest is done: the number is how far along the chain the character is, and
+    -- the line says which quest comes next. A chain is known for the quests of
+    -- `Data/MountPlaces.lua` that have one; for the others nothing changes -- not knowing the
+    -- chain is not having walked it.
+    local cadeia = type(q.chain) == "table" and #q.chain >= 2 and q.chain or nil
+    if cadeia and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        -- The furthest one done: a step the game skipped for this character, or the other
+        -- faction's, is behind it all the same.
+        local feitas = 0
+        for i, passo in ipairs(cadeia) do
+            local ok, v = pcall(C_QuestLog.IsQuestFlaggedCompleted, passo)
+            if ok and v then feitas = i end
+        end
+        -- (The last of the chain is the mount's quest, and with that one done the answer was
+        -- given above: here `feitas` is at most one short of the chain.)
+        local proxima = cadeia[feitas + 1]
+        local nome
+        if proxima and proxima ~= questID and C_QuestLog.GetTitleForQuestID then
+            if C_QuestLog.RequestLoadQuestByID then pcall(C_QuestLog.RequestLoadQuestByID, proxima) end
+            local ok, t = pcall(C_QuestLog.GetTitleForQuestID, proxima)
+            if ok and type(t) == "string" and t ~= "" then nome = t end
+        end
+        return {
+            kind = "quest", pct = feitas / #cadeia, questID = questID, titulo = titulo, onde = onde,
+            naConta = naConta, steps = #cadeia, done = feitas, nextQuest = proxima,
+            label = string.format(L['Quest "%s": %d of the %d quests that lead to it done'],
+                titulo or "?", feitas, #cadeia)
+                .. (nome and string.format(L['  ·  next: "%s"'], nome) or "")
+                .. (onde and ("  ·  " .. onde) or "") .. extra,
+        }
+    end
+
     return {
         kind = "quest", pct = 0, questID = questID, titulo = titulo, onde = onde,
         naConta = naConta,
