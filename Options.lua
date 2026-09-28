@@ -104,6 +104,8 @@ function ns.SetupOptions()
                 function(value)
                     ns.db[chave] = value
                     if ns.MapPins then ns.MapPins.Refresh() end
+                    -- The button on the map shows the same switch, and is itself an option.
+                    if ns.MapButton then ns.MapButton.Update() end
                 end)
             return Settings.CreateCheckbox(category, setting, dica), setting
         end
@@ -117,6 +119,8 @@ function ns.SetupOptions()
                 L["The mounts that drop inside, at the entrance. The marker steps aside so the game's own entrance icon stays visible."])),
             (Caixa("mapLabels", "MapLabels", L["Name the source under each marker"],
                 L["Rare, Vendor, Quest, Raid… under the mount's icon. Unchecked, the small symbol on the marker still says it."])),
+            (Caixa("mapButton", "MapButton", L["A button on the map to hide and show them"],
+                L["A round button with a horseshoe, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."])),
             (Caixa("minimapPins", "MinimapPins", L["On the minimap too"],
                 L["The places within the minimap's reach, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."])),
             (Caixa("mapRoutes", "MapRoutes", L["Draw the route of a creature that walks"],

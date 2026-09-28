@@ -64,6 +64,7 @@ function handlers:ADDON_LOADED(addon)
     -- The world map can load after us; its pins wait for it.
     if addon == "Blizzard_WorldMap" and ns.MapPins then
         ns.MapPins.Enable()
+        if ns.MapButton then ns.MapButton.Enable() end
         return
     end
     if addon ~= ADDON then return end
@@ -98,6 +99,7 @@ function handlers:PLAYER_LOGIN()
     if ns.Sighting then ns.Sighting.Enable() end
     if ns.MapPins then ns.MapPins.Enable() end
     if ns.MinimapPins then ns.MinimapPins.Enable() end
+    if ns.MapButton then ns.MapButton.Enable() end
     -- The calendar of events is asked of the server (no window opens): the vendors of an event
     -- count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
     if C_Calendar and C_Calendar.OpenCalendar then pcall(C_Calendar.OpenCalendar) end

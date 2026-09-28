@@ -47,6 +47,7 @@ Window.lua
 Sighting.lua
 MapPins.lua
 MinimapPins.lua
+MapButton.lua
 MapPins.xml
 Minimap.lua
 Options.lua

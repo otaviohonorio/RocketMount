@@ -134,6 +134,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   reaches 50 and again at 100; only a Gigantic Dreamseed of yours gives the other six. What is
   of all of them comes once, at the end: only a seed is planted, the bar is of everybody who
   gave, and where the gigantic seed comes from. The chance is a rate for each cache.
+- **A button on the world map to hide the markers.** A round button with a horseshoe, in the
+  column of the map's own buttons at the top right: one click and the map is clean, another and
+  the markers are back. It is an option, like the markers themselves.
 - **A quest that is the end of a chain counts the chain.** A mount from a quest showed 0% until
   the quest was done, even when that quest is the last of five, twenty-three days after the
   first. For the 22 quests whose chain is known, the number is how far along it you are, and the

@@ -369,6 +369,13 @@ L["%s is the character you are playing: it would be recorded again right away."]
     "%s é o personagem com que você está jogando: seria anotado de novo na hora."
 L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
 L["%s no longer exists"] = "%s não existe mais"
+L["The markers of the mounts you are missing are on the map."] = "As marcações das montarias que faltam estão no mapa."
+L["The markers of the mounts you are missing are hidden."] = "As marcações das montarias que faltam estão escondidas."
+L["Click: hide them"] = "Clique: esconder"
+L["Click: show them"] = "Clique: mostrar"
+L["A button on the map to hide and show them"] = "Um botão no mapa para esconder e mostrar"
+L["A round button with a horseshoe, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."] =
+    "Um botão redondo com uma ferradura, na coluna dos botões do próprio mapa, no alto à direita. Um clique esconde todas as marcações do Rocket Mount, para quando você precisa do mapa limpo; outro traz de volta."
 L['Quest "%s": %d of the %d quests that lead to it done'] = 'Missão "%s": %d das %d missões que levam a ela feitas'
 L['  ·  next: "%s"'] = '  ·  a próxima: "%s"'
 L["By difficulty, as players measured it:"] = "Por dificuldade, como os jogadores mediram:"
