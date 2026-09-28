@@ -186,6 +186,9 @@ local function BuildDetail(parent)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
 
+    -- The "no longer exists" buttons, made as they are needed (`ForgetButton`).
+    d.forget = {}
+
     d.empty = Text(d, "GameFontDisable")
     d.empty:SetPoint("TOPLEFT", 0, -6)
     d.empty:SetWidth(DETAIL_W)
@@ -306,6 +309,7 @@ function ns.DetailBlocks(entry)
     local function Add(key, label, value)
         if not value or value == "" then return end
         blocks[#blocks + 1] = { key = key, label = label, value = value }
+        return blocks[#blocks]
     end
 
     -- THE FLAVOUR LINE, in quotes, the way the game writes one on an item.
@@ -371,13 +375,14 @@ function ns.DetailBlocks(entry)
     -- *"falta cristal de ressonancia mas que tambem falta reputacao"*. Uma montaria com dois
     -- requisitos que anuncia so um deles manda o jogador para a metade do caminho.
     local p = entry.requirementFrom and entry[entry.requirementFrom]
+    local exigido
     if entry.requisitos and #entry.requisitos > 0 then
         local linhas = {}
         for _, r in ipairs(entry.requisitos) do
             linhas[#linhas + 1] = (r.cumprido and "|cff55dd66+|r  " or "|cffff5a52x|r  ")
                 .. (r.label or "?")
         end
-        Add("requirements", entry.faltando > 0
+        exigido = Add("requirements", entry.faltando > 0
             and string.format(L["Requirements — %d of %d missing"], entry.faltando, #entry.requisitos)
             or L["Requirements — all met"],
             table.concat(linhas, string.char(10)))
@@ -422,18 +427,31 @@ function ns.DetailBlocks(entry)
     -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
     -- escrito quando cada personagem entra. Por isso ela diz "pelo que ficou anotado" — uma
     -- anotação velha se passando por leitura ao vivo seria pior que anotação nenhuma.
+    local anotados
     if p and p.unreadable and entry.rep and entry.rep.factionId ~= nil and ns.Roster then
         local quem = ns.Roster.WhoHas(entry.rep.factionId)
         if #quem > 0 then
-            local linhas = {}
+            local linhas, nomeados = {}, {}
             for i = 1, math.min(#quem, 5) do
                 local c = quem[i]
                 linhas[#linhas + 1] = string.format("%s — %s", c.name,
                     _G["FACTION_STANDING_LABEL" .. c.reaction] or "?")
+                nomeados[#nomeados + 1] = { key = c.key, name = c.name, seen = c.seen }
             end
-            Add("who", L["Who has it, from what was recorded"],
+            anotados = Add("who", L["Who has it, from what was recorded"],
                 table.concat(linhas, string.char(10)))
+            if anotados then anotados.chars = nomeados end
         end
+    end
+
+    -- (!) WHERE A CHARACTER IS NAMED, THE PLAYER CAN SAY IT IS GONE (28/09). The user: *"talvez
+    -- onde está escrito quem é o personagem, ter algum botão ali para avisar que o personagem
+    -- foi excluído"*. The block says which characters it names (`chars`), and the card puts a
+    -- button under it for each. One button per character: when the list of who has it is on the
+    -- card, the character of the requirement line is in it, and its button is there.
+    local nomeado = entry.rep and entry.rep.named
+    if exigido and not anotados and nomeado and nomeado.key then
+        exigido.chars = { nomeado }
     end
 
     -- (!) O PREÇO NÃO TEM BLOCO PRÓPRIO, e isso é correção, não esquecimento.
@@ -482,11 +500,100 @@ local function Altura(fs, texto, porLinha)
     return (quebras + 1) * (porLinha or 14)
 end
 
+--------------------------------------------------------------------------------
+-- "No longer exists": the button under the block that names a character
+--------------------------------------------------------------------------------
+-- The game does not tell an addon that a character was deleted: the ledger goes on naming it
+-- until the player says so. `/rmt forget Name` does it from the chat; this does it from where
+-- the name is read. The dialog is the game's own, and asks before anything is taken out: what
+-- goes cannot be read again from a character that is gone.
+local FORGET_POPUP = "ROCKETMOUNT_FORGET"
+-- 6 from the text that names the character; 2 between buttons, which makes 24 from the middle of
+-- one to the middle of the next.
+local FORGET_GAP, FORGET_STEP, FORGET_H = 6, 2, 22
+ns.Geometry.forgetGap, ns.Geometry.forgetStep, ns.Geometry.forgetH = FORGET_GAP, FORGET_STEP, FORGET_H
+
+---Takes a character out of the records and says so. The list and the card are redone by
+---`Roster.Forget` itself.
+function ns.ForgetCharacter(key)
+    if not (ns.Roster and ns.Roster.Forget(key)) then return false end
+    ns.Print(string.format(L["%s is out of the records: reputations, rares looted and what the vendors said."], key))
+    return true
+end
+
+---Asks, in the game's dialog, whether the character is to be taken out of the records.
+function ns.AskForget(key)
+    if not (key and StaticPopupDialogs and StaticPopup_Show) then return end
+    if not StaticPopupDialogs[FORGET_POPUP] then
+        StaticPopupDialogs[FORGET_POPUP] = {
+            text = L["Take %s out of the records of Rocket Mount?|n|nFor a character that was deleted, renamed or moved. One that still exists is recorded again the next time it logs in."],
+            button1 = YES,
+            button2 = NO,
+            -- (!) No `return`: the game keeps the dialog open when this answers true
+            -- (`StaticPopup.lua`, `hide = not OnAccept(...)`).
+            OnAccept = function(_, chave) ns.ForgetCharacter(chave) end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+    end
+    StaticPopup_Show(FORGET_POPUP, key, nil, key)
+end
+
+---What the button's tooltip says: the character with its realm, the day it was last seen, and
+---what the click does.
+---@return string title, table lines
+function ns.ForgetTooltip(key, seen)
+    local linhas = {}
+    seen = tonumber(seen)
+    if seen and seen > 0 and date then
+        linhas[#linhas + 1] = string.format(L["Last seen on %s"], date(L["%m/%d/%Y"], seen))
+    end
+    linhas[#linhas + 1] = L["The game does not tell an addon that a character was deleted, renamed or moved. Click to take it out of what Rocket Mount recorded."]
+    return key, linhas
+end
+
+local function ForgetButton(d, i)
+    local b = d.forget[i]
+    if b then return b end
+    b = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    b:SetHeight(FORGET_H)
+    b:SetScript("OnClick", function(self)
+        if type(self.charKey) == "string" then ns.AskForget(self.charKey) end
+    end)
+    b:SetScript("OnEnter", function(self)
+        if type(self.charKey) ~= "string" then return end
+        local titulo, linhas = ns.ForgetTooltip(self.charKey, self.charSeen)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if GameTooltip_SetTitle then
+            GameTooltip_SetTitle(GameTooltip, titulo)
+        else
+            GameTooltip:SetText(titulo, 1, 1, 1)
+        end
+        for _, linha in ipairs(linhas) do
+            if GameTooltip_AddNormalLine then
+                GameTooltip_AddNormalLine(GameTooltip, linha, true)
+            else
+                GameTooltip:AddLine(linha, 1, 0.82, 0, true)
+            end
+        end
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    d.forget[i] = b
+    return b
+end
+
 local function FillDetail(entry)
     local d = detail
     for _, b in ipairs(d.blocks) do
         b.label:Hide()
         b.value:Hide()
+    end
+    for _, b in ipairs(d.forget) do
+        b.charKey, b.charSeen = nil, nil
+        b:Hide()
     end
     d.waypoint:Hide()
 
@@ -521,6 +628,7 @@ local function FillDetail(entry)
     -- piece of the card that is not an answer to a question.
     local anchor, y = d.rule, -10
     local total = 48 + 10 + 1
+    local botoes = 0
     for i, bloco in ipairs(blocks) do
         local b = Block(d, i)
         b.label:ClearAllPoints()
@@ -534,6 +642,22 @@ local function FillDetail(entry)
             b.value:Show()
             total = total - y + Altura(b.label, bloco.label, 14) + 2 + Altura(b.value, bloco.value, 14)
             anchor, y = b.value, -10
+            -- Under the text that names them, one button for each character named.
+            for n, c in ipairs(bloco.chars or {}) do
+                botoes = botoes + 1
+                local botao = ForgetButton(d, botoes)
+                botao.charKey, botao.charSeen = c.key, c.seen
+                botao:SetText(string.format(L["%s no longer exists"], c.name))
+                -- As wide as its text plus 40, which is the template's own rule
+                -- (`UIButtonFitToTextBehaviorMixin`). After the text, never before it.
+                botao:FitToText()
+                local vao = n == 1 and FORGET_GAP or FORGET_STEP
+                botao:ClearAllPoints()
+                botao:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -vao)
+                botao:Show()
+                total = total + vao + FORGET_H
+                anchor = botao
+            end
         else
             -- In the label's font: the game writes flavour text in its gold.
             b.label:SetText(bloco.value)
@@ -808,10 +932,26 @@ local function Redraw()
     window.footer:SetText(footer)
 end
 
+---The entry of the same mount in the list as it is NOW, or nil when the mount left it.
+local function Fresh(entry)
+    if not (entry and entry.mountID) then return entry end
+    for _, e in ipairs(ns.GetRanked()) do
+        if e.mountID == entry.mountID then return e end
+    end
+    return nil
+end
+
 function ns.RefreshWindow()
     if window and window:IsShown() then
         Redraw()
-        if selected then FillDetail(selected) end
+        if selected then
+            -- (!) THE CARD FOLLOWS THE LIST (28/09). A rebuilt list is made of NEW entries, and
+            -- the card was filled again from the OLD one: with the character taken out of the
+            -- records, the row named the next one and the card went on naming the one that was
+            -- gone.
+            selected = Fresh(selected)
+            FillDetail(selected)
+        end
     end
 end
 

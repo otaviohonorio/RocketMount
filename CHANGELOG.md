@@ -116,9 +116,13 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   vendor and 14 their quest, the class mounts of Legion among them.
 - **A character you deleted can be taken out of the records.** The list names the character of
   yours that is closest to a mount, from what each one had when it last logged in — and the
-  game does not tell an addon that a character was deleted. `/rmt who` now lists every
-  character with the day it was last seen, and `/rmt forget Name` takes one out, with
-  everything the addon kept of it.
+  game does not tell an addon that a character was deleted. On the mount's card, under the
+  text that names the character, there is now a button, "<Name> no longer exists": it asks
+  before doing it, and the list and the card move on to your next closest character. From the
+  chat, `/rmt who` lists every character with the day it was last seen, and `/rmt forget Name`
+  takes one out. Either way, everything the addon kept of that character goes with it.
+- **The card follows the list.** When the list was redone with the window open, the card went
+  on showing what the mount looked like before.
 - **The black square on the portal markers is gone.** The glyph of a portal was cut from the
   wrong part of the art.
 - **The broken mirrors of Revendreth, the ones that are on.** The Battle Gargon Silessa is

@@ -109,10 +109,13 @@ local function ReputationProgressHere(rep)
     -- conectado, mas o `Roster` anotou o que cada um tinha ao entrar — e a pergunta do usuário
     -- era exatamente essa: *"consegue mostrar qual personagem tem a reputação, caso seja
     -- legada?"*. Reputação de Brigada não precisa disto; a legada, sim.
-    local outro = ns.Roster and ns.Roster.Line(rep.factionId, alvo) or nil
+    local outro, quem
+    if ns.Roster then outro, quem = ns.Roster.Line(rep.factionId, alvo) end
     local desconhecida = {
         kind = "rep", factionName = nome, pct = 0, unreadable = true,
         outroChar = outro,
+        -- Who the line names, for the card's "no longer exists" button.
+        named = quem and { key = quem.key, name = quem.name, seen = quem.seen } or nil,
         label = outro
             and string.format(L["%s: %s — this character does not have it"], nome, outro)
             or string.format(L["%s: no reputation with this faction on this character"], nome),
@@ -281,8 +284,8 @@ local function BestAlt(factionId, alvo)
             pct = math.max(0, math.min(1, (c.reaction - 1) / math.max(1, alvo - 1)))
         end
         if not melhor or pct > melhor.pct then
-            melhor = { name = c.name, class = c.class, pct = pct, standing = c.standing,
-                reaction = c.reaction }
+            melhor = { key = c.key, name = c.name, class = c.class, pct = pct,
+                standing = c.standing, reaction = c.reaction, seen = c.seen }
         end
     end
     return melhor
@@ -318,6 +321,7 @@ local function ReputationProgress(rep)
         kind = "rep", factionId = rep.factionId, factionName = nome,
         pct = melhor.pct, char = melhor.name, charClass = melhor.class,
         outroChar = melhor.name, minePct = meu,
+        named = { key = melhor.key, name = melhor.name, seen = melhor.seen },
         scope = "personagem", label = texto,
     }
 end

@@ -368,6 +368,12 @@ L["%s is out of the records: reputations, rares looted and what the vendors said
 L["%s is the character you are playing: it would be recorded again right away."] =
     "%s é o personagem com que você está jogando: seria anotado de novo na hora."
 L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
+L["%s no longer exists"] = "%s não existe mais"
+L["Last seen on %s"] = "Visto pela última vez em %s"
+L["The game does not tell an addon that a character was deleted, renamed or moved. Click to take it out of what Rocket Mount recorded."] =
+    "O jogo não avisa um addon de que um personagem foi excluído, renomeado ou transferido. Clique para tirá-lo do que o Rocket Mount anotou."
+L["Take %s out of the records of Rocket Mount?|n|nFor a character that was deleted, renamed or moved. One that still exists is recorded again the next time it logs in."] =
+    "Tirar %s dos registros do Rocket Mount?|n|nPara personagem que foi excluído, renomeado ou transferido. O que ainda existe é anotado de novo na próxima vez em que entrar no jogo."
 
 L["source filter cleared: every source is back."] =
     "filtro de fonte limpo: todas as fontes voltam a aparecer."

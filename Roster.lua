@@ -85,6 +85,9 @@ function Roster.WhoHas(factionId, targetIdx)
             local reaction = c.reps[factionId]
             if not targetIdx or reaction >= targetIdx then
                 out[#out + 1] = {
+                    -- The key, for whoever has to point at THIS character: two characters of
+                    -- the same name on two realms are one name and two keys.
+                    key = key,
                     name = c.name or key, realm = c.realm, faction = c.faction,
                     class = c.class, reaction = reaction,
                     standing = c.standing and c.standing[factionId] or nil,
@@ -102,6 +105,8 @@ function Roster.WhoHas(factionId, targetIdx)
 end
 
 ---One short line for the row: who has it, and at what standing.
+---@return string|nil line
+---@return table|nil who the character the line names, as `WhoHas` gives it
 function Roster.Line(factionId, targetIdx)
     local quem = Roster.WhoHas(factionId, targetIdx)
     if #quem == 0 then return nil end
@@ -109,9 +114,9 @@ function Roster.Line(factionId, targetIdx)
     local primeiro = quem[1]
     local nivel = _G["FACTION_STANDING_LABEL" .. primeiro.reaction] or "?"
     if #quem == 1 then
-        return string.format(L["%s has it (%s)"], primeiro.name, nivel)
+        return string.format(L["%s has it (%s)"], primeiro.name, nivel), primeiro
     end
-    return string.format(L["%s has it (%s) and %d more"], primeiro.name, nivel, #quem - 1)
+    return string.format(L["%s has it (%s) and %d more"], primeiro.name, nivel, #quem - 1), primeiro
 end
 
 ---The characters of the ledger, the one seen last first: `{ key, name, realm, faction, class,
