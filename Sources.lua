@@ -832,6 +832,43 @@ function ns.OwnBoss(mountID)
 end
 
 --------------------------------------------------------------------------------
+-- THE CHANCE ON EACH DIFFICULTY
+--------------------------------------------------------------------------------
+-- (!) 28/09. A raid's chest is one object for each difficulty, all of one name, and the chance
+-- is not the same in all of them: the Astral Cloud Serpent came in 0.4% of the chests of 10
+-- players and in 2.9% of those of 25. The number of the list is of all of them together; this
+-- is what each difficulty gave, for the card (`Data/MountChances.lua`,
+-- tools/coletar_dificuldades.py). The user: *"explica também a dificuldade da raid"*.
+--
+-- A row with no difficulty is a chest whose difficulty could not be told: it is kept, and the
+-- card says so. One row alone has nothing to be compared with, and says nothing. And a mount
+-- seen fewer than ten times on a difficulty has no rate there yet: two in three hundred is
+-- not 0.7%.
+local SEEN_ENOUGH = 10
+
+---@return table|nil `{ { d = difficultyID|nil, rate, count, outof }, ... }`, the best first
+function ns.OwnChances(mountID)
+    local t = type(ns.MountChances) == "table" and ns.MountChances[mountID]
+    if type(t) ~= "table" then return nil end
+    local out = {}
+    for i, r in ipairs(t) do
+        if type(r) == "table" and type(r.count) == "number" and type(r.outof) == "number"
+            and r.count >= SEEN_ENOUGH and r.outof >= r.count then
+            out[#out + 1] = {
+                d = type(r.d) == "number" and r.d or nil,
+                rate = r.count / r.outof, count = r.count, outof = r.outof, i = i,
+            }
+        end
+    end
+    if #out < 2 then return nil end
+    table.sort(out, function(a, b)
+        if a.rate ~= b.rate then return a.rate > b.rate end
+        return a.i < b.i
+    end)
+    return out
+end
+
+--------------------------------------------------------------------------------
 -- WHERE THE PRICE COMES FROM
 --
 -- (!) Reported on 27/09 with a screenshot, standing at Elianna (Emerald Dream): *"Montaria
@@ -1289,6 +1326,8 @@ function ns.BuildList()
                     e.difficulties = chefe.difficulties
                     e.bossFrom = "own"
                 end
+                local okD, porDificuldade = pcall(ns.OwnChances, mountID)
+                e.chanceBy = okD and porDificuldade or nil
 
                 -- WHERE IT IS GOT (28/09): vendors, chests and quests, from
                 -- `Data/MountPlaces.lua`.

@@ -369,6 +369,10 @@ L["%s is the character you are playing: it would be recorded again right away."]
     "%s é o personagem com que você está jogando: seria anotado de novo na hora."
 L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
 L["%s no longer exists"] = "%s não existe mais"
+L["By difficulty, as players measured it:"] = "Por dificuldade, como os jogadores mediram:"
+L["Chests of a difficulty not identified: %s"] = "Baús de dificuldade não identificada: %s"
+L["%s to %s"] = "%s a %s"
+L["The number of the list is of all the difficulties together."] = "O número da lista é o de todas as dificuldades juntas."
 L["Last seen on %s"] = "Visto pela última vez em %s"
 L["The game does not tell an addon that a character was deleted, renamed or moved. Click to take it out of what Rocket Mount recorded."] =
     "O jogo não avisa um addon de que um personagem foi excluído, renomeado ou transferido. Clique para tirá-lo do que o Rocket Mount anotou."

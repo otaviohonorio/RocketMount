@@ -295,6 +295,39 @@ local function Difficulties(ids)
     return table.concat(nomes, ", ")
 end
 
+---What each difficulty gave, for the card: a line for each difficulty the game names, the best
+---first, and ONE line for the chests whose difficulty could not be told.
+---@param rows table|nil what `ns.OwnChances` gives
+---@return table|nil lines
+function ns.ChanceByDifficulty(rows)
+    if type(rows) ~= "table" or #rows < 2 then return nil end
+    local linhas, soltas = {}, {}
+    for _, r in ipairs(rows) do
+        local nome
+        if r.d and GetDifficultyInfo then
+            local ok, n = pcall(GetDifficultyInfo, r.d)
+            if ok and type(n) == "string" and n ~= "" then nome = n end
+        end
+        local taxa = ns.FormatChance(1 / r.rate)
+        if nome and taxa then
+            linhas[#linhas + 1] = string.format("%s: %s", nome, taxa)
+        elseif taxa then
+            -- The game does not name it, or it could not be told: not a difficulty to choose.
+            soltas[#soltas + 1] = r.rate
+        end
+    end
+    if #linhas == 0 then return nil end
+    if #soltas > 0 then
+        table.sort(soltas)
+        local menor, maior = ns.FormatChance(1 / soltas[1]), ns.FormatChance(1 / soltas[#soltas])
+        linhas[#linhas + 1] = string.format(L["Chests of a difficulty not identified: %s"],
+            menor == maior and maior or string.format(L["%s to %s"], menor, maior))
+    end
+    table.insert(linhas, 1, L["By difficulty, as players measured it:"])
+    linhas[#linhas + 1] = "|cff808080" .. L["The number of the list is of all the difficulties together."] .. "|r"
+    return linhas
+end
+
 -- (!) O CONTEÚDO DA FICHA SE MONTA FORA DO DESENHO.
 --
 -- A regra morava dentro do código que pinta widget, e por isso o harness não tinha como
@@ -346,6 +379,9 @@ function ns.DetailBlocks(entry)
         end
         local dificuldades = Difficulties(entry.difficulties)
         if dificuldades then linhas[#linhas + 1] = dificuldades end
+        for _, l in ipairs(ns.ChanceByDifficulty(entry.chanceBy) or {}) do
+            linhas[#linhas + 1] = l
+        end
         -- How often the loot comes back, only when it IS known: "not known yet" belongs to the
         -- map's creature, not to a card about the mount.
         local npc = entry.bossName and ns.CreatureId and ns.CreatureId(entry.bossName)

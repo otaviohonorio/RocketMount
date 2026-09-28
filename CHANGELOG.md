@@ -133,6 +133,11 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   the Winter Night Dreamsaber; only the Gigantic Dreamseed gives the other six; the plump and
   the small ones never do. A full bar is not required, and whether it raises the chance is
   said for what it is: not measured.
+- **The chance on each difficulty.** For a mount whose chance is not the same on every
+  difficulty, the card lists what each one gave, the best first, with the game's own names:
+  the Astral Cloud Serpent came in 0.4% of the chests of 10 players and in 2.9% of those of 25.
+  A chest whose difficulty could not be told is said to be so, with its number. Thirteen
+  mounts have it.
 - **The chance of a chest that is in many places is the chance over all of them.** The addon
   took the number of the luckiest one: 1.5% for a mount of the Dreamseed Cache that comes in
   0.5%. 27 mounts have a lower, truer number now, the mounts of the Dreamseed Cache and the
