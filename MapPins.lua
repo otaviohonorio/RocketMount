@@ -43,7 +43,15 @@ local TEMPLATE = "RocketMountMapPinTemplate"
 -- do mapa?"*. The game's own quest marker is a button of 20 with its art at 32
 -- (`POIButton.xml`, POIButtonTemplate), which is 80% of what we had -- so that is the size, and
 -- every other number went down by the same 80%.
-MapPins.Geometry = { PIN = 20, DISC = 32, ICON = 17, RING = 20, BADGE = 12, BADGE_X = 7, BADGE_Y = -7 }
+--
+-- (!) THE WORD UNDER THE MARKER, SMALLER (28/09). The user: *"pode diminuir um pouco o texto"*.
+-- It was the game's small outlined font as it comes, 10 high (GameFontNormalSmallOutline,
+-- Fonts.xml: SystemFont_Shadow_Small_Outline). The game has no outlined font object below 10 --
+-- its 9 and 8 (SystemFont_Tiny, SystemFont_Tiny2) have no outline, and a word over the map
+-- needs one. So the object stays, with the height the game's smallest text has: 8, the same
+-- 80% the marker itself was brought down to (`FontString:SetFontHeight`).
+MapPins.Geometry = { PIN = 20, DISC = 32, ICON = 17, RING = 20, BADGE = 12, BADGE_X = 7, BADGE_Y = -7,
+                     LABEL = 8 }
 
 -- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
 -- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
@@ -66,7 +74,9 @@ local TIP_MOUNTS = 8    -- then "and N more"
 --------------------------------------------------------------------------------
 local KIND = {
     rare       = { atlas = "VignetteKill",              size = 12, label = L["Rare"],       group = "creature" },
-    rareelite  = { atlas = "VignetteKill",              size = 12, label = L["Rare elite"], group = "creature", dragon = true },
+    -- (!) A RARE IS A RARE (28/09). The user: *"não precisa diferenciar raro de elite de raro,
+    -- deixa os dois como Raro"*. The word is the same; the elite still wears the dragon frame.
+    rareelite  = { atlas = "VignetteKill",              size = 12, label = L["Rare"],       group = "creature", dragon = true },
     elite      = { atlas = "VignetteKill",              size = 12, label = L["Elite"],      group = "creature", dragon = true },
     boss       = { atlas = "worldquest-icon-boss",      size = 11, label = L["Boss"],       group = "creature", dragon = true },
     raid       = { atlas = "Raid",                      size = 16, label = L["Raid"],       group = "instance" },
@@ -717,6 +727,7 @@ function RocketMountMapPinMixin:OnAcquired(data)
     self.Badge:SetSize(kind.size, kind.size)
 
     local rotulo = not (ns.db and ns.db.mapLabels == false)
+    if self.Label.SetFontHeight then self.Label:SetFontHeight(MapPins.Geometry.LABEL) end
     self.Label:SetText(rotulo and kind.label or "")
     self.Label:SetShown(rotulo)
 

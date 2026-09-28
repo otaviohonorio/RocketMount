@@ -152,7 +152,6 @@ L["%m/%d"] = "%d/%m"
 
 -- O mapa-múndi (MapPins.lua).
 L["Rare"] = "Raro"
-L["Rare elite"] = "Raro de elite"
 L["Elite"] = "Elite"
 L["%dd"] = "%dd"
 L["%dh"] = "%dh"

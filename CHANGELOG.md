@@ -114,6 +114,8 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **The word under a map marker is smaller**, and a rare elite is simply a "Rare": the dragon
+  frame around the marker already says it is an elite.
 - **On the minimap too.** The places within the minimap's reach have a small marker there,
   with the symbol of what each one is — the star of a rare, the coins of a vendor, the chest.
   Hover it for the same details as on the world map, click it to point the game's arrow at the
