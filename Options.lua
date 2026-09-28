@@ -131,22 +131,10 @@ function ns.SetupOptions()
         end
     end
 
-    -- "Donate" (26/09): the game's own button row, at the end of the panel (Donate.lua).
-    if SettingsPanel and SettingsPanel.GetLayout and CreateSettingsButtonInitializer then
-        local layout = SettingsPanel:GetLayout(category)
-        if layout and layout.AddInitializer then
-            if CreateSettingsListSectionHeaderInitializer then
-                layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Support"]))
-            end
-            layout:AddInitializer(CreateSettingsButtonInitializer(L["Support the project"],
-                "|T" .. ns.PAYPAL_ICON .. ":14:14|t " .. L["Open link"],
-                function() ns.ShowDonate() end, L["Opens the donation link, ready to copy."], true))
-            layout:AddInitializer(CreateSettingsButtonInitializer(L["Report a problem"],
-                "|A:" .. ns.REPORT_ICON .. ":14:14|a " .. L["Open link"],
-                function() ns.ReportMenu(SettingsPanel) end,
-                L["Opens the address to report a problem, ready to copy."], true))
-        end
-    end
+    -- (!) NO SUPPORT ROW HERE (28/09). The panel had a "Support" section with the donation and
+    -- the report links. The user: *"sobre a parte de apoiar dos addons, somente na janela do addon
+    -- e não na aba de addons da janela da blizzard, pode remover esse"*. They live at the bottom
+    -- of the addon's own window (Donate.lua, `ns.DonateFooter`), and nowhere else.
 
     Settings.RegisterAddOnCategory(category)
 end
