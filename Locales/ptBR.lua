@@ -166,6 +166,10 @@ L["Boss"] = "Chefe"
 L["Treasure"] = "Tesouro"
 L["Portal"] = "Portal"
 L["Starts here"] = "Começa aqui"
+L["Only during: %s"] = "Só durante: %s"
+L["On the minimap too"] = "No minimapa também"
+L["The places within the minimap's reach, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."] =
+    "Os lugares ao alcance do minimapa, cada um com o símbolo do que é: um raro, um vendedor, um tesouro. Passe o mouse em um para ver os mesmos detalhes do mapa-múndi; clique para apontar a seta para lá."
 L["%s: renown %d, and this character is not in this covenant"] =
     "%s: renome %d, e este personagem não é deste pacto"
 L["Leads to:"] = "Leva a:"

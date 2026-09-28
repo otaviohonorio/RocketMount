@@ -97,6 +97,10 @@ function handlers:PLAYER_LOGIN()
     if ns.Roster then ns.Roster.Record() end
     if ns.Sighting then ns.Sighting.Enable() end
     if ns.MapPins then ns.MapPins.Enable() end
+    if ns.MinimapPins then ns.MinimapPins.Enable() end
+    -- The calendar of events is asked of the server (no window opens): the vendors of an event
+    -- count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
+    if C_Calendar and C_Calendar.OpenCalendar then pcall(C_Calendar.OpenCalendar) end
     ns.Start()
 end
 
@@ -124,6 +128,12 @@ end
 
 function handlers:CURRENCY_DISPLAY_UPDATE()
     ns.Invalidate()
+end
+
+-- The game's list of events changed (a holiday started, the calendar arrived from the server):
+-- the vendors of an event are asked again.
+function handlers:CALENDAR_UPDATE_EVENT_LIST()
+    if ns.CalendarChanged and ns.CalendarChanged() then ns.Invalidate() end
 end
 
 local frame = CreateFrame("Frame", ADDON .. "EventFrame")

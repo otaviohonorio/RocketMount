@@ -114,6 +114,17 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **On the minimap too.** The places within the minimap's reach have a small marker there,
+  with the symbol of what each one is — the star of a rare, the coins of a vendor, the chest.
+  Hover it for the same details as on the world map, click it to point the game's arrow at the
+  place. It follows the minimap's zoom and rotation, and has its own option.
+- **Where, in words.** Every marker's tooltip now says the zone and the coordinates of the
+  place, under the name of who or what is there.
+- **A vendor of an event is on the map only during the event.** The vendors of WoW Remix, of
+  the holidays, of Timewalking and of the anniversary used to be marked all year — with
+  nobody there. The game's own calendar now says when the event is on; outside it the vendor
+  has no marker and the mount is not counted as one you can buy. Vendors that left the game
+  for good are gone from the map.
 - **Puzzle mounts have a place to start.** A mount the journal only gives a zone for — Darkmaul,
   the Dusklight Razorwing, the Elusive Quickhoof, the Hand of Nilganihmaht, Magmashell, the
   Shimmermist Runner, the Arboreal Gulper, Otto, the Echo of Aln'sharan — has a marker where it

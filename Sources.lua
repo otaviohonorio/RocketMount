@@ -408,8 +408,117 @@ end
 -- What comes out has the shape the rest of the addon already reads (it was MCL's): `vendors`
 -- and `coords`, in the map's own scale. A vendor or a quest of the OTHER faction is left out.
 --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- IS THE EVENT ON? THE GAME'S CALENDAR ANSWERS
+--
+-- (!) The user's screenshot, 28/09: a "Vendor" marker in The Jade Forest with 39 raid mounts in
+-- its tooltip, and nobody there -- *"não achei nenhum NPC, revise todos, precisa ter certeza"*.
+-- The vendor was of WoW Remix: Mists of Pandaria, which ended. A vendor of an event
+-- (`event` in Data/MountPlaces.lua) is in the world only while the event is on, and who knows
+-- that is the calendar: `CalendarDayEvent.eventID` is the id of the game's holiday.
+--
+-- Whatever cannot be told is "not on": no calendar, no answer, a secret value, an event the
+-- table has no id for. A marker that is missing costs a look at the journal; a marker with
+-- nobody there costs the trip.
+--------------------------------------------------------------------------------
+local CALENDAR_TTL = 60
+local hoje, hojeEm
+
+---A moment of the calendar ({ year, month, monthDay, hour, minute }) as one number to compare.
+local function Instante(t)
+    if type(t) ~= "table" then return nil end
+    local y, m, d = tonumber(t.year), tonumber(t.month), tonumber(t.monthDay)
+    if not (y and m and d) then return nil end
+    return (((y * 12 + m) * 31 + d) * 24 + (tonumber(t.hour) or 0)) * 60 + (tonumber(t.minute) or 0)
+end
+
+---@return table|nil `{ [holiday id] = title }` of what is on right now; nil when the game does not say
+local function LerCalendario()
+    if not (C_Calendar and C_DateAndTime and C_Calendar.GetNumDayEvents and C_Calendar.GetDayEvent
+        and C_Calendar.GetMonthInfo and C_DateAndTime.GetCurrentCalendarTime) then
+        return nil
+    end
+    -- The calendar answers with secrets while chat messaging is locked down.
+    if InChatMessagingLockdown and InChatMessagingLockdown() then return nil end
+    local okA, agora = pcall(C_DateAndTime.GetCurrentCalendarTime)
+    local okM, mes = pcall(C_Calendar.GetMonthInfo)
+    if not (okA and okM and type(agora) == "table" and type(mes) == "table") then return nil end
+    local momento = Instante(agora)
+    if not (momento and tonumber(mes.month) and tonumber(mes.year)) then return nil end
+    -- The calendar counts the months from the one it has SELECTED, which is the current one
+    -- until the player browses it. Browsed away, nothing is read: moving it back would move
+    -- the window the player is looking at.
+    if mes.month ~= agora.month or mes.year ~= agora.year then
+        if (CalendarFrame and CalendarFrame.IsShown and CalendarFrame:IsShown()) or not C_Calendar.SetAbsMonth then
+            return nil
+        end
+        if not pcall(C_Calendar.SetAbsMonth, agora.month, agora.year) then return nil end
+    end
+    local okN, n = pcall(C_Calendar.GetNumDayEvents, 0, agora.monthDay)
+    if not okN or type(n) ~= "number" or (issecretvalue and issecretvalue(n)) then return nil end
+    local out = {}
+    for i = 1, n do
+        local ok, ev = pcall(C_Calendar.GetDayEvent, 0, agora.monthDay, i)
+        local id = ok and type(ev) == "table" and ev.eventID
+        if id ~= nil and issecretvalue and issecretvalue(id) then return nil end
+        if type(id) == "number" then
+            -- The day an event starts or ends it is on for part of the day only.
+            local de, ate = Instante(ev.startTime), Instante(ev.endTime)
+            if not (de and momento < de) and not (ate and momento > ate) then
+                local titulo = ev.title
+                if type(titulo) ~= "string" or (issecretvalue and issecretvalue(titulo)) then titulo = true end
+                out[id] = titulo
+            end
+        end
+    end
+    return out
+end
+
+---@return boolean on, string|nil title the event's name as the calendar gives it, in the player's language
+function ns.EventOn(nome)
+    local T = ns.MountPlaces
+    local e = type(T) == "table" and type(T.event) == "table" and T.event[nome]
+    if type(e) ~= "table" or type(e.ids) ~= "table" then return false end
+    -- The event of a timerunner: a character of the ordinary world has no way to its vendors.
+    if e.timerunning then
+        if type(PlayerGetTimerunningSeasonID) ~= "function" then return false end
+        local ok, temporada = pcall(PlayerGetTimerunningSeasonID)
+        if not ok or type(temporada) ~= "number" then return false end
+    end
+    local agora = GetTime and GetTime() or 0
+    if not hojeEm or agora - hojeEm > CALENDAR_TTL or agora < hojeEm then
+        local ok, lido = pcall(LerCalendario)
+        hoje, hojeEm = ok and lido or nil, agora
+    end
+    if type(hoje) ~= "table" then return false end
+    for _, id in ipairs(e.ids) do
+        if hoje[id] then return true, type(hoje[id]) == "string" and hoje[id] or nil end
+    end
+    return false
+end
+
+---The game says its list of events changed: the calendar is read again.
+---@return boolean changed whether what is ON changed -- the list is built again only then, and
+---the event comes every time the player turns a page of the calendar
+function ns.CalendarChanged()
+    local function Chave(t)
+        if type(t) ~= "table" then return "?" end
+        local ids = {}
+        for id in pairs(t) do ids[#ids + 1] = id end
+        table.sort(ids)
+        return table.concat(ids, ",")
+    end
+    local antes = Chave(hoje)
+    local ok, lido = pcall(LerCalendario)
+    hoje, hojeEm = ok and lido or nil, GetTime and GetTime() or 0
+    return Chave(hoje) ~= antes
+end
+
+---A vendor or a quest that counts for THIS character, now: of its faction, and -- when it is of
+---an event -- with the event on.
 local function DoMeuLado(ficha)
     if type(ficha) ~= "table" then return false end
+    if ficha.event ~= nil and not ns.EventOn(ficha.event) then return false end
     if not ficha.side then return true end
     local meu = UnitFactionGroup and UnitFactionGroup("player") or nil
     return not meu or ficha.side == meu
@@ -449,9 +558,12 @@ function ns.OwnPlaces(mountID, sourceType)
         local v = type(T.npc) == "table" and T.npc[id]
         if DoMeuLado(v) then
             local pts = Pontos(v.where)
+            -- The event that is on, by the name the calendar gives it (the player's language).
+            local evento = v.event ~= nil and select(2, ns.EventOn(v.event)) or nil
             for _, p in ipairs(pts) do
                 out.vendors[#out.vendors + 1] = {
                     npc = v.name, npcId = id, m = p.m, x = p.x, y = p.y, guild = v.guild == true,
+                    event = evento,
                 }
             end
             -- A vendor nobody has placed is still a vendor: the card names it.

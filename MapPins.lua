@@ -334,6 +334,8 @@ local function Construir()
         if wp then
             lugar.nameNpc = lugar.nameNpc or wp.npcId
             lugar.nameQuest = lugar.nameQuest or wp.questId
+            -- The event a vendor is of, by the name the calendar gave it.
+            lugar.event = lugar.event or wp.event
         end
         -- A vendor is "Reputation" only while EVERY mount there is behind one.
         if grupo == "vendor" and kind == "vendor" then lugar.kind = "vendor" end
@@ -349,7 +351,7 @@ local function Construir()
             for _, v in ipairs(e.vendors or {}) do
                 if v.m and v.x and v.y then
                     Juntar(e.rep and "reputation" or "vendor", v.m, v.x / 100, v.y / 100, v.npc, e,
-                        v.npcId and { npcId = v.npcId } or nil)
+                        v.npcId and { npcId = v.npcId, event = v.event } or nil)
                 end
             end
         end
@@ -464,7 +466,7 @@ function MapPins.PinsFor(mapID)
                     out[#out + 1] = {
                         kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
                         mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
-                        nameNpc = p.nameNpc, nameQuest = p.nameQuest, first = p.first,
+                        nameNpc = p.nameNpc, nameQuest = p.nameQuest, first = p.first, event = p.event,
                         -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
                         x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
                         locked = preso, lockSource = fonte, lockLeft = falta,
@@ -825,11 +827,34 @@ function MapPins.PlaceName(data)
     return kind.label
 end
 
+---"The Jade Forest  42.6, 27.0": the map the place is on, by the game's name for it, and the
+---coordinates in the scale the game's own waypoints use. nil when the place has no coordinates.
+function MapPins.WhereText(data)
+    if type(data) ~= "table" then return nil end
+    local m, x, y = data.homeMap or data.mapID, data.homeX or data.x, data.homeY or data.y
+    if type(x) ~= "number" or type(y) ~= "number" then return nil end
+    local zona
+    if m and C_Map and C_Map.GetMapInfo then
+        local ok, info = pcall(C_Map.GetMapInfo, m)
+        zona = ok and type(info) == "table" and type(info.name) == "string" and info.name ~= "" and info.name or nil
+    end
+    local onde = string.format("%.1f, %.1f", x * 100, y * 100)
+    return zona and (zona .. "  " .. onde) or onde
+end
+
 function MapPins.Tooltip(tooltip, data)
     local kind = KindDe(data)
     local criatura = kind.group == "creature"
     Titulo(tooltip, MapPins.PlaceName(data))
     Linha(tooltip, kind.label, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+    -- (!) WHERE, IN WORDS (28/09). The user stood on a marker, found nobody and had nothing to
+    -- check the place against: *"adicionar o nome dos vendedores e coordenadas"*. The name is the
+    -- title; the zone and the coordinates are the place's own (a cave's, not the zone's it is
+    -- drawn on), the same the arrow is pointed at.
+    Linha(tooltip, MapPins.WhereText(data), "HIGHLIGHT_FONT_COLOR", 1, 1, 1)
+    if type(data.event) == "string" and data.event ~= "" then
+        Linha(tooltip, string.format(L["Only during: %s"], data.event), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+    end
     tooltip:AddLine(" ")
     Linha(tooltip, HEADER[kind.group] or HEADER.other, "NORMAL_FONT_COLOR", 1, 0.82, 0)
 
@@ -911,7 +936,11 @@ end
 ---file did) takes the pin out of the map's own click handling.
 function RocketMountMapPinMixin:OnMouseClickAction(button)
     if button ~= "LeftButton" then return end
-    local d = self.data
+    MapPins.PointArrow(self.data)
+end
+
+---The game's own arrow, pointed at a place: the click of a marker, on the map and on the minimap.
+function MapPins.PointArrow(d)
     if not (d and C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.SetUserWaypoint) then return end
     -- The place's own map first (a cave is where the arrow has to lead); the map being looked
     -- at when that one takes no pin.
@@ -939,6 +968,8 @@ end
 ---Redraw with fresh data: a mount learned, a rare looted, the option toggled.
 function MapPins.Refresh()
     indice = nil
+    -- the minimap draws the same places
+    if ns.MinimapPins then ns.MinimapPins.Refresh() end
     local map = provider and provider.GetMap and provider:GetMap()
     if not map then return end
     -- A closed map draws nothing: it asks every provider again when it opens
