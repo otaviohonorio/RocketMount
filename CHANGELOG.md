@@ -134,6 +134,10 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   reaches 50 and again at 100; only a Gigantic Dreamseed of yours gives the other six. What is
   of all of them comes once, at the end: only a seed is planted, the bar is of everybody who
   gave, and where the gigantic seed comes from. The chance is a rate for each cache.
+- **A chance is a rate, in every tip.** "About 1 kill in 18 gives the mount" read as a promise;
+  it is now "about 5.5% of the kills give the mount". Sixteen tips changed.
+- **Korthia's covenant mounts and Undermine's cartel troves, mount by mount.** Each mount says
+  its own covenant and rare, or the rate of its own cartel's trove.
 - **A tip can say what is of each mount.** On the map, the mounts of a place that share a
   sentence are listed together with the sentence once under them, and what is common to all
   comes last; on the card, the mount's own sentence comes first.

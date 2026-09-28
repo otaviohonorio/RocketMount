@@ -27,7 +27,8 @@ ns.MountTips = {
     [802] = { year = 2018, -- Long-Forgotten Hippogryph
         text = "Five Ephemeral Crystals appear at the same time at random spots of {map:630|Azsuna}, many of them inside caves. Touching the first one starts 8 hours to touch the other four; dying loses the count. Other players are after the same crystals, and when somebody finishes they all vanish until the next round." },
     [803] = { year = 2022, -- Covenant mounts of the rares of Korthia
-        text = "Four mounts, each from a rare of {map:1961|Korthia} and only for a character of its covenant: {npc:179985|Stygian Stonecrusher} (Venthyr), {npc:180032|Wild Worldcracker} (Kyrian), {npc:180013|Escaped Wilderling} (Night Fae) and {npc:180042|Fleshwing} (Necrolord). Each character has one try a day at each. What comes is not the mount: the crystal, the core and the saddle are items that start a quest, and the egg of Fleshwing hatches after 3 days. The egg comes with no message: look in the bags. Players with low renown got them." },
+        own = "Only for a Venthyr character. {npc:179985|Stygian Stonecrusher} drops a crystal, an item that starts a quest: the quest gives the mount.",
+        text = "Each character has one try a day at each rare of {map:1961|Korthia}. What the rare drops is not the mount, but what leads to it. Players with low renown got them." },
     [1057] = { year = 2025, -- Nazjatar Blood Serpent
         text = "1. Gather 20 {item:161344|Abyssal Fragment}: a drop of creatures of Kul Tiras and Zandalar, which can be bought at the auction house.\n2. In {map:942|Stormsong Valley}, at 73.5, 23.6, there is a cave behind a waterfall with an altar at the back: join the fragments there into the {item:161345|Abhorrent Essence of the Abyss}.\n3. Enter the mine at 46.5, 36.1 and go down to the small statue at 59.4, 54.2 on the map of the mine. Use the essence there: the {npc:140474|Adherent of the Abyss} comes.\n4. Only who summoned has a chance at the mount. In 2023 a character of level 70 killed it alone." },
     [1313] = { year = 2020, -- Rajani Warserpent
@@ -43,13 +44,16 @@ ns.MountTips = {
     [1415] = { year = 2023, -- Arboreal Gulper
         text = "{npc:164112|Humon'gozz} is summoned. Get an {item:175247|Unusually Large Mushroom}, a rare drop of any creature of {map:1565|Ardenweald}: it lasts 20 minutes in the bags. Take it to the Damp Loam at 32.5, 30.2 and click the loam: a mushroom grows, and he comes out of it. Whoever takes part in the kill can loot, so one mushroom serves a whole group." },
     [1449] = { year = 2022, -- Covenant mounts of the rares of Korthia
-        text = "Four mounts, each from a rare of {map:1961|Korthia} and only for a character of its covenant: {npc:179985|Stygian Stonecrusher} (Venthyr), {npc:180032|Wild Worldcracker} (Kyrian), {npc:180013|Escaped Wilderling} (Night Fae) and {npc:180042|Fleshwing} (Necrolord). Each character has one try a day at each. What comes is not the mount: the crystal, the core and the saddle are items that start a quest, and the egg of Fleshwing hatches after 3 days. The egg comes with no message: look in the bags. Players with low renown got them." },
+        own = "Only for a Necrolord character. {npc:180042|Fleshwing} drops an egg, which hatches after 3 days. The egg comes with no message: look in the bags.",
+        text = "Each character has one try a day at each rare of {map:1961|Korthia}. What the rare drops is not the mount, but what leads to it. Players with low renown got them." },
     [1469] = { year = 2023, -- Magmashell
         text = "1. Get an {item:201883|Empty Magma Shell}: a rare drop of the lava snails of the west of {map:2022|The Waking Shores}, {npc:193138|Lavaslurper} among them.\n2. Take it to the {npc:199010|Empowered Snail}, at the bottom of a pool of lava at 71.0, 25.0. When it is not there, it comes back in up to 30 minutes.\n3. Click the snail, not the shell in the bags, and hold for 20 seconds. The lava kills in less than that: take a healer, a way of your class of not dying, or the toy {item:200116|Everlasting Horn of Lavaswimming}." },
     [1487] = { year = 2022, -- Covenant mounts of the rares of Korthia
-        text = "Four mounts, each from a rare of {map:1961|Korthia} and only for a character of its covenant: {npc:179985|Stygian Stonecrusher} (Venthyr), {npc:180032|Wild Worldcracker} (Kyrian), {npc:180013|Escaped Wilderling} (Night Fae) and {npc:180042|Fleshwing} (Necrolord). Each character has one try a day at each. What comes is not the mount: the crystal, the core and the saddle are items that start a quest, and the egg of Fleshwing hatches after 3 days. The egg comes with no message: look in the bags. Players with low renown got them." },
+        own = "Only for a Night Fae character. {npc:180013|Escaped Wilderling} drops a saddle, an item that starts a quest: the quest gives the mount.",
+        text = "Each character has one try a day at each rare of {map:1961|Korthia}. What the rare drops is not the mount, but what leads to it. Players with low renown got them." },
     [1493] = { year = 2022, -- Covenant mounts of the rares of Korthia
-        text = "Four mounts, each from a rare of {map:1961|Korthia} and only for a character of its covenant: {npc:179985|Stygian Stonecrusher} (Venthyr), {npc:180032|Wild Worldcracker} (Kyrian), {npc:180013|Escaped Wilderling} (Night Fae) and {npc:180042|Fleshwing} (Necrolord). Each character has one try a day at each. What comes is not the mount: the crystal, the core and the saddle are items that start a quest, and the egg of Fleshwing hatches after 3 days. The egg comes with no message: look in the bags. Players with low renown got them." },
+        own = "Only for a Kyrian character. {npc:180032|Wild Worldcracker} drops a core, an item that starts a quest: the quest gives the mount.",
+        text = "Each character has one try a day at each rare of {map:1961|Korthia}. What the rare drops is not the mount, but what leads to it. Players with low renown got them." },
     [1503] = { year = 2024, -- Hand of Nilganihmaht
         text = "The {npc:179572|Hand of Nilganihmaht} is in a cave at 25.5, 36.8 in {map:1543|The Maw}, and only in the rift phase of the zone. With the 5 rings on it, it offers the quest of the mount:\n- {item:186608|Nilganihmaht's Gold Band}: on top of a spire at 19.2, 32.3, a climb.\n- {item:186607|Nilganihmaht's Silver Ring}: in the Domination Sealed Chest at 66.0, 57.4, which takes 4 {item:186727|Seal Breaker Key}.\n- {item:186605|Nilganihmaht's Runed Band}: from {npc:179735|Torglluun}, in the rift.\n- {item:186606|Nilganihmaht's Signet Ring}: from {npc:170303|Exos, Herald of Domination}, who is summoned.\n- {item:186603|Nilganihmaht's Stone Ring}: made of 4 pieces found in Perdition Hold, with {quest:63545|Putting A Plan Together}, of the {quest:63543|Necrolord Assault}, available." },
     [1507] = { year = 2021, -- Darkmaul
@@ -102,17 +106,18 @@ ns.MountTips = {
     [2178] = { year = 2026, -- Nesting Swarmite
         text = "In the Horrific Visions, each district has a pile of trash; clicking it calls creatures and, now and then, the Nesting Swarmite, which always drops the mount. No mask is needed. Players check one or two piles, leave the vision and enter again; reports go from the first pile to more than 70 attempts.\n{map:2404|Vision of Stormwind}: 55.8, 49.3 · 62.9, 30.7 · 73.6, 62.7 · 66.1, 76.3 · 52.6, 77.3.\n{map:2403|Vision of Orgrimmar}: 47.8, 75.0 · 40.7, 79.3 · 50.9, 45.2 · 69.0, 49.8 · 57.5, 60.6, this one inside a shop and smaller." },
     [2192] = { year = 2026, -- Beledar's Spawn
-        text = "{npc:207802|Beledar's Spawn} appears in {map:2215|Hallowfall} when Beledar goes dark, every 3 hours, in one of several spots. It gives loot once a day per character, and about 1 kill in 18 gives the mount. It dies in seconds: players join a group that has every spot covered." },
+        text = "{npc:207802|Beledar's Spawn} appears in {map:2215|Hallowfall} when Beledar goes dark, every 3 hours, in one of several spots. It gives loot once a day per character, and about 5.5% of the kills give the mount. It dies in seconds: players join a group that has every spot covered." },
     [2194] = { year = 2026, -- Dauntless Imperial Lynx
-        text = "It comes in {item:228741|Lamplighter Supply Satchel}, given by the fires of {quest:76586|Spreading the Light} in {map:2215|Hallowfall}: the main ones, and the side quests the small fires give for 3 crystals. Less than 1 satchel in 100 has it, and reports go past 300. A character of level 70 can do it." },
+        text = "It comes in {item:228741|Lamplighter Supply Satchel}, given by the fires of {quest:76586|Spreading the Light} in {map:2215|Hallowfall}: the main ones, and the side quests the small fires give for 3 crystals. About 0.6% of the satchels have it, and reports go past 300. A character of level 70 can do it." },
     [2205] = { year = 2025, -- Ol' Mole Rufus
-        text = "Five levers spread over {map:2214|The Ringing Deeps} have to be pulled at the same time, so it takes five players. A message in the chat says it worked, and some time later {npc:220285|Lurker of the Deeps} appears. Loot once a day per character, also below level 80. Wowhead counts about 1 mount in 17 kills; players who counted in raids say fewer." },
+        text = "Five levers spread over {map:2214|The Ringing Deeps} have to be pulled at the same time, so it takes five players. A message in the chat says it worked, and some time later {npc:220285|Lurker of the Deeps} appears. Loot once a day per character, also below level 80. Wowhead counts the mount in about 6% of the kills; players who counted in raids say fewer." },
     [2222] = { year = 2026, -- Siesbarg
         text = "{npc:216046|Tka'ktath} (63, 66 in {map:2255|Azj-Kahet}, on top of a platform) drops {item:225952|Vial of Tka'ktath's Blood} to characters of level 78 or more. He takes hours to come back and is hard alone; the loot is once a day. The vial starts a chain that asks, in this order, for 1,500 {item:225950|Nerubian Chitin}, 1,000 {item:226135|Nerubian Venom} and 500 {item:226136|Nerubian Blood}, all from nerubian creatures, the blood from few of them. The chain is of the character. Players farm the first rooms of the dungeons Ara-Kara and City of Threads with followers, leaving and entering again." },
     [2225] = { year = 2025, -- Timewalking vendor mounts
         text = "The vendor is only there while the Timewalking of their expansion is on. {currency:1166|Timewarped Badge} can be moved between the characters of the account, in the currency tab." },
     [2274] = { year = 2025, -- Undermine cartel troves (Blackwater, Steamwheedle, Venture Co., Bilgewater)
-        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. About 1 trove in 4 has the mount: many players got it in the first, one needed 16." },
+        own = "About 28% of the troves of its cartel have it.",
+        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. Many players got the mount in the first trove, one needed 16." },
     [2276] = { year = 2025, -- Ando the Gat's mounts (Darkfuse Chompactor, Flarendo the Furious, Thunderdrum Misfire)
         text = "{npc:235621|Ando the Gat} is INSIDE the raid Liberation of Undermine, up the stairs from the entrance. Players get to him through the Raid Finder, which {npc:231045|Paks Topskimmer} opens at 43.4, 51.5 in {map:2346|Undermine}." },
     [2278] = { year = 2025, -- Ando the Gat's mounts (Darkfuse Chompactor, Flarendo the Furious, Thunderdrum Misfire)
@@ -120,21 +125,24 @@ ns.MountTips = {
     [2279] = { year = 2025, -- Ando the Gat's mounts (Darkfuse Chompactor, Flarendo the Furious, Thunderdrum Misfire)
         text = "{npc:235621|Ando the Gat} is INSIDE the raid Liberation of Undermine, up the stairs from the entrance. Players get to him through the Raid Finder, which {npc:231045|Paks Topskimmer} opens at 43.4, 51.5 in {map:2346|Undermine}." },
     [2281] = { year = 2025, -- Undermine cartel troves (Blackwater, Steamwheedle, Venture Co., Bilgewater)
-        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. About 1 trove in 4 has the mount: many players got it in the first, one needed 16." },
+        own = "About 25% of the troves of its cartel have it.",
+        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. Many players got the mount in the first trove, one needed 16." },
     [2283] = { year = 2026, -- Miscellaneous Mechanica mounts (Innovation Investigator, Asset Advocator, Margin Manipulator)
         text = "{item:234741|Miscellaneous Mechanica} drops, seldom, from the rares each cartel calls in {map:2346|Undermine}, and not only on the first kill of the day; players also found it in the overflowing dumpsters. {npc:228286|Skedgit Cinderbangs} is at 43.3, 82.8. Players call it one of the longest farms of the expansion: one of them bought the third mount at the auction house." },
     [2289] = { year = 2025, -- Undermine cartel troves (Blackwater, Steamwheedle, Venture Co., Bilgewater)
-        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. About 1 trove in 4 has the mount: many players got it in the first, one needed 16." },
+        own = "About 28% of the troves of its cartel have it.",
+        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. Many players got the mount in the first trove, one needed 16." },
     [2290] = { year = 2026, -- Miscellaneous Mechanica mounts (Innovation Investigator, Asset Advocator, Margin Manipulator)
         text = "{item:234741|Miscellaneous Mechanica} drops, seldom, from the rares each cartel calls in {map:2346|Undermine}, and not only on the first kill of the day; players also found it in the overflowing dumpsters. {npc:228286|Skedgit Cinderbangs} is at 43.3, 82.8. Players call it one of the longest farms of the expansion: one of them bought the third mount at the auction house." },
     [2291] = { year = 2026, -- Salvaged Goblin Gazillionaire's Flying Machine
-        text = "{npc:234621|Gallagio Garbage} may appear when the bar of trash shoveled of a S.C.R.A.P. event reaches 500, and not when the event ends. It takes 3 players or more to fill the bar. The same character can kill it again and again on the same day; about 1 kill in 60 gives the mount." },
+        text = "{npc:234621|Gallagio Garbage} may appear when the bar of trash shoveled of a S.C.R.A.P. event reaches 500, and not when the event ends. It takes 3 players or more to fill the bar. The same character can kill it again and again on the same day; about 1.6% of the kills give the mount." },
     [2292] = { year = 2026, -- Miscellaneous Mechanica mounts (Innovation Investigator, Asset Advocator, Margin Manipulator)
         text = "{item:234741|Miscellaneous Mechanica} drops, seldom, from the rares each cartel calls in {map:2346|Undermine}, and not only on the first kill of the day; players also found it in the overflowing dumpsters. {npc:228286|Skedgit Cinderbangs} is at 43.3, 82.8. Players call it one of the longest farms of the expansion: one of them bought the third mount at the auction house." },
     [2293] = { year = 2025, -- Darkfuse Spy-Eye
-        text = "{npc:231310|Darkfuse Precipitant} is called with {item:229823|Canister of Darkfuse Solution}, which {npc:231396|Sitch Lowdown} sells to who has Renown 6 with {faction:2653|The Cartels of Undermine} and is Friendly with {faction:2669|Darkfuse Solutions}; it goes in the pylon at 40.6, 91.8 of {map:2346|Undermine}. Whoever is there can loot, once a week per character. About 1 kill in 23 gives the mount." },
+        text = "{npc:231310|Darkfuse Precipitant} is called with {item:229823|Canister of Darkfuse Solution}, which {npc:231396|Sitch Lowdown} sells to who has Renown 6 with {faction:2653|The Cartels of Undermine} and is Friendly with {faction:2669|Darkfuse Solutions}; it goes in the pylon at 40.6, 91.8 of {map:2346|Undermine}. Whoever is there can loot, once a week per character. About 4.3% of the kills give the mount." },
     [2295] = { year = 2025, -- Undermine cartel troves (Blackwater, Steamwheedle, Venture Co., Bilgewater)
-        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. About 1 trove in 4 has the mount: many players got it in the first, one needed 16." },
+        own = "About 25% of the troves of its cartel have it.",
+        text = "The trove is what the cartel gives each time the reputation bar fills again after Exalted. Many players got the mount in the first trove, one needed 16." },
     [2296] = { year = 2026, -- Delver's mounts sold by Reno Jackson (Dirigible, Gob-Trotter, Mana-Skimmer, OC91 Chariot)
         text = "Whatever the journal says, since Midnight {npc:226250|Reno Jackson}, in Dornogal, sells it for 10,000 {currency:2815|Resonance Crystals}." },
     [2303] = { year = 2026, -- Violet Goblin Shredder
@@ -144,7 +152,7 @@ ns.MountTips = {
     [2322] = { year = 2026, -- Thrayir, Eyes of the Siren
         text = "Thrayir lies in The Forgotten Vault of {map:2369|Siren Isle} (cave at 44.0, 23.1) among 5 runestones, each asking for a runekey. Keys are only found and used in the storm: {npc:227815|Suzie Boltwrench} (69.0, 49.1) takes you into it once the week's {quest:84850|Serpent's Wrath} is done.\n- {item:232571|Whirling Runekey}: {npc:231368|Ksvir the Forgotten}, in the vault.\n- {item:232569|Cyclonic Runekey}: {npc:231357|Zek'ul the Shipbreaker}, or fished where he appears.\n- {item:232572|Torrential Runekey}: 7 {item:234328|Torrential Fragment}, from any creature in the storm.\n- {item:232573|Thunderous Runekey}: 5 {item:232605|Thunderous Fragment}, from chests.\n- {item:232570|Turbulent Runekey}: 3 {item:234327|Turbulent Fragment}, at 38.2, 51.8 · 67.1, 78.4 · 52.4, 38.6." },
     [2334] = { year = 2026, -- Bronze Goblin Waveshredder
-        text = "{item:232465|Darkfuse Trove} is what {faction:2669|Darkfuse Solutions} gives each time the reputation bar fills again after Exalted. About 1 trove in 5 has the mount." },
+        text = "{item:232465|Darkfuse Trove} is what {faction:2669|Darkfuse Solutions} gives each time the reputation bar fills again after Exalted. About 19% of the troves have the mount." },
     [2470] = { year = 2025, -- Timewalking vendor mounts
         text = "The vendor is only there while the Timewalking of their expansion is on. {currency:1166|Timewarped Badge} can be moved between the characters of the account, in the currency tab." },
     [2471] = { year = 2025, -- Timewalking vendor mounts
@@ -170,7 +178,7 @@ ns.MountTips = {
     [2512] = { year = 2026, -- Delver's mounts sold by Reno Jackson (Dirigible, Gob-Trotter, Mana-Skimmer, OC91 Chariot)
         text = "Whatever the journal says, since Midnight {npc:226250|Reno Jackson}, in Dornogal, sells it for 10,000 {currency:2815|Resonance Crystals}." },
     [2535] = { year = 2026, -- Void-Scarred Lynx
-        text = "It comes in {item:239546|Confiscated Cultist's Bag}, the bag of the DAILY quests of the incursions in {map:2215|Hallowfall}, and not in the weekly satchel. Less than 1 bag in 100 has it; reports go from the 3rd bag to more than 500." },
+        text = "It comes in {item:239546|Confiscated Cultist's Bag}, the bag of the DAILY quests of the incursions in {map:2215|Hallowfall}, and not in the weekly satchel. About 0.7% of the bags have it; reports go from the 3rd bag to more than 500." },
     [2552] = { year = 2025, -- Lavender K'arroc, Acidic Void Creeper (Untethered Coin)
         text = "{quest:91093|More Than Just a Phase} gives 7 {currency:3303|Untethered Coin} per week to the whole account. {npc:241624|Shad'anis} asks for 66 for everything she sells." },
     [2557] = { year = 2025, -- Lavender K'arroc, Acidic Void Creeper (Untethered Coin)
@@ -186,17 +194,17 @@ ns.MountTips = {
     [2602] = { year = 2025, -- Translocated Gorger
         text = "It is made from 20 {item:246240|Devoured Energy-Pod}. Each of the 4 rares of the devourer attacks gives one per week to the account: {npc:231229|Korgoth the Hungerer} (71.8, 28.2), {npc:234970|Miasmawrath} (50.6, 54.0) and a third at 49.5, 64.2 in {map:2371|K'aresh}, {npc:235104|The Wallbreaker} (28.6, 74.3) in {map:2472|Tazavesh, the Veiled Market}. That is 4 per week at most, so 5 weeks. One attack is on at a time, and the map shows it; the rare comes when the bar of devourers killed is full." },
     [2603] = { year = 2026, -- Sthaarbs's Last Lunch
-        text = "{npc:234845|Sthaarbs} appears in the middle of the Oasis of {map:2371|K'aresh} (74.0, 32.5) about an hour after it last died, and can only be fought from inside Phase Diving: it takes {item:235499|Reshii Wraps} and level 80. Beside the phase conduit at 75.8, 33.0 an extra button takes you to the platforms around it. Loot once a week per character; about 1 kill in 15 gives the mount." },
+        text = "{npc:234845|Sthaarbs} appears in the middle of the Oasis of {map:2371|K'aresh} (74.0, 32.5) about an hour after it last died, and can only be fought from inside Phase Diving: it takes {item:235499|Reshii Wraps} and level 80. Beside the phase conduit at 75.8, 33.0 an extra button takes you to the platforms around it. Loot once a week per character; about 6.8% of the kills give the mount." },
     [2604] = { year = 2026, -- Delver's mounts sold by Reno Jackson (Dirigible, Gob-Trotter, Mana-Skimmer, OC91 Chariot)
         text = "Whatever the journal says, since Midnight {npc:226250|Reno Jackson}, in Dornogal, sells it for 10,000 {currency:2815|Resonance Crystals}." },
     [2615] = { year = 2026, -- Rootstalker Grimlynx, Vibrant Petalwing (Harandar rares)
-        text = "Any rare of {map:2413|Harandar} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2413|Harandar} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
     [2655] = { year = 2026, -- Phase-Lost Slateback
-        text = "The orbs of {achievement:61017|Phase-Lost-and-Found} only show inside Phase Diving, in {map:2371|K'aresh} and in Tazavesh, and ask for {item:235499|Reshii Wraps} at rank 3. About 1 orb in 5 gives a weapon, always one you do not have yet. Two players cannot take the same orb. Players did it in 30 minutes to a few hours, going round the isles." },
+        text = "The orbs of {achievement:61017|Phase-Lost-and-Found} only show inside Phase Diving, in {map:2371|K'aresh} and in Tazavesh, and ask for {item:235499|Reshii Wraps} at rank 3. About 20% of the orbs give a weapon, always one you do not have yet. Two players cannot take the same orb. Players did it in 30 minutes to a few hours, going round the isles." },
     [2693] = { year = 2026, -- Blessed Amani Burrower, Amani Sunfeather (Abundance vendor)
         text = "The journal says 1,600 {currency:3377|Unalloyed Abundance}, but {npc:241928|Chel the Chip} charges 6,400." },
     [2708] = { year = 2026, -- Rootstalker Grimlynx, Vibrant Petalwing (Harandar rares)
-        text = "Any rare of {map:2413|Harandar} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2413|Harandar} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
     [2713] = { year = 2026, -- Ruddy Sporeglider
         text = "The Peculiar Cauldron (40.7, 28.1 in {map:2413|Harandar}) opens with 150 {item:260531|Crystalized Resin Fragment}. They come, 2 to 7 at a time, from the Flame-Hardened Sap of Teldrassil lying in the river that runs from 40.0, 21.4 to 49.3, 51.2, and in no other water. The sap comes back as fast as it is picked. From high above the river its outline is easier to see." },
     [2747] = { year = 2026, -- Untainted Grove Crawler
@@ -204,21 +212,21 @@ ns.MountTips = {
     [2749] = { year = 2026, -- Echo of Aln'sharan
         text = "1. Do the short chain of {npc:245637|Su'meera} that starts with {quest:91063|The Blooming Lattice} (65.4, 22.6 in {map:2413|Harandar}), then the chain of {npc:242358|Kuri} (67.8, 24.8), from {quest:90467|Tales of the Sky} to {quest:90474|The Legend of Aln'sharan}. One character of the account is enough.\n2. From then on the creatures of Harandar drop {item:255826|Mysterious Skyshards}, in delves and dungeons too; rares drop them far more often. Gather 500.\n3. Give them to Kuri at 66.2, 25.5 with the extra action button. Nothing seems to happen, but you get a buff.\n4. Aln'sharan flies high over the zone and hurts whoever gets near. Dismount in the air next to his head and click him, with a slow fall at hand.\nPlayers lost the buff, and the 500 shards with it, by joining a group or a battleground before step 4." },
     [2751] = { year = 2026, -- Augmented Stormray, Sanguine Harrower (Voidstorm rares)
-        text = "Any rare of {map:2405|Voidstorm} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2405|Voidstorm} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
     [2758] = { year = 2026, -- Cobalt Dragonhawk, Cerulean Hawkstrider (Eversong Woods rares)
-        text = "Any rare of {map:2395|Eversong Woods} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2395|Eversong Woods} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 2,000." },
     [2760] = { year = 2026, -- Amani Sharptalon, Witherbark Pango (Zul'Aman rares)
-        text = "Any rare of {map:2437|Zul'Aman} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from a few kills to more than 2,000." },
+        text = "Any rare of {map:2437|Zul'Aman} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from a few kills to more than 2,000." },
     [2762] = { year = 2026, -- Cobalt Dragonhawk, Cerulean Hawkstrider (Eversong Woods rares)
-        text = "Any rare of {map:2395|Eversong Woods} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2395|Eversong Woods} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 2,000." },
     [2764] = { year = 2026, -- Duskbrute Harrower
-        text = "{item:267299|Slayer's Duellum Trove} is what {faction:2770|Slayer's Duellum} gives each time the reputation bar fills again after the reputation is at its maximum. About 1 trove in 4 has the mount; the others may bring the same pet again and again." },
+        text = "{item:267299|Slayer's Duellum Trove} is what {faction:2770|Slayer's Duellum} gives each time the reputation bar fills again after the reputation is at its maximum. About 26% of the troves have the mount; the others may bring the same pet again and again." },
     [2767] = { year = 2026, -- Contained Stormarion Defender
         text = "Two caches can have it, a few in every hundred: {item:268485|Victorious Stormarion Pinnacle Cache}, the weekly one for finishing {quest:90962|Stormarion Assault}, and {item:260979|Victorious Stormarion Cache}, the one of its world quest. The world quest only shows up for a character that has finished the event once." },
     [2772] = { year = 2026, -- Blessed Amani Burrower, Amani Sunfeather (Abundance vendor)
         text = "The journal says 1,600 {currency:3377|Unalloyed Abundance}, but {npc:241928|Chel the Chip} charges 6,400." },
     [2775] = { year = 2026, -- Amani Sharptalon, Witherbark Pango (Zul'Aman rares)
-        text = "Any rare of {map:2437|Zul'Aman} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from a few kills to more than 2,000." },
+        text = "Any rare of {map:2437|Zul'Aman} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from a few kills to more than 2,000." },
     [2778] = { year = 2026, -- Ancestral War Bear
         text = "The Honored Warrior's Cache is inside the base of the tree at 47.0, 82.4 of {map:2437|Zul'Aman}. Click it first: only then do the four Honored Warrior's Urns answer. Each urn calls a guardian that drops one token: {npc:255171|Nalorakk's Chosen} at 32.6, 83.5, {npc:255232|Halazzi's Chosen} at 34.5, 33.4, {npc:255233|Jan'alai's Chosen} at 54.7, 22.3 and {npc:255231|Akil'zon's Chosen} at 51.5, 84.9. With the four tokens, go back to the cache." },
     [2779] = { year = 2026, -- Witherbark Warbear Mother
@@ -228,7 +236,7 @@ ns.MountTips = {
     [2790] = { year = 2026, -- Insatiable Shredclaw
         text = "The cave is in the south of {map:2405|Voidstorm}, entrance at 48.9, 78.4. Inside, broken eggs make a maze of lightning circles; being hit sends you back to the entrance. The Final Clutch of Predaxas is at the end. Players say a circle stops hurting a little before it vanishes, and that a trail of wind on the ground shows the way." },
     [2827] = { year = 2026, -- Augmented Stormray, Sanguine Harrower (Voidstorm rares)
-        text = "Any rare of {map:2405|Voidstorm} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
+        text = "Any rare of {map:2405|Voidstorm} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters, level 80 ones included. Reports go from the first kill to more than 2,000." },
     [2829] = { year = 2026, -- Lab-Grown Stormray
         text = "{achievement:62385|Staring Into The Void} asks for 7 {currency:3400|Uncontaminated Void Sample}: 1 at the start, then each week 1 from the weekly quest of {npc:248328|Void Researcher Anomander}, beside the console, and 1 from the weekly cache of {quest:90962|Stormarion Assault}. About 3 weeks. If the mount does not come with the achievement, look in the mail, or use Wings of the Void in the spellbook: it puts the item in your bag, wherever you are." },
     [2839] = { year = 2026, -- Delver's Arcane Golem
@@ -264,7 +272,7 @@ ns.MountTips = {
     [3043] = { year = 2026, -- Corroded Soul Crusher
         text = "The item only says that the Delver's Journey unlocks it. Players report rank 5 of the Journey of Season 2." },
     [3051] = { year = 2026, -- Topaz Skyfang, Ruby Writhe (Coiled Isle rares)
-        text = "Any rare of {map:2512|The Coiled Isle} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 1,200." },
+        text = "Any rare of {map:2512|The Coiled Isle} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 1,200." },
     [3061] = { year = 2026, -- Topaz Skyfang, Ruby Writhe (Coiled Isle rares)
-        text = "Any rare of {map:2512|The Coiled Isle} can drop it, each with about 1 chance in 1,000. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 1,200." },
+        text = "Any rare of {map:2512|The Coiled Isle} can drop it, each with a chance of about 0.1%. A rare gives loot once a day per character, so players repeat the round on other characters. Reports go from the first kill to more than 1,200." },
 }
