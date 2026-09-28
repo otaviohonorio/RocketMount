@@ -55,9 +55,25 @@ function Tips.Resolve(texto)
     end))
 end
 
----The tip of one mount, for the card and the map tooltip.
+---(!) THE TIP IN TWO PARTS (28/09). The user, with the tip of the seven mounts of the Dreamseed
+---Cache at the limit of its size and naming each mount: *"tu pode colocar uma descrição abaixo da
+---montaria, aí não precisa repetir o nome dela no texto, e para o texto comum coloca no final
+---(...) importante é não ficar confuso"*. A tip may have what is of ONE mount (`own`, which does
+---not name it: it is shown under the mount) and what is common to the mounts of the tip
+---(`text`, shown once, at the end).
+
+---What is of this mount alone in its tip, without the mount's name; nil when the tip has none.
+function Tips.Own(mountID)
+    local t = mountID and type(ns.MountTips) == "table" and ns.MountTips[mountID]
+    if type(t) ~= "table" or type(t.text) ~= "string" then return nil end
+    if type(t.own) ~= "string" or t.own == "" then return nil end
+    local local_ = type(ns.MountTipsOwnLocal) == "table" and ns.MountTipsOwnLocal[mountID]
+    return Tips.Resolve(type(local_) == "string" and local_ ~= "" and local_ or t.own)
+end
+
+---What the mounts of a tip have in common: the whole tip, when it is of one mount.
 ---@return string|nil text, string|nil note -- the note says when it was reported
-function Tips.For(mountID)
+function Tips.Common(mountID)
     local t = mountID and type(ns.MountTips) == "table" and ns.MountTips[mountID]
     if type(t) ~= "table" or type(t.text) ~= "string" then return nil end
     -- The player's language when there is one for this mount (`Locales/ptBR_Tips.lua`, written
@@ -67,6 +83,40 @@ function Tips.For(mountID)
     local nota = t.year and string.format(L["Reported by players in %d. The game may have changed since."], t.year)
         or L["Reported by players. The game may have changed since."]
     return texto, nota
+end
+
+---The tip of one mount, for the card: what is of it, a line of air, and what is common.
+---@return string|nil text, string|nil note
+function Tips.For(mountID)
+    local comum, nota = Tips.Common(mountID)
+    if not comum then return nil end
+    local dela = Tips.Own(mountID)
+    if dela then return dela .. string.char(10, 10) .. comum, nota end
+    return comum, nota
+end
+
+---The mounts of a place, in the groups the tooltip shows them in: the mounts that have the same
+---sentence of their own together, in the order the first of them came, with the sentence once
+---under them. A mount with no sentence of its own is a group of one.
+---@param entries table[] -- what a marker holds in `mounts`
+---@param n number|nil -- how many of them the tooltip shows
+---@return table groups `{ { own = string|nil, mounts = { ... } }, ... }`
+function Tips.Groups(entries, n)
+    local grupos, por = {}, {}
+    if type(entries) ~= "table" then return grupos end
+    for i = 1, math.min(#entries, n or #entries) do
+        local m = entries[i]
+        local e = type(m) == "table" and m.entry
+        local dela = Tips.Own(type(e) == "table" and e.mountID or nil)
+        local g = dela and por[dela]
+        if not g then
+            g = { own = dela, mounts = {} }
+            grupos[#grupos + 1] = g
+            if dela then por[dela] = g end
+        end
+        g.mounts[#g.mounts + 1] = m
+    end
+    return grupos
 end
 
 ---The tip SEVERAL mounts have in common, for a place on the map that gives more than one: the two
@@ -79,7 +129,7 @@ function Tips.Shared(entries)
     local texto, nota
     for _, m in ipairs(entries) do
         local e = type(m) == "table" and m.entry
-        local t, n = Tips.For(type(e) == "table" and e.mountID or nil)
+        local t, n = Tips.Common(type(e) == "table" and e.mountID or nil)
         if not t or (texto and t ~= texto) then return nil end
         texto, nota = t, n
     end

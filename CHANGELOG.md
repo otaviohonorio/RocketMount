@@ -128,16 +128,15 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **The broken mirrors of Revendreth, the ones that are on.** The Battle Gargon Silessa is
   behind twelve broken mirrors that appear three at a time. The map now marks the three of
   the group the game says is on — and none for a character the mirrors are not for.
-- **How the Dreamseeds work, and which seed gives what.** The seven mounts of the Dreamseed
-  Cache share a tip: the seed you give decides. Any seed, or Emerald Dewdrops alone, can give
-  the Winter Night Dreamsaber; only the Gigantic Dreamseed gives the other six; the plump and
-  the small ones never do. A full bar is not required, and whether it raises the chance is
-  said for what it is: not measured.
-- **The chance on each difficulty.** For a mount whose chance is not the same on every
-  difficulty, the card lists what each one gave, the best first, with the game's own names:
-  the Astral Cloud Serpent came in 0.4% of the chests of 10 players and in 2.9% of those of 25.
-  A chest whose difficulty could not be told is said to be so, with its number. Thirteen
-  mounts have it.
+- **How the Dreamseeds work, and which seed gives what.** Under each mount of the Dreamseed
+  Cache, what is of that mount: any seed, or Emerald Dewdrops alone on somebody's plant, can
+  give the Winter Night Dreamsaber, and the game says its chance grows when the plant's bar
+  reaches 50 and again at 100; only a Gigantic Dreamseed of yours gives the other six. What is
+  of all of them comes once, at the end: only a seed is planted, the bar is of everybody who
+  gave, and where the gigantic seed comes from. The chance is a rate for each cache.
+- **A tip can say what is of each mount.** On the map, the mounts of a place that share a
+  sentence are listed together with the sentence once under them, and what is common to all
+  comes last; on the card, the mount's own sentence comes first.
 - **The chance of a chest that is in many places is the chance over all of them.** The addon
   took the number of the luckiest one: 1.5% for a mount of the Dreamseed Cache that comes in
   0.5%. 27 mounts have a lower, truer number now, the mounts of the Dreamseed Cache and the

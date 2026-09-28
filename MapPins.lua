@@ -885,8 +885,22 @@ function MapPins.Tooltip(tooltip, data)
     local wr, wg, wb = Cor("HIGHLIGHT_FONT_COLOR", 1, 1, 1)
     local gr, gg, gb = Cor("NORMAL_FONT_COLOR", 1, 0.82, 0)
     local total = #data.mounts
-    for i = 1, math.min(total, TIP_MOUNTS) do
-        local m = data.mounts[i]
+    -- The mounts that have the same sentence of their own go together, and the sentence once
+    -- under them (`Tips.Groups`): six mounts of one seed are one thing to read, not six.
+    local grupos = ns.Tips and ns.Tips.Groups and ns.Tips.Groups(data.mounts, TIP_MOUNTS)
+    if not grupos then
+        grupos = {}
+        for i = 1, math.min(total, TIP_MOUNTS) do grupos[i] = { mounts = { data.mounts[i] } } end
+    end
+    local comFrase = false
+    for _, g in ipairs(grupos) do
+        if g.own and total > 1 then comFrase = true end
+    end
+    for k, g in ipairs(grupos) do
+      -- A line of air between two groups, when a group ends in a sentence: without it the
+      -- sentence of one reads as the title of the next.
+      if comFrase and k > 1 then tooltip:AddLine(" ") end
+      for _, m in ipairs(g.mounts) do
         local e = m.entry
         -- At a creature the number is the chance THERE; anywhere else, the one the list shows.
         local numero
@@ -908,6 +922,13 @@ function MapPins.Tooltip(tooltip, data)
                 Linha(tooltip, porque, "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5, true)
             end
         end
+      end
+      -- (One mount alone has its sentence in the description, below, with the rest of its tip.)
+      if g.own and total > 1 then
+          for _, l in ipairs(Linhas(g.own)) do
+              Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+          end
+      end
     end
     if total > TIP_MOUNTS then
         Linha(tooltip, string.format(L["and %d more"], total - TIP_MOUNTS),
