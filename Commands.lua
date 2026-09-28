@@ -274,6 +274,18 @@ commands["pins"] = function()
         print("    " .. string.format(L["%d route(s), drawn with %d dash(es)"], u.routes, u.dashes or 0))
     end
     if u.err then print(string.format(L["    first failure: %s"], u.err)) end
+    -- The vendors of this map that are there only sometimes, and what the game says now.
+    for _, v in ipairs(ns.ConditionalVendors and ns.ConditionalVendors(u.map) or {}) do
+        local nome = ns.MapPins.NpcName and ns.MapPins.NpcName(v.npcId, v.name) or v.name
+        if v.event then
+            print("    " .. string.format(v.on and L["%s: of the event %s, which is ON"]
+                or L["%s: of the event %s, which is not on (no marker)"], nome, v.title or v.event))
+        end
+        if v.perks then
+            print("    " .. string.format(L["%s: Trading Post; the game's landmark is %s, mounts on offer known: %d"],
+                nome, v.landmark and L["on the map"] or L["NOT on the map"], v.offers or 0))
+        end
+    end
 end
 
 -- THE DIARY, in chat. Only in development: the packaged addon has no `Log.lua` (see Core.lua).

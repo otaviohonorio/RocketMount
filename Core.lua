@@ -101,6 +101,8 @@ function handlers:PLAYER_LOGIN()
     -- The calendar of events is asked of the server (no window opens): the vendors of an event
     -- count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
     if C_Calendar and C_Calendar.OpenCalendar then pcall(C_Calendar.OpenCalendar) end
+    -- And the Trading Post is asked what is on offer, in case the game already knows.
+    if ns.ReadPerks then pcall(ns.ReadPerks) end
     ns.Start()
 end
 
@@ -132,6 +134,16 @@ end
 
 -- The game's list of events changed (a holiday started, the calendar arrived from the server):
 -- the vendors of an event are asked again.
+-- The Trading Post told what is on offer (its window opened, its data arrived): kept, and the
+-- list built again when the offer is another.
+function handlers:PERKS_PROGRAM_DATA_REFRESH()
+    if ns.ReadPerks and ns.ReadPerks() then ns.Invalidate() end
+end
+
+function handlers:PERKS_PROGRAM_OPEN()
+    if ns.ReadPerks and ns.ReadPerks() then ns.Invalidate() end
+end
+
 function handlers:CALENDAR_UPDATE_EVENT_LIST()
     if ns.CalendarChanged and ns.CalendarChanged() then ns.Invalidate() end
 end

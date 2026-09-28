@@ -514,11 +514,123 @@ function ns.CalendarChanged()
     return Chave(hoje) ~= antes
 end
 
----A vendor or a quest that counts for THIS character, now: of its faction, and -- when it is of
----an event -- with the event on.
-local function DoMeuLado(ficha)
+--------------------------------------------------------------------------------
+-- THE TRADING POST: WHAT IS ON OFFER THIS MONTH, AND WHETHER IT IS THERE
+--
+-- (!) The user's second screenshot, 28/09: the vendor of the Trading Post of Stormwind, "Sells:
+-- Celestial Steed 61%, The Dreadwake 69%, Riding Turtle 1%", and nobody at the place. The list
+-- of what a Trading Post vendor sells is every mount that ever went through it; the month's
+-- offer is the game's to say (`C_PerksProgram`), and so is whether the Trading Post is there
+-- for this character (the game's own landmark, `C_AreaPoiInfo`).
+--
+-- The game answers about the offer when it has the data -- for sure with the Trading Post
+-- open -- so what it said is KEPT (account-wide: the offer is the account's), each mount until
+-- its own offer ends, and the ones with no end until the month turns. Nothing kept and
+-- nothing answered is "not on offer": the mount goes back to what its journal says it is.
+--------------------------------------------------------------------------------
+local function MesDe(t)
+    return date and date("%Y-%m", t) or ""
+end
+
+---Read what the game says is on offer, and keep it.
+---@return boolean changed whether the set of mounts on offer changed
+function ns.ReadPerks()
+    if not (ns.db and C_PerksProgram and C_PerksProgram.GetAvailableVendorItemIDs
+        and C_PerksProgram.GetVendorItemInfo) then
+        return false
+    end
+    local ok, ids = pcall(C_PerksProgram.GetAvailableVendorItemIDs)
+    -- An empty list is the game not having the data yet, not a month with nothing on offer.
+    if not ok or type(ids) ~= "table" or #ids == 0 then return false end
+    local agora = time()
+    local montarias, lidos = {}, 0
+    for _, id in ipairs(ids) do
+        local okI, info = pcall(C_PerksProgram.GetVendorItemInfo, id)
+        if okI and type(info) == "table" then
+            lidos = lidos + 1
+            local m, resta = info.mountID, info.timeRemaining
+            if issecretvalue and (issecretvalue(m) or issecretvalue(resta)) then return false end
+            if type(m) == "number" and m > 0 then
+                if info.doesNotExpire ~= true and type(resta) == "number" and resta > 0 then
+                    montarias[m] = agora + resta
+                else
+                    montarias[m] = true
+                end
+            end
+        end
+    end
+    if lidos == 0 then return false end
+    local antes = ns.db.perks
+    local function Chave(t)
+        local ms = {}
+        for m in pairs(type(t) == "table" and type(t.mounts) == "table" and t.mounts or {}) do ms[#ms + 1] = m end
+        table.sort(ms)
+        return table.concat(ms, ",")
+    end
+    local novo = { read = agora, mounts = montarias }
+    ns.db.perks = novo
+    if ns.Log and ns.Log.Add then
+        pcall(ns.Log.Add, "perks", { items = lidos, mounts = Chave(novo) })
+    end
+    return Chave(antes) ~= Chave(novo)
+end
+
+---Is this mount on offer at the Trading Post now, by what the game said?
+function ns.PerksOffer(mountID)
+    local p = ns.db and ns.db.perks
+    if type(p) ~= "table" or type(p.mounts) ~= "table" or type(p.read) ~= "number" then return false end
+    local ate = p.mounts[mountID]
+    local agora = time()
+    if type(ate) == "number" then return ate > agora end
+    -- An offer with no end of its own is the month's: read in another month, it is over.
+    return ate == true and MesDe(p.read) == MesDe(agora)
+end
+
+---Does the game draw its own landmark of this Trading Post, for this character?
+local function MarcoNoMapa(ficha)
+    if type(ficha.poi) ~= "number" then return true end     -- no landmark known: nothing to ask
+    if not (C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo) then return false end
+    local ok, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, ficha.poiMap, ficha.poi)
+    return ok and type(info) == "table"
+end
+ns.PerksLandmark = MarcoNoMapa
+
+---The vendors of a map that are there only SOMETIMES, and what the game says of each now: for
+---`/rmt pins`, which is how "there is no marker here" is told from "the addon does not know".
+---@return table[] `{ { name, npcId, event, on, title, perks, landmark, offers }, ... }`
+function ns.ConditionalVendors(mapID)
+    local T = ns.MountPlaces
+    local out = {}
+    if type(T) ~= "table" or type(T.npc) ~= "table" then return out end
+    local ofertas = 0
+    for m in pairs(ns.db and type(ns.db.perks) == "table" and type(ns.db.perks.mounts) == "table"
+        and ns.db.perks.mounts or {}) do
+        if ns.PerksOffer(m) then ofertas = ofertas + 1 end
+    end
+    for id, v in pairs(T.npc) do
+        if type(v) == "table" and (v.event ~= nil or v.perks) and type(v.where) == "table" and v.where[mapID] then
+            local reg = { name = v.name, npcId = id }
+            if v.event ~= nil then
+                reg.event = v.event
+                reg.on, reg.title = ns.EventOn(v.event)
+            end
+            if v.perks then
+                reg.perks, reg.landmark, reg.offers = true, MarcoNoMapa(v), ofertas
+            end
+            out[#out + 1] = reg
+        end
+    end
+    table.sort(out, function(a, b) return a.npcId < b.npcId end)
+    return out
+end
+
+---A vendor or a quest that counts for THIS character, now, for THIS mount: of its faction;
+---when it is of an event, with the event on; when it is of the Trading Post, with the mount on
+---offer and the Trading Post there.
+local function DoMeuLado(ficha, mountID)
     if type(ficha) ~= "table" then return false end
     if ficha.event ~= nil and not ns.EventOn(ficha.event) then return false end
+    if ficha.perks and not (ns.PerksOffer(mountID) and MarcoNoMapa(ficha)) then return false end
     if not ficha.side then return true end
     local meu = UnitFactionGroup and UnitFactionGroup("player") or nil
     return not meu or ficha.side == meu
@@ -556,7 +668,7 @@ function ns.OwnPlaces(mountID, sourceType)
 
     for _, id in ipairs(type(m.npc) == "table" and m.npc or {}) do
         local v = type(T.npc) == "table" and T.npc[id]
-        if DoMeuLado(v) then
+        if DoMeuLado(v, mountID) then
             local pts = Pontos(v.where)
             -- The event that is on, by the name the calendar gives it (the player's language).
             local evento = v.event ~= nil and select(2, ns.EventOn(v.event)) or nil
@@ -769,7 +881,7 @@ function ns.OwnCost(mountID)
             -- A price belongs to who charges it: the other faction's vendor does not count.
             local meu = false
             for _, id in ipairs(type(p.npc) == "table" and p.npc or {}) do
-                if type(T.npc) == "table" and DoMeuLado(T.npc[id]) then meu = true end
+                if type(T.npc) == "table" and DoMeuLado(T.npc[id], mountID) then meu = true end
             end
             if meu then
                 local lista = {}

@@ -114,6 +114,14 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **The Trading Post sells what is on offer this month.** Its vendors used to be marked as
+  selling every mount that ever went through the Trading Post, each with a percentage. Now a
+  mount counts as sold there only while the game says it is on offer, and the marker is drawn
+  only where the game itself shows its Trading Post landmark. Until the game has said what is
+  on offer — for sure once you open the Trading Post — there is no marker.
+- **The Darkmoon Faire's vendors** are on the map only during the Faire.
+- `/rmt pins` also lists the vendors of the map that are there only sometimes, and what the
+  game answers about each right now.
 - **The word under a map marker is smaller**, and a rare elite is simply a "Rare": the dragon
   frame around the marker already says it is an elite.
 - **On the minimap too.** The places within the minimap's reach have a small marker there,
