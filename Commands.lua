@@ -74,9 +74,8 @@ commands["warn"] = function()
         or L["mount sighting alert off."])
 end
 
--- Turns the ones that left the game on and off. It exists because the MCL catalogue knows
--- them, and a collector usually wants to SEE what they missed -- just not in the middle of a
--- list about where to start.
+-- Turns the ones that left the game on and off: a collector usually wants to SEE what they
+-- missed -- just not in the middle of a list about where to start.
 commands["gone"] = function()
     ns.db.showUnobtainable = not ns.db.showUnobtainable
     ns.Print(ns.db.showUnobtainable
@@ -172,12 +171,14 @@ commands["debug"] = function(rest)
                     .. (e.chanceRough and " (rough)" or "") .. (e.sureDrop and " (sure drop)" or "")
                     .. "   creature: " .. tostring(e.dropName) .. " of " .. tostring(e.dropCreatures))
                 print("    rep: " .. tostring(e.rep and e.rep.label))
-                print("    achievement: " .. tostring(e.achievement and e.achievement.label))
+                print("    achievement: " .. tostring(e.achievementReward and e.achievementReward.label))
+                print("    boss: " .. tostring(e.bossName) .. "   instance: " .. tostring(e.instanceName)
+                    .. " (" .. tostring(e.instanceID) .. ")   world boss: " .. tostring(e.worldBoss))
                 print("    cost: " .. tostring(e.cost and e.cost.price)
                     .. "   gap: " .. tostring(e.cost and e.cost.gap)
                     .. "   from: " .. tostring(e.cost and e.cost.from)
                     .. (e.cost and e.cost.partial and " (partial)" or ""))
-                print("    places from: " .. tostring(e.placesFrom or (e.coords or e.vendor) and "catalogue" or nil)
+                print("    places from: " .. tostring(e.placesFrom)
                     .. "   vendors: " .. tostring(e.vendors and #e.vendors) .. "   points: " .. tostring(e.coords and #e.coords))
                 print("    vendor: " .. tostring(e.vendor and e.vendor.npc)
                     .. "   guild vendor: " .. tostring(e.vendorGuilda))
@@ -195,12 +196,6 @@ commands["debug"] = function(rest)
         end
         return
     end
-
-    local mcl, rar = ns.ProviderStatus()
-    ns.Print(L["MCL (drop chance, coordinates):"],
-        mcl and L["|cff33ff99read|r"] or L["|cffff5555missing|r"])
-    ns.Print(L["MountJournalEnhanced (share of the playerbase):"],
-        rar and L["|cff33ff99read|r"] or L["|cffff5555missing|r"])
 
     local list = ns.GetRanked(true)
     local byTier = {}

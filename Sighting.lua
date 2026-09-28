@@ -40,7 +40,6 @@ ns.Sighting = Sighting
 -- every nameplate that appears and disappears -- and a repeated alert becomes an ignored one.
 local REPEAT_AFTER = 600
 
-local byVignette     -- vignette id      -> { points }
 local byName         -- folded name      -> { points }
 local byNpc          -- npc id           -> { points }, from Data/MobDrops.lua
 local lastSeen = {}  -- key              -> when we announced it
@@ -108,7 +107,23 @@ local function IndexarMobDrops(lista)
         for _, d in ipairs(type(rec) == "table" and rec or {}) do
             local n = type(d) == "table" and tonumber(d.count)
             local e = n and n > 0 and d.item and porMontaria[MountOfItem(d.item)]
-            if e then Push(byNpc, npc, { entry = e, drop = d }) end
+            if e then
+                Push(byNpc, npc, { entry = e, drop = d })
+                -- BY NAME TOO, for what arrives without a GUID (a yell): the name the table
+                -- has, with the place the creature lives at -- one point per map, which is
+                -- what the zone guard asks for. A creature the table cannot place goes in
+                -- without a place, and the guard refuses it.
+                if type(rec.name) == "string" and rec.name ~= "" then
+                    local chave, posto = ns.Fold(rec.name), false
+                    for mapa, pts in pairs(type(rec.where) == "table" and rec.where or {}) do
+                        if type(pts) == "table" and pts[1] and pts[2] then
+                            Push(byName, chave, { entry = e, drop = d, npc = npc, m = mapa, x = pts[1], y = pts[2] })
+                            posto = true
+                        end
+                    end
+                    if not posto then Push(byName, chave, { entry = e, drop = d, npc = npc }) end
+                end
+            end
         end
     end
 end
@@ -116,7 +131,7 @@ end
 ---Rebuilt when the list changes, not on every event: a rare showing up is no time to walk four
 ---hundred mounts.
 function Sighting.Rebuild()
-    byVignette, byName, byNpc = {}, {}, {}
+    byName, byNpc = {}, {}
     if not ns.GetRanked then return end
 
     local ok, lista = pcall(ns.GetRanked)
@@ -126,44 +141,19 @@ function Sighting.Rebuild()
     for _, e in ipairs(lista) do
         -- Only what can still be obtained: alerting about a mount that left the game is a taunt.
         if not e.unobtainable then
-            local primeiro
-            if e.coords then
-                for _, wp in ipairs(e.coords) do
-                    -- (!) `i` IS AN INSTANCE, NOT A CREATURE. Reported with a screenshot (23/09):
-                    -- "Abismo Peçonhento pode largar: Viperiveno Carmesim, Amigo do Céu Primevo",
-                    -- flying past the entrance of The Venomous Abyss -- a RAID (Ula'tek, mythic,
-                    -- 20 players). MCL pins that mount at the raid's entrance, with the entrance's
-                    -- own vignette (8032) and name; the minimap showed the entrance, and this index
-                    -- took it for a rare. The open-world guard could not help: the player WAS in
-                    -- the open world. MCL does not document `i`; the data does -- on 23/09 all 14
-                    -- points carrying it were instanced content (raid and dungeon bosses, holiday
-                    -- dungeon bosses), and none of the 206 rare points had it.
-                    if not wp.i then
-                        -- `dq` is the rare's daily tracking quest, when MCL knows it: see
-                        -- `Sighting.LockedOut`.
-                        local ponto = { entry = e, m = wp.m, x = wp.x, y = wp.y, dq = wp.dq }
-                        primeiro = primeiro or ponto
-                        -- `wp.v` IS THE VIGNETTE, and it is the good key: a number, identical
-                        -- in every language, and it cannot collide with a pet's name.
-                        if wp.v then Push(byVignette, wp.v, ponto) end
-                        if wp.n then Push(byName, ns.Fold(wp.n), ponto) end
-                    end
-                end
-            end
-            -- `lockBossName` has no coordinates of its own, so it borrows the entry's first
-            -- point. With no point at all it still goes in -- and the zone guard below will
-            -- refuse it, which is the correct outcome: a place we cannot confirm is a place we
-            -- do not claim.
+            -- (28/09) The places of a mount are vendors, chests and quest givers now: none of
+            -- them is a creature to be sighted. The creatures are the table's (IndexarMobDrops).
+            -- A boss is known by name too, and with no place of its own the zone guard below
+            -- refuses it -- a place we cannot confirm is a place we do not claim.
             if e.bossName then
-                Push(byName, ns.Fold(e.bossName), primeiro
-                    or { entry = e, m = nil, x = nil, y = nil })
+                Push(byName, ns.Fold(e.bossName), { entry = e, m = nil, x = nil, y = nil })
             end
         end
     end
     if ns.Log then
         local function Conta(t) local n = 0; for _ in pairs(t) do n = n + 1 end; return n end
         pcall(ns.Log.Add, "rebuild", {
-            missing = #lista, npcs = Conta(byNpc), vignettes = Conta(byVignette),
+            missing = #lista, npcs = Conta(byNpc),
             names = Conta(byName), table = type(ns.MobDrops) == "table" and Conta(ns.MobDrops) or 0,
         })
     end
@@ -752,12 +742,6 @@ function Sighting.LockedOut(npc, pontos)
             return true, "q:" .. rl.q, falta
         end
     end
-    for _, p in ipairs(pontos or {}) do
-        if p.dq and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
-            local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, p.dq)
-            if ok and feito then return true, "dq:" .. tostring(p.dq) end
-        end
-    end
     if npc then
         local reg = Registro()
         local ate = reg and reg[npc]
@@ -814,8 +798,8 @@ end
 ---Every way of recognising a rare ends here, so that one rare seen three ways -- vignette,
 ---nameplate, target -- is ONE alert, keyed by the strongest identity available.
 ---
----  npc       from a GUID: exact, and the key of the Wowhead table;
----  vignette  from the minimap: exact, the key of MCL's pins;
+---  npc       from a GUID (a unit's, or the one a vignette carries): exact, and the key of
+---            the table of creatures;
 ---  name      the fallback, and only inside the zone guard.
 ---(!) OPEN WORLD ONLY. The user: "os avisos são para áreas abertas, dentro de dungeons e raids
 ---não precisa do aviso". Inside an instance you already know what you came for, and a boss's
@@ -842,7 +826,6 @@ function Sighting.Sight(npc, vignetteID, nome, mapa, onde, via)
         for _, p in ipairs(lista or {}) do pontos[#pontos + 1] = p end
     end
     if npc then Somar(byNpc[npc]) end
-    if vignetteID then Somar(byVignette[vignetteID]) end
     local dobrado = nome and ns.Fold(nome) or ""
     if dobrado ~= "" then Somar(NoMapaCerto(byName[dobrado], mapa or MapaAtual())) end
 

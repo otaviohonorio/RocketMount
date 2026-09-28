@@ -149,16 +149,9 @@ local LUCK_SOURCE = {
 -- The acquisition is deterministic when nothing in it depends on luck: buying from the
 -- vendor, handing in the quest, closing the achievement. A drop chance on the record is
 -- proof of the opposite.
--- (!) "SPECIAL" É O CATÁLOGO DIZENDO QUE NÃO SABE. São 126 montarias marcadas assim — evento,
--- promoção, recompensa esquisita — e para todas elas o registro traz **só** o método e o item.
--- Tratar isso como aquisição determinística é concluir "é só comprar" a partir de um campo que
--- literalmente diz "é um caso à parte".
-local UNKNOWN_METHOD = { SPECIAL = true, [""] = true }
-
 local function Deterministic(e)
     if e.chance and e.chance > 0 then return false end
     if LUCK_SOURCE[e.sourceType] then return false end
-    if e.method and UNKNOWN_METHOD[e.method] then return false end
     return true
 end
 
@@ -364,8 +357,6 @@ function ns.Rank(entry)
         end
     elseif e.chance and e.chance > 0 then
         e.headline = ns.FormatChance(e.chance, e.chanceRough)
-    elseif e.ownedByPct then
-        e.headline = string.format(L["%.0f%% own it"], e.ownedByPct)
     else
         e.headline = "—"
     end
@@ -411,8 +402,10 @@ function ns.Rank(entry)
     elseif e.chance then
         e.why = string.format(L["%s chance"], ns.FormatChance(e.chance, e.chanceRough))
         if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
-        if e.bossName then
-            e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(e.bossName) or e.bossName)
+        -- Who drops it: the boss, or the creature of the table.
+        local quem = e.bossName or (not e.box and e.dropName) or nil
+        if quem then
+            e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(quem) or quem)
         end
         if e.box and e.dropName then
             e.why = e.why .. "  ·  " .. string.format(L["inside %s"], e.dropName)
@@ -479,9 +472,6 @@ local function Compare(a, b)
 
     local ca, cb = a.chance or math.huge, b.chance or math.huge
     if ca ~= cb then return ca < cb end
-
-    local oa, ob = a.ownedByPct or -1, b.ownedByPct or -1
-    if oa ~= ob then return oa > ob end
 
     return (a.name or "") < (b.name or "")
 end

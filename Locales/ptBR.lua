@@ -43,7 +43,6 @@ L["left the game"]                      = "saiu do jogo"
 -- O número da direita e a frase que explica a posição
 --------------------------------------------------------------------------------
 L["ready to grab"] = "pode pegar"
-L["%.0f%% own it"] = "%.0f%% têm"
 
 L["Not unlocked yet — %s"] = "Falta liberar — %s"
 L["requirement not met"]   = "requisito não cumprido"
@@ -102,7 +101,6 @@ L["item %d"]            = "item %d"
 L['Quest "%s": completed']                  = 'Missão "%s": concluída'
 L["  —  already done on another character"] = "  —  já feita em outro personagem"
 L['Quest "%s": not completed%s%s']          = 'Missão "%s": não concluída%s%s'
-L["Achievement completed: %s"]              = "Conquista concluída: %s"
 L["%s: %d of %d"]                           = "%s: %d de %d"
 L['Achievement "%s": not completed']        = 'Conquista "%s": não concluída'
 
@@ -227,7 +225,6 @@ L["how much of it is done"] = "o quanto já está feito"
 L["how far to the standing asked for"] = "o caminho até o nível exigido"
 L["how far to the renown level asked for"] = "o caminho até o renome exigido"
 L['Achievement "%s": %d%% done'] = 'Conquista "%s": %d%% feita'
-L["%s: %d%% done"] = "%s: %d%% feita"
 L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."] =
     "\"?\" quer dizer que ainda não dá para medir: abra o vendedor, ou não há dado."
 L["Show them on the world map"] = "Mostrar no mapa-múndi"
@@ -256,23 +253,18 @@ L["The requirement above only UNLOCKS the attempt. Once met, the mount still dep
     "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria ainda depende da sorte."
 
 L["Why check"] = "Por que conferir"
-L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read, because no installed catalogue says which achievement belongs to which mount. The price shown in the requirements is only part of what it costs."] =
+L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read. The price shown in the requirements is only part of what it costs."] =
     "Vendedor de guilda. Estas exigem reputação com a sua guilda E uma conquista DA GUILDA — e é "
-    .. "a conquista que eu não consigo ler, porque nenhum catálogo instalado diz qual conquista "
-    .. "pertence a qual montaria. O preço que aparece nos requisitos é só uma parte do que ela "
-    .. "custa."
+    .. "a conquista que eu não consigo ler. O preço que aparece nos requisitos é só uma parte do "
+    .. "que ela custa."
 L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."] =
     "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase nunca é o que "
     .. "trava. Pode haver conquista, nível de guilda ou classificação no caminho, e isso eu não "
     .. "leio."
-L[" Not even the catalogue knows which vendor this one has."] =
-    " Nem o catálogo sabe qual é o vendedor exato desta."
+L[" And where its vendor is, I do not know."] =
+    " E onde fica o vendedor dela, eu não sei."
 
 L["Where"]                    = "Onde"
-L["How many players own it"]  = "Quantos jogadores têm"
-L["%.1f%% of the playerbase"] = "%.1f%% da base"
-L["Also shows up at"]         = "Também aparece"
-L["Black Market"]             = "Mercado Negro"
 
 L["arrow pointed at %s."] = "seta apontada para %s."
 L["the mount"]            = "a montaria"
@@ -282,10 +274,6 @@ L["Next in line:"]          = "Próxima da fila:"
 L["Click to open · right-click for options"] = "Clique para abrir · botão direito para as opções"
 L[" (filtered from %d)"]    = " (filtrado de %d)"
 L['nothing found for "%s"'] = 'nada encontrado para "%s"'
-L["  |cff888888· the chance of some chests and bosses is not known yet|r"] =
-    "  |cff888888· a chance de alguns baús e chefes ainda não é conhecida|r"
-L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"] =
-    "  |cff888888· sem o MountJournalEnhanced, não há o percentual da base|r"
 L["this client has no new menu; use /rmt sources."] =
     "este cliente não tem o menu novo; use /rmt fontes."
 
@@ -360,10 +348,6 @@ L["source filter cleared: every source is back."] =
     "filtro de fonte limpo: todas as fontes voltam a aparecer."
 
 L['no missing mount has "%s" in its name.'] = 'nenhuma montaria que falta tem "%s" no nome.'
-L["MCL (drop chance, coordinates):"] = "MCL (chance de saque, coordenada):"
-L["MountJournalEnhanced (share of the playerbase):"] = "MountJournalEnhanced (percentual da base):"
-L["|cff33ff99read|r"]    = "|cff33ff99lido|r"
-L["|cffff5555missing|r"] = "|cffff5555ausente|r"
 L["%d mounts missing on this character:"] = "%d montarias faltando neste personagem:"
 
 L["locale %s, %d game label(s):"]          = "idioma %s, %d rótulo(s) do jogo:"

@@ -460,22 +460,14 @@ function ns.DetailBlocks(entry)
         if entry.vendorGuilda then
             -- ESPECÍFICO quando dá para ser: toda montaria de vendedor de guilda exige
             -- reputação com a guilda mais uma conquista de guilda.
-            texto = L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read, because no installed catalogue says which achievement belongs to which mount. The price shown in the requirements is only part of what it costs."]
+            texto = L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read. The price shown in the requirements is only part of what it costs."]
         else
             texto = L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."]
             if entry.vendorVago then
-                texto = texto .. L[" Not even the catalogue knows which vendor this one has."]
+                texto = texto .. L[" And where its vendor is, I do not know."]
             end
         end
         Add("why", L["Why check"], texto)
-    end
-
-    if entry.ownedByPct then
-        Add("owned", L["How many players own it"], string.format(L["%.1f%% of the playerbase"], entry.ownedByPct))
-    end
-
-    if entry.blackMarket then
-        Add("bmah", L["Also shows up at"], L["Black Market"])
     end
 
     return blocks, wp
@@ -800,7 +792,6 @@ local function Redraw()
     window.count:SetText(tostring(#entries))
     ns.UpdateCollectionBoxes()
 
-    local mcl, rar = ns.ProviderStatus()
     -- WHOSE LIST THIS IS. Reputation, currency and achievements are read from the character
     -- logged in, and the player cannot tell that by looking -- the second defect reported on
     -- 21/09: *"qual char tem essa reputação?"*. The name stays in sight the whole time.
@@ -812,12 +803,6 @@ local function Redraw()
     -- broken addon.
     if ns.search and ns.search ~= "" and #entries == 0 then
         footer = string.format(L['nothing found for "%s"'], ns.search)
-    end
-    if not mcl then
-        -- Our own table knows the creatures; the chests and some bosses are still to come.
-        footer = footer .. L["  |cff888888· the chance of some chests and bosses is not known yet|r"]
-    elseif not rar then
-        footer = footer .. L["  |cff888888· without MountJournalEnhanced, there is no playerbase share|r"]
     end
     footer = (UnitName("player") or "?") .. "  ·  " .. footer
     window.footer:SetText(footer)

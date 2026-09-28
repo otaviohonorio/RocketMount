@@ -18,8 +18,9 @@
 -- one pin per place on the map being viewed. No library -- SilverDragon uses its own, and it
 -- has no licence.
 --
---   where   a PLACE: a creature's spawn point (`ns.MobDrops[npc].where`, Wowhead's map), or a
---           point of the catalogue (MCL's `coords` and vendors, read at run time, nothing copied)
+--   where   a PLACE: a creature's spawn point (`ns.MobDrops[npc].where`), a vendor, a chest
+--           or a quest giver (`Data/MountPlaces.lua`), or the door of an instance, which the
+--           game itself places on the map being viewed
 --   what    the mounts THIS character is missing there, easiest first; for a creature it is
 --           `Sighting.MountsOf(npc)`, the SAME index the alert uses, so the two never disagree
 --   state   `Sighting.LockedOut`: looted today (or this week, for a world boss) goes dim
@@ -47,14 +48,11 @@ MapPins.Geometry = { PIN = 20, DISC = 32, ICON = 17, RING = 20, BADGE = 12, BADG
 -- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
 -- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
 local NEAR = 0.035
--- A vendor, a quest giver or an entrance is ONE place however many mounts it has: catalogue
--- points this close (and of the same sort) are the same place, and the tooltip lists the mounts.
+-- A vendor or a quest giver is ONE place however many mounts it has: points this close (and of
+-- the same sort) are the same place, and the tooltip lists the mounts.
 local SAME_PLACE = 0.012
 local TIP_ICON = 22     -- the mount's icon in the tooltip
 local TIP_MOUNTS = 8    -- then "and N more"
--- How far from a point of the catalogue the game's own entrance may be and still be the same
--- door (map fractions). MCL's points for an instance sit on the entrance, within a unit or so.
-local ENTRANCE_NEAR = 0.04
 
 --------------------------------------------------------------------------------
 -- What kind of source a place is
@@ -99,13 +97,6 @@ local function KindDe(data)
     local nome = data.kind or (data.rec and KIND_OF_CLASS[data.rec.c]) or (data.npc and "rare")
     return KIND[nome] or KIND.other, nome or "other"
 end
-
--- MCL's `method` -> kind. What is not here is decided by what the record has (KindOf).
-local KIND_OF_METHOD = {
-    NPC = "rare", ["Grand Hunt"] = "rare", BOSS = "boss", ZONE = "loot", USE = "loot",
-    VENDOR = "vendor", QUEST = "quest", FISHING = "fishing",
-    Treasure = "treasure", Chest = "treasure", Dungeon = "dungeon",
-}
 
 ---An art that is mostly margin, cut to its ink: `crop` is { left, right, top, bottom } in
 ---fractions of the art. `SetAtlas` has just put the art's own rectangle on the texture, and the
@@ -234,21 +225,10 @@ local function Ordenar(montarias)
     return montarias
 end
 
----What kind of source one point of the catalogue is.
-local function KindOf(e, wp)
-    -- A point of our own table says what it is (Sources.lua, `ns.OwnPlaces`).
+---What kind of source one point is: the table says (Sources.lua, `ns.OwnPlaces`). A kind the
+---map does not know how to draw is "other", never a guess.
+local function KindOf(wp)
     if wp and wp.kind and KIND[wp.kind] then return wp.kind end
-    if wp and wp.i then
-        return (e.groupSize and e.groupSize >= 10) and "raid" or "dungeon"
-    end
-    -- `dq` is a rare's daily tracking quest: a rare, whatever the method says.
-    if wp and wp.dq then return "rare" end
-    local kind = KIND_OF_METHOD[e.method or ""]
-    if kind == "vendor" and e.rep then return "reputation" end
-    if kind then return kind end
-    -- The catalogue's "SPECIAL" and "": decided by what the record HAS.
-    if e.isVendorMount then return e.rep and "reputation" or "vendor" end
-    if e.quest then return "quest" end
     return "other"
 end
 
@@ -316,29 +296,9 @@ local function Construir()
         end
     end
 
-    -- 2. THE CATALOGUE, read at run time.
+    -- 2. THE PLACES OF EACH MOUNT: vendors, chests, quest givers.
     local ok, ranqueadas = pcall(ns.GetRanked or error)
     if not ok or type(ranqueadas) ~= "table" then return idx end
-
-    ---(!) THE RARES WOWHEAD DOES NOT KNOW (25/09). The user: *"até os raros de midnight, tem
-    ---alguns faltando (...) confere em mais de uma fonte"*. Some rares that DO drop a mount have
-    ---no drop recorded on Wowhead yet (Farthik the Plunderer; Image of Astalor Bloodsworn, whose
-    ---mount has no source on Wowhead at all), so they are not in the table. MCL knows them. A
-    ---rare the table already put on this map is not put twice ("Lockjaw" there is "Lockjaw the
-    ---Snapper" here: the names are matched by prefix).
-    local function JaTem(m, nome)
-        nome = nome:lower()
-        for _, p in ipairs(idx[m] or {}) do
-            if p.npc then
-                local d = (p.name or ""):lower()
-                if nome == d or nome:sub(1, #d + 1) == d .. " " or nome:sub(1, #d + 1) == d .. ","
-                    or d:sub(1, #nome + 1) == nome .. " " then
-                    return true
-                end
-            end
-        end
-        return false
-    end
 
     local function Juntar(kind, m, x, y, nome, e, wp)
         local grupo = KIND[kind].group
@@ -346,17 +306,15 @@ local function Construir()
         local lugar
         for _, p in ipairs(lista) do
             if p.fromCatalogue and KIND[p.kind].group == grupo
-                -- Two creatures standing on the same spot are still two creatures.
-                and (grupo ~= "creature" or p.name == nome)
-                and Perto({ { p.x, p.y } }, x, y, grupo == "creature" and NEAR or SAME_PLACE) then
+                and Perto({ { p.x, p.y } }, x, y, SAME_PLACE) then
                 lugar = p
                 break
             end
         end
         if not lugar then
             lugar = {
-                kind = kind, name = nome, rec = { name = nome, c = kind == "rare" and 4 or nil },
-                mounts = {}, dq = {}, mapID = m, x = x, y = y, fromCatalogue = true,
+                kind = kind, name = nome, rec = { name = nome },
+                mounts = {}, mapID = m, x = x, y = y, fromCatalogue = true,
                 -- One of SEVERAL places of the same thing (a portal that appears here or there)
                 -- says which is the first of its map, as a creature's spawn points do.
                 first = not (wp and wp.first == false),
@@ -367,7 +325,6 @@ local function Construir()
             if mt.entry == e then return end
         end
         lugar.mounts[#lugar.mounts + 1] = { entry = e }
-        if wp and wp.dq then lugar.dq[#lugar.dq + 1] = { dq = wp.dq } end
         -- Who or what the place is, by id: the name comes from the game, in its language.
         if wp then
             lugar.nameNpc = lugar.nameNpc or wp.npcId
@@ -380,16 +337,8 @@ local function Construir()
     for _, e in ipairs(ranqueadas) do
         if not e.unobtainable then
             for _, wp in ipairs(e.coords or {}) do
-                -- The door of an instance we know by id is drawn where the GAME says it is
-                -- (PinsFor): the catalogue's point for it would be a second marker.
-                if wp.m and wp.x and wp.y and not Gasto(wp) and not (wp.i and e.instanceID) then
-                    local kind = KindOf(e, wp)
-                    local nome = wp.n or (KIND[kind].group == "creature" and e.bossName) or nil
-                    if KIND[kind].group ~= "creature" then
-                        Juntar(kind, wp.m, wp.x / 100, wp.y / 100, nome, e, wp)
-                    elseif nome and not JaTem(wp.m, nome) then
-                        Juntar(kind, wp.m, wp.x / 100, wp.y / 100, nome, e, wp)
-                    end
+                if wp.m and wp.x and wp.y and not Gasto(wp) then
+                    Juntar(KindOf(wp), wp.m, wp.x / 100, wp.y / 100, wp.n, e, wp)
                 end
             end
             for _, v in ipairs(e.vendors or {}) do
@@ -465,25 +414,6 @@ function MapPins.Project(deMapa, x, y, paraMapa)
     return px, py
 end
 
----The game's own entrance next to a point, when the map being viewed has one there: its name is
----already in the player's language, and its art says whether it is a raid.
-local function Entrada(mapID, x, y)
-    if not (C_EncounterJournal and C_EncounterJournal.GetDungeonEntrancesForMap) then return nil end
-    local ok, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, mapID)
-    local melhor, menor
-    for _, d in ipairs(ok and type(lista) == "table" and lista or {}) do
-        local px, py
-        if type(d.position) == "table" and d.position.GetXY then px, py = d.position:GetXY() end
-        if px and py then
-            local dist = (px - x) ^ 2 + (py - y) ^ 2
-            if dist < ENTRANCE_NEAR * ENTRANCE_NEAR and (not menor or dist < menor) then
-                melhor, menor = d, dist
-            end
-        end
-    end
-    return melhor
-end
-
 ---What goes on this map: one entry per place that still has a mount for you.
 function MapPins.PinsFor(mapID)
     local out = {}
@@ -504,17 +434,9 @@ function MapPins.PinsFor(mapID)
                 local x, y = MapPins.Project(m, p.x, p.y, mapID)
                 if x then
                     local kind, nome = p.kind, p.name
-                    if KIND[kind].group == "instance" then
-                        local porta = Entrada(mapID, x, y)
-                        if porta then
-                            nome = porta.name or nome
-                            if porta.atlasName == "Raid" then kind = "raid"
-                            elseif porta.atlasName == "Dungeon" then kind = "dungeon" end
-                        end
-                    end
                     local preso, fonte, falta
                     if criatura then
-                        preso, fonte, falta = ns.Sighting.LockedOut(p.npc, p.npc and p.mounts or p.dq)
+                        preso, fonte, falta = ns.Sighting.LockedOut(p.npc)
                         if p.npc then MapPins.NpcName(p.npc) end   -- warms the name for the tooltip
                     end
                     -- The road, on the map being viewed. Not on a continent (a zone's roads
@@ -547,10 +469,10 @@ function MapPins.PinsFor(mapID)
         end
     end
 
-    -- (!) THE DOOR IS WHERE THE GAME SAYS (28/09). The entrance of a raid or a dungeon used to
-    -- come from the catalogue's coordinates. The game answers for the map being looked at, in
-    -- that map's own coordinates and with the name in the player's language -- the same call
-    -- its own entrance markers are made of (`DungeonEntranceDataProvider.lua`).
+    -- (!) THE DOOR IS WHERE THE GAME SAYS (28/09). No coordinate of an entrance is kept: the
+    -- game answers for the map being looked at, in that map's own coordinates and with the name
+    -- in the player's language -- the same call its own entrance markers are made of
+    -- (`DungeonEntranceDataProvider.lua`).
     local portas = indice.instances
     if portas and next(portas) and C_EncounterJournal and C_EncounterJournal.GetDungeonEntrancesForMap then
         local ok, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, mapID)
@@ -892,7 +814,7 @@ function MapPins.PlaceName(data)
     end
     if kind.group == "creature" and data.name then return ns.LocalizedCreature(data.name) end
     if data.name and data.name ~= "" then return data.name end
-    -- A place the catalogue did not name: one mount, its boss; several, what kind of place it is.
+    -- A place with no name: one mount, its boss; several, what kind of place it is.
     local unica = data.mounts and #data.mounts == 1 and data.mounts[1].entry
     if unica and unica.bossName then return ns.LocalizedCreature(unica.bossName) end
     return kind.label

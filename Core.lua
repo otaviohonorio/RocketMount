@@ -13,13 +13,10 @@ ns.defaults = {
     hideUnavailable = true,
     -- (!) MONTARIA QUE SAIU DO JOGO FICA DE FORA POR PADRÃO (0.8.0).
     --
-    -- O addon lia a marca `isUnobtainable` do MCL desde a primeira versão e **nunca a usava**:
-    -- promoções encerradas, montarias de card game e conquistas aposentadas entravam na lista e
-    -- eram ranqueadas junto com as que dá para pegar. Numa lista cujo assunto é "por onde
-    -- começar", montaria que ninguém mais consegue é a pior linha possível.
-    --
-    -- O MCL esconde essas por padrão (`MCL_SETTINGS.unobtainable = false`) e deixa ligar; aqui
-    -- é igual, e aí quem quer ver o catálogo completo vê.
+    -- Promoções encerradas, montarias de card game e conquistas aposentadas: numa lista cujo
+    -- assunto é "por onde começar", montaria que ninguém mais consegue é a pior linha possível.
+    -- (28/09) A marca vinha de outro addon; hoje nenhuma tabela NOSSA a tem (`ns.MountGone`), e
+    -- por isso nenhuma montaria está marcada. A opção fica para quando houver fonte.
     showUnobtainable = false,
     -- A busca NÃO é salva entre sessões de propósito: abrir a janela e encontrar a lista já
     -- filtrada por algo que se digitou semana passada é uma lista que parece quebrada.
@@ -100,10 +97,7 @@ function handlers:PLAYER_LOGIN()
     if ns.Roster then ns.Roster.Record() end
     if ns.Sighting then ns.Sighting.Enable() end
     if ns.MapPins then ns.MapPins.Enable() end
-    -- MCL builds `MCL_GUIDE.mountLookup` at PLAYER_LOGIN + 4s and tells nobody. Rather
-    -- than guessing a longer delay, we wait for its own ready flag -- and give up after a
-    -- while, because it may simply not be installed.
-    ns.WaitForProviders()
+    ns.Start()
 end
 
 function handlers:COMPANION_LEARNED()
@@ -170,24 +164,15 @@ function ns.MarkClean()
 end
 
 --------------------------------------------------------------------------------
--- Waiting for the optional providers (MCL and MountJournalEnhanced).
+-- The first list of the session. Nothing to wait for: every table the list reads is the addon's
+-- own, and it is already loaded.
 --------------------------------------------------------------------------------
-local WAIT_STEP = 1
-local WAIT_GIVEUP = 20
-
-function ns.WaitForProviders(elapsed)
-    elapsed = elapsed or 0
-    if ns.ProvidersReady() or elapsed >= WAIT_GIVEUP then
-        ns.Invalidate()
-        -- A varredura de conquistas só começa depois de a lista existir: ela casa o texto de
-        -- recompensa contra as montarias que FALTAM, e antes disso não há contra o que casar.
-        if ns.Achievements then ns.Achievements.Scan() end
-        ns.StartValidation()
-        return
-    end
-    C_Timer.After(WAIT_STEP, function()
-        ns.WaitForProviders(elapsed + WAIT_STEP)
-    end)
+function ns.Start()
+    ns.Invalidate()
+    -- The achievement scan starts only once the list exists: it matches the reward text against
+    -- the mounts that are MISSING.
+    if ns.Achievements then ns.Achievements.Scan() end
+    ns.StartValidation()
 end
 
 --------------------------------------------------------------------------------

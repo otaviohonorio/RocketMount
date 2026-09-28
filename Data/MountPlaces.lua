@@ -4,7 +4,8 @@
 -- Where each mount is got: who sells it, the chest it is in, the quest that rewards it, and
 -- the container it comes from with how often. `where` is { [uiMapID] = { x1, y1, ... } } in
 -- the 0-100 scale, the place seen most first. `side` is the faction a vendor or a quest
--- belongs to, when it belongs to one. `box` is { count, outof, kind, id, name }.
+-- belongs to, when it belongs to one. `guild` is a guild's vendor. `box` is
+-- { count, outof, kind, id, name }.
 -- `cost` is what the vendors charge, a price per group of vendors that charge the same:
 -- { npc = { ids }, gold = copper, currency = { [id] = n }, item = { [id] = n } }. Gold is
 -- never less than the game's own journal text states.
@@ -79,21 +80,21 @@ ns.MountPlaces = {
         [43694] = { name = "Katie Stokx", where = { [84] = { 77, 67.8 } }, side = "Alliance" },
         [43768] = { name = "Tannec Stonebeak", where = { [84] = { 71.4, 72.2 } }, side = "Alliance" },
         [44918] = { name = "Drakma", where = { [85] = { 48, 58.4 } }, side = "Horde" },
-        [46572] = { name = "Goram", where = { [85] = { 48.2, 75.6, 45, 5.6, 47.2, 79.8 } }, side = "Horde" },
-        [46602] = { name = "Shay Pressler", where = { [84] = { 64.2, 77 } }, side = "Alliance" },
+        [46572] = { name = "Goram", where = { [85] = { 48.2, 75.6, 45, 5.6, 47.2, 79.8 } }, side = "Horde", guild = true },
+        [46602] = { name = "Shay Pressler", where = { [84] = { 64.2, 77 } }, side = "Alliance", guild = true },
         [47328] = { name = "Quartermaster Brazie", where = { [245] = { 72.6, 62.6 } }, side = "Alliance" },
         [47897] = { name = "Lunar Festival Vendor", where = { [85] = { 48.8, 56.2, 52.8, 56.2 } } },
         [48510] = { name = "Kall Worthaton", where = { [85] = { 36.2, 86.6, 38.2, 78, 41, 9.2 } }, side = "Horde" },
         [48531] = { name = "Pogg", where = { [245] = { 54.4, 80.4 } }, side = "Horde" },
         [48617] = { name = "Blacksmith Abasi", where = { [249] = { 54, 33.2 } } },
-        [51495] = { name = "Steeg Haskell", where = { [87] = { 36, 85.4 } }, side = "Alliance" },
-        [51496] = { name = "Kim Horn", where = { [90] = { 69.4, 43.4 } }, side = "Horde" },
-        [51501] = { name = "Nuri", where = { [103] = { 53.4, 69.8 } }, side = "Alliance" },
-        [51502] = { name = "Larissia", where = { [110] = { 78.2, 84.8 } }, side = "Horde" },
-        [51503] = { name = "Randah Songhorn", where = { [88] = { 37.2, 62.8 } }, side = "Horde" },
-        [51504] = { name = "Velia Moonbow", where = { [89] = { 64.4, 37.4 } }, side = "Alliance" },
-        [51512] = { name = "Mirla Silverblaze", where = {  } },
-        [52268] = { name = "Riha", where = { [111] = { 58.4, 46.4 } } },
+        [51495] = { name = "Steeg Haskell", where = { [87] = { 36, 85.4 } }, side = "Alliance", guild = true },
+        [51496] = { name = "Kim Horn", where = { [90] = { 69.4, 43.4 } }, side = "Horde", guild = true },
+        [51501] = { name = "Nuri", where = { [103] = { 53.4, 69.8 } }, side = "Alliance", guild = true },
+        [51502] = { name = "Larissia", where = { [110] = { 78.2, 84.8 } }, side = "Horde", guild = true },
+        [51503] = { name = "Randah Songhorn", where = { [88] = { 37.2, 62.8 } }, side = "Horde", guild = true },
+        [51504] = { name = "Velia Moonbow", where = { [89] = { 64.4, 37.4 } }, side = "Alliance", guild = true },
+        [51512] = { name = "Mirla Silverblaze", where = {  }, guild = true },
+        [52268] = { name = "Riha", where = { [111] = { 58.4, 46.4 } }, guild = true },
         [55103] = { name = "Galissa Sundew", where = { [407] = { 52.4, 88.4 } } },
         [55285] = { name = "Astrid Langstrump", where = { [84] = { 52.4, 8.2 }, [89] = { 48.2, 21.8 } }, side = "Alliance" },
         [58414] = { name = "San Redscale", where = { [371] = { 56.6, 44.4 } } },
@@ -174,7 +175,7 @@ ns.MountPlaces = {
         [127151] = { name = "Toraan the Revered", where = {  } },
         [128756] = { name = "Magister Langley", where = { [622] = { 54.6, 17.6 } }, side = "Alliance" },
         [128759] = { name = "Dazzerian", where = { [624] = { 49, 54.4 } }, side = "Horde" },
-        [130965] = { name = "Kim Horn", where = { [90] = { 66.6, 47, 69.2, 44, 79.6, 43.4 } }, side = "Horde" },
+        [130965] = { name = "Kim Horn", where = { [90] = { 66.6, 47, 69.2, 44, 79.6, 43.4 } }, side = "Horde", guild = true },
         [131287] = { name = "Natal'hakata", where = {  }, side = "Horde" },
         [135459] = { name = "Provisioner Lija", where = { [863] = { 39, 79.4 } }, side = "Horde" },
         [135800] = { name = "Sister Lilyana", where = { [942] = { 59.2, 69.4 } }, side = "Alliance" },
@@ -182,10 +183,10 @@ ns.MountPlaces = {
         [135808] = { name = "Provisioner Fray", where = {  }, side = "Alliance" },
         [135815] = { name = "Quartermaster Alcorn", where = { [896] = { 37.8, 49 } }, side = "Alliance" },
         [141691] = { name = "Zachariah Post", where = { [85] = { 55.4, 89.6 } }, side = "Horde" },
-        [142086] = { name = "Perry Charlton", where = { [1161] = { 70, 14.8 } }, side = "Alliance" },
-        [142185] = { name = "Ulla Skycloven", where = {  }, side = "Horde" },
+        [142086] = { name = "Perry Charlton", where = { [1161] = { 70, 14.8 } }, side = "Alliance", guild = true },
+        [142185] = { name = "Ulla Skycloven", where = {  }, side = "Horde", guild = true },
         [142691] = { name = "Tricky Nick", where = {  } },
-        [142856] = { name = "Kim Horn", where = { [85] = { 56.8, 88.4 } }, side = "Horde" },
+        [142856] = { name = "Kim Horn", where = { [85] = { 56.8, 88.4 } }, side = "Horde", guild = true },
         [148810] = { name = "Gottum", where = { [863] = { 70.8, 56.4 } } },
         [148922] = { name = "Captain Klarisa", where = {  }, side = "Alliance" },
         [148923] = { name = "Captain Zen'taga", where = { [1165] = { 44.4, 94.4 } }, side = "Horde" },
@@ -238,7 +239,7 @@ ns.MountPlaces = {
         [185472] = { name = "Shiri", where = { [85] = { 48.8, 76.2 } }, side = "Horde" },
         [185473] = { name = "Zen'kala", where = { [85] = { 48.4, 76 } }, side = "Horde" },
         [186016] = { name = "Zachariah Post", where = { [2070] = { 66, 67.4 } }, side = "Horde" },
-        [186072] = { name = "Kim Horn", where = { [2070] = { 66.2, 67 } }, side = "Horde" },
+        [186072] = { name = "Kim Horn", where = { [2070] = { 66.2, 67 } }, side = "Horde", guild = true },
         [186199] = { name = "Forsaken Dreadmage", where = { [85] = { 50.8, 75.4 } }, side = "Horde" },
         [186462] = { name = "Tatto", where = { [2024] = { 13.2, 48.8 } } },
         [187408] = { name = "Granpap Whiskers", where = { [2022] = { 47.6, 83.2 } } },

@@ -46,8 +46,7 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   is one marker; a marker on an entrance steps aside so the game's entrance icon stays
   visible; a rare inside a cave or sub-zone shows on the zone's map too. Every known spawn
   point is on the map (Beledar's Spawn has 20). Once you loot a rare, it dims until it can
-  drop again. Vendors, quests, treasures and entrances come from Mount Collection Log when
-  it is installed. Only in the open world; each family can be turned off in the options.
+  drop again. Only in the open world; each family can be turned off in the options.
 - **A real description of how to get each mount**, on the card and on the map. The card opens
   with the mount's flavour line and then says, in your game's language: how the game says it
   is obtained; **where** — who sells or drops it, in which zone, at which coordinates, every
@@ -104,6 +103,13 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   entrance the game itself shows. World bosses are no longer tagged as raids.
 - **Prices come with the addon.** What each vendor charges is known without opening the vendor
   and without any other addon installed; once you open the vendor, what it charges you wins.
+- **Rocket Mount needs no other addon, and reads none.** Everything it shows comes from the
+  game or from its own data: alone or beside other mount addons, the list is the same. Two
+  lines left the card with this, because nothing of the addon's own knows them: the share of
+  players who own the mount, and the Black Market note.
+- **Search finds a mount by who sells it or drops it.** A mount with no boss could not be found
+  by its vendor or its faction; now every mount is found by vendor, faction, creature, boss,
+  instance and zone.
 - **No more marker on the wrong continent.** The Time-Lost Proto-Drake had a marker in Nagrand,
   from a single stray sighting; a place on another continent than the creature's, seen once or
   twice, is no longer a place.
