@@ -176,10 +176,10 @@ end
 local function Vestir(f, d)
     local kind = ns.MapPins.KIND[d.kind] or ns.MapPins.KIND.other
     f.data = d
-    -- (`SetAtlas` puts the art's own rectangle back: a recycled marker does not keep the cut
-    -- of the art it had before.)
+    -- (The cut is the texture's, and stays when the art changes: a recycled marker is told
+    -- its cut every time, the whole art included.)
     f.Art:SetAtlas(kind.atlas)
-    if kind.crop then ns.MapPins.Crop(f.Art, kind.atlas, kind.crop) end
+    ns.MapPins.Crop(f.Art, kind.crop)
     local preso = d.locked and true or false
     if f.Art.SetDesaturated then f.Art:SetDesaturated(preso) end
     f:SetAlpha(preso and 0.5 or 1)

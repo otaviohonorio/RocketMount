@@ -50,8 +50,14 @@ local TEMPLATE = "RocketMountMapPinTemplate"
 -- its 9 and 8 (SystemFont_Tiny, SystemFont_Tiny2) have no outline, and a word over the map
 -- needs one. So the object stays, with the height the game's smallest text has: 8, the same
 -- 80% the marker itself was brought down to (`FontString:SetFontHeight`).
-MapPins.Geometry = { PIN = 20, DISC = 32, ICON = 17, RING = 20, BADGE = 12, BADGE_X = 7, BADGE_Y = -7,
-                     LABEL = 8 }
+--
+-- (!) AND A LITTLE SMALLER STILL (28/09). The user, looking at the map with the new sizes:
+-- *"reduzir mais um pouquinho bem levemente o tamanho do ícone e texto, bem pouca coisa, 5px no
+-- máximo"*. The disc went from 32 to 28 (4 px), and everything else by the same 7/8: the pin
+-- 18, the ring 18, the mount's icon 15, the glyph 11 -- which is the least an art can be drawn
+-- at before it is a smudge, so the glyphs that were already 11 stay. The word went from 8 to 7.
+MapPins.Geometry = { PIN = 18, DISC = 28, ICON = 15, RING = 18, BADGE = 11, BADGE_X = 6, BADGE_Y = -6,
+                     LABEL = 7 }
 
 -- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
 -- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
@@ -73,32 +79,32 @@ local TIP_MOUNTS = 8    -- then "and N more"
 -- vendor: same glyph as the vendor, its own label.
 --------------------------------------------------------------------------------
 local KIND = {
-    rare       = { atlas = "VignetteKill",              size = 12, label = L["Rare"],       group = "creature" },
+    rare       = { atlas = "VignetteKill",              size = 11, label = L["Rare"],       group = "creature" },
     -- (!) A RARE IS A RARE (28/09). The user: *"não precisa diferenciar raro de elite de raro,
     -- deixa os dois como Raro"*. The word is the same; the elite still wears the dragon frame.
-    rareelite  = { atlas = "VignetteKill",              size = 12, label = L["Rare"],       group = "creature", dragon = true },
-    elite      = { atlas = "VignetteKill",              size = 12, label = L["Elite"],      group = "creature", dragon = true },
+    rareelite  = { atlas = "VignetteKill",              size = 11, label = L["Rare"],       group = "creature", dragon = true },
+    elite      = { atlas = "VignetteKill",              size = 11, label = L["Elite"],      group = "creature", dragon = true },
     boss       = { atlas = "worldquest-icon-boss",      size = 11, label = L["Boss"],       group = "creature", dragon = true },
-    raid       = { atlas = "Raid",                      size = 16, label = L["Raid"],       group = "instance" },
-    dungeon    = { atlas = "Dungeon",                   size = 16, label = L["Dungeon"],    group = "instance" },
-    vendor     = { atlas = "auctioneer",                size = 12, label = L["Vendor"],     group = "vendor" },
-    reputation = { atlas = "auctioneer",                size = 12, label = L["Reputation"], group = "vendor" },
-    quest      = { atlas = "QuestNormal",               size = 14, label = L["Quest"],      group = "quest" },
-    treasure   = { atlas = "VignetteLoot",              size = 12, label = L["Treasure"],   group = "treasure" },
+    raid       = { atlas = "Raid",                      size = 14, label = L["Raid"],       group = "instance" },
+    dungeon    = { atlas = "Dungeon",                   size = 14, label = L["Dungeon"],    group = "instance" },
+    vendor     = { atlas = "auctioneer",                size = 11, label = L["Vendor"],     group = "vendor" },
+    reputation = { atlas = "auctioneer",                size = 11, label = L["Reputation"], group = "vendor" },
+    quest      = { atlas = "QuestNormal",               size = 12, label = L["Quest"],      group = "quest" },
+    treasure   = { atlas = "VignetteLoot",              size = 11, label = L["Treasure"],   group = "treasure" },
     -- (!) THE WAY IN, NOT THE THING (28/09). The user: *"este raro em especifico ele não spawna
     -- no mapa, mas sim um portal, veja como indicar isto no mapa"* -- the Voidtalon of the Dark
     -- Star is in an egg on the other side of a portal that appears at one of some thirty
     -- places. The art is the game's own portal; measured (tools/ver_atlas.py), its ink is the
     -- middle 16 of the 32, so it is cut to the middle half or it would be a smudge of 6 px.
-    portal     = { atlas = "portalpurple",              size = 14, label = L["Portal"],     group = "portal",
+    portal     = { atlas = "portalpurple",              size = 12, label = L["Portal"],     group = "portal",
                    crop = { 0.25, 0.75, 0.25, 0.75 } },
     -- (!) WHERE IT STARTS (28/09). A mount of puzzle has no creature to kill and no vendor: an
     -- animal that is fed, a book that is read, a nest that takes eggs. The art is the game's
     -- own sign for "this can be interacted with" (the gear of the cursor over such a thing);
     -- measured (tools/ver_atlas.py), its ink is 28 of the 32, as the chest's and the vendor's.
-    start      = { atlas = "crosshair_interact_32",     size = 12, label = L["Starts here"], group = "start" },
-    loot       = { atlas = "VignetteLoot",             size = 12, label = L["Drop"],       group = "loot" },
-    fishing    = { atlas = "professions_tracking_fish", size = 12, label = L["Fishing"],    group = "fishing" },
+    start      = { atlas = "crosshair_interact_32",     size = 11, label = L["Starts here"], group = "start" },
+    loot       = { atlas = "VignetteLoot",             size = 11, label = L["Drop"],       group = "loot" },
+    fishing    = { atlas = "professions_tracking_fish", size = 11, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
 }
 MapPins.KIND = KIND
@@ -114,20 +120,27 @@ local function KindDe(data)
 end
 
 ---An art that is mostly margin, cut to its ink: `crop` is { left, right, top, bottom } in
----fractions of the art. `SetAtlas` has just put the art's own rectangle on the texture, and the
----cut is made inside it (the same arithmetic the skin of the header uses). Without the atlas'
----numbers the art stays whole: small, but the right one.
-function MapPins.Crop(texture, atlas, crop)
-    if not (texture and type(crop) == "table" and C_Texture and C_Texture.GetAtlasInfo) then return false end
-    local ok, info = pcall(C_Texture.GetAtlasInfo, atlas)
-    if not (ok and type(info) == "table" and info.leftTexCoord and info.rightTexCoord
-        and info.topTexCoord and info.bottomTexCoord) then
-        return false
+---fractions of the art; without one, the art whole.
+---
+---(!) THE BLACK SQUARE (28/09). The user's screenshot of Revendreth: every portal marker with a
+---black rectangle where its glyph should be. The cut used to be computed on the SHEET the art
+---lives in (`C_Texture.GetAtlasInfo`: the art's rectangle, and the cut inside it), and after
+---`SetAtlas` the game reads `SetTexCoord` as a fraction of THE ART ITSELF: what was drawn was a
+---sliver of the inside of the portal, stretched. Read in the client's own documentation
+---(`SetAtlas` has a `resetTexCoords` argument: the coordinates are the texture's, and stay
+---when the art changes) and in two addons installed here, which turn and reset an atlas' art
+---with coordinates from 0 to 1.
+---
+---And for the same reason the art WITHOUT a cut says so: the markers are recycled, and the one
+---that was a portal would keep the portal's cut as a vendor.
+function MapPins.Crop(texture, crop)
+    if not (texture and texture.SetTexCoord) then return false end
+    if type(crop) == "table" and #crop == 4 then
+        texture:SetTexCoord(crop[1], crop[2], crop[3], crop[4])
+        return true
     end
-    local l, t = info.leftTexCoord, info.topTexCoord
-    local w, h = info.rightTexCoord - l, info.bottomTexCoord - t
-    texture:SetTexCoord(l + w * crop[1], l + w * crop[2], t + h * crop[3], t + h * crop[4])
-    return true
+    texture:SetTexCoord(0, 1, 0, 1)
+    return false
 end
 
 ---What the options let through: the master switch, then the two families that can be turned off
@@ -723,7 +736,7 @@ function RocketMountMapPinMixin:OnAcquired(data)
     self.Icon:SetTexture(primeira and primeira.entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     self.Underlay:SetShown(kind.dragon and true or false)
     self.Badge:SetAtlas(kind.atlas)
-    if kind.crop then MapPins.Crop(self.Badge, kind.atlas, kind.crop) end
+    MapPins.Crop(self.Badge, kind.crop)
     self.Badge:SetSize(kind.size, kind.size)
 
     local rotulo = not (ns.db and ns.db.mapLabels == false)

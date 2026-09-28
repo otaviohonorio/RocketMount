@@ -114,6 +114,15 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **The black square on the portal markers is gone.** The glyph of a portal was cut from the
+  wrong part of the art.
+- **The broken mirrors of Revendreth, the ones that are on.** The Battle Gargon Silessa is
+  behind twelve broken mirrors that appear three at a time. The map now marks the three of
+  the group the game says is on — and none for a character the mirrors are not for.
+- **How the Dreamseeds work.** The seven mounts of the Dreamseed Cache share a tip: the three
+  seeds and where the big one comes from, planting and adding Emerald Dewdrops, and the vendor
+  that sells six of them.
+- **Markers a little smaller still**, and the word under them too.
 - **The Trading Post sells what is on offer this month.** Its vendors used to be marked as
   selling every mount that ever went through the Trading Post, each with a percentage. Now a
   mount counts as sold there only while the game says it is on offer, and the marker is drawn

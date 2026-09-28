@@ -11,6 +11,8 @@
 -- never less than the game's own journal text states.
 -- An object with `kind` is not a chest: "portal" is the way in to where the mount is, and
 -- appears at ONE of its places at a time; "start" is where a mount of puzzle begins.
+-- `when` is for the places that take turns: for each place of `where`, in the same order,
+-- the world quest that is active while that place is the one.
 -- `creature` is a creature that is not killed and sells nothing (it is fed, talked to,
 -- followed), with its `kind`.
 -- A vendor with `event` is in the world only while that event is on. `event` has, for each
@@ -470,7 +472,7 @@ ns.MountPlaces = {
         [356740] = { name = "The Countess' Substantial Tribute", where = { [1525] = { 47.4, 41.1 }, [1644] = { 47.4, 41.3 } } },
         [356741] = { name = "The Countess' Extravagant Tribute", where = { [1525] = { 47.4, 41.2 }, [1644] = { 47.4, 41.2 } } },
         [356818] = { name = "Penitence of Purity", where = { [1533] = { 60.2, 78.2 } } },
-        [357218] = { name = "Broken Mirror", where = { [1525] = { 77.1, 65.3, 29.5, 37.3, 27.1, 21.6, 40.4, 73.3, 39.1, 52.2, 58.8, 67.8, 71, 43.6, 40.3, 77.2, 29.6, 25.9, 20.8, 54.3, 55.1, 35.7 } }, kind = "portal" },
+        [357218] = { name = "Broken Mirror", where = { [1525] = { 29.5, 37.3, 27.1, 21.6, 40.4, 73.3, 39.1, 52.2, 58.8, 67.8, 71, 43.6, 72.6, 43.6, 40.3, 77.2, 77.2, 65.4, 29.6, 25.9, 20.8, 54.3, 55.1, 35.7 } }, kind = "portal", when = { [1525] = { 61879, 61879, 61879, 61883, 61883, 61883, 61885, 61885, 61885, 61886, 61886, 61886 } } },
         [357228] = { name = "Forgotten Chest", where = { [1525] = { 31.8, 47 } } },
         [357229] = { name = "Forgotten Chest", where = { [1525] = { 31.8, 48.3 } } },
         [357230] = { name = "Forgotten Chest", where = { [1525] = { 30.9, 47 } } },

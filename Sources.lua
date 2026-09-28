@@ -644,11 +644,33 @@ local function Pontos(where)
     for _, mapa in ipairs(mapas) do
         local pts = where[mapa]
         for i = 1, #pts - 1, 2 do
-            out[#out + 1] = { m = mapa, x = pts[i], y = pts[i + 1] }
+            -- `i` is which place of the map it is, in the order of the table
+            out[#out + 1] = { m = mapa, x = pts[i], y = pts[i + 1], i = (i + 1) / 2 }
         end
     end
     return out
 end
+
+---Is it the turn of a place that takes turns? The game has a world quest for each group of the
+---broken mirrors of Revendreth, active while the group is (and done, once the player did it).
+---
+---A character the mirrors are not for -- another covenant, the network not yet built -- has
+---none of the quests, and no marker: the game's answer is the requirement too. A client that
+---cannot be asked at all leaves every place on the map: they are where the thing may be.
+local function NaVez(quest)
+    if type(quest) ~= "number" then return true end
+    if not (C_TaskQuest and C_TaskQuest.IsActive) then return true end
+    local ok, ativa = pcall(C_TaskQuest.IsActive, quest)
+    if not ok then return true end
+    if issecretvalue and issecretvalue(ativa) then return false end
+    if ativa then return true end
+    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        local okF, feita = pcall(C_QuestLog.IsQuestFlaggedCompleted, quest)
+        if okF and feita and not (issecretvalue and issecretvalue(feita)) then return true end
+    end
+    return false
+end
+ns.PlaceTurn = NaVez
 
 ---The name of an object in the player's language: the game has no way to ask it by id, so the
 ---translation is ours (`Locales/ptBR_Places.lua`) and English is what is left.
@@ -698,14 +720,18 @@ function ns.OwnPlaces(mountID, sourceType)
             -- An object is a chest unless the table says what else: a PORTAL is the way in to
             -- where the mount is, and appears at one of its places (28/09).
             local kind = type(o.kind) == "string" and o.kind or "treasure"
+            local quando = type(o.when) == "table" and o.when or nil
             local mapa
             for _, p in ipairs(Pontos(o.where)) do
-                out.coords[#out.coords + 1] = {
-                    m = p.m, x = p.x, y = p.y, n = NomeDoObjeto(id, o.name), kind = kind, objectId = id,
-                    -- the first of each map: on a continent, the only one drawn
-                    first = p.m ~= mapa,
-                }
-                mapa = p.m
+                local vez = quando and type(quando[p.m]) == "table" and quando[p.m][p.i] or nil
+                if NaVez(vez) then
+                    out.coords[#out.coords + 1] = {
+                        m = p.m, x = p.x, y = p.y, n = NomeDoObjeto(id, o.name), kind = kind, objectId = id,
+                        -- the first of each map: on a continent, the only one drawn
+                        first = p.m ~= mapa,
+                    }
+                    mapa = p.m
+                end
             end
         end
     end
