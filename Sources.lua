@@ -154,8 +154,54 @@ local function ReputationProgressHere(rep)
             or string.format(L["%s: no reputation with this faction on this character"], nome),
     }
 
+    -- (!) A COVENANT OF THE SHADOWLANDS (28/09). Its renown is not a faction's: it belongs to
+    -- the covenant the character is IN, and the game answers for that one only
+    -- (`C_Covenants.GetActiveCovenantID`, `C_CovenantSanctumUI.GetRenownLevel`). A character
+    -- of another covenant, or of none, has not walked any of this road.
+    if rep.renown and rep.covenant then
+        local ativo, tenho
+        if C_Covenants and C_Covenants.GetCovenantData then
+            local ok, dado = pcall(C_Covenants.GetCovenantData, rep.covenant)
+            if ok and type(dado) == "table" and type(dado.name) == "string" and dado.name ~= ""
+                and not (issecretvalue and issecretvalue(dado.name)) then
+                nome = dado.name
+            end
+        end
+        if C_Covenants and C_Covenants.GetActiveCovenantID then
+            local ok, id = pcall(C_Covenants.GetActiveCovenantID)
+            if ok and type(id) == "number" then ativo = id end
+        end
+        if C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevel then
+            local ok, n = pcall(C_CovenantSanctumUI.GetRenownLevel)
+            if ok and type(n) == "number" then tenho = n end
+        end
+        if ativo == nil or (ativo == rep.covenant and tenho == nil) then return desconhecida end
+        local need = rep.level or 1
+        if ativo ~= rep.covenant then
+            return {
+                kind = "rep", factionName = nome, have = 0, need = need, pct = 0,
+                label = string.format(L["%s: renown %d, and this character is not in this covenant"], nome, need),
+            }
+        end
+        return {
+            kind = "rep", factionName = nome, have = tenho, need = need,
+            pct = math.min(1, tenho / math.max(1, need)),
+            label = tenho >= need
+                and string.format(L["%s: renown %d reached (you are at %d)"], nome, need, tenho)
+                or string.format(L["%s: renown %d of %d"], nome, tenho, need),
+        }
+    end
+
     -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
     if rep.renown and C_MajorFactions and C_MajorFactions.GetMajorFactionRenownInfo then
+        -- The faction's name in the player's language: the table's is English.
+        if C_MajorFactions.GetMajorFactionData then
+            local okN, dado = pcall(C_MajorFactions.GetMajorFactionData, rep.factionId)
+            if okN and type(dado) == "table" and type(dado.name) == "string" and dado.name ~= ""
+                and not (issecretvalue and issecretvalue(dado.name)) then
+                nome = dado.name
+            end
+        end
         local ok, info = pcall(C_MajorFactions.GetMajorFactionRenownInfo, rep.factionId)
         if ok and info and info.renownLevel then
             local need = rep.level or 1
