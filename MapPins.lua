@@ -82,7 +82,12 @@ local KIND = {
     -- middle 16 of the 32, so it is cut to the middle half or it would be a smudge of 6 px.
     portal     = { atlas = "portalpurple",              size = 14, label = L["Portal"],     group = "portal",
                    crop = { 0.25, 0.75, 0.25, 0.75 } },
-    loot       = { atlas = "VignetteLoot",              size = 12, label = L["Drop"],       group = "loot" },
+    -- (!) WHERE IT STARTS (28/09). A mount of puzzle has no creature to kill and no vendor: an
+    -- animal that is fed, a book that is read, a nest that takes eggs. The art is the game's
+    -- own sign for "this can be interacted with" (the gear of the cursor over such a thing);
+    -- measured (tools/ver_atlas.py), its ink is 28 of the 32, as the chest's and the vendor's.
+    start      = { atlas = "crosshair_interact_32",     size = 12, label = L["Starts here"], group = "start" },
+    loot       = { atlas = "VignetteLoot",             size = 12, label = L["Drop"],       group = "loot" },
     fishing    = { atlas = "professions_tracking_fish", size = 12, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
 }
@@ -757,7 +762,7 @@ end
 local HEADER = {
     creature = L["Can drop:"], instance = L["Can drop:"], loot = L["Can drop:"],
     treasure = L["Can drop:"], fishing = L["Can drop:"], portal = L["Leads to:"],
-    vendor = L["Sells:"], quest = L["Rewards:"], other = L["Mounts here:"],
+    start = L["Leads to:"], vendor = L["Sells:"], quest = L["Rewards:"], other = L["Mounts here:"],
 }
 
 -- What of the mount's card the tooltip quotes, and in which order. "Where" stays out: the pin IS

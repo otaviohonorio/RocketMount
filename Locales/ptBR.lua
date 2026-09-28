@@ -165,6 +165,7 @@ L["Can drop:"] = "Pode largar:"
 L["Boss"] = "Chefe"
 L["Treasure"] = "Tesouro"
 L["Portal"] = "Portal"
+L["Starts here"] = "Começa aqui"
 L["%s: renown %d, and this character is not in this covenant"] =
     "%s: renome %d, e este personagem não é deste pacto"
 L["Leads to:"] = "Leva a:"

@@ -15,7 +15,7 @@
 -- the points it was seen at, in the order of the shortest path through them (`loop = true`
 -- when the path closes). Such a creature has ONE place in `where` per route, where it was
 -- seen most, and the map draws the route. An estimate: Wowhead records sightings, not paths.
--- 30 routes in this build.
+-- 31 routes in this build.
 local ADDON, ns = ...
 
 ns.MobDrops = {
@@ -506,6 +506,7 @@ ns.MobDrops = {
     },
     [140474] = { name = "Adherent of the Abyss", c = 2,
         { item = 161479, count = 1326, outof = 2345 }, -- Nazjatar Blood Serpent
+        where = { [942] = { 46.5, 36.1 }, [1182] = { 59.4, 54.2 } },
     },
     [141143] = { name = "Sister Absinthe", c = 4,
         { item = 163573, count = 5, outof = 92777 }, -- Goldenmane
@@ -656,6 +657,10 @@ ns.MobDrops = {
         where = { [1530] = { 11.4, 30.4 } },
         route = { [1530] = { { 9.4, 34.4, 11.4, 30.4, 12.4, 27.2 } } },
     },
+    [157162] = { name = "Rei Lun", c = 2,
+        { item = 174649, unknown = true }, -- Rajani Warserpent
+        where = { [1530] = { 21.8, 12.8 } },
+    },
     [157309] = { name = "Violet Mistake", c = 4,
         { item = 182079, count = 352, outof = 9476 }, -- Hulking Deathroc
         where = { [1536] = { 58.4, 74.2 } },
@@ -674,6 +679,10 @@ ns.MobDrops = {
         { item = 174653, count = 792, outof = 792 }, -- Mail Muncher
         where = { [2403] = { 58.8, 51, 39.4, 79.4, 39.6, 48.6, 52.4, 76.8 }, [2404] = { 54.6, 56.2, 61.8, 74, 62.2, 31.6, 75.6, 64.2, 49.6, 86.4 } },
         route = { [2403] = { { 58.8, 51, 67.6, 39.6 }, { 36.8, 75.2, 39.4, 79.4, 38.2, 86 } } },
+    },
+    [160821] = { name = "Worldedge Gorger", c = 2,
+        { item = 182589, unknown = true }, -- Loyal Gorger
+        where = { [1525] = { 38.8, 72 } },
     },
     [162147] = { name = "Corpse Eater", c = 4,
         { item = 174769, count = 337, outof = 27603 }, -- Malevolent Drone
@@ -787,6 +796,10 @@ ns.MobDrops = {
     [171422] = { name = "Arch-Suppressor Laguas", c = 1,
         { item = 188700, count = 22, outof = 16490 }, -- Colossal Umbrahide Mawrat
     },
+    [171767] = { name = "Shizgher", c = 1,
+        { item = 180727, unknown = true }, -- Shimmermist Runner
+        where = { [1565] = { 26.4, 59 } },
+    },
     [173468] = { name = "Dead Blanchy", c = 4,
         { item = 182614, unknown = true }, -- Sinrunner Blanchy
         where = { [1525] = { 62.8, 43.6 } },
@@ -882,6 +895,10 @@ ns.MobDrops = {
     [182120] = { name = "Rhuv, Gorger of Ruin", c = 1,
         { item = 190765, count = 311, outof = 1232 }, -- Colossal Plaguespew Mawrat
         where = { [1970] = { 63.2, 26 } },
+    },
+    [193209] = { name = "Zenet Avis", c = 4,
+        { item = 198825, unknown = true }, -- Zenet Hatchling
+        where = { [2023] = { 31.4, 63.8 } },
     },
     [195353] = { name = "Breezebiter", c = 1,
         { item = 201440, count = 140, outof = 7002 }, -- Liberated Slyvern
@@ -989,6 +1006,10 @@ ns.MobDrops = {
         { item = 235626, count = 20, outof = 152 }, -- The Big G
         { item = 236960, count = 56, outof = 6944 }, -- Prototype A.S.M.R.
     },
+    [231229] = { name = "Korgoth the Hungerer", c = 2,
+        { item = 246159, unknown = true }, -- Translocated Gorger
+        where = { [2371] = { 71.4, 27.4 } },
+    },
     [231310] = { name = "Darkfuse Precipitant", c = 2,
         { item = 229955, count = 58, outof = 1345 }, -- Darkfuse Spy-Eye
         where = { [2346] = { 41.4, 92 } },
@@ -1007,6 +1028,19 @@ ns.MobDrops = {
     [234845] = { name = "Sthaarbs", c = 2,
         { item = 246160, count = 347, outof = 5070 }, -- Sthaarbs's Last Lunch
         where = { [2371] = { 74, 32.4 } },
+    },
+    [234970] = { name = "Miasmawrath", c = 2,
+        { item = 246159, unknown = true }, -- Translocated Gorger
+        where = { [2371] = { 50.6, 54 } },
+    },
+    [235087] = { name = "The Harvester", c = 2,
+        { item = 246159, unknown = true }, -- Translocated Gorger
+        where = { [2371] = { 49.6, 64.2 } },
+    },
+    [235104] = { name = "The Wallbreaker", c = 2,
+        { item = 246159, unknown = true }, -- Translocated Gorger
+        where = { [2472] = { 28.4, 73.4 } },
+        route = { [2472] = { { 28.8, 76.6, 28.4, 73.4, 30.6, 71.2 } } },
     },
     [237991] = { name = "Void-Scarred Gryphon", c = 1,
         { item = 235700, count = 714, outof = 715 }, -- Void-Scarred Gryphon

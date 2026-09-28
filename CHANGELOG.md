@@ -114,6 +114,18 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **Puzzle mounts have a place to start.** A mount the journal only gives a zone for — Darkmaul,
+  the Dusklight Razorwing, the Elusive Quickhoof, the Hand of Nilganihmaht, Magmashell, the
+  Shimmermist Runner, the Arboreal Gulper, Otto, the Echo of Aln'sharan — has a marker where it
+  begins: the animal that is fed, the nest that takes the eggs, the scroll at the door of the
+  maze. The marker says "Starts here", with the game's own gear for things you interact with,
+  and the card tells the steps.
+- **The rare behind the item.** Where the mount comes from something a rare drops — the egg of
+  Zenet Avis, the scale of Rei Lun that buys the Rajani Warserpent, the pods of the four rares
+  of K'aresh, the crystals and eggs of Korthia's covenant rares — that rare is on the map and
+  in the rare alert.
+- **Broken mirrors instead of unreachable chests.** The Battle Gargon Silessa is in chests
+  inside rooms nobody walks into; the map marks the twelve broken mirrors that lead to them.
 - **Creatures the game names, even with no drop rate known.** Where the mount journal says
   which creature drops a mount and no drop has been recorded yet (Fabious, Sundancer, the
   Frightened Kodo…), the creature is on the map and in the rare alert, with "?" for the chance.
