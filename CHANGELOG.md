@@ -114,6 +114,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **More vendors and quests known**: where the game's journal names who sells a mount or the
   quest that gives it, the addon now knows who that is and where — 35 mounts gained their
   vendor and 14 their quest, the class mounts of Legion among them.
+- **Creatures the game names, even with no drop rate known.** Where the mount journal says
+  which creature drops a mount and no drop has been recorded yet (Fabious, Sundancer, the
+  Frightened Kodo…), the creature is on the map and in the rare alert, with "?" for the chance.
 - **Mounts that left the game stay out**, the 67 the game itself marks as "Legacy" in the mount
   journal. `/rmt gone` or the option shows them again.
 - **Search finds a mount by who sells it or drops it.** A mount with no boss could not be found

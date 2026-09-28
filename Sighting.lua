@@ -106,7 +106,10 @@ local function IndexarMobDrops(lista)
         -- A line that is not what the collector writes is skipped, not tripped over.
         for _, d in ipairs(type(rec) == "table" and rec or {}) do
             local n = type(d) == "table" and tonumber(d.count)
-            local e = n and n > 0 and d.item and porMontaria[MountOfItem(d.item)]
+            -- `unknown`: the game's journal names this creature and no drop was recorded yet.
+            -- It is still the creature to look for; what is not known is how often.
+            local larga = (n and n > 0) or (type(d) == "table" and d.unknown == true)
+            local e = larga and d.item and porMontaria[MountOfItem(d.item)]
             if e then
                 Push(byNpc, npc, { entry = e, drop = d })
                 -- BY NAME TOO, for what arrives without a GUID (a yell): the name the table

@@ -184,7 +184,9 @@ ns.PlaceNamesLocal = {
         [605169] = "Garra Final de Predaxas",
         [614483] = "Caldeirão Peculiar",
         [615963] = "Baú Gera-esporos",
+        [642076] = "Baú do Desafiante",
         [642083] = "Baú do Desafiante",
         [655978] = "Baú Resistente",
+        [660768] = "Caixa-forte de Zul'jan",
     },
 }
