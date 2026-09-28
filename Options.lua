@@ -141,6 +141,10 @@ function ns.SetupOptions()
             layout:AddInitializer(CreateSettingsButtonInitializer(L["Support the project"],
                 "|T" .. ns.PAYPAL_ICON .. ":14:14|t " .. L["Open link"],
                 function() ns.ShowDonate() end, L["Opens the donation link, ready to copy."], true))
+            layout:AddInitializer(CreateSettingsButtonInitializer(L["Report a problem"],
+                "|A:" .. ns.REPORT_ICON .. ":14:14|a " .. L["Open link"],
+                function() ns.ReportMenu(SettingsPanel) end,
+                L["Opens the address to report a problem, ready to copy."], true))
         end
     end
 
