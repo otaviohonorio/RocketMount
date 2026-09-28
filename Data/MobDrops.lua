@@ -15,7 +15,7 @@
 -- the points it was seen at, in the order of the shortest path through them (`loop = true`
 -- when the path closes). Such a creature has ONE place in `where` per route, where it was
 -- seen most, and the map draws the route. An estimate: Wowhead records sightings, not paths.
--- 29 routes in this build.
+-- 30 routes in this build.
 local ADDON, ns = ...
 
 ns.MobDrops = {
@@ -103,8 +103,14 @@ ns.MobDrops = {
     [23035] = { name = "Anzu", c = 1,
         { item = 32768, count = 5346, outof = 332250 }, -- Raven Lord
     },
+    [23872] = { name = "Coren Direbrew", c = 4,
+        { item = 248761, unknown = true }, -- Brewfest Bomber
+    },
     [24664] = { name = "Kael'thas Sunstrider", c = 1,
         { item = 35513, count = 8835, outof = 167661 }, -- Swift White Hawkstrider
+    },
+    [25740] = { name = "Ahune", c = 4,
+        { item = 275464, unknown = true }, -- Sun Festival's Painted Roc
     },
     [26693] = { name = "Skadi the Ruthless", c = 1,
         { item = 44151, count = 2407, outof = 197358 }, -- Blue Proto-Drake
@@ -137,6 +143,10 @@ ns.MobDrops = {
     [35013] = { name = "Koralon the Flame Watcher", c = 1,
         { item = 43959, count = 486, outof = 43271 }, -- Grand Black War Mammoth
         { item = 44083, count = 352, outof = 43271 }, -- Grand Black War Mammoth
+    },
+    [36296] = { name = "Apothecary Hummel", c = 4,
+        { item = 232926, unknown = true }, -- Love Witch's Sweeper
+        { item = 235658, unknown = true }, -- Spring Butterfly
     },
     [36597] = { name = "The Lich King", c = 1,
         { item = 50818, count = 2054, outof = 205760 }, -- Invincible
@@ -368,6 +378,31 @@ ns.MobDrops = {
     [91331] = { name = "Archimonde", c = 1,
         { item = 123890, count = 2243, outof = 29965 }, -- Felsteel Annihilator
     },
+    [95044] = { name = "Terrorfist", c = 4,
+        { item = 116658, unknown = true }, -- Tundra Icehoof
+        { item = 116669, unknown = true }, -- Armored Razorback
+        { item = 116780, unknown = true }, -- Warsong Direfang
+        where = { [534] = { 14.2, 60.6 } },
+        route = { [534] = { { 14.2, 60.6, 15.2, 63.6 } } },
+    },
+    [95053] = { name = "Deathtalon", c = 4,
+        { item = 116658, unknown = true }, -- Tundra Icehoof
+        { item = 116669, unknown = true }, -- Armored Razorback
+        { item = 116780, unknown = true }, -- Warsong Direfang
+        where = { [534] = { 23.6, 39.8 } },
+    },
+    [95054] = { name = "Vengeance", c = 4,
+        { item = 116658, unknown = true }, -- Tundra Icehoof
+        { item = 116669, unknown = true }, -- Armored Razorback
+        { item = 116780, unknown = true }, -- Warsong Direfang
+        where = { [534] = { 32.4, 73.8 } },
+    },
+    [95056] = { name = "Doomroller", c = 4,
+        { item = 116658, unknown = true }, -- Tundra Icehoof
+        { item = 116669, unknown = true }, -- Armored Razorback
+        { item = 116780, unknown = true }, -- Warsong Direfang
+        where = { [534] = { 47, 52.6 } },
+    },
     [95888] = { name = "Cordana Felsong", c = 1,
         { item = 133543, count = 3, outof = 14174 }, -- Infinite Timereaver
     },
@@ -381,6 +416,10 @@ ns.MobDrops = {
     [111022] = { name = "The Demon Within", c = 1,
         { item = 137574, count = 168, outof = 38537 }, -- Felblaze Infernal
         { item = 137575, count = 3093, outof = 38537 }, -- Hellfire Infernal
+    },
+    [111573] = { name = "Kosumoth the Hungering", c = 4,
+        { item = 138201, unknown = true }, -- Fathom Dweller
+        where = { [790] = { 46.4, 49.2 } },
     },
     [114262] = { name = "Attumen the Huntsman", c = 1,
         { item = 142236, count = 1038, outof = 78508 }, -- Midnight
@@ -695,6 +734,9 @@ ns.MobDrops = {
         { item = 180725, count = 2610, outof = 4061 }, -- Spinemaw Gladechewer
         where = { [1565] = { 28.4, 55 } },
     },
+    [164112] = { name = "Humon'gozz", c = 4,
+        { item = 182650, unknown = true }, -- Arboreal Gulper
+    },
     [165290] = { name = "Harika the Horrid", c = 4,
         { item = 180461, count = 1437, outof = 67516 }, -- Horrid Dredwing
         where = { [1525] = { 46, 78.4 } },
@@ -809,6 +851,22 @@ ns.MobDrops = {
     [179684] = { name = "Malbog", c = 4,
         { item = 186645, count = 847, outof = 42345 }, -- Crimson Shardhide
         where = { [1961] = { 44.6, 29.6 } },
+    },
+    [179985] = { name = "Stygian Stonecrusher", c = 4,
+        { item = 186479, unknown = true }, -- Mastercraft Gravewing
+        where = { [1961] = { 45.6, 79.4 } },
+    },
+    [180013] = { name = "Escaped Wilderling", c = 4,
+        { item = 186492, unknown = true }, -- Summer Wilderling
+        where = { [1961] = { 33.6, 39.4 } },
+    },
+    [180032] = { name = "Wild Worldcracker", c = 4,
+        { item = 186483, unknown = true }, -- Forsworn Aquilon
+        where = { [1961] = { 47, 35.6 } },
+    },
+    [180042] = { name = "Fleshwing", c = 4,
+        { item = 186489, unknown = true }, -- Lord of the Corpseflies
+        where = { [1961] = { 59.4, 43.2 } },
     },
     [180160] = { name = "Reliwik the Defiant", c = 4,
         { item = 186652, count = 475, outof = 18177 }, -- Garnet Razorwing
