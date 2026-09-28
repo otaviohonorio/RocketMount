@@ -448,10 +448,17 @@ function ns.OwnPlaces(mountID)
     for _, id in ipairs(type(m.object) == "table" and m.object or {}) do
         local o = type(T.object) == "table" and T.object[id]
         if type(o) == "table" then
+            -- An object is a chest unless the table says what else: a PORTAL is the way in to
+            -- where the mount is, and appears at one of its places (28/09).
+            local kind = type(o.kind) == "string" and o.kind or "treasure"
+            local mapa
             for _, p in ipairs(Pontos(o.where)) do
                 out.coords[#out.coords + 1] = {
-                    m = p.m, x = p.x, y = p.y, n = NomeDoObjeto(id, o.name), kind = "treasure", objectId = id,
+                    m = p.m, x = p.x, y = p.y, n = NomeDoObjeto(id, o.name), kind = kind, objectId = id,
+                    -- the first of each map: on a continent, the only one drawn
+                    first = p.m ~= mapa,
                 }
+                mapa = p.m
             end
         end
     end

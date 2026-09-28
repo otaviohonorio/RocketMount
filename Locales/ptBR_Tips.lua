@@ -11,6 +11,8 @@ if GetLocale() ~= "ptBR" then return end
 ns.MountTipsLocal = {
     [401] = -- Dark Phoenix
         "Vendida pelos vendedores de guilda a personagem Exaltado com uma guilda que tenha {achievement:4988|Glória da Guilda do Aventureiro do Cataclismo}. Entrar numa guilda que já a tem serve, mas a reputação com guilda nova começa do zero. Depois de aprendida, a montaria é sua em qualquer guilda.",
+    [682] = -- Voidtalon of the Dark Star
+        "A montaria está num ovo do outro lado do Gume da Realidade, um portal, e o ovo sempre a entrega. O portal aparece raramente, em um dos lugares marcados de seis zonas de Draenor, fica alguns minutos e leva só o primeiro jogador que clicar nele. Cada zona conta o tempo por conta própria: os jogadores deixam um personagem em cada zona e percorrem os lugares.",
     [802] = -- Long-Forgotten Hippogryph
         "Cinco Cristais Efêmeros aparecem ao mesmo tempo em pontos sorteados de {map:630|Azsuna}, muitos dentro de cavernas. Tocar o primeiro dá 8 horas para tocar os outros quatro; morrer zera a contagem. Outros jogadores estão atrás dos mesmos cristais, e quando alguém termina todos somem até a rodada seguinte.",
     [1617] = -- Verdant Skitterfly

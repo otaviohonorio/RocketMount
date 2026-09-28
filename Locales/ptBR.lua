@@ -166,6 +166,8 @@ L["Can drop:"] = "Pode largar:"
 -- O tipo de cada lugar no mapa (27/09). São os rótulos sob o marcador e a segunda linha do balão.
 L["Boss"] = "Chefe"
 L["Treasure"] = "Tesouro"
+L["Portal"] = "Portal"
+L["Leads to:"] = "Leva a:"
 L["Fishing"] = "Pesca"
 L["Other"] = "Outra fonte"
 L["Sells:"] = "Vende:"

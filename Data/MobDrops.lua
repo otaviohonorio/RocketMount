@@ -112,7 +112,7 @@ ns.MobDrops = {
     },
     [32491] = { name = "Time-Lost Proto-Drake", c = 4,
         { item = 44168, count = 1870, outof = 1894 }, -- Reins of the Time-Lost Proto-Drake
-        where = { [120] = { 28, 65.4, 36.6, 69.8, 39.4, 84.4, 41.2, 68.2 }, [550] = { 90.6, 29.6 } },
+        where = { [120] = { 28, 65.4, 36.6, 69.8, 39.4, 84.4, 41.2, 68.2 } },
     },
     [33288] = { name = "Yogg-Saron", c = 1,
         { item = 45693, count = 24, outof = 2028 }, -- Mimiron's Head
@@ -1307,7 +1307,7 @@ ns.MobDrops = {
     [257906] = { name = "Coin-Eye Skully", c = 4,
         { item = 276549, count = 1, outof = 1817 }, -- Topaz Skyfang
         { item = 276803, count = 4, outof = 1817 }, -- Ruby Writhe
-        where = { [2512] = { 58.4, 66.4 }, [2537] = { 75.3, 72.2 } },
+        where = { [2512] = { 58.4, 66.4 } },
     },
     [258916] = { name = "Garsecg", c = 4,
         { item = 276549, count = 7, outof = 5944 }, -- Topaz Skyfang

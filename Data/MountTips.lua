@@ -19,6 +19,8 @@ local ADDON, ns = ...
 ns.MountTips = {
     [401] = { year = 2021, -- Dark Phoenix
         text = "Sold by the guild vendors to a character Exalted with a guild that has {achievement:4988|Guild Glory of the Cataclysm Raider}. Joining a guild that already has it works, but the reputation with a new guild starts over. Once learnt, the mount is yours whatever guild you are in." },
+    [682] = { year = 2021, -- Voidtalon of the Dark Star
+        text = "The mount is in an egg on the other side of the Edge of Reality, a portal, and the egg always gives it. The portal appears rarely, at one of the marked places of six zones of Draenor, stays for some minutes and takes only the first player who clicks it. Each zone keeps its own timer: players leave one character in each zone and go round the places." },
     [802] = { year = 2018, -- Long-Forgotten Hippogryph
         text = "Five Ephemeral Crystals appear at the same time at random spots of {map:630|Azsuna}, many of them inside caves. Touching the first one starts 8 hours to touch the other four; dying loses the count. Other players are after the same crystals, and when somebody finishes they all vanish until the next round." },
     [1617] = { year = 2022, -- Verdant Skitterfly

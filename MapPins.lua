@@ -77,6 +77,13 @@ local KIND = {
     reputation = { atlas = "auctioneer",                size = 12, label = L["Reputation"], group = "vendor" },
     quest      = { atlas = "QuestNormal",               size = 14, label = L["Quest"],      group = "quest" },
     treasure   = { atlas = "VignetteLoot",              size = 12, label = L["Treasure"],   group = "treasure" },
+    -- (!) THE WAY IN, NOT THE THING (28/09). The user: *"este raro em especifico ele não spawna
+    -- no mapa, mas sim um portal, veja como indicar isto no mapa"* -- the Voidtalon of the Dark
+    -- Star is in an egg on the other side of a portal that appears at one of some thirty
+    -- places. The art is the game's own portal; measured (tools/ver_atlas.py), its ink is the
+    -- middle 16 of the 32, so it is cut to the middle half or it would be a smudge of 6 px.
+    portal     = { atlas = "portalpurple",              size = 14, label = L["Portal"],     group = "portal",
+                   crop = { 0.25, 0.75, 0.25, 0.75 } },
     loot       = { atlas = "VignetteLoot",              size = 12, label = L["Drop"],       group = "loot" },
     fishing    = { atlas = "professions_tracking_fish", size = 12, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
@@ -99,6 +106,23 @@ local KIND_OF_METHOD = {
     VENDOR = "vendor", QUEST = "quest", FISHING = "fishing",
     Treasure = "treasure", Chest = "treasure", Dungeon = "dungeon",
 }
+
+---An art that is mostly margin, cut to its ink: `crop` is { left, right, top, bottom } in
+---fractions of the art. `SetAtlas` has just put the art's own rectangle on the texture, and the
+---cut is made inside it (the same arithmetic the skin of the header uses). Without the atlas'
+---numbers the art stays whole: small, but the right one.
+function MapPins.Crop(texture, atlas, crop)
+    if not (texture and type(crop) == "table" and C_Texture and C_Texture.GetAtlasInfo) then return false end
+    local ok, info = pcall(C_Texture.GetAtlasInfo, atlas)
+    if not (ok and type(info) == "table" and info.leftTexCoord and info.rightTexCoord
+        and info.topTexCoord and info.bottomTexCoord) then
+        return false
+    end
+    local l, t = info.leftTexCoord, info.topTexCoord
+    local w, h = info.rightTexCoord - l, info.bottomTexCoord - t
+    texture:SetTexCoord(l + w * crop[1], l + w * crop[2], t + h * crop[3], t + h * crop[4])
+    return true
+end
 
 ---What the options let through: the master switch, then the two families that can be turned off
 ---apart. A creature is what the map started with, and stays with the master switch.
@@ -332,7 +356,10 @@ local function Construir()
         if not lugar then
             lugar = {
                 kind = kind, name = nome, rec = { name = nome, c = kind == "rare" and 4 or nil },
-                mounts = {}, dq = {}, mapID = m, x = x, y = y, fromCatalogue = true, first = true,
+                mounts = {}, dq = {}, mapID = m, x = x, y = y, fromCatalogue = true,
+                -- One of SEVERAL places of the same thing (a portal that appears here or there)
+                -- says which is the first of its map, as a creature's spawn points do.
+                first = not (wp and wp.first == false),
             }
             lista[#lista + 1] = lugar
         end
@@ -457,8 +484,9 @@ function MapPins.PinsFor(mapID)
         for _, p in ipairs(indice[m] or {}) do
             local criatura = KIND[p.kind].group == "creature"
             -- On a continent a creature is ONE pin: forty-five points of a flight path, times
-            -- every rare of every zone, is a map nobody can read.
-            if KindShown(p.kind) and not (continente and criatura and not p.first) then
+            -- every rare of every zone, is a map nobody can read. The same for a portal with
+            -- seven places in a zone (`first` is only ever false for a thing of several places).
+            if KindShown(p.kind) and not (continente and not p.first) then
                 local x, y = MapPins.Project(m, p.x, p.y, mapID)
                 if x then
                     local kind, nome = p.kind, p.name
@@ -495,7 +523,7 @@ function MapPins.PinsFor(mapID)
                     out[#out + 1] = {
                         kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
                         mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
-                        nameNpc = p.nameNpc, nameQuest = p.nameQuest,
+                        nameNpc = p.nameNpc, nameQuest = p.nameQuest, first = p.first,
                         -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
                         x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
                         locked = preso, lockSource = fonte, lockLeft = falta,
@@ -718,6 +746,7 @@ function RocketMountMapPinMixin:OnAcquired(data)
     self.Icon:SetTexture(primeira and primeira.entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     self.Underlay:SetShown(kind.dragon and true or false)
     self.Badge:SetAtlas(kind.atlas)
+    if kind.crop then MapPins.Crop(self.Badge, kind.atlas, kind.crop) end
     self.Badge:SetSize(kind.size, kind.size)
 
     local rotulo = not (ns.db and ns.db.mapLabels == false)
@@ -767,7 +796,7 @@ end
 
 local HEADER = {
     creature = L["Can drop:"], instance = L["Can drop:"], loot = L["Can drop:"],
-    treasure = L["Can drop:"], fishing = L["Can drop:"],
+    treasure = L["Can drop:"], fishing = L["Can drop:"], portal = L["Leads to:"],
     vendor = L["Sells:"], quest = L["Rewards:"], other = L["Mounts here:"],
 }
 

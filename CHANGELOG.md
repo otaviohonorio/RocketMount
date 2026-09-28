@@ -88,6 +88,16 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   players' sightings; it can be turned off in the options.
 - **Smaller map markers.** They are now the size of the game's own quest marker (the ring is
   20 across, it was 25), so a zone full of rares covers less of the map.
+- **A portal is marked as a portal.** The Voidtalon of the Dark Star is not on any map: it is
+  in an egg on the other side of the Edge of Reality, a portal that appears at one of several
+  places in six zones of Draenor. Each of those places now has a marker with the game's portal
+  symbol and the word "Portal", and the tooltip says how it works. On the continent's map it is
+  one marker per zone.
+- **Vendors, chests and quest givers on the map come from the addon's own data**: about 260
+  vendors, 130 chests and 85 quest givers, each named in your game's language.
+- **No more marker on the wrong continent.** The Time-Lost Proto-Drake had a marker in Nagrand,
+  from a single stray sighting; a place on another continent than the creature's, seen once or
+  twice, is no longer a place.
 - **The rare alert looks like the game's.** It is now the game's own new-mount alert: who the
   rare is, the mount you are likeliest to get and its chance, and how often the loot comes
   back. Hover it for every mount and each chance; click it to point the map arrow at the
