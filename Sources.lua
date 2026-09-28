@@ -427,8 +427,9 @@ local function NomeDoObjeto(id, ingles)
     return type(nome) == "string" and nome or ingles
 end
 
+---@param sourceType number|nil what the game's journal says the mount comes from (2 = quest)
 ---@return table|nil `{ vendors, coords, quests, box }`
-function ns.OwnPlaces(mountID)
+function ns.OwnPlaces(mountID, sourceType)
     local T = ns.MountPlaces
     local m = type(T) == "table" and type(T.mount) == "table" and T.mount[mountID]
     if type(m) ~= "table" then return nil end
@@ -462,7 +463,14 @@ function ns.OwnPlaces(mountID)
             end
         end
     end
-    for _, id in ipairs(type(m.quest) == "table" and m.quest or {}) do
+    -- (!) A QUEST LISTED IS NOT A QUEST ASKED (28/09). Wowhead lists every quest that ever
+    -- rewarded the item: the old epic horses, sold for gold, come with the two quests that
+    -- once exchanged them. 40 mounts of the table have a vendor AND a quest, and read as a
+    -- requirement the quest put "quest pending" on a mount anyone can buy. With a vendor, the
+    -- quest only counts when the GAME says the mount comes from a quest.
+    local QUEST = 2
+    local contaMissao = #out.vendors == 0 or sourceType == QUEST
+    for _, id in ipairs(contaMissao and type(m.quest) == "table" and m.quest or {}) do
         local q = type(T.quest) == "table" and T.quest[id]
         if DoMeuLado(q) then
             out.quests[#out.quests + 1] = { id = id, name = q.name }
@@ -489,10 +497,12 @@ end
 -- afford, `MerchantFrame.lua`). No price known was read as nothing to pay: the same family of
 -- defect, for the seventh time, and this one reaches everybody who installs the addon alone.
 --
--- Three sources now, the most certain first:
+-- Four sources now, the most certain first:
 --   vendor      what the vendor CHARGES, read with the vendor open (`ns.ScanMerchant`). It is the
 --               game charging, so it wins. Kept for the account: a price is not per character.
---   catalogue   MCL's table, when it is installed.
+--   own         our table (`Data/MountPlaces.lua`, `cost`): what each vendor charges, as
+--               players' clients reported it. Since 28/09; it took the place of MCL's table.
+--   catalogue   MCL's table, when it is installed -- only where ours has nothing.
 --   journal     the game's own source text, which carries the price as a link:
 --               `Cost: |r1|Hcurrency:2777|h|T...|t`. Always there, in every language.
 --
@@ -540,6 +550,45 @@ function ns.JournalCost(sourceText)
         if #out > 0 then return out end
     end
     return nil
+end
+
+---(!) WHAT OUR OWN TABLE SAYS THE VENDORS CHARGE (28/09), as a list of prices in the shape the
+---rest reads. One price when every vendor of the player's side charges the same; several when
+---they charge different things (one takes a currency, another takes another).
+---@return table[]|nil `{ { { type, id, amount }, ... }, ... }`
+function ns.OwnCost(mountID)
+    local T = ns.MountPlaces
+    local m = type(T) == "table" and type(T.mount) == "table" and T.mount[mountID]
+    if type(m) ~= "table" or type(m.cost) ~= "table" then return nil end
+    local out = {}
+    for _, p in ipairs(m.cost) do
+        if type(p) == "table" then
+            -- A price belongs to who charges it: the other faction's vendor does not count.
+            local meu = false
+            for _, id in ipairs(type(p.npc) == "table" and p.npc or {}) do
+                if type(T.npc) == "table" and DoMeuLado(T.npc[id]) then meu = true end
+            end
+            if meu then
+                local lista = {}
+                if type(p.gold) == "number" and p.gold > 0 then
+                    lista[#lista + 1] = { type = "gold", id = 0, amount = p.gold }
+                end
+                for _, tipo in ipairs({ "currency", "item" }) do
+                    local ids = {}
+                    for id, n in pairs(type(p[tipo]) == "table" and p[tipo] or {}) do
+                        if type(id) == "number" and type(n) == "number" and n > 0 then ids[#ids + 1] = id end
+                    end
+                    table.sort(ids)
+                    for _, id in ipairs(ids) do
+                        lista[#lista + 1] = { type = tipo, id = id, amount = p[tipo][id] }
+                    end
+                end
+                if #lista > 0 then out[#out + 1] = lista end
+            end
+        end
+    end
+    if #out == 0 then return nil end
+    return out
 end
 
 ---What the vendor charged for this mount the last time one was open, in MCL's shape.
@@ -646,6 +695,10 @@ local function CostProgress(spellID, itemID, mountID, sourceText)
     local fontes = {}
     local visto = VendorCost(mountID)
     if visto then fontes[#fontes + 1] = { "vendor", visto } end
+    -- Ours: with several prices, the one the player is FARTHEST from (below). Which vendor he
+    -- will go to nobody knows, and not knowing pushes down.
+    local nossos = ns.OwnCost(mountID)
+    if nossos then fontes[#fontes + 1] = { "own", nossos, several = true } end
     local data = _G.MCL_GUIDE_CURRENCY_DATA
     local list = type(data) == "table" and (data[spellID] or (itemID and data[itemID])) or nil
     if type(list) == "table" then
@@ -656,7 +709,16 @@ local function CostProgress(spellID, itemID, mountID, sourceText)
     if ok and doDiario then fontes[#fontes + 1] = { "journal", doDiario } end
 
     for _, f in ipairs(fontes) do
-        local okC, custo = pcall(CostOf, f[2])
+        local okC, custo
+        if f.several then
+            for _, lista in ipairs(f[2]) do
+                local okL, c = pcall(CostOf, lista)
+                if okL and c and (not custo or c.pct < custo.pct) then okC, custo = true, c end
+            end
+            if custo then custo.alternatives = #f[2] > 1 and #f[2] or nil end
+        else
+            okC, custo = pcall(CostOf, f[2])
+        end
         if okC and custo then
             custo.from = f[1]
             -- The vendor charged something the addon could not read: what is here is part of it.
@@ -965,7 +1027,7 @@ function ns.BuildList()
                 -- (!) WHERE IT IS GOT: OURS FIRST (28/09). Vendors, chests and quests from
                 -- `Data/MountPlaces.lua`. Of the catalogue's points only what ours does not have
                 -- yet is kept: the entrances of instances.
-                local okP, nosso = pcall(ns.OwnPlaces, mountID)
+                local okP, nosso = pcall(ns.OwnPlaces, mountID, e.sourceType)
                 if okP and type(nosso) == "table" then
                     if #nosso.vendors > 0 then
                         e.vendors = nosso.vendors
