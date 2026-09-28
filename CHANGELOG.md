@@ -111,6 +111,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   Trading Post, of a promotion or of the Trading Card Game has its own Type and a line that
   says so, at 0% — so you know to stop looking for where it drops. (They used to share one
   "Shop / promotion" tag with a "?" for a number, and the Trading Post had no tag at all.)
+- **More vendors and quests known**: where the game's journal names who sells a mount or the
+  quest that gives it, the addon now knows who that is and where — 35 mounts gained their
+  vendor and 14 their quest, the class mounts of Legion among them.
 - **Mounts that left the game stay out**, the 67 the game itself marks as "Legacy" in the mount
   journal. `/rmt gone` or the option shows them again.
 - **Search finds a mount by who sells it or drops it.** A mount with no boss could not be found
