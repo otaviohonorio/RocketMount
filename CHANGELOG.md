@@ -128,9 +128,15 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
 - **The broken mirrors of Revendreth, the ones that are on.** The Battle Gargon Silessa is
   behind twelve broken mirrors that appear three at a time. The map now marks the three of
   the group the game says is on — and none for a character the mirrors are not for.
-- **How the Dreamseeds work.** The seven mounts of the Dreamseed Cache share a tip: the three
-  seeds and where the big one comes from, planting and adding Emerald Dewdrops, and the vendor
-  that sells six of them.
+- **How the Dreamseeds work, and which seed gives what.** The seven mounts of the Dreamseed
+  Cache share a tip: the seed you give decides. Any seed, or Emerald Dewdrops alone, can give
+  the Winter Night Dreamsaber; only the Gigantic Dreamseed gives the other six; the plump and
+  the small ones never do. A full bar is not required, and whether it raises the chance is
+  said for what it is: not measured.
+- **The chance of a chest that is in many places is the chance over all of them.** The addon
+  took the number of the luckiest one: 1.5% for a mount of the Dreamseed Cache that comes in
+  0.5%. 27 mounts have a lower, truer number now, the mounts of the Dreamseed Cache and the
+  Battle Gargon Silessa among them.
 - **Markers a little smaller still**, and the word under them too.
 - **The Trading Post sells what is on offer this month.** Its vendors used to be marked as
   selling every mount that ever went through the Trading Post, each with a percentage. Now a
