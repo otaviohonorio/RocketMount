@@ -99,6 +99,11 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   Stormshield or Warspear, was drawn in Valdrakken. Vendors inside a faction's city, a
   garrison or a class hall are now on their own map, and a vendor of the other faction's city
   is no longer offered to you.
+- **Raid and dungeon mounts name their boss in your language**, with the instance and the
+  difficulties the game's own Adventure Guide lists; the marker of a raid or dungeon sits on the
+  entrance the game itself shows. World bosses are no longer tagged as raids.
+- **Prices come with the addon.** What each vendor charges is known without opening the vendor
+  and without any other addon installed; once you open the vendor, what it charges you wins.
 - **No more marker on the wrong continent.** The Time-Lost Proto-Drake had a marker in Nagrand,
   from a single stray sighting; a place on another continent than the creature's, seen once or
   twice, is no longer a place.

@@ -380,7 +380,9 @@ local function Construir()
     for _, e in ipairs(ranqueadas) do
         if not e.unobtainable then
             for _, wp in ipairs(e.coords or {}) do
-                if wp.m and wp.x and wp.y and not Gasto(wp) then
+                -- The door of an instance we know by id is drawn where the GAME says it is
+                -- (PinsFor): the catalogue's point for it would be a second marker.
+                if wp.m and wp.x and wp.y and not Gasto(wp) and not (wp.i and e.instanceID) then
                     local kind = KindOf(e, wp)
                     local nome = wp.n or (KIND[kind].group == "creature" and e.bossName) or nil
                     if KIND[kind].group ~= "creature" then
@@ -403,6 +405,18 @@ local function Construir()
             if p.fromCatalogue then Ordenar(p.mounts) end
         end
     end
+
+    -- 3. THE INSTANCES: which mounts are behind each door. The door itself is not here -- the
+    -- game says where it is, on the map being looked at (PinsFor).
+    idx.instances = {}
+    for _, e in ipairs(ranqueadas) do
+        if not e.unobtainable and type(e.instanceID) == "number" and not e.worldBoss then
+            local lista = idx.instances[e.instanceID] or {}
+            idx.instances[e.instanceID] = lista
+            lista[#lista + 1] = { entry = e }
+        end
+    end
+    for _, lista in pairs(idx.instances) do Ordenar(lista) end
     return idx
 end
 
@@ -529,6 +543,30 @@ function MapPins.PinsFor(mapID)
                         locked = preso, lockSource = fonte, lockLeft = falta,
                     }
                 end
+            end
+        end
+    end
+
+    -- (!) THE DOOR IS WHERE THE GAME SAYS (28/09). The entrance of a raid or a dungeon used to
+    -- come from the catalogue's coordinates. The game answers for the map being looked at, in
+    -- that map's own coordinates and with the name in the player's language -- the same call
+    -- its own entrance markers are made of (`DungeonEntranceDataProvider.lua`).
+    local portas = indice.instances
+    if portas and next(portas) and C_EncounterJournal and C_EncounterJournal.GetDungeonEntrancesForMap then
+        local ok, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, mapID)
+        for _, d in ipairs(ok and type(lista) == "table" and lista or {}) do
+            local montarias = type(d) == "table" and portas[d.journalInstanceID]
+            local x, y
+            if montarias and type(d.position) == "table" and d.position.GetXY then
+                x, y = d.position:GetXY()
+            end
+            local kind = d and d.atlasName == "Raid" and "raid" or "dungeon"
+            if x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 and KindShown(kind) then
+                out[#out + 1] = {
+                    kind = kind, name = d.name, rec = { name = d.name }, mounts = montarias,
+                    instance = d.journalInstanceID, first = true,
+                    x = x, y = y, mapID = mapID, homeMap = mapID, homeX = x, homeY = y,
+                }
             end
         end
     end

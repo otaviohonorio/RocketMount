@@ -486,6 +486,57 @@ function ns.OwnPlaces(mountID, sourceType)
 end
 
 --------------------------------------------------------------------------------
+-- THE BOSS, FROM THE GAME'S OWN ADVENTURE GUIDE
+--
+-- (!) 28/09. The name of the boss, the difficulties, the size of the group and the entrance on
+-- the map came from MCL, read at run time, and no addon of ours reads another one.
+-- `Data/MountBosses.lua` (tools/coletar_chefes.py) has the game's own ids for each mount a boss
+-- drops; the NAMES are asked of the game by id, so they come in the player's language, and the
+-- English ones of the table are what is left when the game does not answer.
+--------------------------------------------------------------------------------
+---A name the game gave: a string, not empty, not secret.
+local function NomeDoJogo(f, id)
+    if type(f) ~= "function" then return nil end
+    local ok, nome = pcall(f, id)
+    if not ok or nome == nil then return nil end
+    if issecretvalue and issecretvalue(nome) then return nil end
+    if type(nome) ~= "string" or nome == "" then return nil end
+    return nome
+end
+
+---@return table|nil `{ name, names, instance, zone, raid, world, difficulties }`
+function ns.OwnBoss(mountID)
+    local b = type(ns.MountBosses) == "table" and ns.MountBosses[mountID]
+    if type(b) ~= "table" or type(b.bosses) ~= "table" then return nil end
+    local nomes = {}
+    for _, par in ipairs(b.bosses) do
+        if type(par) == "table" and type(par[1]) == "number" then
+            local nome = NomeDoJogo(_G.EJ_GetEncounterInfo, par[1])
+                or (type(par[2]) == "string" and par[2] ~= "" and par[2]) or nil
+            if nome then nomes[#nomes + 1] = nome end
+        end
+    end
+    if #nomes == 0 then return nil end
+    local instancia = type(b.instance) == "number" and b.instance or nil
+    local difs
+    if type(b.difficulties) == "table" then
+        difs = {}
+        for _, d in ipairs(b.difficulties) do
+            if type(d) == "number" then difs[#difs + 1] = d end
+        end
+        if #difs == 0 then difs = nil end
+    end
+    return {
+        name = nomes[1], names = nomes,
+        instance = instancia,
+        zone = (instancia and NomeDoJogo(_G.EJ_GetInstanceInfo, instancia))
+            or (type(b.zone) == "string" and b.zone ~= "" and b.zone) or nil,
+        raid = b.raid == true, world = b.world == true,
+        difficulties = difs,
+    }
+end
+
+--------------------------------------------------------------------------------
 -- WHERE THE PRICE COMES FROM
 --
 -- (!) Reported on 27/09 with a screenshot, standing at Elianna (Emerald Dream): *"Montaria
@@ -1022,6 +1073,20 @@ function ns.BuildList()
                     local r = ns.MountReputation[mountID]
                     e.rep = ReputationProgress(r)
                     e.isRenown = r.renown and true or false
+                end
+
+                -- (!) THE BOSS: OURS, FROM THE GAME'S ADVENTURE GUIDE (28/09). It wins over the
+                -- catalogue's: the name is the game's, in the player's language.
+                local chefe = ns.OwnBoss(mountID)
+                if type(chefe) == "table" then
+                    e.bossName, e.bossNames = chefe.name, chefe.names
+                    e.instanceID, e.instanceName = chefe.instance, chefe.zone
+                    e.worldBoss = chefe.world
+                    -- What the tags and the map ask: a raid, a dungeon, or neither.
+                    e.groupSize = (chefe.raid and 10) or (not chefe.world and 5) or nil
+                    e.difficulties = chefe.difficulties
+                    e.method = "BOSS"
+                    e.bossFrom = "own"
                 end
 
                 -- (!) WHERE IT IS GOT: OURS FIRST (28/09). Vendors, chests and quests from
