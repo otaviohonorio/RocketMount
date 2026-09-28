@@ -209,7 +209,11 @@ L["Raid"] = "Raide"
 L["Dungeon"] = "Masmorra"
 L["Renown"] = "Renome"
 L["Reputation"] = "Reputação"
-L["Shop / promotion"] = "Loja / promoção"
+L["Trading Post"] = "Posto Comercial"
+L["From a promotion outside the game"] = "De uma promoção de fora do jogo"
+L["From the Trading Card Game"] = "Do jogo de cartas"
+L["Sold in the in-game shop"] = "Vendida na loja do jogo"
+L["From the Trading Post, when it is on offer"] = "Do Posto Comercial, quando está em oferta"
 
 -- A lista com colunas (Window.lua).
 L["Mount"] = "Montaria"

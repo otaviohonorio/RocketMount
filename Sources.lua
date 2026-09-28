@@ -26,6 +26,7 @@ local SOURCE_FALLBACK = {
     [9] = L["Trading Card Game"],
     [10] = L["Shop"],
     [11] = L["Discovery"],
+    [12] = L["Trading Post"],
 }
 
 ns.SOURCE_NAMES = setmetatable({}, {
@@ -983,8 +984,9 @@ function ns.BuildList()
                 e.sourceText = source
 
                 e.itemID = ns.VerifiedMountItem(mountID)
-                -- LEFT THE GAME: a table of ours, when there is one. No source of ours says it
-                -- yet, and what nobody says is not claimed.
+                -- LEFT THE GAME (28/09): the game itself marks them -- the journal's source text
+                -- of such a mount is the single word "Legacy". `Data/MountGone.lua` has the ids,
+                -- from the game's own table (tools/coletar_legado.py).
                 e.unobtainable = type(ns.MountGone) == "table" and ns.MountGone[mountID] == true
 
                 -- THE REPUTATION (25/09): the vendor's condition and what renown gives, from

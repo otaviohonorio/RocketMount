@@ -222,6 +222,7 @@ function ns.Rank(entry)
     end
     local access, from = Access(e)
     local price = Price(e)
+    e.outside = nil
 
     -- The requirement the row shows is the one furthest behind -- except gold, which counts only
     -- once everything else is met (`Price` above holds it back from the currencies too).
@@ -428,6 +429,19 @@ function ns.Rank(entry)
         e.why = ns.SOURCE_NAMES[e.sourceType]
     end
 
+    -- NOT GOT BY PLAYING, and nothing else known about it: zero, and what it is. A mount of the
+    -- Trading Post whose price the table knows keeps its price, and says what it is too.
+    local fora = ns.OUTSIDE and ns.OUTSIDE[e.sourceType]
+    if fora then
+        if e.tier == ns.TIER.UNKNOWN then
+            e.outside = true
+            e.headline = "0%"
+            e.why = fora
+        elseif not (type(e.why) == "string" and e.why:find(fora, 1, true)) then
+            e.why = (e.why and e.why ~= "" and (e.why .. "  ·  ") or "") .. fora
+        end
+    end
+
     return e
 end
 
@@ -565,12 +579,18 @@ end
 
 -- Tag keys, in the order they are shown on a row (the most telling first).
 ns.TAG_ORDER = { "raid", "dungeon", "drop", "quest", "achievement", "renown", "reputation",
-                 "vendor", "profession", "event", "petbattle", "promotion", "discovery" }
+                 "vendor", "profession", "event", "petbattle", "discovery",
+                 "tradingpost", "shop", "promotion", "tcg" }
 ns.TAG_NAME = {
     raid = L["Raid"], dungeon = L["Dungeon"], drop = L["Drop"], quest = L["Quest"],
     achievement = L["Achievement"], renown = L["Renown"], reputation = L["Reputation"],
     vendor = L["Vendor"], profession = L["Profession"], event = L["World Event"],
-    petbattle = L["Pet Battle"], promotion = L["Shop / promotion"], discovery = L["Discovery"],
+    petbattle = L["Pet Battle"], discovery = L["Discovery"],
+    -- (!) EACH ONE SAYS WHAT IT IS (28/09). The user: *"é bom ter todas, mesmo que seja 0%, pelo
+    -- menos avisa, essa é de loja, e etc"*. They were one tag, "Shop / promotion", and the
+    -- Trading Post had none. The names are the game's own, in the player's language.
+    tradingpost = ns.SOURCE_NAMES[12], shop = ns.SOURCE_NAMES[10],
+    promotion = ns.SOURCE_NAMES[8], tcg = ns.SOURCE_NAMES[9],
 }
 local TAG_RANK = {}
 for i, k in ipairs(ns.TAG_ORDER) do TAG_RANK[k] = i end
@@ -578,9 +598,21 @@ for i, k in ipairs(ns.TAG_ORDER) do TAG_RANK[k] = i end
 -- Blizzard's own source type (`C_MountJournal` source) -> tag.
 local TAG_OF_SOURCE = {
     [1] = "drop", [2] = "quest", [3] = "vendor", [4] = "profession", [5] = "petbattle",
-    [6] = "achievement", [7] = "event", [8] = "promotion", [9] = "promotion", [10] = "promotion",
-    [11] = "discovery",
+    [6] = "achievement", [7] = "event", [8] = "promotion", [9] = "tcg", [10] = "shop",
+    [11] = "discovery", [12] = "tradingpost",
 }
+
+-- (!) NOT GOT BY PLAYING (28/09): the shop, the Trading Post, a promotion, a card of the card
+-- game. There is no road to walk and no luck to try, so there is no number to show but zero --
+-- and the row says what the mount is, which is what the player needs to know to stop looking
+-- for where it drops.
+local OUTSIDE = {
+    [8] = L["From a promotion outside the game"],
+    [9] = L["From the Trading Card Game"],
+    [10] = L["Sold in the in-game shop"],
+    [12] = L["From the Trading Post, when it is on offer"],
+}
+ns.OUTSIDE = OUTSIDE
 
 ---What a mount IS, as a set of tags and an ordered list. Built from what the game says (source
 ---type) and what the catalogue adds (reputation, renown, the group an encounter needs).
@@ -618,6 +650,8 @@ end
 
 ---The row's number, 0..1, or nil when it cannot be measured (it goes last, shown as "?").
 function ns.RowPercent(e)
+    -- Not got by playing: nothing walked, and nothing to walk.
+    if e.outside then return 0 end
     if e.tier == ns.TIER.GONE or e.tier == ns.TIER.UNKNOWN or e.tier == ns.TIER.CHECK then
         return nil
     end

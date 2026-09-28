@@ -107,6 +107,12 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   game or from its own data: alone or beside other mount addons, the list is the same. Two
   lines left the card with this, because nothing of the addon's own knows them: the share of
   players who own the mount, and the Black Market note.
+- **Every mount is in the list, and says what it is.** A mount of the in-game shop, of the
+  Trading Post, of a promotion or of the Trading Card Game has its own Type and a line that
+  says so, at 0% — so you know to stop looking for where it drops. (They used to share one
+  "Shop / promotion" tag with a "?" for a number, and the Trading Post had no tag at all.)
+- **Mounts that left the game stay out**, the 67 the game itself marks as "Legacy" in the mount
+  journal. `/rmt gone` or the option shows them again.
 - **Search finds a mount by who sells it or drops it.** A mount with no boss could not be found
   by its vendor or its faction; now every mount is found by vendor, faction, creature, boss,
   instance and zone.
