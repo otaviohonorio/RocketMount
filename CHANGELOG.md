@@ -93,8 +93,12 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   places in six zones of Draenor. Each of those places now has a marker with the game's portal
   symbol and the word "Portal", and the tooltip says how it works. On the continent's map it is
   one marker per zone.
-- **Vendors, chests and quest givers on the map come from the addon's own data**: about 260
-  vendors, 130 chests and 85 quest givers, each named in your game's language.
+- **Vendors, chests and quest givers on the map come from the addon's own data**: about 290
+  vendors, 135 chests and 100 quest givers, each named in your game's language.
+- **A vendor is where it stands.** The vendor of the Domesticated Razorback, who is in
+  Stormshield or Warspear, was drawn in Valdrakken. Vendors inside a faction's city, a
+  garrison or a class hall are now on their own map, and a vendor of the other faction's city
+  is no longer offered to you.
 - **No more marker on the wrong continent.** The Time-Lost Proto-Drake had a marker in Nagrand,
   from a single stray sighting; a place on another continent than the creature's, seen once or
   twice, is no longer a place.
