@@ -103,6 +103,7 @@ end
 -- it is one line here.
 ns.REPORT = {
     { name = "GitHub", url = "https://github.com/otaviohonorio/RocketMount/issues" },
+    { name = "CurseForge", url = "https://www.curseforge.com/wow/addons/rocketmount/comments" },
 }
 
 -- The place chosen, for the dialog that is open.
