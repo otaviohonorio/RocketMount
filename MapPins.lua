@@ -465,6 +465,116 @@ function MapPins.WhyEmpty(mapID)
     return lugares .. " places, none shown"
 end
 
+--------------------------------------------------------------------------------
+-- (!) ONE PLACE, ONE MARKER (29/09)
+--
+-- The user: *"to achando que tem marcação duplicada e tem uma duplicada com categoria
+-- diferente, vendedor e missão"*. Measured with the real tables, for a character with no mount
+-- at all: 32 places of the 155 maps had more than one marker within 1.2 of each other, 103
+-- markers in all. Three sorts:
+--   * the vendor and the quest of the SAME mounts, at the same point (in Harandar the quest
+--     giver IS the vendor): two markers, two kinds, one thing to do;
+--   * a vendor and a quest of different mounts at the same point: one marker hid the other;
+--   * creatures at the same point -- the same name under several ids (each colour of a mount
+--     has its own), or different creatures that take turns there and drop the same mount.
+-- It is done when the markers are DRAWN, on the map being looked at, because a place of a cave
+-- and one of the zone only meet once both are put on the zone's map.
+--
+-- What is joined: two places of the table (vendor, quest, chest, where it starts...) at the
+-- same point, whatever their kind; two creatures at the same point that have the same name or
+-- drop the same mounts. A creature and a vendor stay two markers, and so do two creatures of
+-- different names and different mounts: those are two things to do.
+--------------------------------------------------------------------------------
+-- Which kind names the marker when places of several kinds are one: where the mount is HANDED
+-- OVER comes first.
+local PRIMEIRO = { vendor = 1, reputation = 2, quest = 3, treasure = 4, loot = 5, fishing = 6,
+                   delve = 7, portal = 8, start = 9, other = 10,
+                   boss = 1, rareelite = 2, elite = 3, rare = 4 }
+
+local function MesmasMontarias(a, b)
+    if #a.mounts ~= #b.mounts then return false end
+    local tem = {}
+    for _, m in ipairs(a.mounts) do tem[m.entry] = true end
+    for _, m in ipairs(b.mounts) do
+        if not tem[m.entry] then return false end
+    end
+    return true
+end
+
+local function Juntam(a, b)
+    if a.instance or b.instance then return false end
+    local ca = KIND[a.kind] and KIND[a.kind].group == "creature"
+    local cb = KIND[b.kind] and KIND[b.kind].group == "creature"
+    if ca ~= cb then return false end
+    if not ca then return true end
+    local na, nb = a.rec and a.rec.name, b.rec and b.rec.name
+    return (na ~= nil and na == nb) or MesmasMontarias(a, b)
+end
+
+---`b` becomes part of `a`. Each part is kept whole (`parts`): the tooltip names every one.
+local function Somar(a, b)
+    if not a.parts then
+        local eu = {}
+        for k, v in pairs(a) do eu[k] = v end
+        a.parts = { eu }
+    end
+    a.parts[#a.parts + 1] = b
+    -- the mounts of the two, each one once: with the better chance, where there are two
+    local novas, onde = {}, {}
+    for _, lista in ipairs({ a.mounts, b.mounts }) do
+        for _, m in ipairs(lista) do
+            local i = onde[m.entry]
+            if not i then
+                novas[#novas + 1] = m
+                onde[m.entry] = #novas
+            elseif Peso(m) > Peso(novas[i]) then
+                novas[i] = m
+            end
+        end
+    end
+    a.mounts = Ordenar(novas)
+    -- the kind that names the marker, and where the arrow goes: the part that comes first
+    if (PRIMEIRO[b.kind] or 99) < (PRIMEIRO[a.kind] or 99) then
+        for _, k in ipairs({ "kind", "npc", "rec", "name", "nameNpc", "nameQuest", "namePoi", "event",
+                             "x", "y", "homeMap", "homeX", "homeY", "fromCatalogue" }) do
+            a[k] = b[k]
+        end
+    end
+    -- a vendor is "Reputation" only while EVERY vendor there is behind one
+    if a.kind == "reputation" then
+        for _, p in ipairs(a.parts) do
+            if p.kind == "vendor" then a.kind = "vendor" end
+        end
+    end
+    a.first = a.first or b.first
+    -- looted only when every creature of the place is: one that can still drop is worth the trip
+    if a.locked and not b.locked then
+        a.locked, a.lockSource, a.lockLeft = nil, nil, nil
+    elseif a.locked and b.locked and a.lockLeft and b.lockLeft and b.lockLeft < a.lockLeft then
+        a.lockLeft = b.lockLeft
+    end
+    if b.routes then
+        a.routes = a.routes or {}
+        for _, r in ipairs(b.routes) do a.routes[#a.routes + 1] = r end
+    end
+end
+
+---The markers of one map, the ones of the same place made one.
+function MapPins.Merge(lista)
+    local out = {}
+    for _, p in ipairs(lista) do
+        local alvo
+        for _, q in ipairs(out) do
+            if Perto({ { q.x, q.y } }, p.x, p.y, SAME_PLACE) and Juntam(q, p) then
+                alvo = q
+                break
+            end
+        end
+        if alvo then Somar(alvo, p) else out[#out + 1] = p end
+    end
+    return out
+end
+
 ---What goes on this map: one entry per place that still has a mount for you.
 function MapPins.PinsFor(mapID)
     local out = {}
@@ -525,6 +635,8 @@ function MapPins.PinsFor(mapID)
     -- game answers for the map being looked at, in that map's own coordinates and with the name
     -- in the player's language -- the same call its own entrance markers are made of
     -- (`DungeonEntranceDataProvider.lua`).
+    out = MapPins.Merge(out)
+
     local portas = indice.instances
     if portas and next(portas) and C_EncounterJournal and C_EncounterJournal.GetDungeonEntrancesForMap then
         local ok, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, mapID)
@@ -689,8 +801,12 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     local map = self:GetMap()
     local mapID = map:GetMapID()
     local lista = MapPins.PinsFor(mapID)
+    local juntos = 0
+    for _, data in ipairs(lista) do
+        if type(data.parts) == "table" then juntos = juntos + #data.parts - 1 end
+    end
     ultimo = { map = mapID, asked = #lista, drawn = 0, failed = 0, err = nil, kinds = {},
-               routes = 0, dashes = 0 }
+               routes = 0, dashes = 0, merged = juntos }
     self.routes = {}
     for _, data in ipairs(lista) do
         for _, r in ipairs(data.routes or {}) do self.routes[#self.routes + 1] = r end
@@ -714,6 +830,7 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     if ultimo.asked > 0 or ultimo.failed > 0 then
         ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
                              routes = ultimo.routes, dashes = ultimo.dashes,
+                             merged = ultimo.merged,
                              failed = ultimo.failed, error = ultimo.err })
     elseif mapID then
         -- And one line for the map that came out empty, with why: once per map, and again
@@ -864,7 +981,31 @@ local function Descricao(tooltip, e, criatura)
     end
 end
 
-function MapPins.PlaceName(data)
+---The names of a marker that is several places: each one once, in the order of the parts.
+local TIP_NAMES = 3
+
+local function NomeDeUm(data)
+    return MapPins.PlaceName(data, true)
+end
+
+function MapPins.PlaceName(data, sozinho)
+    if not sozinho and type(data.parts) == "table" then
+        local nomes, visto = {}, {}
+        -- the part that names the marker first
+        local n0 = NomeDeUm(data)
+        if n0 then nomes[1], visto[n0] = n0, true end
+        for _, p in ipairs(data.parts) do
+            local n = NomeDeUm(p)
+            if n and not visto[n] then
+                visto[n] = true
+                nomes[#nomes + 1] = n
+            end
+        end
+        if #nomes > TIP_NAMES then
+            return string.format(L["%s and %d more"], nomes[1], #nomes - 1)
+        end
+        return table.concat(nomes, ", ")
+    end
     local kind = KindDe(data)
     if data.npc then return MapPins.NpcName(data.npc, data.rec and data.rec.name or data.name) end
     if data.nameNpc then return MapPins.NpcName(data.nameNpc, data.name) end
@@ -910,7 +1051,21 @@ function MapPins.Tooltip(tooltip, data)
     local kind = KindDe(data)
     local criatura = kind.group == "creature"
     Titulo(tooltip, MapPins.PlaceName(data))
-    Linha(tooltip, kind.label, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+    -- A marker that is several places says every kind it is, and its list has no single verb.
+    local rotulo, cabecalho = kind.label, HEADER[kind.group] or HEADER.other
+    if type(data.parts) == "table" then
+        local rotulos, visto = { kind.label }, { [kind.label] = true }
+        for _, p in ipairs(data.parts) do
+            local k = KindDe(p)
+            if not visto[k.label] then
+                visto[k.label] = true
+                rotulos[#rotulos + 1] = k.label
+            end
+            if (HEADER[k.group] or HEADER.other) ~= cabecalho then cabecalho = HEADER.other end
+        end
+        rotulo = table.concat(rotulos, ", ")
+    end
+    Linha(tooltip, rotulo, "NORMAL_FONT_COLOR", 1, 0.82, 0)
     -- (!) WHERE, IN WORDS (28/09). The user stood on a marker, found nobody and had nothing to
     -- check the place against: *"adicionar o nome dos vendedores e coordenadas"*. The name is the
     -- title; the zone and the coordinates are the place's own (a cave's, not the zone's it is
@@ -920,7 +1075,7 @@ function MapPins.Tooltip(tooltip, data)
         Linha(tooltip, string.format(L["Only during: %s"], data.event), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
     end
     tooltip:AddLine(" ")
-    Linha(tooltip, HEADER[kind.group] or HEADER.other, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+    Linha(tooltip, cabecalho, "NORMAL_FONT_COLOR", 1, 0.82, 0)
 
     local wr, wg, wb = Cor("HIGHLIGHT_FONT_COLOR", 1, 1, 1)
     local gr, gg, gb = Cor("NORMAL_FONT_COLOR", 1, 0.82, 0)
