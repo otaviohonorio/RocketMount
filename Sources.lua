@@ -443,7 +443,11 @@ local function LerCalendario()
         return nil
     end
     -- The calendar answers with secrets while chat messaging is locked down.
-    if InChatMessagingLockdown and InChatMessagingLockdown() then return nil end
+    -- (!) `C_ChatInfo.InChatMessagingLockdown` (ChatInfoDocumentation.lua, 12.1.0.69933). This
+    -- asked a GLOBAL of that name, which the game does not have: the guard was never on, and
+    -- the harness passed because it defined the global itself. Found by `tools/globais.py`.
+    local trancado = C_ChatInfo and C_ChatInfo.InChatMessagingLockdown
+    if trancado and trancado() then return nil end
     local okA, agora = pcall(C_DateAndTime.GetCurrentCalendarTime)
     local okM, mes = pcall(C_Calendar.GetMonthInfo)
     if not (okA and okM and type(agora) == "table" and type(mes) == "table") then return nil end
@@ -1009,10 +1013,12 @@ local function CostOf(list)
             have = GetMoney and GetMoney() or 0
             -- `GetCoinTextureString` é compacto e já traz o ícone da moeda: "3000g". O
             -- `GetMoneyString` escreve por extenso e ocupa a linha inteira.
-            preco = GetCoinTextureString and GetCoinTextureString(need) or tostring(need)
+            -- From `C_CurrencyInfo` (28/09): the global of the same name only exists while the
+            -- game loads its deprecated shims (`Blizzard_DeprecatedCurrencyScript`).
+            local moedas = C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString
+            preco = moedas and moedas(need) or tostring(need)
             if have < need then
-                falta = GetCoinTextureString and GetCoinTextureString(need - have)
-                    or tostring(need - have)
+                falta = moedas and moedas(need - have) or tostring(need - have)
             end
         elseif c.type == "currency" and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
             local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, c.id)
