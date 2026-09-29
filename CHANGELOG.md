@@ -11,6 +11,9 @@ reset "x") at the top of the list, and a "Not collected" counter next to the por
   gives only an appearance.
 - **A rare never goes missing from the map for a whole session.** When the game was late to
   say which mount an item teaches, the addon took it for "none" until the next login.
+- **Expansion and rare lockouts are read from the game's own data.** A few mounts change
+  expansion in the filter, and a mount that arrived late in an old block of ids is now of the
+  expansion of its raid or item (the Hellfire Infernal is Legion).
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
 - **Collected, and the next mount-count achievement.** Beside "Not collected", the window shows
   how many mounts you have and the next "Obtain N mounts" achievement with the game's own

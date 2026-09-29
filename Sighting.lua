@@ -594,9 +594,10 @@ end
 -- HOW OFTEN A RARE'S LOOT COMES BACK (25/09)
 --
 -- The user: *"posso tá indo matar o sha da raiva todo dia, mas ele é por semana, to indo em vão"*.
--- `Data/RareLockout.lua` has, for 140 rares, the hidden quest the game marks when you get the loot
--- (SilverDragon, MCL) -- and for 9 of them how often it resets (Wowhead's quest flag, MCL's
--- per-day credit). Nothing in the client says how often a quest resets, so the rest is LEARNED:
+-- `Data/RareLockout.lua` has, for 143 rares, the hidden quest the game marks when you get the loot
+-- (the quest that hides the rare's star on the map, from the game's own table) -- and for a few
+-- of them how often it resets. Nothing in the client says how often a quest resets, so the rest
+-- is LEARNED:
 -- the quest is watched after a kill, and the reset that clears it gives the answer -- the daily
 -- one means daily, surviving the daily and clearing at the weekly means weekly. What is learned is
 -- written account-wide, so one character's kill teaches every other.

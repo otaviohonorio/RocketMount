@@ -29,6 +29,7 @@ Data\RareLockout.lua
 Data\MountTips.lua
 Data\MountPlaces.lua
 Data\MountBosses.lua
+Data\MountExpansion.lua
 Data\MountChances.lua
 Data\MountGone.lua
 Core.lua

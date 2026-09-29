@@ -2,46 +2,59 @@
 -- Which expansion a mount belongs to.
 --
 -- (!) THE GAME DOES NOT TELL YOU. `C_MountJournal` has no expansion field, and the Mount Journal
--- itself has no expansion filter -- so there is nothing to read.
+-- itself has no expansion filter -- so there is nothing to read at run time.
 --
--- What there is: mount IDs are handed out in order, so each expansion owns a contiguous range.
--- That is not a guess of mine; it is how MountJournalEnhanced solves the same problem, and the
--- ranges below were taken from its `Database/Database.lua` (`ADDON.DB.Expansion`), which is
--- maintained by someone who tracks every patch. Its table is private to that addon
--- (no `AllowAddOnTableAccess` in its .toc), so the numbers are copied rather than read.
+-- What there is: mount ids are handed out in order, as the mounts are made, so each expansion
+-- owns a stretch of ids. WHERE each stretch begins is in `Data/MountExpansion.lua`, which
+-- tools/coletar_expansao.py writes from the game's own tables: the instance of the boss that
+-- drops the mount, the faction it asks for, the map of who sells it, the item that teaches it
+-- and what the journal itself writes of it. The cut is the first mount known to be of the new
+-- expansion.
 --
--- WHAT THIS COSTS, said plainly: MJE's table also carries a handful of per-mount exceptions --
--- mounts added late that got an ID out of their expansion's block, like the Brutal Nether Drake.
--- Those are NOT copied here. So a few mounts land one expansion off, and the filter is a good
--- way to narrow a list, not a source of truth about when something was added.
+-- (!) OURS SINCE 29/09/2026. The ranges used to be copied from another addon's table. The user,
+-- before the first publication: *"falamos para criar o nosso sem precisar de dados terceiros,
+-- certo?"*.
+--
+-- WHAT THIS COSTS, said plainly: a stretch of ids is an approximation. The game made some
+-- mounts long before it released them, and a few with an id of an older block. The ones whose
+-- instance, item or journal says another expansion are written one by one (`late`); a mount
+-- with nothing to say for itself (the shop, a promotion) is of the stretch its id falls in. The
+-- filter is a good way to narrow a list, not a source of truth about when something was added.
 local _, ns = ...
 
 local Expansion = {}
 ns.Expansion = Expansion
 
--- One mount-ID range per expansion. The last one has no ceiling on purpose: a mount shipped
--- tomorrow falls into it by itself, instead of dropping out of the filter until someone
--- remembers to bump a number.
-local RANGES = {
-    { id = 0,  name = "Classic",             min = 0,    max = 122 },
-    { id = 1,  name = "Burning Crusade",     min = 123,  max = 226 },
-    { id = 2,  name = "Wrath of the Lich King", min = 227, max = 382 },
-    { id = 3,  name = "Cataclysm",           min = 383,  max = 447 },
-    { id = 4,  name = "Mists of Pandaria",   min = 448,  max = 571 },
-    { id = 5,  name = "Warlords of Draenor", min = 572,  max = 772 },
-    { id = 6,  name = "Legion",              min = 773,  max = 991 },
-    { id = 7,  name = "Battle for Azeroth",  min = 993,  max = 1329 },
-    { id = 8,  name = "Shadowlands",         min = 1330, max = 1576 },
-    { id = 9,  name = "Dragonflight",        min = 1577, max = 2115 },
-    { id = 10, name = "The War Within",      min = 2116, max = 2732 },
-    { id = 11, name = "Midnight",            min = 2733, max = math.huge },
-}
+-- One stretch per expansion, from the table. The last one has no ceiling on purpose: a mount
+-- shipped tomorrow falls into it by itself, instead of dropping out of the filter until the
+-- table is made again.
+local RANGES, LATE = {}, {}
+do
+    local T = type(ns.MountExpansion) == "table" and ns.MountExpansion or {}
+    for i, r in ipairs(T) do
+        local depois = T[i + 1]
+        RANGES[i] = {
+            id = r.id, name = r.name, min = r.min,
+            max = type(depois) == "table" and type(depois.min) == "number" and depois.min - 1 or math.huge,
+        }
+    end
+    LATE = type(T.late) == "table" and T.late or {}
+end
 
 Expansion.RANGES = RANGES
+
+local function ById(id)
+    for i = 1, #RANGES do
+        if RANGES[i].id == id then return RANGES[i] end
+    end
+end
 
 ---@return number|nil id, string|nil name
 function Expansion.Of(mountID)
     if type(mountID) ~= "number" then return nil end
+    -- The one that came late says so itself.
+    local tarde = LATE[mountID] and ById(LATE[mountID])
+    if tarde then return tarde.id, tarde.name end
     for i = 1, #RANGES do
         local r = RANGES[i]
         if mountID >= r.min and mountID <= r.max then

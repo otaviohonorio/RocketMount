@@ -42,9 +42,9 @@ commands["expansion"] = function(rest)
         return
     end
     for _, r in ipairs(ns.Expansion.RANGES) do
-        -- Matched against BOTH the English name and the translation: the expansion names are
-        -- copied from MountJournalEnhanced in English, and whoever plays in another language
-        -- will type what the interface shows them.
+        -- Matched against BOTH the English name and the translation: the table has the names
+        -- in English, and whoever plays in another language will type what the interface
+        -- shows them.
         if ns.Fold(r.name):find(arg, 1, true) or ns.Fold(L[r.name]):find(arg, 1, true) then
             -- The same filter as the window's Expansion column.
             ns.db.expFilter = { [r.id] = true }
