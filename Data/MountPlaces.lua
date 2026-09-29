@@ -15,6 +15,8 @@
 -- the world quest that is active while that place is the one.
 -- `creature` is a creature that is not killed and sells nothing (it is fed, talked to,
 -- followed), with its `kind`.
+-- `poi` is a landmark of the game's own map (a delve): the key is the game's id of it, the
+-- place is the game's, and the name in the player's language is asked of the game by id.
 -- A vendor with `event` is in the world only while that event is on. `event` has, for each
 -- one, the ids the game's calendar answers with (`ids`; none when it cannot be told) and
 -- `timerunning` for the event only a character of it takes part in.
@@ -712,6 +714,9 @@ ns.MountPlaces = {
         [199010] = { name = "Empowered Snail", where = { [2022] = { 71, 25 } }, kind = "start" },
         [199563] = { name = "Otto", where = { [2022] = { 19.6, 36.5 } }, kind = "start" },
         [242358] = { name = "Kuri", where = { [2413] = { 66.2, 25.4 } }, kind = "start" },
+    },
+    poi = {
+        [8779] = { name = "Venomfall Deeps", where = { [2512] = { 51.2, 30.4 } }, kind = "delve" },
     },
     mount = {
         [6] = { npc = { 384, 1460, 4885, 43694 }, cost = { { npc = { 384, 1460, 4885, 43694 }, gold = 10000 } } },
@@ -1718,6 +1723,7 @@ ns.MountPlaces = {
         [3010] = { npc = { 197711 }, cost = { { npc = { 197711 }, item = { [275436] = 1 } } } },
         [3019] = { npc = { 257598 }, cost = { { npc = { 257598 }, currency = { [3546] = 2500 } } } },
         [3020] = { npc = { 272751 }, cost = { { npc = { 272751 }, currency = { [3448] = 10000 } } } },
+        [3029] = { poi = { 8779 } },
         [3032] = { npc = { 252956 }, cost = { { npc = { 252956 }, currency = { [3392] = 2250 } } } },
         [3033] = { npc = { 265559, 266234 }, cost = { { npc = { 265559, 266234 }, currency = { [3316] = 15 } } } },
         [3036] = { box = { count = 151, outof = 60575, kind = "item", id = 117394, name = "Satchel of Chilled Goods" } },

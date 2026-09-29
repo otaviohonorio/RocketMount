@@ -760,6 +760,19 @@ function ns.OwnPlaces(mountID, sourceType)
             end
         end
     end
+    -- (!) A DELVE IS A PLACE TOO (28/09). The mount of a nemesis is an achievement's reward
+    -- and the journal names no place: the place to go is the door of the nemesis' own delve,
+    -- a landmark of the game's own map (`poi`).
+    for _, id in ipairs(type(m.poi) == "table" and m.poi or {}) do
+        local d = type(T.poi) == "table" and T.poi[id]
+        if type(d) == "table" and type(d.kind) == "string" then
+            for _, p in ipairs(Pontos(d.where)) do
+                out.coords[#out.coords + 1] = {
+                    m = p.m, x = p.x, y = p.y, n = d.name, kind = d.kind, poiId = id,
+                }
+            end
+        end
+    end
     -- (!) A QUEST LISTED IS NOT A QUEST ASKED (28/09). Wowhead lists every quest that ever
     -- rewarded the item: the old epic horses, sold for gold, come with the two quests that
     -- once exchanged them. 40 mounts of the table have a vendor AND a quest, and read as a

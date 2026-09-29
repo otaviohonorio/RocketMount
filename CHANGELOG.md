@@ -5,6 +5,12 @@ mount journal: the portrait frame with its title and close button, the list inse
 journal's row style and scroll bar, the search box and the standard filter button (with its
 reset "x") at the top of the list, and a "Not collected" counter next to the portrait.
 
+- **The Coiled Isle on the map, with the nemesis' delve.** The mount of Azta'rec is an
+  achievement's reward and the journal names no place: the marker is on the door of his delve,
+  with the game's own delve art, and the tip says which achievement gives the mount and which
+  gives only an appearance.
+- **A rare never goes missing from the map for a whole session.** When the game was late to
+  say which mount an item teaches, the addon took it for "none" until the next login.
 - The filter button replaces the old "Sources" button; the source list inside it is the same.
 - **Collected, and the next mount-count achievement.** Beside "Not collected", the window shows
   how many mounts you have and the next "Obtain N mounts" achievement with the game's own

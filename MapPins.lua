@@ -103,6 +103,12 @@ local KIND = {
     -- own sign for "this can be interacted with" (the gear of the cursor over such a thing);
     -- measured (tools/ver_atlas.py), its ink is 28 of the 32, as the chest's and the vendor's.
     start      = { atlas = "crosshair_interact_32",     size = 11, label = L["Starts here"], group = "start" },
+    -- (!) THE DOOR OF A DELVE (28/09). The art is the game's own marker of a delve on the map
+    -- (`delves-regular`, MapLegendFrame.lua), and the word is the game's (MAP_LEGEND_DELVE).
+    -- Measured (tools/ver_atlas.py): the door is the middle 44 of the 64, inside a glow; cut to
+    -- it, the door is as big as the coins of a vendor.
+    delve      = { atlas = "delves-regular",            size = 11, label = MAP_LEGEND_DELVE or L["Delve"],
+                   group = "delve", crop = { 0.12, 0.88, 0.12, 0.88 } },
     loot       = { atlas = "VignetteLoot",             size = 11, label = L["Drop"],       group = "loot" },
     fishing    = { atlas = "professions_tracking_fish", size = 11, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
@@ -357,6 +363,7 @@ local function Construir()
         if wp then
             lugar.nameNpc = lugar.nameNpc or wp.npcId
             lugar.nameQuest = lugar.nameQuest or wp.questId
+            lugar.namePoi = lugar.namePoi or wp.poiId
             -- The event a vendor is of, by the name the calendar gave it.
             lugar.event = lugar.event or wp.event
         end
@@ -444,6 +451,20 @@ function MapPins.Project(deMapa, x, y, paraMapa)
     return px, py
 end
 
+---Why a map came out with nothing, in a word, for the diary: the user's question *"o mapa novo
+---da ilha enrolada não aparece montaria"* (28/09) had no line to be answered from, because a
+---drawing that asked for nothing wrote nothing.
+function MapPins.WhyEmpty(mapID)
+    if ns.db and ns.db.mapPins == false then return "off" end
+    if not MapaAberto(mapID) then return "instance floor" end
+    local familia = Familia(mapID)
+    if not familia then return "world" end
+    local lugares = 0
+    for m in pairs(familia) do lugares = lugares + #((indice or {})[m] or {}) end
+    if lugares == 0 then return "no place here" end
+    return lugares .. " places, none shown"
+end
+
 ---What goes on this map: one entry per place that still has a mount for you.
 function MapPins.PinsFor(mapID)
     local out = {}
@@ -490,6 +511,7 @@ function MapPins.PinsFor(mapID)
                         kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
                         mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
                         nameNpc = p.nameNpc, nameQuest = p.nameQuest, first = p.first, event = p.event,
+                        namePoi = p.namePoi,
                         -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
                         x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
                         locked = preso, lockSource = fonte, lockLeft = falta,
@@ -659,6 +681,8 @@ function RocketMountMapDataProviderMixin:OnCanvasSizeChanged() self:LayoutRoutes
 
 -- What the last drawing asked for and got, for `/rmt pins` and the diary.
 local ultimo = { map = nil, asked = 0, drawn = 0, failed = 0, err = nil }
+-- The maps that came out empty and were already written down, each with its reason.
+local vazios = {}
 
 function RocketMountMapDataProviderMixin:RefreshAllData()
     self:RemoveAllData()
@@ -691,6 +715,14 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
         ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
                              routes = ultimo.routes, dashes = ultimo.dashes,
                              failed = ultimo.failed, error = ultimo.err })
+    elseif mapID then
+        -- And one line for the map that came out empty, with why: once per map, and again
+        -- only if the reason changes (the list is made again dozens of times in a session).
+        local porque = MapPins.WhyEmpty(mapID)
+        if vazios[mapID] ~= porque then
+            vazios[mapID] = porque
+            ns.Log.Add("pins", { map = mapID, asked = 0, why = porque })
+        end
     end
 end
 
@@ -841,6 +873,14 @@ function MapPins.PlaceName(data)
         if ok and type(titulo) == "string" and titulo ~= ""
             and not (issecretvalue and issecretvalue(titulo)) then
             return titulo
+        end
+    end
+    -- A landmark of the game's map, by the name the game gives it on the map it is of.
+    if data.namePoi and C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo then
+        local ok, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, data.homeMap or data.mapID, data.namePoi)
+        local nome = ok and type(info) == "table" and info.name
+        if type(nome) == "string" and nome ~= "" and not (issecretvalue and issecretvalue(nome)) then
+            return nome
         end
     end
     if kind.group == "creature" and data.name then return ns.LocalizedCreature(data.name) end

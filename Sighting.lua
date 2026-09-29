@@ -43,7 +43,7 @@ local REPEAT_AFTER = 600
 local byName         -- folded name      -> { points }
 local byNpc          -- npc id           -> { points }, from Data/MobDrops.lua
 local lastSeen = {}  -- key              -> when we announced it
-local mountOfItem = {} -- item id -> mount id (false when the item is not a mount); never changes
+local mountOfItem = {} -- item id -> mount id, once the game has said which; never changes
 -- What the GAME called each creature this session. A world boss gives loot once a week, and
 -- the game says "worldboss" -- Wowhead does not help here: it files the Lich King, Kael'thas and
 -- every other boss as plain elite.
@@ -81,15 +81,20 @@ local function Push(tabela, chave, ponto)
     tabela[chave][#tabela[chave] + 1] = ponto
 end
 
+-- (!) A "NO" IS NOT KEPT (28/09). The diary of 28/09 has a session whose only index of creatures
+-- came out with NONE of the 351 creatures of the table tied to a mount (`rebuild npcs=0`), when
+-- every other session has 223. Whatever answered "no" at that moment, the "no" was written down
+-- for the rest of the session: no rare on any map, no sighting. An answer that is a mount is the
+-- game's and does not change; an answer that is nothing is asked again at the next index.
 local function MountOfItem(item)
     local cached = mountOfItem[item]
-    if cached ~= nil then return cached or nil end
+    if cached then return cached end
     local id
     if C_MountJournal and C_MountJournal.GetMountFromItem then
         local ok, r = pcall(C_MountJournal.GetMountFromItem, item)
         id = ok and type(r) == "number" and r or nil
     end
-    mountOfItem[item] = id or false
+    if id then mountOfItem[item] = id end
     return id
 end
 
