@@ -109,6 +109,11 @@ local KIND = {
     -- it, the door is as big as the coins of a vendor.
     delve      = { atlas = "delves-regular",            size = 11, label = MAP_LEGEND_DELVE or L["Delve"],
                    group = "delve", crop = { 0.12, 0.88, 0.12, 0.88 } },
+    -- (!) THE WAY IN TO A RITUAL SITE (30/09). The art is the game's own marker of a ritual site
+    -- on the map (`ritual-sites-map-icon`, the atlas of the landmark itself in the game's
+    -- table). Measured (tools/ver_atlas.py): the ink fills the 32, nothing to cut. The word is
+    -- the game's: the landmark is "Ritual Site: ..." / "Sítio Ritualístico: ...".
+    ritual     = { atlas = "ritual-sites-map-icon",     size = 11, label = L["Ritual Site"], group = "ritual" },
     loot       = { atlas = "VignetteLoot",             size = 11, label = L["Drop"],       group = "loot" },
     fishing    = { atlas = "professions_tracking_fish", size = 11, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
@@ -488,7 +493,7 @@ end
 -- Which kind names the marker when places of several kinds are one: where the mount is HANDED
 -- OVER comes first.
 local PRIMEIRO = { vendor = 1, reputation = 2, quest = 3, treasure = 4, loot = 5, fishing = 6,
-                   delve = 7, portal = 8, start = 9, other = 10,
+                   delve = 7, ritual = 7, portal = 8, start = 9, other = 10,
                    boss = 1, rareelite = 2, elite = 3, rare = 4 }
 
 local function MesmasMontarias(a, b)

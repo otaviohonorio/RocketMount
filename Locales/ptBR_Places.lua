@@ -1,5 +1,5 @@
 -- RocketMount | Locales/ptBR_Places.lua
--- GERADO em 2026-09-28 -- não edite à mão.
+-- GERADO em 2026-09-30 -- não edite à mão.
 --
 -- O nome, em português, dos baús e objetos de Data/MountPlaces.lua: o jogo não nomeia objeto
 -- pelo id, então o nome vem daqui. Vendedor e missão o jogo nomeia sozinho.

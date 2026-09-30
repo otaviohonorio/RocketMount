@@ -680,6 +680,20 @@ local function NaVez(quest)
 end
 ns.PlaceTurn = NaVez
 
+---Is a landmark that moves (a ritual site) the one on now?
+---(!) THE RITUAL SITE MOVES (30/09). The user: *"os rituais depende de onde está o ritual, ou
+---seja, qual mapa"*. The game has one landmark per site, each behind a world state, and draws
+---the one that is on: the marker follows the game's. As with the places that take turns, a
+---client that cannot be asked leaves the place on the map; a client that answers "no such
+---landmark here" takes it off.
+local function MarcoAoVivo(mapa, poi)
+    if not (C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo) then return true end
+    local ok, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, mapa, poi)
+    if not ok then return true end
+    return type(info) == "table"
+end
+ns.LandmarkOn = MarcoAoVivo
+
 ---The name of an object in the player's language: the game has no way to ask it by id, so the
 ---translation is ours (`Locales/ptBR_Places.lua`) and English is what is left.
 local function NomeDoObjeto(id, ingles)
@@ -767,9 +781,11 @@ function ns.OwnPlaces(mountID, sourceType)
         local d = type(T.poi) == "table" and T.poi[id]
         if type(d) == "table" and type(d.kind) == "string" then
             for _, p in ipairs(Pontos(d.where)) do
-                out.coords[#out.coords + 1] = {
-                    m = p.m, x = p.x, y = p.y, n = d.name, kind = d.kind, poiId = id,
-                }
+                if not d.live or MarcoAoVivo(p.m, id) then
+                    out.coords[#out.coords + 1] = {
+                        m = p.m, x = p.x, y = p.y, n = d.name, kind = d.kind, poiId = id,
+                    }
+                end
             end
         end
     end

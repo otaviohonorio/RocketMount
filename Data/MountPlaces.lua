@@ -1,5 +1,5 @@
 -- RocketMount | Data/MountPlaces.lua
--- GENERATED on 2026-09-28 -- do not edit by hand.
+-- GENERATED on 2026-09-30 -- do not edit by hand.
 --
 -- Where each mount is got: who sells it, the chest it is in, the quest that rewards it, and
 -- the container it comes from with how often. `where` is { [uiMapID] = { x1, y1, ... } } in
@@ -17,6 +17,7 @@
 -- followed), with its `kind`.
 -- `poi` is a landmark of the game's own map (a delve): the key is the game's id of it, the
 -- place is the game's, and the name in the player's language is asked of the game by id.
+-- A landmark with `live` (a ritual site) is on the map only while the game draws it there.
 -- A vendor with `event` is in the world only while that event is on. `event` has, for each
 -- one, the ids the game's calendar answers with (`ids`; none when it cannot be told) and
 -- `timerunning` for the event only a character of it takes part in.
@@ -716,6 +717,8 @@ ns.MountPlaces = {
         [242358] = { name = "Kuri", where = { [2413] = { 66.2, 25.4 } }, kind = "start" },
     },
     poi = {
+        [8614] = { name = "Ritual Site: Broken Throne", where = { [2437] = { 29.6, 77.9 } }, kind = "ritual", live = true },
+        [8615] = { name = "Ritual Site: Daggerspine Point", where = { [2395] = { 37.6, 65.3 } }, kind = "ritual", live = true },
         [8779] = { name = "Venomfall Deeps", where = { [2512] = { 51.2, 30.4 } }, kind = "delve" },
     },
     mount = {
@@ -1675,6 +1678,7 @@ ns.MountPlaces = {
         [2772] = { npc = { 241928, 248658, 257632, 257633 }, cost = { { npc = { 241928, 248658, 257632, 257633 }, currency = { [3377] = 6400 } } } },
         [2776] = { npc = { 240279 }, cost = { { npc = { 240279 }, currency = { [3316] = 6000 } } } },
         [2778] = { object = { 539046 }, box = { count = 1626, outof = 1693, kind = "object", id = 539046, name = "Honored Warrior's Cache" } },
+        [2779] = { poi = { 8614 } },
         [2785] = { quest = { 86902 } },
         [2786] = { object = { 539047 }, box = { count = 46, outof = 48, kind = "object", id = 539047, name = "Abandoned Ritual Skull" } },
         [2789] = { npc = { 248328 }, cost = { { npc = { 248328 }, currency = { [3316] = 6000 } } } },
@@ -1710,6 +1714,9 @@ ns.MountPlaces = {
         [2933] = { npc = { 256084 }, cost = { { npc = { 256084 }, currency = { [3393] = 500 } } } },
         [2935] = { npc = { 255503 }, cost = { { npc = { 255503 }, currency = { [3316] = 4500 } } } },
         [2940] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746 }, currency = { [2032] = 700 } } } },
+        [2961] = { poi = { 8614 } },
+        [2964] = { poi = { 8615 } },
+        [2965] = { poi = { 8614, 8615 } },
         [2973] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, currency = { [2032] = 700 } } } },
         [2980] = { quest = { 96305 } },
         [2988] = { npc = { 265559, 266234 }, cost = { { npc = { 265559, 266234 }, currency = { [3316] = 15 } } } },

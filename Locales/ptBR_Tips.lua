@@ -1,5 +1,5 @@
 -- RocketMount | Locales/ptBR_Tips.lua
--- GERADO por tools/gerar_dicas.py em 2026-09-28 a partir de tools/dicas/*.json -- não edite à mão.
+-- GERADO por tools/gerar_dicas.py em 2026-09-30 a partir de tools/dicas/*.json -- não edite à mão.
 --
 -- O português das dicas de jogadores (Data/MountTips.lua), por id de montaria. Fica num
 -- arquivo à parte do ptBR.lua porque é gerado, e porque a chave aqui é o id: a frase em
@@ -226,7 +226,7 @@ ns.MountTipsLocal = {
     [2964] = -- Void-Touched Snapdragon
         "No Sítio Ritualístico {map:2594|Ponto de Espinhadaga}, em qualquer Grau, aparecem até 2 Algas Trazidas pela Água por entrada, entre 8 pontos ao longo das praias. Clicar numa chama criaturas e, com uma chance pequena, o Dracolisco Tocado pelo Caos, que deixa cair a montaria. Os jogadores conferem as algas, saem da instância e entram de novo, sem fazer o ritual. Os relatos falam de 25 a 30 tentativas.",
     [2965] = -- Void-Corrupted Lynx
-        "Jogadores a conseguiram nos Graus 1, 2 e 5 dos Sítios Ritualísticos: o Grau não parece decidir. Um deles contou cerca de 20 entradas.",
+        "Esta montaria é fabricada, não saqueada. O {item:270058|Arnês do Lince de Corda} é feito com Couraria de Midnight (90) a partir de 1 {item:272392|Coleira de Lince Danificada}, 40 de {item:236950|Grânulo de Energia Primeva}, 1 {item:244634|Pelego Tecido em Escamas Imbuído} e 2 de {item:244636|Elo de Armadura Sin'dorei}.\nA coleira é a parte que se saqueia: a arca ritualística no fim de um Sítio Ritualístico a dá em 1,5% das aberturas no {map:2585|Trono Partido} e 0,5% no {map:2594|Ponto de Espinhadaga}, em qualquer Grau. Os jogadores só a relatam depois do Renome 8 com os {faction:2792|Sítios Ritualísticos}. Ela se vincula a você.\nO {item:272391|Molde: Arnês do Lince de Corda} sai da mesma arca no Trono Partido (0,3%) e pode ser comprado na casa de leilões. Sem Couraria, envie a coleira num pedido de criação a um coureiro que tenha o molde.",
     [2980] = -- Spirit of Tok'jara
         "No Renome 10 com {faction:2772|Forças de Zul'jarra}, {npc:264611|Du'gal} (50.5, 63.9 em {map:2509|Câmaras de Atal'Utek}) começa uma cadeia de 6 missões, uma por dia, de {quest:96267|Gemas ancestrais} até {quest:96305|A essência inocente}, que dá a montaria. Seis dias no mínimo, e a cadeia é do personagem que a começou.",
     [3005] = -- Lindormi's six mounts (Timelost Saddle)
