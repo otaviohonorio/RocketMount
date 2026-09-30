@@ -1160,6 +1160,9 @@ function MapPins.Tooltip(tooltip, data)
         if total == 1 then tooltip:AddLine(" ") end
         -- How often its loot comes back: daily, weekly, every kill -- or plainly not known yet.
         Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+        -- The rare that comes on a clock: when it comes next, from the game's clock (30/09).
+        local janela = ns.Sighting.WindowText(data.npc)
+        if janela then Linha(tooltip, janela, "HIGHLIGHT_FONT_COLOR", 1, 1, 1) end
         if data.locked then
             tooltip:AddLine(" ")
             local volta = Horas(data.lockLeft)

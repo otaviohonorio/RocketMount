@@ -32,6 +32,7 @@ Data\MountBosses.lua
 Data\MountExpansion.lua
 Data\MountChances.lua
 Data\MountGone.lua
+Data\RareTimers.lua
 Core.lua
 Donate.lua
 #@debug@

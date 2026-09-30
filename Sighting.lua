@@ -643,6 +643,50 @@ function Sighting.FrequencyText(npc)
     return L["Loot: how often is not known yet"]
 end
 
+--------------------------------------------------------------------------------
+-- THE RARE THAT COMES ON A CLOCK (30/09)
+--
+-- Beledar's Spawn comes when Beledar goes dark, 1 h 01 min after the daily reset and every
+-- three hours, for half an hour (Data/RareTimers.lua). The next opening comes from the game's
+-- own clock: the seconds until the daily reset. A client that does not answer says nothing --
+-- a clock counted from a guess would send the player at the wrong hour.
+--------------------------------------------------------------------------------
+
+---Hours and minutes, for a wait shorter than a day: "2 h 13 min", "45 min".
+local function HorasEMinutos(segundos)
+    local h = math.floor(segundos / 3600)
+    local m = math.floor((segundos % 3600) / 60)
+    if h >= 1 then return string.format(L["%dh %dmin"], h, m) end
+    return string.format(L["%dmin"], math.max(1, m))
+end
+
+---When the rare's window opens next, from the game's clock.
+---@return table|nil `{ open = bool, seconds = n }`: open now with `seconds` left, or opens in `seconds`
+function Sighting.NextWindow(npc)
+    local t = type(ns.RareTimers) == "table" and ns.RareTimers[npc]
+    if type(t) ~= "table" then return nil end
+    local f = C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset
+    local ok, ateReset = pcall(f or error)
+    if not (ok and type(ateReset) == "number") then return nil end
+    if issecretvalue and issecretvalue(ateReset) then return nil end
+    -- The openings are `afterReset` after every reset, then every `period`: the next one is
+    -- that far from now, modulo the period.
+    local proxima = (ateReset + t.afterReset) % t.period
+    local decorrido = (t.period - proxima) % t.period   -- since the last opening (0 = now)
+    if decorrido < t.lasts then
+        return { open = true, seconds = t.lasts - decorrido }
+    end
+    return { open = false, seconds = proxima }
+end
+
+---"Appears in 2 h 13 min" / "Appearing now — for 12 min more", or nil for a rare with no clock.
+function Sighting.WindowText(npc)
+    local w = Sighting.NextWindow(npc)
+    if not w then return nil end
+    if w.open then return string.format(L["Appearing now — for %s more"], HorasEMinutos(w.seconds)) end
+    return string.format(L["Appears in %s"], HorasEMinutos(w.seconds))
+end
+
 ---Start watching a tracking quest this character just completed, to learn its reset.
 local function Vigiar(q)
     -- A rare can be in the table with its frequency and NO quest (Huolon: `f = "unlimited"`):

@@ -388,6 +388,9 @@ function ns.DetailBlocks(entry)
         if npc and ns.Sighting and ns.Sighting.LootFrequency(npc) then
             linhas[#linhas + 1] = ns.Sighting.FrequencyText(npc)
         end
+        -- The rare that comes on a clock: when it comes next (30/09).
+        local janela = npc and ns.Sighting and ns.Sighting.WindowText and ns.Sighting.WindowText(npc)
+        if janela then linhas[#linhas + 1] = janela end
         Add("chance", L["Chance"], table.concat(linhas, string.char(10)))
     end
 

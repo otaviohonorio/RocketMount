@@ -11,5 +11,7 @@
   Leatherworking, and the part you loot is the leash from the ritual chest.
 - The way in to the Horrific Visions is on the map of Dornogal, with the eight mounts that come
   from them, while the game shows it. New tips for the Voidfire Deathcycle and the Mail Muncher.
+- **Beledar's Spawn tells the hour.** Its marker and its card say when Beledar's Shadow comes
+  next ("Appears in 2h 13min") or how long it still lasts, from the game's own clock.
 - Fixed a Lua error when looting Huolon.
 - A marker of several creatures only dims as "already looted" when every one of them is.
