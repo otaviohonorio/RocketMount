@@ -114,6 +114,12 @@ local KIND = {
     -- table). Measured (tools/ver_atlas.py): the ink fills the 32, nothing to cut. The word is
     -- the game's: the landmark is "Ritual Site: ..." / "Sítio Ritualístico: ...".
     ritual     = { atlas = "ritual-sites-map-icon",     size = 11, label = L["Ritual Site"], group = "ritual" },
+    -- (!) THE WAY IN TO THE HORRIFIC VISIONS (30/09). The art is the game's own marker of that
+    -- landmark (`ui-eventpoi-horrificvision`, the 32 px twin of the atlas the game's table
+    -- names). Measured (tools/ver_atlas.py): the eye is the middle 11 by 14 of the 32, so it
+    -- is cut to the middle half, as the portal is. The words are the landmark's own.
+    vision     = { atlas = "ui-eventpoi-horrificvision", size = 12, label = L["Horrific Visions"], group = "vision",
+                   crop = { 0.25, 0.75, 0.25, 0.75 } },
     loot       = { atlas = "VignetteLoot",             size = 11, label = L["Drop"],       group = "loot" },
     fishing    = { atlas = "professions_tracking_fish", size = 11, label = L["Fishing"],    group = "fishing" },
     other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
@@ -493,7 +499,7 @@ end
 -- Which kind names the marker when places of several kinds are one: where the mount is HANDED
 -- OVER comes first.
 local PRIMEIRO = { vendor = 1, reputation = 2, quest = 3, treasure = 4, loot = 5, fishing = 6,
-                   delve = 7, ritual = 7, portal = 8, start = 9, other = 10,
+                   delve = 7, ritual = 7, vision = 7, portal = 8, start = 9, other = 10,
                    boss = 1, rareelite = 2, elite = 3, rare = 4 }
 
 local function MesmasMontarias(a, b)

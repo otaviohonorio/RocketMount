@@ -17,7 +17,7 @@
 -- followed), with its `kind`.
 -- `poi` is a landmark of the game's own map (a delve): the key is the game's id of it, the
 -- place is the game's, and the name in the player's language is asked of the game by id.
--- A landmark with `live` (a ritual site) is on the map only while the game draws it there.
+-- A landmark with `live` (a ritual site, the visions) is on the map only while the game draws it there.
 -- A vendor with `event` is in the world only while that event is on. `event` has, for each
 -- one, the ids the game's calendar answers with (`ids`; none when it cannot be told) and
 -- `timerunning` for the event only a character of it takes part in.
@@ -717,6 +717,7 @@ ns.MountPlaces = {
         [242358] = { name = "Kuri", where = { [2413] = { 66.2, 25.4 } }, kind = "start" },
     },
     poi = {
+        [8301] = { name = "Horrific Visions Revisited", where = { [2339] = { 34.7, 68.5 } }, kind = "vision", live = true },
         [8614] = { name = "Ritual Site: Broken Throne", where = { [2437] = { 29.6, 77.9 } }, kind = "ritual", live = true },
         [8615] = { name = "Ritual Site: Daggerspine Point", where = { [2395] = { 37.6, 65.3 } }, kind = "ritual", live = true },
         [8779] = { name = "Venomfall Deeps", where = { [2512] = { 51.2, 30.4 } }, kind = "delve" },
@@ -1257,6 +1258,7 @@ ns.MountPlaces = {
         [1303] = { quest = { 60108 } },
         [1310] = { npc = { 174710 }, cost = { { npc = { 174710 }, currency = { [1813] = 5000, [1885] = 100 } } } },
         [1313] = { npc = { 160711 }, cost = { { npc = { 160711 }, item = { [174230] = 1 } } } },
+        [1315] = { poi = { 8301 } },
         [1318] = { npc = { 160714 }, cost = { { npc = { 160714 }, gold = 240000000 } } },
         [1320] = { quest = { 58866 } },
         [1321] = { npc = { 155496, 238138 }, cost = { { npc = { 155496 }, currency = { [1719] = 100000 } }, { npc = { 238138 }, currency = { [3149] = 20000 } } } },
@@ -1463,6 +1465,7 @@ ns.MountPlaces = {
         [1942] = { npc = { 185467, 185468, 185472, 185473, 199643, 219243, 219244, 234742, 234744, 234746, 234747 }, cost = { { npc = { 185467, 185468, 185472, 185473, 199643, 219243, 219244, 234742, 234744, 234746, 234747 }, currency = { [2032] = 800 } } } },
         [1943] = { object = { 467191 }, box = { count = 604, outof = 604, kind = "object", id = 467191, name = "Encrypted Chest" } },
         [1947] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, currency = { [2032] = 500 } } } },
+        [1948] = { poi = { 8301 } },
         [1949] = { quest = { 78189 } },
         [1953] = { quest = { 76465 } },
         [1954] = { quest = { 76318 } },
@@ -1518,6 +1521,7 @@ ns.MountPlaces = {
         [2172] = { npc = { 224729, 228184, 229184 }, cost = { { npc = { 224729, 228184, 229184 }, currency = { [3056] = 2020 } } } },
         [2174] = { npc = { 224733, 228184 }, cost = { { npc = { 224733, 228184 }, currency = { [3056] = 2020 } } } },
         [2177] = { npc = { 220867, 223750 }, cost = { { npc = { 220867, 223750 }, currency = { [3056] = 3940 } } } },
+        [2178] = { poi = { 8301 } },
         [2184] = { npc = { 220867, 223750 }, cost = { { npc = { 220867, 223750 }, currency = { [3056] = 2815 } } } },
         [2189] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, currency = { [2032] = 800 } } } },
         [2191] = { npc = { 213145 }, cost = { { npc = { 213145 }, currency = { [2815] = 11375 } } } },
@@ -1579,6 +1583,11 @@ ns.MountPlaces = {
         [2491] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, currency = { [2032] = 700 } } } },
         [2492] = { box = { count = 38, outof = 1195371, kind = "item", id = 54537, name = "Heart-Shaped Box" } },
         [2495] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244, 234742, 234744, 234746, 234747 }, currency = { [2032] = 325 } } } },
+        [2496] = { poi = { 8301 } },
+        [2497] = { poi = { 8301 } },
+        [2498] = { poi = { 8301 } },
+        [2499] = { poi = { 8301 } },
+        [2500] = { poi = { 8301 } },
         [2501] = { npc = { 238138 }, cost = { { npc = { 238138 }, currency = { [3149] = 40000 } } } },
         [2504] = { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, cost = { { npc = { 185467, 185468, 185472, 185473, 219243, 219244 }, currency = { [2032] = 325 } } } },
         [2505] = { quest = { 88976 } },

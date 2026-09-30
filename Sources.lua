@@ -680,7 +680,7 @@ local function NaVez(quest)
 end
 ns.PlaceTurn = NaVez
 
----Is a landmark that moves (a ritual site) the one on now?
+---Is a landmark that comes and goes (a ritual site, the way in to the visions) on now?
 ---(!) THE RITUAL SITE MOVES (30/09). The user: *"os rituais depende de onde está o ritual, ou
 ---seja, qual mapa"*. The game has one landmark per site, each behind a world state, and draws
 ---the one that is on: the marker follows the game's. As with the places that take turns, a

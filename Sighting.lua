@@ -645,6 +645,9 @@ end
 
 ---Start watching a tracking quest this character just completed, to learn its reset.
 local function Vigiar(q)
+    -- A rare can be in the table with its frequency and NO quest (Huolon: `f = "unlimited"`):
+    -- there is nothing to watch. Looting him raised "table index is nil" (30/09).
+    if type(q) ~= "number" then return end
     local ap, vig = Aprendido(), Vigias()
     if not (ap and vig) or ap[q] or vig[q] then return end
     local agora = time and time() or 0

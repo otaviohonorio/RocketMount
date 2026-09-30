@@ -9,4 +9,7 @@
   itself shows it on the map.
 - The tip of the Void-Corrupted Lynx now says what it really takes: the mount is crafted with
   Leatherworking, and the part you loot is the leash from the ritual chest.
+- The way in to the Horrific Visions is on the map of Dornogal, with the eight mounts that come
+  from them, while the game shows it. New tips for the Voidfire Deathcycle and the Mail Muncher.
+- Fixed a Lua error when looting Huolon.
 - A marker of several creatures only dims as "already looted" when every one of them is.
