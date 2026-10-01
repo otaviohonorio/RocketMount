@@ -21,5 +21,8 @@
   have more room.
 - **Shorter labels in the options.** Each option is named in two or three words; hover it for
   what it does.
+- **A reputation on its way no longer reads 0%.** A vendor mount whose item names the same
+  reputation the addon already measures (the riding goats of The Tillers, for one) showed 0%
+  and "1 more requirement" even at Revered. It now shows how far along you are.
 - Fixed a Lua error when looting Huolon.
 - A marker of several creatures only dims as "already looted" when every one of them is.

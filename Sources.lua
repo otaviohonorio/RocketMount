@@ -1500,8 +1500,23 @@ function ns.BuildList()
                 if e.tooltipState == "ok" then
                     -- When another character holds the reputation, THIS one's red "Requires
                     -- <faction> - Exalted" is not what stands in the way.
-                    e.tooltipGate = ns.Tooltip.Gate(e.itemID,
-                        e.rep and e.rep.char and { e.rep.factionName } or nil)
+                    --
+                    -- (!) THE SAME REPUTATION IS NOT COUNTED TWICE (01/10, the goats of Gina
+                    -- Mudclaw). A character Revered with The Tillers, 33,646 of 42,000, read
+                    -- "0% - Requires The Tillers - Exalted - and 1 more requirement": the red
+                    -- line is worth 0 or 1, so it beat the measured 80%, and it added a
+                    -- requirement that is the same one. While the table's reputation is
+                    -- measured and NOT met, the item's line that names that faction says
+                    -- nothing new and steps aside. Met by the table and red in the game, the
+                    -- line stays: the tooltip is still the negative signal.
+                    local aside
+                    if e.rep and e.rep.char then
+                        aside = { e.rep.factionName }
+                    elseif e.rep and e.rep.pct and e.rep.pct < 1 and not e.rep.unreadable
+                        and type(e.rep.factionName) == "string" and e.rep.factionName ~= "" then
+                        aside = { e.rep.factionName, onlyNamed = true }
+                    end
+                    e.tooltipGate = ns.Tooltip.Gate(e.itemID, aside)
                 end
                 -- What a vendor told THIS character, when it stood in front of one.
                 e.vendorCheck = ns.VendorVerdict(mountID)

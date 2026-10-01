@@ -188,7 +188,9 @@ function Tooltip.Gate(itemID, ignorarRep)
     for _, r in ipairs(reqs) do
         local daRep = false
         if ignorarRep then
-            daRep = r.rep
+            -- `onlyNamed`: only the line that names one of the factions is set aside; a
+            -- reputation line of ANOTHER faction is still a requirement.
+            daRep = r.rep and not ignorarRep.onlyNamed
             for _, nome in ipairs(ignorarRep) do
                 if type(nome) == "string" and nome ~= "" and r.texto:find(nome, 1, true) then
                     daRep = true
