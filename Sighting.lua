@@ -273,10 +273,20 @@ end
 -- alert queue, which shows and hides it on its own schedule. The parts are created here.
 --------------------------------------------------------------------------------
 -- ItemAlertFrameTemplate: the frame, the icon at LEFT 23,-2, its border, the two text lines.
-local TOAST_W, TOAST_H = 276, 96
-local ICON, ICON_X, ICON_Y = 52, 23, -2
+--
+-- (!) A LITTLE LARGER, AND MORE IN WIDTH (01/10). The user: *"gostaria de aumentar um pouco a
+-- janela de popup largura e altura, e um pouco mais da largura, mas sem exageros"*. Blizzard's
+-- toast is 276 x 96 over an art of 276 x 109 (measured in the client's atlas table); ours is
+-- that times 1.2 across and 1.1 down. The icon keeps its size and its distance from the edge
+-- grows with the frame; what the width gives goes to the TEXT, where a long mount name and the
+-- line of numbers were being cut.
+local NATIVE_W, NATIVE_H, NATIVE_ART_H = 276, 96, 109
+local SCALE_W, SCALE_H = 1.2, 1.1
+local TOAST_W, TOAST_H = math.floor(NATIVE_W * SCALE_W + 0.5), math.floor(NATIVE_H * SCALE_H + 0.5)
+local ART_H = math.floor(NATIVE_ART_H * SCALE_H + 0.5)
+local ICON, ICON_X, ICON_Y = 52, math.floor(23 * SCALE_W + 0.5), -2
 local BORDER = 60
-local TEXT_W = 167
+local TEXT_W = 167 + (TOAST_W - NATIVE_W) - (ICON_X - 23)
 local LABEL_X, LABEL_Y, LABEL_H = 7, 5, 16       -- from the icon's TOPRIGHT
 local NAME_X, NAME_Y, NAME_H = 10, -16, 16
 -- Ours: Blizzard's name box is 33 tall, for a name that wraps to two lines. A mount's name is
@@ -284,6 +294,7 @@ local NAME_X, NAME_Y, NAME_H = 10, -16, 16
 local SUB_Y, SUB_H = -33, 14
 
 Sighting.Geometry = {
+    NATIVE_W = NATIVE_W, NATIVE_H = NATIVE_H, ART_H = ART_H,
     WIDTH = TOAST_W, HEIGHT = TOAST_H, ICON = ICON, ICON_X = ICON_X, BORDER = BORDER,
     TEXT = TEXT_W, TEXT_X = NAME_X, TEXT_TOP = LABEL_Y, TEXT_BOTTOM = SUB_Y - SUB_H,
     -- Blizzard's own text box: the label starts 5 above the icon, the name box ends 49 below
@@ -348,7 +359,9 @@ local function Build()
     end)
 
     frame.Background = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
-    frame.Background:SetAtlas("MountToast-Background", true)
+    -- The game's art, stretched with the frame (it is 276 x 109 at its own size).
+    frame.Background:SetAtlas("MountToast-Background")
+    frame.Background:SetSize(TOAST_W, ART_H)
     frame.Background:SetPoint("CENTER")
 
     frame.Icon = frame:CreateTexture(nil, "BORDER")
@@ -486,6 +499,61 @@ local function Show(nome, montarias, frequencia, npc, alvo)
 
     frame:Show()
     HideLater(HOLD)
+    Sighting.PlaySound()
+end
+
+--------------------------------------------------------------------------------
+-- THE SOUND OF THE ALERT (01/10)
+--
+-- The user: *"seria possível no aviso colocar um alerta sonoro leve quando achar um raro? e ter
+-- a configuração de alguns alertas sonoros, volume e poder desativar"*.
+--
+-- The sounds are the GAME'S (sound kits of `SOUNDKIT`, 12.1.0): nothing is shipped. The volume
+-- is the game's too: `C_Sound.PlaySoundWithOptions` takes `volumeOverride`, which the game's own
+-- combat audio alerts fill with their volume setting times 0.01
+-- (Blizzard_CombatAudioAlertManager.lua). The channel is "SFX", the one the client's own Lua
+-- passes to PlaySound. A client without that function plays the sound at the channel's volume.
+--------------------------------------------------------------------------------
+local SOUNDS = {
+    { key = "event",   kit = "UI_BONUS_EVENT_SYSTEM_VIGNETTES", id = 45142, label = function() return L["World event"] end },
+    { key = "ping",    kit = "MAP_PING",            id = 3175,  label = function() return L["Map ping"] end },
+    { key = "quest",   kit = "UI_WORLDQUEST_START", id = 73275, label = function() return L["World quest"] end },
+    { key = "whisper", kit = "TELL_MESSAGE",        id = 3081,  label = function() return WHISPER or L["Whisper"] end },
+    { key = "ready",   kit = "READY_CHECK",         id = 8960,  label = function() return READY_CHECK or L["Ready check"] end },
+    { key = "warning", kit = "RAID_WARNING",        id = 8959,  label = function() return RAID_WARNING or L["Raid warning"] end },
+}
+Sighting.DEFAULT_SOUND = "event"
+Sighting.DEFAULT_VOLUME = 50
+
+---The sounds the options offer: `{ key, label }`, in the order of the list.
+function Sighting.Sounds()
+    local out = {}
+    for i, s in ipairs(SOUNDS) do out[i] = { key = s.key, label = s.label() } end
+    return out
+end
+
+---Plays the alert's sound. With no argument: the one chosen in the options, when the sound is
+---on. With a key (and a volume): that one, whatever the switch says -- the options' preview.
+---@return boolean played
+function Sighting.PlaySound(key, volume)
+    local db = ns.db or {}
+    local preview = key ~= nil
+    if not preview and db.sightingSound == false then return false end
+    key = key or db.sightingSoundKey or Sighting.DEFAULT_SOUND
+    local som
+    for _, s in ipairs(SOUNDS) do if s.key == key then som = s end end
+    som = som or SOUNDS[1]
+    volume = tonumber(volume or db.sightingVolume) or Sighting.DEFAULT_VOLUME
+    if volume <= 0 then return false end
+    if volume > 100 then volume = 100 end
+    local kit = (type(SOUNDKIT) == "table" and SOUNDKIT[som.kit]) or som.id
+    if C_Sound and C_Sound.PlaySoundWithOptions then
+        local ok = pcall(C_Sound.PlaySoundWithOptions,
+            { soundKitID = kit, uiSoundSubType = "SFX", volumeOverride = volume / 100 })
+        if ok then return true end
+    end
+    if PlaySound then return (pcall(PlaySound, kit, "SFX")) end
+    return false
 end
 
 function Sighting.GetPanel() return frame end

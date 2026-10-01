@@ -69,8 +69,58 @@ function ns.SetupOptions()
             function() return ns.db.sightings ~= false end,
             function(value) ns.db.sightings = value end)
 
-        Settings.CreateCheckbox(category, setting,
+        local aviso = Settings.CreateCheckbox(category, setting,
             L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."])
+
+        -- (!) THE SOUND OF THE ALERT (01/10): on or off, which one, how loud. The three hang
+        -- under the alert's own switch and go grey with it. Choosing a sound or moving the
+        -- volume plays it, so the choice is heard and not guessed.
+        local filhas = {}
+        do
+            local s = Settings.RegisterProxySetting(category, ADDON .. "SightingSound",
+                Settings.VarType.Boolean, L["Play a sound with the alert"], true,
+                function() return ns.db.sightingSound ~= false end,
+                function(value) ns.db.sightingSound = value end)
+            filhas[#filhas + 1] = Settings.CreateCheckbox(category, s,
+                L["A short sound of the game when the alert appears."])
+        end
+        if Settings.CreateDropdown and Settings.CreateControlTextContainer then
+            local s = Settings.RegisterProxySetting(category, ADDON .. "SightingSoundKey",
+                Settings.VarType.String, L["Sound"], ns.Sighting.DEFAULT_SOUND,
+                function() return ns.db.sightingSoundKey or ns.Sighting.DEFAULT_SOUND end,
+                function(value)
+                    ns.db.sightingSoundKey = value
+                    ns.Sighting.PlaySound(value, ns.db.sightingVolume)
+                end)
+            local function Lista()
+                local container = Settings.CreateControlTextContainer()
+                for _, som in ipairs(ns.Sighting.Sounds()) do container:Add(som.key, som.label) end
+                return container:GetData()
+            end
+            filhas[#filhas + 1] = Settings.CreateDropdown(category, s, Lista,
+                L["Which of the game's sounds the alert plays. Picking one plays it."])
+        end
+        do
+            local s = Settings.RegisterProxySetting(category, ADDON .. "SightingVolume",
+                Settings.VarType.Number, L["Sound volume"], ns.Sighting.DEFAULT_VOLUME,
+                function() return ns.db.sightingVolume or ns.Sighting.DEFAULT_VOLUME end,
+                function(value)
+                    ns.db.sightingVolume = value
+                    ns.Sighting.PlaySound(ns.db.sightingSoundKey or ns.Sighting.DEFAULT_SOUND, value)
+                end)
+            local options = Settings.CreateSliderOptions(10, 100, 10)
+            if options.SetLabelFormatter and MinimalSliderWithSteppersMixin then
+                options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right,
+                    function(value) return string.format("%d%%", value) end)
+            end
+            filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
+                L["How loud the alert's sound is, on top of the game's own sound effects volume."])
+        end
+        for _, filha in ipairs(filhas) do
+            if type(filha) == "table" and filha.SetParentInitializer and aviso then
+                filha:SetParentInitializer(aviso, function() return setting:GetValue() end)
+            end
+        end
     end
 
     do

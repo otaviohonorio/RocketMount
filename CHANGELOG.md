@@ -13,5 +13,10 @@
   from them, while the game shows it. New tips for the Voidfire Deathcycle and the Mail Muncher.
 - **Beledar's Spawn tells the hour.** Its marker and its card say when Beledar's Shadow comes
   next ("Appears in 2h 13min") or how long it still lasts, from the game's own clock.
+- **The alert has a sound.** A short sound of the game plays when the alert of a rare shows.
+  In the options, under the alert's own switch: turn it off, pick one of six of the game's
+  sounds (picking one plays it) and set how loud it is. It starts at half volume.
+- **The alert is a little larger**, mostly wider: a long mount name and the line of numbers
+  have more room.
 - Fixed a Lua error when looting Huolon.
 - A marker of several creatures only dims as "already looted" when every one of them is.

@@ -35,6 +35,10 @@ ns.defaults = {
     -- O aviso de bicho que larga montaria. Ligado por padrão, com caixa para desligar: o
     -- usuário foi explícito que nem todo mundo quer receber.
     sightings = true,
+    -- The alert's sound (01/10): on, the game's world event chime, at half volume ("leve").
+    sightingSound = true,
+    sightingSoundKey = "event",
+    sightingVolume = 50,
     sightingPos = nil,
 }
 

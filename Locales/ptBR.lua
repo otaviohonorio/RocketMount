@@ -445,3 +445,17 @@ L["Report a problem on"] = "Relatar um problema em"
 L["Opens the address to report a problem, ready to copy."] = "Abre o endereço para relatar um problema, pronto para copiar."
 L["Rocket Mount %s — report a problem on %s.|n|nPress Ctrl+C to copy the link, then paste it in your browser. Say what you were doing and what happened."] =
     "Rocket Mount %s — relatar um problema em %s.|n|nAperte Ctrl+C para copiar o endereço e cole no navegador. Conte o que você estava fazendo e o que aconteceu."
+
+-- The alert's sound (01/10).
+L["Play a sound with the alert"] = "Tocar um som com o aviso"
+L["A short sound of the game when the alert appears."] = "Um som curto do jogo quando o aviso aparece."
+L["Sound"] = "Som"
+L["Which of the game's sounds the alert plays. Picking one plays it."] = "Qual dos sons do jogo o aviso toca. Escolher um o toca."
+L["Sound volume"] = "Volume do som"
+L["How loud the alert's sound is, on top of the game's own sound effects volume."] = "A altura do som do aviso, sobre o volume de efeitos sonoros do próprio jogo."
+L["World event"] = "Evento do mundo"
+L["Map ping"] = "Sinal no mapa"
+L["World quest"] = "Missão mundial"
+L["Whisper"] = "Sussurro"
+L["Ready check"] = "Todos prontos?"
+L["Raid warning"] = "Aviso do raide"
