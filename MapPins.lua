@@ -758,6 +758,8 @@ end
 local SPREAD = {
     MIN = 26,               -- between the centres of two markers: the disc is 28 across
     PASSES = 4,             -- a group that opened may reach a neighbour: then they are one group
+    RELAX = 8,              -- rounds of pushing apart, once the icons of others are in the count
+    OTHER_MAX = 64,         -- an icon of others wider than this is not an icon (a frame over the map)
     THICK = 9,              -- of the line's art, which is mostly glow (the route's is 18)
     ALPHA = 0.75, ALPHA_LOCKED = 0.35,
     -- The dot: a black centre in a white ring in a black ring (seen on the sheet of
@@ -771,13 +773,22 @@ MapPins.SpreadRule = SPREAD
 
 ---Gives each marker of `lista` where it is DRAWN: `drawX, drawY` (map fractions, like `x, y`)
 ---and `moved` when that is not the place itself.
+---
+---(!) THE ICONS OF OTHERS COUNT TOO (01/10, the second screenshot). In Silvermoon our
+---"Reputation" marker sat right on an icon of the game's own, and the first version only knew
+---about OUR markers: *"existem outros ícones e precisamos dar um espaço para ficar visível, como
+---fez nos outros"*. `fixos` are those icons -- the GAME'S own, and only those
+---(`RocketMountMapDataProviderMixin:OtherPins`). They do not move: ours steps aside, away
+---from the icon, and keeps its line to the exact place.
 ---@param w number canvas width @param h number canvas height (canvas units)
 ---@param escala number canvas scale: canvas units times it are screen points
+---@param fixos table|nil `{ { x, y }, ... }` in map fractions: icons that are not ours
 ---@return number moved how many markers were moved
-function MapPins.Spread(lista, w, h, escala)
+function MapPins.Spread(lista, w, h, escala, fixos)
     for _, d in ipairs(lista) do d.drawX, d.drawY, d.moved = d.x, d.y, nil end
     local n = #lista
-    if n < 2 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
+    local temFixos = type(fixos) == "table" and #fixos > 0
+    if (n < 2 and not temFixos) or n < 1 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
     local min = SPREAD.MIN / escala
     local px, py, dx, dy, pai = {}, {}, {}, {}, {}
     for i, d in ipairs(lista) do
@@ -800,7 +811,7 @@ function MapPins.Spread(lista, w, h, escala)
         return ex * ex + ey * ey < min * min * 0.98
     end
 
-    for _ = 1, SPREAD.PASSES do
+    for _ = 1, (n > 1 and SPREAD.PASSES or 0) do
         local mudou = false
         for i = 1, n do
             for j = i + 1, n do
@@ -857,6 +868,64 @@ function MapPins.Spread(lista, w, h, escala)
         end
     end
 
+    -- THE ICONS OF OTHERS: only the ones near a marker of ours matter, and they stay put.
+    local ox, oy = {}, {}
+    if temFixos then
+        local alcance = (min * 4) * (min * 4)
+        for _, f in ipairs(fixos) do
+            local fx, fy = (f[1] or f.x) * w, (f[2] or f.y) * h
+            for i = 1, n do
+                local ex, ey = px[i] - fx, py[i] - fy
+                if ex * ex + ey * ey < alcance then
+                    ox[#ox + 1], oy[#oy + 1] = fx, fy
+                    break
+                end
+            end
+        end
+    end
+    if #ox > 0 then
+        local limite = min * min * 0.98
+        for _ = 1, SPREAD.RELAX do
+            local mudou = false
+            for i = 1, n do
+                -- away from an icon of others: the whole distance, since that one does not move
+                for k = 1, #ox do
+                    local ex, ey = dx[i] - ox[k], dy[i] - oy[k]
+                    local d2 = ex * ex + ey * ey
+                    if d2 < limite then
+                        local dist = math.sqrt(d2)
+                        if dist < 0.001 then ex, ey, dist = 1, 0, 1 end      -- right on it: to the right
+                        dx[i], dy[i] = ox[k] + ex / dist * min, oy[k] + ey / dist * min
+                        mudou = true
+                    end
+                end
+                -- and away from each other: half the way each
+                for j = i + 1, n do
+                    local ex, ey = dx[j] - dx[i], dy[j] - dy[i]
+                    local d2 = ex * ex + ey * ey
+                    if d2 < limite then
+                        local dist = math.sqrt(d2)
+                        if dist < 0.001 then ex, ey, dist = 1, 0, 1 end
+                        local falta = (min - (d2 < 0.000001 and 0 or dist)) / 2
+                        dx[i], dy[i] = dx[i] - ex / dist * falta, dy[i] - ey / dist * falta
+                        dx[j], dy[j] = dx[j] + ex / dist * falta, dy[j] + ey / dist * falta
+                        mudou = true
+                    end
+                end
+            end
+            if not mudou then break end
+        end
+        local folga = min / 2
+        for i = 1, n do
+            dx[i] = math.max(folga, math.min(w - folga, dx[i]))
+            dy[i] = math.max(folga, math.min(h - folga, dy[i]))
+        end
+        -- a marker that needed no moving stays EXACTLY where it is (the clamp may not touch it)
+        for i = 1, n do
+            if math.abs(dx[i] - px[i]) < 0.001 and math.abs(dy[i] - py[i]) < 0.001 then dx[i], dy[i] = px[i], py[i] end
+        end
+    end
+
     local movidos = 0
     for i, d in ipairs(lista) do
         if dx[i] ~= px[i] or dy[i] ~= py[i] then
@@ -879,6 +948,39 @@ function RocketMountMapDataProviderMixin:RemoveAllData()
     self:LayoutRoutes()
 end
 
+---Where the GAME'S own icons are, on the map as it is now: `{ { x, y }, ... }` in map
+---fractions. The game's own way of walking every pin (`MapCanvasMixin:ExecuteOnAllPins`, the
+---call its nudging uses) and of asking where one is (`MapCanvasPinMixin:GetPosition`).
+---
+---(!) THE GAME'S, NOT OTHER ADDONS' (01/10). The first version counted every icon on the map.
+---The user: *"mais do jogo, de outros addons é difícil, o usuário pode usar muitos addons, aí
+---complica"*. A player with HandyNotes and three more would have our markers pushed around by
+---hundreds of icons nobody chose. A pin is the game's when the game's own code handed it out:
+---`pinTemplate` is written inside `AcquirePin`, and `issecurevariable` tells whether that was
+---done by Blizzard's code or by an addon's. What cannot be told is left out.
+---A pin wider than an icon (the frames the game lays over the whole map: the player and the
+---group, the fog, the highlights) is not an obstacle.
+---@return table list
+function RocketMountMapDataProviderMixin:OtherPins()
+    local out = {}
+    local map = self:GetMap()
+    if not (map and map.ExecuteOnAllPins) then return out end
+    pcall(map.ExecuteOnAllPins, map, function(pin)
+        if type(pin) ~= "table" or pin.pinTemplate == TEMPLATE then return end
+        if not (issecurevariable and issecurevariable(pin, "pinTemplate")) then return end
+        if pin.IsShown and not pin:IsShown() then return end
+        if not pin.GetPosition then return end
+        local x, y = pin:GetPosition()
+        if type(x) ~= "number" or type(y) ~= "number" then return end
+        if issecretvalue and (issecretvalue(x) or issecretvalue(y)) then return end
+        if x < 0 or x > 1 or y < 0 or y > 1 then return end
+        local largura = pin.GetWidth and pin:GetWidth()
+        if type(largura) == "number" and largura > SPREAD.OTHER_MAX then return end
+        out[#out + 1] = { x, y }
+    end)
+    return out
+end
+
 ---Opens the markers that would be a pile, for the canvas as it is now (see `MapPins.Spread`),
 ---and puts the pins already on the map where they are drawn.
 ---@return number moved
@@ -890,7 +992,9 @@ function RocketMountMapDataProviderMixin:SpreadPins()
         if not (canvas and self.places) then return end
         local w, h = canvas:GetSize()
         local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
-        movidos = MapPins.Spread(self.places, w, h, escala)
+        local outros = self:OtherPins()
+        self.others = #outros
+        movidos = MapPins.Spread(self.places, w, h, escala, outros)
         if map.EnumeratePinsByTemplate then
             for pin in map:EnumeratePinsByTemplate(TEMPLATE) do
                 local d = pin.data
@@ -1033,12 +1137,24 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     end
     ultimo.routes = #self.routes
     ultimo.dashes = self:LayoutRoutes()
+    ultimo.others = self.others
+    -- (!) AGAIN ON THE NEXT FRAME. The map asks every provider in turn, and the game's own
+    -- icons may be drawn AFTER ours: on this pass they are not on the map yet. One frame later
+    -- they are, and ours step aside from them.
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function()
+            if self.places ~= lista then return end
+            ultimo.moved = self:SpreadPins()
+            ultimo.others = self.others
+            self:LayoutRoutes()
+        end)
+    end
     if self.routeError then ultimo.err = ultimo.err or "routes" end
     -- One line per drawing that has something to say: pins asked for, or a failure.
     if ultimo.asked > 0 or ultimo.failed > 0 then
         ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
                              routes = ultimo.routes, dashes = ultimo.dashes,
-                             merged = ultimo.merged, moved = ultimo.moved,
+                             merged = ultimo.merged, moved = ultimo.moved, others = ultimo.others,
                              failed = ultimo.failed, error = ultimo.err })
     elseif mapID then
         -- And one line for the map that came out empty, with why: once per map, and again
