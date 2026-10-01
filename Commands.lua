@@ -172,7 +172,7 @@ commands["debug"] = function(rest)
     --
     -- It exists because a defect came back: *"ainda aparece Fênix Negra e etc o erro que passei
     -- anteriormente"*. Without this, the only way to know which band it fell into and why is me
-    -- guessing -- and the CLAUDE.md already says guessing spends the user's time to find out
+    -- guessing -- and the workspace rules already say guessing spends the user's time to find out
     -- what one diagnostic line would answer.
     --
     -- The field labels below stay in English and out of `L` on purpose: they name internal
