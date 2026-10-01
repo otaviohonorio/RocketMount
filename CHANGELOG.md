@@ -21,6 +21,9 @@
   have more room.
 - **Shorter labels in the options.** Each option is named in two or three words; hover it for
   what it does.
+- **Tips in the window.** At the top right, "Tips" says how many of your characters the addon
+  has read; hover it for what feeds the list: entering with each character, opening the mount
+  vendors, opening the Trading Post, looting the rares.
 - **The list keeps up with your character.** Renown gained, a covenant chosen, an achievement
   earned or advanced, a quest handed in, gold spent, an item of a price looted, a level or a
   profession gained now update the list and the map; before, some of these waited for

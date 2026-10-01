@@ -969,6 +969,7 @@ local function Redraw()
     end
     footer = (UnitName("player") or "?") .. "  ·  " .. footer
     window.footer:SetText(footer)
+    if window.tips then window.tips:Update() end
 end
 
 ---The entry of the same mount in the list as it is NOW, or nil when the mount left it.
@@ -1113,6 +1114,84 @@ local function PctHelp(host, pctHeader)
 end
 
 --------------------------------------------------------------------------------
+-- HOW TO FEED THE LIST (01/10)
+--
+-- The user: *"precisamos colocar na janela essa dica ou recomendação de acessar todos os chars,
+-- o que fazer para melhorar e alimentar melhor esta lista"*. The list reads the game for the
+-- character that is logged in, and a few things it only learns when the player DOES something:
+-- enter with each character, open a vendor, open the Trading Post, loot a rare. None of that
+-- was said anywhere. It is one line in the attic, at the right of the counters -- the game's
+-- "i" and how many characters were read so far -- and the tips are its tooltip, in the game's
+-- own tooltip colours (title white, text gold, the hint green).
+--------------------------------------------------------------------------------
+local TIPS = {
+    { "Enter the game with each of your characters",
+      "The addon reads only the character that is logged in. Each one you enter with is written down, and from then on the list says which of them already has the reputation a mount asks for." },
+    { "Open the vendors that sell mounts",
+      "The vendor is who knows the real price and whether it sells to this character. A mount with \"?\" is waiting for that." },
+    { "Open the Trading Post every month",
+      "Its mounts only enter the list after the game shows what is on offer." },
+    { "Loot the rares you kill",
+      "The addon learns how often each rare can drop again, and stops calling you to one that has nothing for you today." },
+    { "A character that no longer exists",
+      "Deleted, renamed or moved to another realm: on the card of a mount that names it, click \"no longer exists\"." },
+}
+
+---The lines of the tips, as `{ title, text }` in the player's language: for the tooltip and for
+---the harness.
+function ns.FeedTips()
+    local out = {}
+    for i, t in ipairs(TIPS) do out[i] = { L[t[1]], L[t[2]] } end
+    return out
+end
+
+local function TipsLabel()
+    local n = ns.Roster and ns.Roster.Count and ns.Roster.Count() or 0
+    return string.format(n == 1 and L["Tips  ·  %d character read"] or L["Tips  ·  %d characters read"], n)
+end
+
+local function TipsButton(parent)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetHeight(20)
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetSize(16, 16)
+    b.icon:SetPoint("RIGHT")
+    b.icon:SetTexture("Interface\\Common\\help-i")
+    b.text = Text(b, "GameFontNormalSmall", "RIGHT")
+    b.text:SetPoint("RIGHT", b.icon, "LEFT", -4, 0)
+    function b:Update()
+        self.text:SetText(TipsLabel())
+        self:SetWidth((self.text.GetStringWidth and tonumber(self.text:GetStringWidth()) or 160) + 16 + 4)
+    end
+    b:SetScript("OnEnter", function(self)
+        self.text:SetFontObject("GameFontHighlightSmall")
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip_SetTitle(GameTooltip, L["How to feed the list"])
+        GameTooltip_AddNormalLine(GameTooltip, L["The list reads the game for the character you are on. What follows is what only you can show it."], true)
+        for _, t in ipairs(ns.FeedTips()) do
+            GameTooltip_AddBlankLineToTooltip(GameTooltip)
+            GameTooltip_AddHighlightLine(GameTooltip, t[1], true)
+            GameTooltip_AddNormalLine(GameTooltip, t[2], true)
+        end
+        local nomes = {}
+        for _, c in ipairs(ns.Roster and ns.Roster.List and ns.Roster.List() or {}) do
+            if type(c) == "table" and c.name then nomes[#nomes + 1] = c.name end
+        end
+        if #nomes > 0 then
+            GameTooltip_AddBlankLineToTooltip(GameTooltip)
+            GameTooltip_AddInstructionLine(GameTooltip, string.format(L["Read so far: %s"], table.concat(nomes, ", ")), true)
+        end
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function(self)
+        self.text:SetFontObject("GameFontNormalSmall")
+        GameTooltip:Hide()
+    end)
+    b:Update()
+    return b
+end
+
+--------------------------------------------------------------------------------
 -- The window
 --------------------------------------------------------------------------------
 
@@ -1190,6 +1269,10 @@ local function Build()
         GameTooltip:Show()
     end)
     window.achievement:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- The tips, at the right end of the same row (see "HOW TO FEED THE LIST").
+    window.tips = TipsButton(window)
+    window.tips:SetPoint("TOPRIGHT", window, "TOPRIGHT", -RIGHT_MARGIN, ATTIC_Y)
 
     -- The inset covers the list column only; the card sits on the window background.
     local host = window

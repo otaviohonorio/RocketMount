@@ -456,3 +456,26 @@ L["Chime"] = "Sino"
 L["Ding"] = "Toque"
 L["Three notes"] = "Três notas"
 L["Soft"] = "Suave"
+
+-- How to feed the list: the tips in the window (01/10).
+L["How to feed the list"] = "Como alimentar a lista"
+L["Tips  ·  %d character read"] = "Dicas  ·  %d personagem lido"
+L["Tips  ·  %d characters read"] = "Dicas  ·  %d personagens lidos"
+L["The list reads the game for the character you are on. What follows is what only you can show it."] =
+    "A lista lê o jogo pelo personagem em que você está. O que vem a seguir é o que só você pode mostrar a ela."
+L["Enter the game with each of your characters"] = "Entre no jogo com cada um dos seus personagens"
+L["The addon reads only the character that is logged in. Each one you enter with is written down, and from then on the list says which of them already has the reputation a mount asks for."] =
+    "O addon lê apenas o personagem que está conectado. Cada um com que você entra fica anotado, e a partir daí a lista diz qual deles já tem a reputação que uma montaria pede."
+L["Open the vendors that sell mounts"] = "Abra os vendedores que vendem montaria"
+L["The vendor is who knows the real price and whether it sells to this character. A mount with \"?\" is waiting for that."] =
+    "O vendedor é quem sabe o preço de verdade e se vende para este personagem. Montaria com \"?\" está esperando por isso."
+L["Open the Trading Post every month"] = "Abra o Posto Comercial todo mês"
+L["Its mounts only enter the list after the game shows what is on offer."] =
+    "As montarias dele só entram na lista depois que o jogo mostra o que está em oferta."
+L["Loot the rares you kill"] = "Saqueie os raros que você matar"
+L["The addon learns how often each rare can drop again, and stops calling you to one that has nothing for you today."] =
+    "O addon aprende de quanto em quanto tempo cada raro volta a largar saque, e para de chamar você para um que hoje não tem nada para você."
+L["A character that no longer exists"] = "Personagem que não existe mais"
+L["Deleted, renamed or moved to another realm: on the card of a mount that names it, click \"no longer exists\"."] =
+    "Apagado, renomeado ou transferido de reino: na ficha de uma montaria que cita o nome dele, clique em \"não existe mais\"."
+L["Read so far: %s"] = "Lidos até agora: %s"
