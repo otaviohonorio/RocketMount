@@ -476,6 +476,8 @@ L["Loot the rares you kill"] = "Saqueie os raros que você matar"
 L["The addon learns how often each rare can drop again, and stops calling you to one that has nothing for you today."] =
     "O addon aprende de quanto em quanto tempo cada raro volta a largar saque, e para de chamar você para um que hoje não tem nada para você."
 L["A character that no longer exists"] = "Personagem que não existe mais"
-L["Deleted, renamed or moved to another realm: on the card of a mount that names it, click \"no longer exists\"."] =
-    "Apagado, renomeado ou transferido de reino: na ficha de uma montaria que cita o nome dele, clique em \"não existe mais\"."
-L["Read so far: %s"] = "Lidos até agora: %s"
+L["Deleted, renamed or moved to another realm: click this button and pick it in the list to take it out."] =
+    "Apagado, renomeado ou transferido de reino: clique neste botão e escolha o personagem na lista para tirá-lo."
+L["this character"] = "este personagem"
+L["Click a character that no longer exists to take it out"] = "Clique em um personagem que não existe mais para tirá-lo"
+L["Click: the characters read, to take out one that no longer exists"] = "Clique: os personagens lidos, para tirar um que não existe mais"

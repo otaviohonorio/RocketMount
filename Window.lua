@@ -1120,9 +1120,9 @@ end
 -- o que fazer para melhorar e alimentar melhor esta lista"*. The list reads the game for the
 -- character that is logged in, and a few things it only learns when the player DOES something:
 -- enter with each character, open a vendor, open the Trading Post, loot a rare. None of that
--- was said anywhere. It is one line in the attic, at the right of the counters -- the game's
--- "i" and how many characters were read so far -- and the tips are its tooltip, in the game's
--- own tooltip colours (title white, text gold, the hint green).
+-- was said anywhere. It is one button in the attic, at the right of the counters, with how
+-- many characters were read so far; the tips are its tooltip, in the game's own tooltip
+-- colours (title white, text gold, the hint green).
 --------------------------------------------------------------------------------
 local TIPS = {
     { "Enter the game with each of your characters",
@@ -1134,7 +1134,7 @@ local TIPS = {
     { "Loot the rares you kill",
       "The addon learns how often each rare can drop again, and stops calling you to one that has nothing for you today." },
     { "A character that no longer exists",
-      "Deleted, renamed or moved to another realm: on the card of a mount that names it, click \"no longer exists\"." },
+      "Deleted, renamed or moved to another realm: click this button and pick it in the list to take it out." },
 }
 
 ---The lines of the tips, as `{ title, text }` in the player's language: for the tooltip and for
@@ -1150,21 +1150,63 @@ local function TipsLabel()
     return string.format(n == 1 and L["Tips  ·  %d character read"] or L["Tips  ·  %d characters read"], n)
 end
 
-local function TipsButton(parent)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetHeight(20)
-    b.icon = b:CreateTexture(nil, "ARTWORK")
-    b.icon:SetSize(16, 16)
-    b.icon:SetPoint("RIGHT")
-    b.icon:SetTexture("Interface\\Common\\help-i")
-    b.text = Text(b, "GameFontNormalSmall", "RIGHT")
-    b.text:SetPoint("RIGHT", b.icon, "LEFT", -4, 0)
-    function b:Update()
-        self.text:SetText(TipsLabel())
-        self:SetWidth((self.text.GetStringWidth and tonumber(self.text:GetStringWidth()) or 160) + 16 + 4)
+-- (!) A BUTTON, AND THE CHARACTERS UNDER IT (01/10). It was a line of text with the names in
+-- the tooltip. The user: *"faz esse dicas ser um botão e abrir a lista dos chars abaixo e poder
+-- remover os que não existem mais"*. The button is the game's (`UIPanelButtonTemplate`), the
+-- list is the game's menu, and taking a character out goes through the same dialog the card's
+-- "no longer exists" button uses (`ns.AskForget`): nothing is removed without a yes. The
+-- character that is logged in is listed and cannot be removed -- it would be written again.
+
+---The characters as the menu lists them: `{ key, text, me, seen }`, last seen first.
+function ns.TipsCharacters()
+    local out = {}
+    for _, c in ipairs(ns.Roster and ns.Roster.List and ns.Roster.List() or {}) do
+        if type(c) == "table" and type(c.key) == "string" then
+            local texto = c.key
+            if c.me then
+                texto = texto .. "  ·  " .. L["this character"]
+            elseif c.seen and c.seen > 0 and date then
+                texto = texto .. "  ·  " .. date(L["%m/%d/%Y"], c.seen)
+            end
+            out[#out + 1] = { key = c.key, text = texto, me = c.me and true or false, seen = c.seen }
+        end
     end
+    return out
+end
+
+local function TipsMenu(owner)
+    if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
+    MenuUtil.CreateContextMenu(owner, function(_, root)
+        root:CreateTitle(L["Click a character that no longer exists to take it out"])
+        for _, c in ipairs(ns.TipsCharacters()) do
+            local item = root:CreateButton(c.text, function() ns.AskForget(c.key) end)
+            if type(item) == "table" then
+                if c.me and item.SetEnabled then item:SetEnabled(false) end
+                if not c.me and item.SetTooltip then
+                    item:SetTooltip(function(tooltip)
+                        local titulo, linhas = ns.ForgetTooltip(c.key, c.seen)
+                        GameTooltip_SetTitle(tooltip, titulo)
+                        for _, linha in ipairs(linhas) do GameTooltip_AddNormalLine(tooltip, linha, true) end
+                    end)
+                end
+            end
+        end
+    end)
+end
+
+local function TipsButton(parent)
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    b:SetHeight(22)
+    function b:Update()
+        self:SetText(TipsLabel())
+        local w = self.GetTextWidth and tonumber(self:GetTextWidth()) or 0
+        self:SetWidth((w > 0 and w or 170) + 30)
+    end
+    b:SetScript("OnClick", function(self)
+        GameTooltip:Hide()
+        TipsMenu(self)
+    end)
     b:SetScript("OnEnter", function(self)
-        self.text:SetFontObject("GameFontHighlightSmall")
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
         GameTooltip_SetTitle(GameTooltip, L["How to feed the list"])
         GameTooltip_AddNormalLine(GameTooltip, L["The list reads the game for the character you are on. What follows is what only you can show it."], true)
@@ -1173,20 +1215,11 @@ local function TipsButton(parent)
             GameTooltip_AddHighlightLine(GameTooltip, t[1], true)
             GameTooltip_AddNormalLine(GameTooltip, t[2], true)
         end
-        local nomes = {}
-        for _, c in ipairs(ns.Roster and ns.Roster.List and ns.Roster.List() or {}) do
-            if type(c) == "table" and c.name then nomes[#nomes + 1] = c.name end
-        end
-        if #nomes > 0 then
-            GameTooltip_AddBlankLineToTooltip(GameTooltip)
-            GameTooltip_AddInstructionLine(GameTooltip, string.format(L["Read so far: %s"], table.concat(nomes, ", ")), true)
-        end
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: the characters read, to take out one that no longer exists"], true)
         GameTooltip:Show()
     end)
-    b:SetScript("OnLeave", function(self)
-        self.text:SetFontObject("GameFontNormalSmall")
-        GameTooltip:Hide()
-    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
     b:Update()
     return b
 end
@@ -1272,7 +1305,7 @@ local function Build()
 
     -- The tips, at the right end of the same row (see "HOW TO FEED THE LIST").
     window.tips = TipsButton(window)
-    window.tips:SetPoint("TOPRIGHT", window, "TOPRIGHT", -RIGHT_MARGIN, ATTIC_Y)
+    window.tips:SetPoint("TOPRIGHT", window, "TOPRIGHT", -RIGHT_MARGIN, ATTIC_Y + 1)
 
     -- The inset covers the list column only; the card sits on the window background.
     local host = window
