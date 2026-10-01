@@ -1509,12 +1509,18 @@ function ns.BuildList()
                     -- measured and NOT met, the item's line that names that faction says
                     -- nothing new and steps aside. Met by the table and red in the game, the
                     -- line stays: the tooltip is still the negative signal.
+                    --
+                    -- A faction this character never met has no name from the game (the API
+                    -- answers nothing), so there the line is known by its FORMAT ("Requires %s
+                    -- - %s"). That is safe on our own data: of the 110 mounts whose item has
+                    -- such a line, all 110 name the faction of the table
+                    -- (`tools/auditar_reputacao.py`).
                     local aside
                     if e.rep and e.rep.char then
                         aside = { e.rep.factionName }
-                    elseif e.rep and e.rep.pct and e.rep.pct < 1 and not e.rep.unreadable
+                    elseif e.rep and e.rep.pct and e.rep.pct < 1
                         and type(e.rep.factionName) == "string" and e.rep.factionName ~= "" then
-                        aside = { e.rep.factionName, onlyNamed = true }
+                        aside = { e.rep.factionName, onlyNamed = not e.rep.unreadable }
                     end
                     e.tooltipGate = ns.Tooltip.Gate(e.itemID, aside)
                 end

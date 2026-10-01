@@ -125,6 +125,27 @@ function handlers:UPDATE_FACTION()
     ns.Invalidate()
 end
 
+-- (!) EVERYTHING THE LIST READS ABOUT THE CHARACTER HAS ITS EVENT (01/10). The user: *"o addon
+-- precisa fazer isso de forma rotineira, para ir atualizando os dados conforme os jogadores vão
+-- mudando de char"*. Changing character is a new login, and the login reads everything again;
+-- what was missing is what changes DURING the session and had no event here: renown (a
+-- faction's and a covenant's), the covenant itself, an achievement earned, a quest handed in,
+-- gold. Until one of the events above happened to fire, the list and the map kept the number
+-- of before. The names are the client's (MajorFactionsDocumentation, CovenantSanctum-,
+-- CovenantsDocumentation, 12.1.0). Each only marks the list dirty: it is built again when
+-- something asks for it.
+local function CharacterChanged()
+    if ns.Roster then ns.Roster.Record() end
+    ns.Invalidate()
+end
+handlers.MAJOR_FACTION_RENOWN_LEVEL_CHANGED = CharacterChanged
+handlers.MAJOR_FACTION_UNLOCKED = CharacterChanged
+handlers.COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED = CharacterChanged
+handlers.COVENANT_CHOSEN = CharacterChanged
+handlers.ACHIEVEMENT_EARNED = CharacterChanged
+handlers.QUEST_TURNED_IN = CharacterChanged
+handlers.PLAYER_MONEY = CharacterChanged
+
 -- THE VENDOR, the moment it opens and every time its list refreshes (items load late).
 function handlers:MERCHANT_SHOW()
     if ns.ScanMerchant and ns.ScanMerchant() then ns.Invalidate() end

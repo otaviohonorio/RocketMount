@@ -594,6 +594,10 @@ function MapPins.PinsFor(mapID)
     if not MapaAberto(mapID) then return out end
     local familia, continente = Familia(mapID)
     if not familia then return out end
+    -- (!) A DIRTY LIST IS BUILT AGAIN BEFORE DRAWING (01/10). A reputation that moved with the
+    -- addon's window closed only marked the list dirty: the map kept its index, and its tooltip
+    -- the number of before. `Construir` asks for the list, which rebuilds it.
+    if ns.IsDirty and ns.IsDirty() then indice = nil end
     indice = indice or Construir()
 
     for m in pairs(familia) do

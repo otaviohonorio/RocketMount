@@ -21,6 +21,9 @@
   have more room.
 - **Shorter labels in the options.** Each option is named in two or three words; hover it for
   what it does.
+- **The list keeps up with your character.** Renown gained, a covenant chosen, an achievement
+  earned, a quest handed in or gold spent now update the list and the map right away; before,
+  some of these waited for something else to refresh them.
 - **A reputation on its way no longer reads 0%.** A vendor mount whose item names the same
   reputation the addon already measures (the riding goats of The Tillers, for one) showed 0%
   and "1 more requirement" even at Revered. It now shows how far along you are.
