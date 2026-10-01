@@ -760,7 +760,11 @@ local SPREAD = {
     PASSES = 4,             -- a group that opened may reach a neighbour: then they are one group
     THICK = 9,              -- of the line's art, which is mostly glow (the route's is 18)
     ALPHA = 0.75, ALPHA_LOCKED = 0.35,
-    DOT = 7, DOT_ATLAS = "WhiteDotCircle-RaidBlips",
+    -- The dot: a black centre in a white ring in a black ring (seen on the sheet of
+    -- tools/ver_atlas.py). It reads on light and on dark ground, and it is the line's own
+    -- colours -- the flight-path art is a dark core with a light fringe. At 9 the ring still
+    -- shows; at 7 it was a smudge.
+    DOT = 9, DOT_ATLAS = "WhiteDotCircle-RaidBlips",
     LINE_ATLAS = "_UI-Taxi-Line-horizontal",
 }
 MapPins.SpreadRule = SPREAD
