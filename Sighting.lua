@@ -508,42 +508,45 @@ end
 -- The user: *"seria possível no aviso colocar um alerta sonoro leve quando achar um raro? e ter
 -- a configuração de alguns alertas sonoros, volume e poder desativar"*.
 --
--- (!) THE SOUNDS ARE OF MOUNTS, NOT OF THE INTERFACE (01/10). The first list was six of the
--- interface's own cues (whisper, ready check, raid warning, world quest...). The user: *"não
--- teria outros sons? não quero confundir o usuário com sons padrões do jogo já"*. A ready check
--- that is not a ready check is worse than no sound. These are the calls the game's own mounts
--- make, which no part of the interface plays: nothing is shipped, and each is a sound kit of the
--- client (table SoundKitEntry, build 12.1.0.69933), chosen SHORT -- every file of every kit was
--- measured, 0.7 to 3.3 seconds. A kit with several files plays one of them at random.
+-- (!) THE SOUNDS ARE OURS: FOUR SIMPLE CHIMES (01/10, third list). The first list was six of
+-- the interface's own cues (whisper, ready check...): *"não quero confundir o usuário com sons
+-- padrões do jogo"*. The second was the calls of the game's mounts: *"sons de bichos ficou
+-- estranho, a maioria é meio um grunhido, pense em algo simples e melhor que isso"*. So the
+-- sounds are synthesised by `tools/gerar_sons.py` -- a bell is a few sines that fade, simple by
+-- construction, nobody's recording, and no sound of the game.
 --
---   whinny   90684  mon_horse_v2_mount_special (5 files, 2.4-3.2 s)
---   snort    90859  mon_horse_v2_chuff        (10 files, 0.7-2.0 s)
---   crane    26836  mon_crane_mountspecial     (3 files, 1.5-1.8 s)
---   moose    51200  mon_moose_mountspecial     (6 files, 1.9-2.0 s)
---   owl      79975  mon_owlmount_mountspecial  (2 files, 2.6 s)
---   reindeer 17328  reindeermount_mountspecial (3 files, 1.8-2.3 s; the quietest)
---
--- The volume is the game's: `C_Sound.PlaySoundWithOptions` takes `volumeOverride`, which the
--- game's own combat audio alerts fill with their volume setting times 0.01
--- (Blizzard_CombatAudioAlertManager.lua). The channel is "SFX", the one the client's own Lua
--- passes to PlaySound. A client without that function plays the sound at the channel's volume.
+-- (!) THE VOLUME IS A CHOICE OF FILE. The game only has a volume for its OWN sounds
+-- (`C_Sound.PlaySoundWithOptions` takes a `soundKitID` and nothing else, SoundDocumentation.lua);
+-- `PlaySoundFile` plays the file at the channel's volume. So each sound is shipped at five
+-- levels, 6 dB apart (`Sounds/<file>_<1..5>.ogg`), and the option picks the file. The channel
+-- is "SFX": the player's own sound effects volume still rules over it.
 --------------------------------------------------------------------------------
 local SOUNDS = {
-    { key = "whinny",   id = 90684, label = function() return L["Horse whinny"] end },
-    { key = "snort",    id = 90859, label = function() return L["Horse snort"] end },
-    { key = "crane",    id = 26836, label = function() return L["Crane"] end },
-    { key = "moose",    id = 51200, label = function() return L["Moose"] end },
-    { key = "owl",      id = 79975, label = function() return L["Owl"] end },
-    { key = "reindeer", id = 17328, label = function() return L["Reindeer"] end },
+    { key = "chime", file = "chime", label = function() return L["Chime"] end },
+    { key = "ding",  file = "ding",  label = function() return L["Ding"] end },
+    { key = "notes", file = "notes", label = function() return L["Three notes"] end },
+    { key = "soft",  file = "soft",  label = function() return L["Soft"] end },
 }
-Sighting.DEFAULT_SOUND = "whinny"
-Sighting.DEFAULT_VOLUME = 50
+local SOUND_LEVELS = 5
+Sighting.DEFAULT_SOUND = "chime"
+Sighting.DEFAULT_VOLUME = 60
+Sighting.SOUND_LEVELS = SOUND_LEVELS
 
 ---The sounds the options offer: `{ key, label }`, in the order of the list.
 function Sighting.Sounds()
     local out = {}
     for i, s in ipairs(SOUNDS) do out[i] = { key = s.key, label = s.label() } end
     return out
+end
+
+---The file of a sound at a volume (1 to 100): the path the game plays.
+function Sighting.SoundFile(key, volume)
+    local som
+    for _, s in ipairs(SOUNDS) do if s.key == key then som = s end end
+    som = som or SOUNDS[1]
+    local level = math.floor((tonumber(volume) or Sighting.DEFAULT_VOLUME) / (100 / SOUND_LEVELS) + 0.5)
+    if level < 1 then level = 1 elseif level > SOUND_LEVELS then level = SOUND_LEVELS end
+    return ("Interface\\AddOns\\%s\\Sounds\\%s_%d.ogg"):format(ADDON, som.file, level)
 end
 
 ---Plays the alert's sound. With no argument: the one chosen in the options, when the sound is
@@ -554,20 +557,10 @@ function Sighting.PlaySound(key, volume)
     local preview = key ~= nil
     if not preview and db.sightingSound == false then return false end
     key = key or db.sightingSoundKey or Sighting.DEFAULT_SOUND
-    local som
-    for _, s in ipairs(SOUNDS) do if s.key == key then som = s end end
-    som = som or SOUNDS[1]
     volume = tonumber(volume or db.sightingVolume) or Sighting.DEFAULT_VOLUME
-    if volume <= 0 then return false end
-    if volume > 100 then volume = 100 end
-    local kit = som.id
-    if C_Sound and C_Sound.PlaySoundWithOptions then
-        local ok = pcall(C_Sound.PlaySoundWithOptions,
-            { soundKitID = kit, uiSoundSubType = "SFX", volumeOverride = volume / 100 })
-        if ok then return true end
-    end
-    if PlaySound then return (pcall(PlaySound, kit, "SFX")) end
-    return false
+    if volume <= 0 or not PlaySoundFile then return false end
+    local ok, played = pcall(PlaySoundFile, Sighting.SoundFile(key, volume), "SFX")
+    return ok and played ~= false
 end
 
 function Sighting.GetPanel() return frame end

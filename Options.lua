@@ -86,7 +86,7 @@ function ns.SetupOptions()
                 function() return ns.db.sightingSound ~= false end,
                 function(value) ns.db.sightingSound = value end)
             filhas[#filhas + 1] = Settings.CreateCheckbox(category, s,
-                L["A mount's call when the alert appears: a sound the game's interface never plays."])
+                L["A short chime when the alert appears. It is the addon's own: no sound of the game is used."])
         end
         if Settings.CreateDropdown and Settings.CreateControlTextContainer then
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingSoundKey",
@@ -102,7 +102,7 @@ function ns.SetupOptions()
                 return container:GetData()
             end
             filhas[#filhas + 1] = Settings.CreateDropdown(category, s, Lista,
-                L["Which mount's call the alert plays. Picking one plays it."])
+                L["Which chime the alert plays. Picking one plays it."])
         end
         do
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingVolume",
@@ -112,13 +112,13 @@ function ns.SetupOptions()
                     ns.db.sightingVolume = value
                     ns.Sighting.PlaySound(ns.db.sightingSoundKey or ns.Sighting.DEFAULT_SOUND, value)
                 end)
-            local options = Settings.CreateSliderOptions(10, 100, 10)
+            local options = Settings.CreateSliderOptions(20, 100, 20)
             if options.SetLabelFormatter and MinimalSliderWithSteppersMixin then
                 options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right,
                     function(value) return string.format("%d%%", value) end)
             end
             filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
-                L["How loud the alert's sound is, on top of the game's own sound effects volume."])
+                L["How loud the alert's sound is, in five steps. The game's own sound effects volume still applies."])
         end
         for _, filha in ipairs(filhas) do
             if type(filha) == "table" and filha.SetParentInitializer and aviso then
