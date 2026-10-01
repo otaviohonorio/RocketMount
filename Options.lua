@@ -86,7 +86,7 @@ function ns.SetupOptions()
                 function() return ns.db.sightingSound ~= false end,
                 function(value) ns.db.sightingSound = value end)
             filhas[#filhas + 1] = Settings.CreateCheckbox(category, s,
-                L["A short sound of the game when the alert appears."])
+                L["A mount's call when the alert appears: a sound the game's interface never plays."])
         end
         if Settings.CreateDropdown and Settings.CreateControlTextContainer then
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingSoundKey",
@@ -102,7 +102,7 @@ function ns.SetupOptions()
                 return container:GetData()
             end
             filhas[#filhas + 1] = Settings.CreateDropdown(category, s, Lista,
-                L["Which of the game's sounds the alert plays. Picking one plays it."])
+                L["Which mount's call the alert plays. Picking one plays it."])
         end
         do
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingVolume",

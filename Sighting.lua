@@ -508,21 +508,35 @@ end
 -- The user: *"seria possível no aviso colocar um alerta sonoro leve quando achar um raro? e ter
 -- a configuração de alguns alertas sonoros, volume e poder desativar"*.
 --
--- The sounds are the GAME'S (sound kits of `SOUNDKIT`, 12.1.0): nothing is shipped. The volume
--- is the game's too: `C_Sound.PlaySoundWithOptions` takes `volumeOverride`, which the game's own
--- combat audio alerts fill with their volume setting times 0.01
+-- (!) THE SOUNDS ARE OF MOUNTS, NOT OF THE INTERFACE (01/10). The first list was six of the
+-- interface's own cues (whisper, ready check, raid warning, world quest...). The user: *"não
+-- teria outros sons? não quero confundir o usuário com sons padrões do jogo já"*. A ready check
+-- that is not a ready check is worse than no sound. These are the calls the game's own mounts
+-- make, which no part of the interface plays: nothing is shipped, and each is a sound kit of the
+-- client (table SoundKitEntry, build 12.1.0.69933), chosen SHORT -- every file of every kit was
+-- measured, 0.7 to 3.3 seconds. A kit with several files plays one of them at random.
+--
+--   whinny   90684  mon_horse_v2_mount_special (5 files, 2.4-3.2 s)
+--   snort    90859  mon_horse_v2_chuff        (10 files, 0.7-2.0 s)
+--   crane    26836  mon_crane_mountspecial     (3 files, 1.5-1.8 s)
+--   moose    51200  mon_moose_mountspecial     (6 files, 1.9-2.0 s)
+--   owl      79975  mon_owlmount_mountspecial  (2 files, 2.6 s)
+--   reindeer 17328  reindeermount_mountspecial (3 files, 1.8-2.3 s; the quietest)
+--
+-- The volume is the game's: `C_Sound.PlaySoundWithOptions` takes `volumeOverride`, which the
+-- game's own combat audio alerts fill with their volume setting times 0.01
 -- (Blizzard_CombatAudioAlertManager.lua). The channel is "SFX", the one the client's own Lua
 -- passes to PlaySound. A client without that function plays the sound at the channel's volume.
 --------------------------------------------------------------------------------
 local SOUNDS = {
-    { key = "event",   kit = "UI_BONUS_EVENT_SYSTEM_VIGNETTES", id = 45142, label = function() return L["World event"] end },
-    { key = "ping",    kit = "MAP_PING",            id = 3175,  label = function() return L["Map ping"] end },
-    { key = "quest",   kit = "UI_WORLDQUEST_START", id = 73275, label = function() return L["World quest"] end },
-    { key = "whisper", kit = "TELL_MESSAGE",        id = 3081,  label = function() return WHISPER or L["Whisper"] end },
-    { key = "ready",   kit = "READY_CHECK",         id = 8960,  label = function() return READY_CHECK or L["Ready check"] end },
-    { key = "warning", kit = "RAID_WARNING",        id = 8959,  label = function() return RAID_WARNING or L["Raid warning"] end },
+    { key = "whinny",   id = 90684, label = function() return L["Horse whinny"] end },
+    { key = "snort",    id = 90859, label = function() return L["Horse snort"] end },
+    { key = "crane",    id = 26836, label = function() return L["Crane"] end },
+    { key = "moose",    id = 51200, label = function() return L["Moose"] end },
+    { key = "owl",      id = 79975, label = function() return L["Owl"] end },
+    { key = "reindeer", id = 17328, label = function() return L["Reindeer"] end },
 }
-Sighting.DEFAULT_SOUND = "event"
+Sighting.DEFAULT_SOUND = "whinny"
 Sighting.DEFAULT_VOLUME = 50
 
 ---The sounds the options offer: `{ key, label }`, in the order of the list.
@@ -546,7 +560,7 @@ function Sighting.PlaySound(key, volume)
     volume = tonumber(volume or db.sightingVolume) or Sighting.DEFAULT_VOLUME
     if volume <= 0 then return false end
     if volume > 100 then volume = 100 end
-    local kit = (type(SOUNDKIT) == "table" and SOUNDKIT[som.kit]) or som.id
+    local kit = som.id
     if C_Sound and C_Sound.PlaySoundWithOptions then
         local ok = pcall(C_Sound.PlaySoundWithOptions,
             { soundKitID = kit, uiSoundSubType = "SFX", volumeOverride = volume / 100 })
