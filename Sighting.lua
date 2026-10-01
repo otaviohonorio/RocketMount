@@ -487,7 +487,12 @@ local function Show(nome, montarias, frequencia, npc, alvo)
     local chance = primeira and Sighting.ChanceText(primeira)
     if chance then partes[#partes + 1] = chance end
     if #lista > 1 then partes[#partes + 1] = string.format(L["and %d more"], #lista - 1) end
-    if frequencia and frequencia ~= "" then partes[#partes + 1] = frequencia end
+    -- (!) THE FREQUENCY STANDS OUT (01/10). The user: *"nas popups tá pouco visível, de cinza,
+    -- melhore isso"*. "Once a week" decides whether the trip is worth it today: gold here,
+    -- white in the map's tooltip (grey is kept for "not known yet").
+    if frequencia and frequencia ~= "" then
+        partes[#partes + 1] = (npc and Sighting.FrequencyMarkup(npc)) or frequencia
+    end
     frame.Sub:SetText(table.concat(partes, "  ·  "))
 
     -- What the tooltip and the click need.
@@ -705,6 +710,16 @@ function Sighting.LootFrequency(npc)
         if npc and ap["npc:" .. npc] then return ap["npc:" .. npc], "learned" end
     end
     return nil
+end
+
+---The frequency as the ALERT writes it: in the game's gold when it is known, so it stands out
+---from the chance and the "and N more" beside it on the same white line; plain when it is not.
+function Sighting.FrequencyMarkup(npc)
+    local texto = Sighting.FrequencyText(npc)
+    if not Sighting.LootFrequency(npc) then return texto end
+    local cor = NORMAL_FONT_COLOR
+    if type(cor) == "table" and cor.WrapTextInColorCode then return cor:WrapTextInColorCode(texto) end
+    return "|cffffd100" .. texto .. "|r"
 end
 
 ---The line the map tooltip and the alert show.

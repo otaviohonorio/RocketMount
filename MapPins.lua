@@ -1163,7 +1163,13 @@ function MapPins.Tooltip(tooltip, data)
     if criatura then
         if total == 1 then tooltip:AddLine(" ") end
         -- How often its loot comes back: daily, weekly, every kill -- or plainly not known yet.
-        Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+        -- (!) WHITE WHEN KNOWN (01/10): it was grey, the colour of a footnote, and the user
+        -- could hardly see it. Grey stays for "not known yet", which IS a footnote.
+        if ns.Sighting.LootFrequency(data.npc) then
+            Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "HIGHLIGHT_FONT_COLOR", 1, 1, 1)
+        else
+            Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+        end
         -- The rare that comes on a clock: when it comes next, from the game's clock (30/09).
         local janela = ns.Sighting.WindowText(data.npc)
         if janela then Linha(tooltip, janela, "HIGHLIGHT_FONT_COLOR", 1, 1, 1) end

@@ -19,6 +19,8 @@
   loud it is, in five steps.
 - **The alert is a little larger**, mostly wider: a long mount name and the line of numbers
   have more room.
+- "Loot: once a day / once a week" is easier to see: white in the map's tooltip (it was grey)
+  and gold in the alert.
 - **Shorter labels in the options.** Each option is named in two or three words; hover it for
   what it does.
 - **Tips in the window.** At the top right, the "Tips" button says how many of your characters
