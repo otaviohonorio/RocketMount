@@ -33,8 +33,12 @@ function ns.SetupOptions()
     ]]
 
     do
-        -- Short on purpose: the Settings panel gives a label ~200px, and the longer version was
-        -- cut to "Esconder o que este persona..." (screenshot, 23/09).
+        -- (!) EVERY LABEL HERE IS SHORT (01/10). The user: *"as opções dos checkboxes estão com
+        -- texto muito longo, tem que ser mais simples, resumido e curto, o mouse em cima explica
+        -- melhor"*. The panel gives a label about 200 px (180 to a sub-option), and a longer one
+        -- was once cut to "Esconder o que este persona..." (screenshot, 23/09). The label names
+        -- the thing in two or three words; the tooltip says what it does. The harness holds
+        -- every label to 22 letters, in both languages.
         local name = L["Only what I can get"]
         local variable = ADDON .. "HideUnavailable"
         local setting = Settings.RegisterProxySetting(category, variable,
@@ -50,7 +54,7 @@ function ns.SetupOptions()
     end
 
     do
-        local name = L["Show the minimap button"]
+        local name = L["Minimap button"]
         local variable = ADDON .. "Minimap"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -62,7 +66,7 @@ function ns.SetupOptions()
     end
 
     do
-        local name = L["Alert on mount rares"]
+        local name = L["Rare alert"]
         local variable = ADDON .. "Sightings"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, true,
@@ -78,7 +82,7 @@ function ns.SetupOptions()
         local filhas = {}
         do
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingSound",
-                Settings.VarType.Boolean, L["Play a sound with the alert"], true,
+                Settings.VarType.Boolean, L["Play a sound"], true,
                 function() return ns.db.sightingSound ~= false end,
                 function(value) ns.db.sightingSound = value end)
             filhas[#filhas + 1] = Settings.CreateCheckbox(category, s,
@@ -102,7 +106,7 @@ function ns.SetupOptions()
         end
         do
             local s = Settings.RegisterProxySetting(category, ADDON .. "SightingVolume",
-                Settings.VarType.Number, L["Sound volume"], ns.Sighting.DEFAULT_VOLUME,
+                Settings.VarType.Number, L["Volume"], ns.Sighting.DEFAULT_VOLUME,
                 function() return ns.db.sightingVolume or ns.Sighting.DEFAULT_VOLUME end,
                 function(value)
                     ns.db.sightingVolume = value
@@ -124,7 +128,7 @@ function ns.SetupOptions()
     end
 
     do
-        local name = L["Show the ones that left the game"]
+        local name = L["Removed mounts"]
         local variable = ADDON .. "ShowUnobtainable"
         local setting = Settings.RegisterProxySetting(category, variable,
             Settings.VarType.Boolean, name, false,
@@ -135,7 +139,7 @@ function ns.SetupOptions()
             end)
 
         Settings.CreateCheckbox(category, setting,
-            L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."])
+            L["Also lists the mounts that left the game: closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."])
     end
 
     -- THE WORLD MAP, under its own header: four switches about one subject are a section
@@ -160,20 +164,20 @@ function ns.SetupOptions()
             return Settings.CreateCheckbox(category, setting, dica), setting
         end
 
-        local mestre, mestreSetting = Caixa("mapPins", "MapPins", L["Show them on the world map"],
+        local mestre, mestreSetting = Caixa("mapPins", "MapPins", L["Markers on the map"],
             L["Every source of a mount you do not have, on the world map: the mount's icon, what kind of source it is, and the chance or how much is left when you hover it. A looted rare goes dim."])
         local filhas = {
-            (Caixa("mapSources", "MapSources", L["Vendors, quests and treasures too"],
-                L["Every place the collection data knows for a mount you do not have: who sells it, who gives the quest, where the treasure is."])),
-            (Caixa("mapInstances", "MapInstances", L["Raid and dungeon entrances too"],
-                L["The mounts that drop inside, at the entrance. The marker steps aside so the game's own entrance icon stays visible."])),
-            (Caixa("mapLabels", "MapLabels", L["Name the source under each marker"],
-                L["Rare, Vendor, Quest, Raid… under the mount's icon. Unchecked, the small symbol on the marker still says it."])),
-            (Caixa("mapButton", "MapButton", L["A button on the map to hide and show them"],
-                L["A round button with a horseshoe, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."])),
-            (Caixa("minimapPins", "MinimapPins", L["On the minimap too"],
-                L["The places within the minimap's reach, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."])),
-            (Caixa("mapRoutes", "MapRoutes", L["Draw the route of a creature that walks"],
+            (Caixa("mapSources", "MapSources", L["Vendors and quests"],
+                L["Besides the rares, every other place known for a mount you do not have: who sells it, who gives the quest, where the treasure is."])),
+            (Caixa("mapInstances", "MapInstances", L["Instance entrances"],
+                L["Raid and dungeon entrances, with the mounts that drop inside. The marker steps aside so the game's own entrance icon stays visible."])),
+            (Caixa("mapLabels", "MapLabels", L["Source names"],
+                L["Writes Rare, Vendor, Quest, Raid… under each marker. Unchecked, the small symbol on the marker still says it."])),
+            (Caixa("mapButton", "MapButton", L["Map button"],
+                L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."])),
+            (Caixa("minimapPins", "MinimapPins", L["On the minimap"],
+                L["Marks the places within the minimap's reach too, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."])),
+            (Caixa("mapRoutes", "MapRoutes", L["Rare routes"],
                 L["A rare that patrols gets one marker and a dashed line along where it was seen. The route is an estimate from players' sightings. Unchecked, only the marker is drawn."])),
         }
         -- The game's own way of hanging an option under another (Blizzard_SettingControls.lua:

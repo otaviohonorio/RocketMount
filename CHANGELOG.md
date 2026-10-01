@@ -18,5 +18,7 @@
   sounds (picking one plays it) and set how loud it is. It starts at half volume.
 - **The alert is a little larger**, mostly wider: a long mount name and the line of numbers
   have more room.
+- **Shorter labels in the options.** Each option is named in two or three words; hover it for
+  what it does.
 - Fixed a Lua error when looting Huolon.
 - A marker of several creatures only dims as "already looted" when every one of them is.

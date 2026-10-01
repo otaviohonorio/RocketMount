@@ -173,15 +173,15 @@ L["Ritual Site"] = "Sítio Ritualístico"
 L["Horrific Visions"] = "Visões Horrendas"
 L["%s and %d more"] = "%s e mais %d"
 L["Only during: %s"] = "Só durante: %s"
-L["On the minimap too"] = "No minimapa também"
+L["On the minimap"] = "No minimapa"
 L["%s: of the event %s, which is ON"] = "%s: do evento %s, que ESTÁ acontecendo"
 L["%s: of the event %s, which is not on (no marker)"] = "%s: do evento %s, que não está acontecendo (sem marcador)"
 L["%s: Trading Post; the game's landmark is %s, mounts on offer known: %d"] =
     "%s: Posto Comercial; o marco do jogo %s, montarias em oferta conhecidas: %d"
 L["on the map"] = "está no mapa"
 L["NOT on the map"] = "NÃO está no mapa"
-L["The places within the minimap's reach, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."] =
-    "Os lugares ao alcance do minimapa, cada um com o símbolo do que é: um raro, um vendedor, um tesouro. Passe o mouse em um para ver os mesmos detalhes do mapa-múndi; clique para apontar a seta para lá."
+L["Marks the places within the minimap's reach too, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."] =
+    "Marca também os lugares ao alcance do minimapa, cada um com o símbolo do que é: um raro, um vendedor, um tesouro. Passe o mouse em um para ver os mesmos detalhes do mapa-múndi; clique para apontar a seta para lá."
 L["%s: renown %d, and this character is not in this covenant"] =
     "%s: renome %d, e este personagem não é deste pacto"
 L["Leads to:"] = "Leva a:"
@@ -200,19 +200,19 @@ L["Reported by players in %d. The game may have changed since."] =
     "Relatado por jogadores em %d. O jogo pode ter mudado desde então."
 L["Reported by players. The game may have changed since."] =
     "Relatado por jogadores. O jogo pode ter mudado desde então."
-L["Vendors, quests and treasures too"] = "Também vendedores, missões e tesouros"
-L["Every place the collection data knows for a mount you do not have: who sells it, who gives the quest, where the treasure is."] =
-    "Todo lugar que os dados da coleção conhecem para uma montaria que você não tem: quem vende, quem entrega a missão, onde está o tesouro."
-L["Raid and dungeon entrances too"] = "Também entradas de raide e masmorra"
-L["The mounts that drop inside, at the entrance. The marker steps aside so the game's own entrance icon stays visible."] =
-    "As montarias que caem lá dentro, na entrada. O marcador se afasta para o ícone de entrada do próprio jogo continuar visível."
-L["Name the source under each marker"] = "Escrever o tipo sob cada marcador"
-L["Draw the route of a creature that walks"] = "Traçar a rota da criatura que anda"
+L["Vendors and quests"] = "Vendedores e missões"
+L["Besides the rares, every other place known for a mount you do not have: who sells it, who gives the quest, where the treasure is."] =
+    "Além dos raros, todo outro lugar conhecido de uma montaria que você não tem: quem vende, quem entrega a missão, onde está o tesouro."
+L["Instance entrances"] = "Entradas de instância"
+L["Raid and dungeon entrances, with the mounts that drop inside. The marker steps aside so the game's own entrance icon stays visible."] =
+    "As entradas de raide e de masmorra, com as montarias que caem lá dentro. O marcador se afasta para o ícone de entrada do próprio jogo continuar visível."
+L["Source names"] = "Nome do tipo"
+L["Rare routes"] = "Rota dos raros"
 L["%d route(s), drawn with %d dash(es)"] = "%d rota(s), desenhada(s) com %d traço(s)"
 L["A rare that patrols gets one marker and a dashed line along where it was seen. The route is an estimate from players' sightings. Unchecked, only the marker is drawn."] =
     "O raro que patrulha ganha um marcador só e uma linha tracejada por onde ele foi visto. A rota é uma estimativa, feita dos avistamentos dos jogadores. Desmarcada, só o marcador é desenhado."
-L["Rare, Vendor, Quest, Raid… under the mount's icon. Unchecked, the small symbol on the marker still says it."] =
-    "Raro, Vendedor, Missão, Raide… sob o ícone da montaria. Desmarcada, o símbolo pequeno no marcador continua dizendo."
+L["Writes Rare, Vendor, Quest, Raid… under each marker. Unchecked, the small symbol on the marker still says it."] =
+    "Escreve Raro, Vendedor, Missão, Raide… sob cada marcador. Desmarcada, o símbolo pequeno no marcador continua dizendo."
 L["World map"] = "Mapa-múndi"
 L["Every source of a mount you do not have, on the world map: the mount's icon, what kind of source it is, and the chance or how much is left when you hover it. A looted rare goes dim."] =
     "Toda fonte de montaria que você não tem, no mapa-múndi: o ícone da montaria, o tipo da fonte e, ao passar o mouse, a chance ou o quanto falta. Raro já saqueado fica apagado."
@@ -248,7 +248,7 @@ L["how far to the renown level asked for"] = "o caminho até o renome exigido"
 L['Achievement "%s": %d%% done'] = 'Conquista "%s": %d%% feita'
 L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."] =
     "\"?\" quer dizer que ainda não dá para medir: abra o vendedor, ou não há dado."
-L["Show them on the world map"] = "Mostrar no mapa-múndi"
+L["Markers on the map"] = "Marcadores no mapa"
 L["Rares, elites and world bosses that drop a mount you do not have, with the mount and the chance when you hover them. Dimmed once looted today."] = "Raros, elites e chefes do mundo que largam montaria que você não tem, com a montaria e a chance ao passar o mouse. Ficam apagados depois de saqueados."
 L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
 L["no error captured (capture: %s)."] = "nenhum erro capturado (captura: %s)."
@@ -319,20 +319,19 @@ L["A mount from the other faction or another class leaves the list. Uncheck to s
     "Montaria de outra facção ou de outra classe sai da lista. Desmarque para ver a coleção "
     .. "inteira."
 
-L["Show the minimap button"] = "Mostrar o botão no minimapa"
+L["Minimap button"] = "Botão do minimapa"
 L["The button opens the list with a click and the options with a right-click. Its tooltip already shows the next mount in line."] =
     "O botão abre a lista com um clique e as opções com o botão direito. A dica dele já mostra a "
     .. "próxima montaria da fila."
 
-L["Alert on mount rares"] = "Avisar de raro com montaria"
+L["Rare alert"] = "Aviso de raro"
 L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."] =
     "Raro, elite ou chefe do mundo que larga montaria que você não tem: o aviso diz quem é, "
     .. "a montaria e a chance. Só no mundo aberto, e em silêncio depois que você saqueou."
 
-L["Show the ones that left the game"] = "Mostrar as que saíram do jogo"
-L["Closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =
-    "Promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. Elas não podem "
-    .. "mais ser conseguidas, então ficam fora da lista por padrão."
+L["Removed mounts"] = "Montarias removidas"
+L["Also lists the mounts that left the game: closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =
+    "Lista também as montarias que saíram do jogo: promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. Elas não podem mais ser conseguidas, então ficam fora da lista por padrão."
 
 --------------------------------------------------------------------------------
 -- Os comandos
@@ -380,9 +379,9 @@ L["The markers of the mounts you are missing are on the map."] = "As marcações
 L["The markers of the mounts you are missing are hidden."] = "As marcações das montarias que faltam estão escondidas."
 L["Click: hide them"] = "Clique: esconder"
 L["Click: show them"] = "Clique: mostrar"
-L["A button on the map to hide and show them"] = "Um botão no mapa para esconder e mostrar"
-L["A round button with a horseshoe, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."] =
-    "Um botão redondo com uma ferradura, na coluna dos botões do próprio mapa, no alto à direita. Um clique esconde todas as marcações do Rocket Mount, para quando você precisa do mapa limpo; outro traz de volta."
+L["Map button"] = "Botão no mapa"
+L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."] =
+    "Um botão redondo com uma ferradura no mapa-múndi, na coluna dos botões do próprio mapa, no alto à direita. Um clique esconde todas as marcações do Rocket Mount, para quando você precisa do mapa limpo; outro traz de volta."
 L['Quest "%s": %d of the %d quests that lead to it done'] = 'Missão "%s": %d das %d missões que levam a ela feitas'
 L['  ·  next: "%s"'] = '  ·  a próxima: "%s"'
 L["By difficulty, as players measured it:"] = "Por dificuldade, como os jogadores mediram:"
@@ -447,11 +446,11 @@ L["Rocket Mount %s — report a problem on %s.|n|nPress Ctrl+C to copy the link,
     "Rocket Mount %s — relatar um problema em %s.|n|nAperte Ctrl+C para copiar o endereço e cole no navegador. Conte o que você estava fazendo e o que aconteceu."
 
 -- The alert's sound (01/10).
-L["Play a sound with the alert"] = "Tocar um som com o aviso"
+L["Play a sound"] = "Tocar um som"
 L["A short sound of the game when the alert appears."] = "Um som curto do jogo quando o aviso aparece."
 L["Sound"] = "Som"
 L["Which of the game's sounds the alert plays. Picking one plays it."] = "Qual dos sons do jogo o aviso toca. Escolher um o toca."
-L["Sound volume"] = "Volume do som"
+L["Volume"] = "Volume"
 L["How loud the alert's sound is, on top of the game's own sound effects volume."] = "A altura do som do aviso, sobre o volume de efeitos sonoros do próprio jogo."
 L["World event"] = "Evento do mundo"
 L["Map ping"] = "Sinal no mapa"
