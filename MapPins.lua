@@ -738,6 +738,132 @@ function MapPins.Dashes(path, loop, dash, gap)
 end
 
 --------------------------------------------------------------------------------
+-- Markers that would sit on top of each other
+--
+-- (!) A SAFE DISTANCE, AND A LINE TO THE EXACT PLACE (01/10). The user's screenshot of Korthia:
+-- Konthrogz and Reliwik spawn 0.2 apart, they are two creatures with two mounts (so they are
+-- NOT one place, `Merge` leaves them alone), and the two markers were one pile. *"teria que
+-- corrigir caso montarias tenham alguma aproximação e deixar uma distância segura e talvez uma
+-- linha sutil com ponto no local exato"*.
+--
+-- Markers closer than SPREAD.MIN on the SCREEN are a group, and the group opens around its
+-- middle: two side by side (the label is under each, so sideways is where there is room),
+-- three or more on a circle, each on the side it already was. What moved gets a thin line of
+-- the game's flight-path art back to where the thing is, and a dot there. The arrow, the
+-- tooltip's coordinates and the minimap keep the exact place: only the drawing moves.
+--
+-- The distance is the screen's, so the group is made again when the map zooms: what is a pile
+-- on the continent has room of its own in the zone, and goes back to its place.
+--------------------------------------------------------------------------------
+local SPREAD = {
+    MIN = 26,               -- between the centres of two markers: the disc is 28 across
+    PASSES = 4,             -- a group that opened may reach a neighbour: then they are one group
+    THICK = 9,              -- of the line's art, which is mostly glow (the route's is 18)
+    ALPHA = 0.75, ALPHA_LOCKED = 0.35,
+    DOT = 7, DOT_ATLAS = "WhiteDotCircle-RaidBlips",
+    LINE_ATLAS = "_UI-Taxi-Line-horizontal",
+}
+MapPins.SpreadRule = SPREAD
+
+---Gives each marker of `lista` where it is DRAWN: `drawX, drawY` (map fractions, like `x, y`)
+---and `moved` when that is not the place itself.
+---@param w number canvas width @param h number canvas height (canvas units)
+---@param escala number canvas scale: canvas units times it are screen points
+---@return number moved how many markers were moved
+function MapPins.Spread(lista, w, h, escala)
+    for _, d in ipairs(lista) do d.drawX, d.drawY, d.moved = d.x, d.y, nil end
+    local n = #lista
+    if n < 2 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
+    local min = SPREAD.MIN / escala
+    local px, py, dx, dy, pai = {}, {}, {}, {}, {}
+    for i, d in ipairs(lista) do
+        px[i], py[i] = d.x * w, d.y * h
+        dx[i], dy[i] = px[i], py[i]
+        pai[i] = i
+    end
+    local function Raiz(i)
+        while pai[i] ~= i do pai[i] = pai[pai[i]]; i = pai[i] end
+        return i
+    end
+    local function Unir(a, b)
+        a, b = Raiz(a), Raiz(b)
+        if a == b then return false end
+        if a < b then pai[b] = a else pai[a] = b end
+        return true
+    end
+    local function Perto2(i, j)
+        local ex, ey = dx[i] - dx[j], dy[i] - dy[j]
+        return ex * ex + ey * ey < min * min * 0.98
+    end
+
+    for _ = 1, SPREAD.PASSES do
+        local mudou = false
+        for i = 1, n do
+            for j = i + 1, n do
+                if Raiz(i) ~= Raiz(j) and Perto2(i, j) then mudou = Unir(i, j) or mudou end
+            end
+        end
+        if not mudou then break end
+        -- every group, opened around the middle of its exact places
+        local grupos, ordem = {}, {}
+        for i = 1, n do
+            local r = Raiz(i)
+            if not grupos[r] then grupos[r] = {}; ordem[#ordem + 1] = r end
+            grupos[r][#grupos[r] + 1] = i
+        end
+        for _, r in ipairs(ordem) do
+            local g = grupos[r]
+            if #g == 1 then
+                dx[g[1]], dy[g[1]] = px[g[1]], py[g[1]]
+            else
+                local cx, cy = 0, 0
+                for _, i in ipairs(g) do cx, cy = cx + px[i], cy + py[i] end
+                cx, cy = cx / #g, cy / #g
+                if #g == 2 then
+                    table.sort(g, function(a, b)
+                        if px[a] ~= px[b] then return px[a] < px[b] end
+                        return a < b
+                    end)
+                    dx[g[1]], dy[g[1]] = cx - min / 2, cy
+                    dx[g[2]], dy[g[2]] = cx + min / 2, cy
+                else
+                    local raio = min / (2 * math.sin(math.pi / #g))
+                    local ang = {}
+                    for _, i in ipairs(g) do ang[i] = math.atan2(py[i] - cy, px[i] - cx) end
+                    table.sort(g, function(a, b)
+                        if ang[a] ~= ang[b] then return ang[a] < ang[b] end
+                        return a < b
+                    end)
+                    for k, i in ipairs(g) do
+                        local a = -math.pi + (k - 0.5) * 2 * math.pi / #g
+                        dx[i], dy[i] = cx + raio * math.cos(a), cy + raio * math.sin(a)
+                    end
+                end
+                -- the whole group inside the map
+                local folga = min / 2
+                local menorX, maiorX, menorY, maiorY = math.huge, -math.huge, math.huge, -math.huge
+                for _, i in ipairs(g) do
+                    menorX, maiorX = math.min(menorX, dx[i]), math.max(maiorX, dx[i])
+                    menorY, maiorY = math.min(menorY, dy[i]), math.max(maiorY, dy[i])
+                end
+                local sx = (menorX < folga and folga - menorX) or (maiorX > w - folga and (w - folga) - maiorX) or 0
+                local sy = (menorY < folga and folga - menorY) or (maiorY > h - folga and (h - folga) - maiorY) or 0
+                for _, i in ipairs(g) do dx[i], dy[i] = dx[i] + sx, dy[i] + sy end
+            end
+        end
+    end
+
+    local movidos = 0
+    for i, d in ipairs(lista) do
+        if dx[i] ~= px[i] or dy[i] ~= py[i] then
+            d.drawX, d.drawY, d.moved = dx[i] / w, dy[i] / h, true
+            movidos = movidos + 1
+        end
+    end
+    return movidos
+end
+
+--------------------------------------------------------------------------------
 -- The data provider
 --------------------------------------------------------------------------------
 RocketMountMapDataProviderMixin = CreateFromMixins(MapCanvasDataProviderMixin)
@@ -745,7 +871,30 @@ RocketMountMapDataProviderMixin = CreateFromMixins(MapCanvasDataProviderMixin)
 function RocketMountMapDataProviderMixin:RemoveAllData()
     self:GetMap():RemoveAllPinsByTemplate(TEMPLATE)
     self.routes = nil
+    self.places = nil
     self:LayoutRoutes()
+end
+
+---Opens the markers that would be a pile, for the canvas as it is now (see `MapPins.Spread`),
+---and puts the pins already on the map where they are drawn.
+---@return number moved
+function RocketMountMapDataProviderMixin:SpreadPins()
+    local movidos = 0
+    pcall(function()
+        local map = self:GetMap()
+        local canvas = map and map.GetCanvas and map:GetCanvas()
+        if not (canvas and self.places) then return end
+        local w, h = canvas:GetSize()
+        local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
+        movidos = MapPins.Spread(self.places, w, h, escala)
+        if map.EnumeratePinsByTemplate then
+            for pin in map:EnumeratePinsByTemplate(TEMPLATE) do
+                local d = pin.data
+                if type(d) == "table" and d.x then pin:SetPosition(d.drawX or d.x, d.drawY or d.y) end
+            end
+        end
+    end)
+    return movidos
 end
 
 ---Draws `self.routes` on the canvas as it is now. Called when the pins are drawn and whenever
@@ -753,11 +902,13 @@ end
 ---@return number lines drawn
 function RocketMountMapDataProviderMixin:LayoutRoutes()
     self.routeLines = self.routeLines or {}
-    local usadas = 0
+    local usadas, guias = 0, 0
     local ok = pcall(function()
         local map = self:GetMap()
         local canvas = map and map.GetCanvas and map:GetCanvas()
-        if not (canvas and self.routes and #self.routes > 0) then return end
+        local movidos = false
+        for _, d in ipairs(self.places or {}) do if d.moved then movidos = true end end
+        if not (canvas and ((self.routes and #self.routes > 0) or movidos)) then return end
         local w, h = canvas:GetSize()
         local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
         if not (w and h and w > 0 and h > 0) or not escala or escala <= 0 then return end
@@ -776,7 +927,7 @@ function RocketMountMapDataProviderMixin:LayoutRoutes()
         end
         self.routeFrame:Show()
 
-        for _, rota in ipairs(self.routes) do
+        for _, rota in ipairs(self.routes or {}) do
             local pontos = {}
             for i, p in ipairs(rota.path) do pontos[i] = { p[1] * w, p[2] * h } end
             local tracos = MapPins.Dashes(pontos, rota.loop, ROUTE.DASH / escala, ROUTE.GAP / escala)
@@ -796,15 +947,50 @@ function RocketMountMapDataProviderMixin:LayoutRoutes()
                 linha:Show()
             end
         end
+
+        -- The markers that were moved out of a pile: a thin line back to the place, a dot there.
+        self.leaderLines, self.leaderDots = self.leaderLines or {}, self.leaderDots or {}
+        for _, d in ipairs(self.places or {}) do
+            if d.moved then
+                guias = guias + 1
+                local linha, ponto = self.leaderLines[guias], self.leaderDots[guias]
+                if not linha then
+                    linha = self.routeFrame:CreateLine(nil, "ARTWORK")
+                    linha:SetAtlas(SPREAD.LINE_ATLAS)
+                    self.leaderLines[guias] = linha
+                    ponto = self.routeFrame:CreateTexture(nil, "OVERLAY")
+                    ponto:SetAtlas(SPREAD.DOT_ATLAS)
+                    self.leaderDots[guias] = ponto
+                end
+                local preso = d.locked and true or false
+                linha:SetThickness(SPREAD.THICK / escala)
+                linha:SetStartPoint("TOPLEFT", canvas, d.x * w, -d.y * h)
+                linha:SetEndPoint("TOPLEFT", canvas, d.drawX * w, -d.drawY * h)
+                linha:SetAlpha(preso and SPREAD.ALPHA_LOCKED or SPREAD.ALPHA)
+                linha:SetDesaturated(preso)
+                linha:Show()
+                ponto:SetSize(SPREAD.DOT / escala, SPREAD.DOT / escala)
+                ponto:ClearAllPoints()
+                ponto:SetPoint("CENTER", canvas, "TOPLEFT", d.x * w, -d.y * h)
+                ponto:SetAlpha(preso and SPREAD.ALPHA_LOCKED or 1)
+                ponto:Show()
+            end
+        end
     end)
     for i = usadas + 1, #self.routeLines do self.routeLines[i]:Hide() end
-    if self.routeFrame and usadas == 0 then self.routeFrame:Hide() end
+    for i = guias + 1, #(self.leaderLines or {}) do
+        self.leaderLines[i]:Hide()
+        self.leaderDots[i]:Hide()
+    end
+    self.leaders = guias
+    if self.routeFrame and usadas == 0 and guias == 0 then self.routeFrame:Hide() end
     self.routeError = not ok
     return usadas
 end
 
-function RocketMountMapDataProviderMixin:OnCanvasScaleChanged() self:LayoutRoutes() end
-function RocketMountMapDataProviderMixin:OnCanvasSizeChanged() self:LayoutRoutes() end
+-- The zoom changes what is a pile: the markers are opened again for the new scale.
+function RocketMountMapDataProviderMixin:OnCanvasScaleChanged() self:SpreadPins(); self:LayoutRoutes() end
+function RocketMountMapDataProviderMixin:OnCanvasSizeChanged() self:SpreadPins(); self:LayoutRoutes() end
 
 -- What the last drawing asked for and got, for `/rmt pins` and the diary.
 local ultimo = { map = nil, asked = 0, drawn = 0, failed = 0, err = nil }
@@ -823,6 +1009,9 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     ultimo = { map = mapID, asked = #lista, drawn = 0, failed = 0, err = nil, kinds = {},
                routes = 0, dashes = 0, merged = juntos }
     self.routes = {}
+    -- Where each one is drawn, before any is: the pin is put there as it is handed out.
+    self.places = lista
+    ultimo.moved = self:SpreadPins()
     for _, data in ipairs(lista) do
         for _, r in ipairs(data.routes or {}) do self.routes[#self.routes + 1] = r end
         -- (!) ONE PIN THAT FAILS DOES NOT TAKE THE REST WITH IT. For four days an assert inside
@@ -845,7 +1034,7 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     if ultimo.asked > 0 or ultimo.failed > 0 then
         ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
                              routes = ultimo.routes, dashes = ultimo.dashes,
-                             merged = ultimo.merged,
+                             merged = ultimo.merged, moved = ultimo.moved,
                              failed = ultimo.failed, error = ultimo.err })
     elseif mapID then
         -- And one line for the map that came out empty, with why: once per map, and again
@@ -893,7 +1082,8 @@ end
 
 function RocketMountMapPinMixin:OnAcquired(data)
     self.data = data
-    self:SetPosition(data.x, data.y)
+    -- Where it is DRAWN: its place, or beside it when it would sit on another (`MapPins.Spread`).
+    self:SetPosition(data.drawX or data.x, data.drawY or data.y)
 
     local kind = KindDe(data)
     local primeira = data.mounts and data.mounts[1]
