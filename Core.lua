@@ -145,6 +145,28 @@ handlers.COVENANT_CHOSEN = CharacterChanged
 handlers.ACHIEVEMENT_EARNED = CharacterChanged
 handlers.QUEST_TURNED_IN = CharacterChanged
 handlers.PLAYER_MONEY = CharacterChanged
+-- The item's own red lines ("Requires Level 40", "Requires Leatherworking") and which faction's
+-- mounts are this character's.
+handlers.PLAYER_LEVEL_UP = CharacterChanged
+handlers.SKILL_LINES_CHANGED = CharacterChanged
+handlers.NEUTRAL_FACTION_SELECT_RESULT = CharacterChanged
+
+-- (!) THE BAGS AND THE CRITERIA OF AN ACHIEVEMENT CHANGE ALL THE TIME (every loot, every kill
+-- that counts), and both are read by the list: a price in ITEMS ("3 x Coin"), an achievement
+-- "40% done". Building 1,600 rows at each would be waste, so these two wait a second and
+-- answer once for however many arrived.
+local soon = false
+local function ChangedOften()
+    if soon then return end
+    soon = true
+    local function Now()
+        soon = false
+        ns.Invalidate()
+    end
+    if C_Timer and C_Timer.After then C_Timer.After(1, Now) else Now() end
+end
+handlers.BAG_UPDATE_DELAYED = ChangedOften
+handlers.CRITERIA_UPDATE = ChangedOften
 
 -- THE VENDOR, the moment it opens and every time its list refreshes (items load late).
 function handlers:MERCHANT_SHOW()

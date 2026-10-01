@@ -22,8 +22,13 @@
 - **Shorter labels in the options.** Each option is named in two or three words; hover it for
   what it does.
 - **The list keeps up with your character.** Renown gained, a covenant chosen, an achievement
-  earned, a quest handed in or gold spent now update the list and the map right away; before,
-  some of these waited for something else to refresh them.
+  earned or advanced, a quest handed in, gold spent, an item of a price looted, a level or a
+  profession gained now update the list and the map; before, some of these waited for
+  something else to refresh them.
+- A vendor's refusal is looked at again every time: once the requirement the item showed in red
+  is met, the mount no longer reads "the vendor does not sell it to you yet".
+- The price a vendor charges is kept for each character: a reputation discount on one no
+  longer shows on the others.
 - **A reputation on its way no longer reads 0%.** A vendor mount whose item names the same
   reputation the addon already measures (the riding goats of The Tillers, for one) showed 0%
   and "1 more requirement" even at Revered. It now shows how far along you are.

@@ -1010,8 +1010,20 @@ function ns.OwnCost(mountID)
 end
 
 ---What the vendor charged for this mount the last time one was open, in MCL's shape.
+---
+---(!) THE PRICE THIS CHARACTER SAW COMES FIRST (01/10). The price was kept once for the whole
+---account, and a vendor does not charge everyone the same: gold drops up to 20% with the
+---reputation. The last character to open the vendor decided the number every other one read.
+---Now each character keeps what it was charged (`vendorSeen[character][mount].cost`), and the
+---account's is what answers for a character that never stood at that vendor.
 local function VendorCost(mountID)
-    local v = mountID and ns.db and type(ns.db.vendorCost) == "table" and ns.db.vendorCost[mountID]
+    if not (mountID and ns.db) then return nil end
+    local name = UnitName and UnitName("player")
+    local chave = name and (name .. "-" .. (GetRealmName and GetRealmName() or ""))
+    local meu = chave and type(ns.db.vendorSeen) == "table" and type(ns.db.vendorSeen[chave]) == "table"
+        and ns.db.vendorSeen[chave][mountID]
+    if type(meu) == "table" and type(meu.cost) == "table" and #meu.cost > 0 then return meu.cost end
+    local v = type(ns.db.vendorCost) == "table" and ns.db.vendorCost[mountID]
     if type(v) == "table" and #v > 0 then return v end
     return nil
 end
@@ -1578,13 +1590,37 @@ local function CharKey()
     return name .. "-" .. (GetRealmName and GetRealmName() or "")
 end
 
+---What the game paints red on an item's tooltip for this character, as one string: "" when
+---nothing is red, nil when the tooltip has not arrived (then nothing can be said).
+local function RedLines(itemID)
+    if not (ns.Tooltip and ns.Tooltip.State and ns.Tooltip.Gate) or type(itemID) ~= "number" then return nil end
+    if ns.Tooltip.State(itemID) ~= "ok" then return nil end
+    local g = ns.Tooltip.Gate(itemID)
+    return g and g.label or ""
+end
+
 ---What the vendor said to THIS character about this mount, as an access requirement.
+---
+---(!) A "NO" IS A PHOTOGRAPH, AND IT IS LOOKED AT AGAIN EVERY TIME THE LIST IS BUILT (01/10).
+---The user: *"tu vai criar uma forma que sempre que o usuário logar, ele vai reler, validar e
+---revisar tudo?"*. Everything else the list reads comes live from the game; the vendor's
+---verdict is the one judgement that is SAVED, and a refusal stayed for ever: refused at Revered,
+---the mount still read "the vendor does not sell it to you yet" at Exalted, until the player
+---walked back to the vendor. So the refusal is kept with what the item's tooltip painted red
+---that day; when the red lines are other ones now (the requirement was met, or a new one
+---appeared), the refusal is of another situation and no longer counts -- the mount goes back to
+---what the game says today. A refusal the tooltip never explained (a guild vendor) has nothing
+---to compare and stays, with its date.
 ---@return table|nil `{ pct = 1|0, label }`, nil when this character never saw it at a vendor
 function ns.VendorVerdict(mountID)
     local chave = CharKey()
     local porChar = chave and ns.db and ns.db.vendorSeen and ns.db.vendorSeen[chave]
     local v = porChar and porChar[mountID]
     if not v then return nil end
+    if not v.ok and v.sig ~= nil then
+        local agora = RedLines(v.item)
+        if agora ~= nil and agora ~= v.sig then return nil end
+    end
     local quando = date and v.t and date(L["%m/%d"], v.t) or "?"
     if v.ok then
         return { pct = 1, label = string.format(L["the vendor sells it to you (seen %s)"], quando) }
@@ -1650,7 +1686,9 @@ function ns.ScanMerchant()
                 local ok = info.isPurchasable and info.isUsable and true or false
                 local antes = reg[mountID]
                 if not antes or antes.ok ~= ok then mudou = true end
-                reg[mountID] = { ok = ok, t = time and time() or 0 }
+                -- With the item and what its tooltip painted red at this moment: what a
+                -- refusal is compared with later (`ns.VendorVerdict`).
+                reg[mountID] = { ok = ok, t = time and time() or 0, item = itemID, sig = RedLines(itemID) }
                 -- And what it CHARGES: the verdict above is about requirements, not money.
                 local okC, custo = pcall(MerchantCost, i, info)
                 local escrito = ""
@@ -1666,6 +1704,14 @@ function ns.ScanMerchant()
                         end
                     end
                     ns.db.vendorCost[mountID] = custo
+                    -- And for this character, whose price it is (see `VendorCost`).
+                    local meu = reg[mountID].cost
+                    if type(meu) ~= "table" or #meu ~= #custo then mudou = true end
+                    for j, c in ipairs(custo) do
+                        local a = type(meu) == "table" and meu[j]
+                        if not a or a.type ~= c.type or a.id ~= c.id or a.amount ~= c.amount then mudou = true end
+                    end
+                    reg[mountID].cost = custo
                 end
                 ns.Log.Add("merchant", {
                     mount = mountID, item = itemID, name = info.name,
