@@ -67,11 +67,15 @@ local ROW_H = 54              -- 46 in the journal; "engrossar um pouco" (25/09)
 local ROW_ICON = 42
 local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
 local COL_GAP = 10
-local NAME_X, NAME_W = 6, 320           -- name, and the "why" line under it
+local NAME_X, NAME_W = 6, 296           -- name, and the "why" line under it
 local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 210   -- three tags
-local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 130
+local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 124
 local PCT_W, PCT_INSET = 64, 8
 local PCT_X = ROW_W - PCT_INSET - PCT_W
+-- The map pin of the row (02/10): its own column between the expansion and the number. The
+-- name gave 24 and the expansion 6 for it.
+local PIN_W = 22
+local PIN_X = EXP_X + EXP_W + COL_GAP
 
 ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
@@ -81,7 +85,8 @@ ns.Geometry = {
     rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
-        { name = "exp", x = EXP_X, w = EXP_W }, { name = "pct", x = PCT_X, w = PCT_W },
+        { name = "exp", x = EXP_X, w = EXP_W }, { name = "pin", x = PIN_X, w = PIN_W },
+        { name = "pct", x = PCT_X, w = PCT_W },
     },
 }
 
@@ -185,6 +190,12 @@ local function BuildDetail(parent)
     d.waypoint:SetSize(160, 22)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
+    -- And the one that opens the map on the place (02/10), beside it.
+    d.openMap = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.openMap:SetSize(160, 22)
+    d.openMap:SetText(L["Open the map"])
+    d.openMap:SetPoint("LEFT", d.waypoint, "RIGHT", 8, 0)
+    d.openMap:Hide()
 
     -- The "no longer exists" buttons, made as they are needed (`ForgetButton`).
     d.forget = {}
@@ -246,6 +257,113 @@ function ns.Places(entry)
         Add(nome, wp.m, wp.x, wp.y, nil, wp.i)
     end
     return out
+end
+
+--------------------------------------------------------------------------------
+-- WHERE THE MOUNT IS, AS ONE PLACE TO GO TO (02/10)
+--
+-- The user: *"na lista das montarias, gostaria que pudesse marcar onde é a montaria, seja como
+-- vendedor, reputação, raid, DG, não importa, marcar onde é e se tiver um botão que abra o mapa
+-- do local, seria melhor ainda"*. The card had a "Set map pin" button at its very end, and only
+-- for a mount with a coordinate of its own: a raid or a dungeon mount had none.
+--
+-- So a mount has ONE place to go to, whatever it is: the vendor, the quest giver, the rare, the
+-- chest -- or, for a mount that drops inside an instance, the DOOR of the instance. The door is
+-- where the game says (`C_EncounterJournal.GetDungeonEntrancesForMap`, the call its own map
+-- icons are made of): no coordinate of an entrance is kept by the addon. Every row has the
+-- game's map pin; a click marks the place and opens the map on it.
+--------------------------------------------------------------------------------
+local entrances     -- [journalInstanceID] = { m, x, y, name }, built once, on the first question
+
+---Where the door of each instance is, from the game. Zones first: the door on the zone's map
+---is where the player walks to; a continent only answers for what no zone has.
+local function Entrances()
+    if entrances then return entrances end
+    entrances = {}
+    if not (C_Map and C_Map.GetMapChildrenInfo and C_EncounterJournal
+            and C_EncounterJournal.GetDungeonEntrancesForMap) then return entrances end
+    local T = Enum and Enum.UIMapType or {}
+    local ok, mapas = pcall(C_Map.GetMapChildrenInfo, 946, nil, true)
+    if not ok or type(mapas) ~= "table" then return entrances end
+    for _, tipo in ipairs({ T.Zone, T.Continent }) do
+        for _, info in ipairs(mapas) do
+            if type(info) == "table" and info.mapID and info.mapType == tipo then
+                local okE, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, info.mapID)
+                for _, d in ipairs(okE and type(lista) == "table" and lista or {}) do
+                    local id = type(d) == "table" and d.journalInstanceID
+                    if type(id) == "number" and not entrances[id] and type(d.position) == "table" and d.position.GetXY then
+                        local x, y = d.position:GetXY()
+                        if type(x) == "number" and type(y) == "number" and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+                            entrances[id] = { m = info.mapID, x = x * 100, y = y * 100, name = d.name }
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return entrances
+end
+
+---For the harness: the doors are asked of the game again.
+function ns.__resetEntrances() entrances = nil end
+
+---The one place to go to for a mount, or nil when no place is known.
+---@return table|nil `{ m, x, y (0-100), text, door }`
+function ns.MountPlace(entry)
+    if type(entry) ~= "table" then return nil end
+    for _, p in ipairs(ns.Places(entry)) do
+        if p.m and p.x and p.y then
+            return { m = p.m, x = p.x, y = p.y, text = p.text }
+        end
+    end
+    if entry.instanceID then
+        local porta = Entrances()[entry.instanceID]
+        if porta then
+            local zona
+            if C_Map and C_Map.GetMapInfo then
+                local ok, info = pcall(C_Map.GetMapInfo, porta.m)
+                zona = ok and type(info) == "table" and info.name or nil
+            end
+            local nome = porta.name or entry.instanceName or ""
+            local texto = string.format("%s%s  %.1f, %.1f", nome ~= "" and (nome .. " — ") or "", zona or "", porta.x, porta.y)
+            return { m = porta.m, x = porta.x, y = porta.y, text = texto, door = true }
+        end
+    end
+    return nil
+end
+
+---Marks the place with the game's map pin (when its map takes one) and, with `open`, opens the
+---world map there.
+---@return boolean pinned, boolean opened
+function ns.GoToPlace(place, entry, open)
+    if type(place) ~= "table" or not place.m then return false, false end
+    local pinned, opened = false, false
+    if C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.SetUserWaypoint and UiMapPoint then
+        local ok, can = pcall(C_Map.CanSetUserWaypointOnMap, place.m)
+        if ok and can then
+            local okP = pcall(function()
+                C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(place.m, place.x / 100, place.y / 100))
+                if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+                    C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+                end
+            end)
+            pinned = okP
+        end
+    end
+    if open then
+        if OpenWorldMap then
+            opened = (pcall(OpenWorldMap, place.m))
+        elseif WorldMapFrame and WorldMapFrame.SetMapID then
+            opened = (pcall(function()
+                if not WorldMapFrame:IsShown() and ToggleWorldMap then ToggleWorldMap() end
+                WorldMapFrame:SetMapID(place.m)
+            end))
+        end
+    end
+    if pinned then
+        ns.Print(string.format(L["arrow pointed at %s."], (entry and entry.name) or L["the mount"]))
+    end
+    return pinned, opened
 end
 
 ---What an achievement asks and what is still missing of it, in the game's words.
@@ -635,6 +753,7 @@ local function FillDetail(entry)
         b:Hide()
     end
     d.waypoint:Hide()
+    d.openMap:Hide()
 
     if not entry then
         d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
@@ -707,18 +826,15 @@ local function FillDetail(entry)
         end
     end
 
-    if wp and C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(wp.m) then
+    -- The place to go to: the mount's own, or the door of its instance (`ns.MountPlace`).
+    wp = ns.MountPlace(entry)
+    if wp then
         d.waypoint:ClearAllPoints()
         d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
-        d.waypoint:SetScript("OnClick", function()
-            local point = UiMapPoint.CreateFromCoordinates(wp.m, wp.x / 100, wp.y / 100)
-            C_Map.SetUserWaypoint(point)
-            if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
-                C_SuperTrack.SetSuperTrackedUserWaypoint(true)
-            end
-            ns.Print(string.format(L["arrow pointed at %s."], entry.name or L["the mount"]))
-        end)
+        d.waypoint:SetScript("OnClick", function() ns.GoToPlace(wp, entry, false) end)
         d.waypoint:Show()
+        d.openMap:SetScript("OnClick", function() ns.GoToPlace(wp, entry, true) end)
+        d.openMap:Show()
         total = total + 14 + 22
     end
 
@@ -782,6 +898,30 @@ local function BuildRow(row)
     row.headline = Text(row, "GameFontHighlight", "RIGHT")
     row.headline:SetPoint("RIGHT", -PCT_INSET, 0)
     row.headline:SetWidth(PCT_W)
+
+    -- THE MAP PIN (02/10): the game's own waypoint diamond. One click marks where the mount is
+    -- and opens the map there; a row with no known place has no pin.
+    row.pin = CreateFrame("Button", nil, row)
+    row.pin:SetSize(PIN_W, PIN_W)
+    row.pin:SetPoint("LEFT", PIN_X, 0)
+    row.pin:SetNormalAtlas("Waypoint-MapPin-Untracked")
+    row.pin:SetHighlightAtlas("Waypoint-MapPin-Highlight")
+    row.pin:SetScript("OnClick", function(self)
+        local e = self:GetParent().entry
+        local lugar = ns.MountPlace(e)
+        if lugar then ns.GoToPlace(lugar, e, true) end
+    end)
+    row.pin:SetScript("OnEnter", function(self)
+        local lugar = ns.MountPlace(self:GetParent().entry)
+        if not lugar then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip_SetTitle(GameTooltip, lugar.door and L["The way in"] or L["Where"])
+        GameTooltip_AddNormalLine(GameTooltip, lugar.text, true)
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: mark it and open the map"], true)
+        GameTooltip:Show()
+    end)
+    row.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     row:SetScript("OnEnter", function(self)
         local e = self.entry
@@ -862,6 +1002,7 @@ local function FillRow(row, data)
         row.headline:SetTextColor(1, 1, 1)
     end
     row.selectedTexture:SetShown(Same(e, selected))
+    row.pin:SetShown(ns.MountPlace(e) ~= nil)
 end
 
 ---What the scroll box shows: one element per mount, in the window's order.

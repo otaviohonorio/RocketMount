@@ -481,3 +481,8 @@ L["Deleted, renamed or moved to another realm: click this button and pick it in 
 L["this character"] = "este personagem"
 L["Click a character that no longer exists to take it out"] = "Clique em um personagem que não existe mais para tirá-lo"
 L["Click: the characters read, to take out one that no longer exists"] = "Clique: os personagens lidos, para tirar um que não existe mais"
+
+-- The place of a mount, from the list (02/10).
+L["Open the map"] = "Abrir o mapa"
+L["The way in"] = "A entrada"
+L["Click: mark it and open the map"] = "Clique: marcar e abrir o mapa"
