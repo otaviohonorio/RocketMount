@@ -1518,9 +1518,45 @@ local function Build()
     -- "Support the project" (27/09): a line of its own at the very bottom (Donate.lua).
     window.donate = ns.DonateFooter(window)
 
+    -- (!) "STILL BEING IMPROVED, SUGGESTIONS WELCOME" (02/10). The user: *"seria bom avisar na
+    -- janela do addon, não sei onde fica melhor para a experiência do usuário, que esta lista de
+    -- montarias assim como a descrição delas ainda estão em evolução e melhoria e que aceitamos
+    -- sugestões"*. Where: the footer line, at the right -- always in sight and never in the
+    -- way, on the same line as the count and right above "Report a problem", which is where a
+    -- suggestion goes. It is quiet (the game's grey small font), lights up under the pointer,
+    -- and a click opens that same menu: saying "we take suggestions" with no way to send one
+    -- would be half a sentence.
+    local nota = CreateFrame("Button", nil, window)
+    nota:SetHeight(14)
+    nota:SetPoint("BOTTOMRIGHT", -12, 6 + DONATE_ROW)
+    nota.text = Text(nota, "GameFontDisableSmall", "RIGHT")
+    nota.text:SetPoint("RIGHT")
+    nota.text:SetText(L["The list and the descriptions are still being improved: suggestions are welcome."])
+    nota:SetWidth((nota.text.GetStringWidth and tonumber(nota.text:GetStringWidth()) or 0) > 0
+        and nota.text:GetStringWidth() or 420)
+    nota:SetScript("OnEnter", function(self)
+        self.text:SetFontObject("GameFontHighlightSmall")
+        GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")
+        GameTooltip_SetTitle(GameTooltip, L["Suggestions are welcome"])
+        GameTooltip_AddNormalLine(GameTooltip, L["A mount in the wrong place of the list, a place that is missing, a description that is wrong or could say more: tell us, and the next version has it."], true)
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: where to send it"], true)
+        GameTooltip:Show()
+    end)
+    nota:SetScript("OnLeave", function(self)
+        self.text:SetFontObject("GameFontDisableSmall")
+        GameTooltip:Hide()
+    end)
+    nota:SetScript("OnClick", function(self)
+        GameTooltip:Hide()
+        if ns.ReportMenu then ns.ReportMenu(self) end
+    end)
+    window.evolving = nota
+
     window.footer = Text(window, "GameFontHighlightSmall")
     window.footer:SetPoint("BOTTOMLEFT", 10, 8 + DONATE_ROW)
-    window.footer:SetWidth(WINDOW_W - 20)
+    -- up to the note, and not under it
+    window.footer:SetPoint("RIGHT", nota, "LEFT", -12, 0)
     window.footer:SetWordWrap(false)
 
     tinsert(UISpecialFrames, window:GetName())   -- Esc closes

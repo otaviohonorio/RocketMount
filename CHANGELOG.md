@@ -8,6 +8,8 @@
   that would overlap were opened into one huge ring, far from where each thing is. Each one
   now steps aside only as much as it takes and never far from its place; on a continent they
   sit closer still, since the zone's map is where each is seen.
+- A note at the foot of the window says the list and the descriptions are still being
+  improved; click it to send a suggestion.
 - **Marker size.** Two new options set how large the markers are, on the world map and on the
   minimap, from 80% to 150%.
 - The mount's card has two buttons for the same place, **Set map pin** and **Open the map**,

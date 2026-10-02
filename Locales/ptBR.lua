@@ -493,3 +493,11 @@ L["How large the markers are on the world map. 100% is the size of the game's ow
     "O tamanho dos marcadores no mapa-múndi. 100% é o tamanho do marcador de missão do próprio jogo."
 L["Size on the minimap"] = "Tamanho no minimapa"
 L["How large the markers are on the minimap."] = "O tamanho dos marcadores no minimapa."
+
+-- The note at the foot of the window (02/10).
+L["The list and the descriptions are still being improved: suggestions are welcome."] =
+    "A lista e as descrições ainda estão em evolução: sugestões são bem-vindas."
+L["Suggestions are welcome"] = "Sugestões são bem-vindas"
+L["A mount in the wrong place of the list, a place that is missing, a description that is wrong or could say more: tell us, and the next version has it."] =
+    "Uma montaria no lugar errado da lista, um local que falta, uma descrição errada ou que poderia dizer mais: conte para nós, e a próxima versão já traz."
+L["Click: where to send it"] = "Clique: para onde enviar"
