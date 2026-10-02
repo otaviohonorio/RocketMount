@@ -39,6 +39,8 @@ ns.defaults = {
     sightingSound = true,
     sightingSoundKey = "chime",
     sightingVolume = 60,
+    -- The size of the markers on the world map, in percent of the game's quest pin (02/10).
+    mapPinScale = 100,
     sightingPos = nil,
 }
 

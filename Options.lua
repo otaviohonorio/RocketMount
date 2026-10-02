@@ -180,6 +180,24 @@ function ns.SetupOptions()
             (Caixa("mapRoutes", "MapRoutes", L["Rare routes"],
                 L["A rare that patrols gets one marker and a dashed line along where it was seen. The route is an estimate from players' sightings. Unchecked, only the marker is drawn."])),
         }
+        -- THE SIZE OF THE MARKERS (02/10): 80% to 150% of the game's quest pin, in steps of 10.
+        do
+            local P = ns.MapPins and ns.MapPins.PIN_SCALE or { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
+            local s = Settings.RegisterProxySetting(category, ADDON .. "MapPinScale",
+                Settings.VarType.Number, L["Marker size"], P.DEFAULT,
+                function() return tonumber(ns.db.mapPinScale) or P.DEFAULT end,
+                function(value)
+                    ns.db.mapPinScale = value
+                    if ns.MapPins then ns.MapPins.Refresh() end
+                end)
+            local options = Settings.CreateSliderOptions(P.MIN, P.MAX, P.STEP)
+            if options.SetLabelFormatter and MinimalSliderWithSteppersMixin then
+                options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right,
+                    function(value) return string.format("%d%%", value) end)
+            end
+            filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
+                L["How large the markers are on the world map. 100% is the size of the game's own quest marker."])
+        end
         -- The game's own way of hanging an option under another (Blizzard_SettingControls.lua:
         -- `SetParentInitializer`, the 15 px indent); older clients simply list them.
         for _, filha in ipairs(filhas) do

@@ -59,6 +59,24 @@ local TEMPLATE = "RocketMountMapPinTemplate"
 MapPins.Geometry = { PIN = 18, DISC = 28, ICON = 15, RING = 18, BADGE = 11, BADGE_X = 6, BADGE_Y = -6,
                      LABEL = 7 }
 
+-- (!) THE SIZE OF THE MARKERS IS THE PLAYER'S TO CHOOSE, WITHIN LIMITS (02/10). The user:
+-- *"podemos também adicionar a configuração de tamanho de ícone de mapa? claro, dentro de um
+-- limite aceitável, nada gigante e também nada minúsculo"*. 100% is the size of the game's own
+-- quest pin (the geometry above). The limits: at 80% the mount's icon inside the ring is still
+-- 12 points; at 150% the disc is 42, about the size of the game's dungeon entrance.
+-- The size is applied the way the game sizes any pin (`SetScalingLimits`), so every piece of
+-- the marker -- disc, icon, badge, label -- grows by the same ratio, and the safe distance
+-- between markers (`SPREAD.MIN`) grows with it.
+local PIN_SCALE = { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
+MapPins.PIN_SCALE = PIN_SCALE
+
+---The marker's size as a factor (1 = the game's quest pin), from the options, inside the limits.
+function MapPins.PinScale()
+    local v = tonumber(ns.db and ns.db.mapPinScale) or PIN_SCALE.DEFAULT
+    if v < PIN_SCALE.MIN then v = PIN_SCALE.MIN elseif v > PIN_SCALE.MAX then v = PIN_SCALE.MAX end
+    return v / 100
+end
+
 -- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
 -- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
 local NEAR = 0.035
@@ -789,7 +807,8 @@ function MapPins.Spread(lista, w, h, escala, fixos)
     local n = #lista
     local temFixos = type(fixos) == "table" and #fixos > 0
     if (n < 2 and not temFixos) or n < 1 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
-    local min = SPREAD.MIN / escala
+    -- larger markers need more room between them
+    local min = SPREAD.MIN * MapPins.PinScale() / escala
     local px, py, dx, dy, pai = {}, {}, {}, {}, {}
     for i, d in ipairs(lista) do
         px[i], py[i] = d.x * w, d.y * h
@@ -1202,6 +1221,10 @@ end
 
 function RocketMountMapPinMixin:OnAcquired(data)
     self.data = data
+    -- The size chosen in the options, through the game's own limits (1.0 zoomed out, 1.2
+    -- zoomed in, as set in OnLoad): both ends by the same factor.
+    local k = MapPins.PinScale()
+    self:SetScalingLimits(1, 1.0 * k, 1.2 * k)
     -- Where it is DRAWN: its place, or beside it when it would sit on another (`MapPins.Spread`).
     self:SetPosition(data.drawX or data.x, data.drawY or data.y)
 

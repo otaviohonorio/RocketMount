@@ -486,3 +486,8 @@ L["Click: the characters read, to take out one that no longer exists"] = "Clique
 L["Open the map"] = "Abrir o mapa"
 L["The way in"] = "A entrada"
 L["Click: mark it and open the map"] = "Clique: marcar e abrir o mapa"
+
+-- The size of the markers on the world map (02/10).
+L["Marker size"] = "Tamanho do marcador"
+L["How large the markers are on the world map. 100% is the size of the game's own quest marker."] =
+    "O tamanho dos marcadores no mapa-múndi. 100% é o tamanho do marcador de missão do próprio jogo."
