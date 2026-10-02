@@ -174,7 +174,7 @@ local function BuildDetail(parent)
     d.name:SetWidth(DETAIL_W - 58)
     d.name:SetJustifyV("TOP")
 
-    d.tier = Text(d, "GameFontHighlightSmall")
+    d.tier = Text(d, "GameFontHighlightSmall2") -- 11, one point over the small one
     d.tier:SetPoint("TOPLEFT", d.name, "BOTTOMLEFT", 0, -4)
     d.tier:SetWidth(DETAIL_W - 58)
 
@@ -221,10 +221,15 @@ local function Block(d, i)
     local b = d.blocks[i]
     if b then return b end
     b = {}
-    b.label = Text(d, "GameFontNormal")
+    -- (!) ONE POINT LARGER (02/10). The user: *"pode aumentar um pouco só o texto do lado
+    -- direito? (…) pouca coisa"*. The game's own next step: `GameFontNormalMed1` is 13 where
+    -- `GameFontNormal` is 12. The game has no white object at 13 (its next white one is 14),
+    -- so the value takes the same object, painted with the game's highlight colour.
+    b.label = Text(d, "GameFontNormalMed1")
     b.label:SetWidth(DETAIL_W)
     b.label:SetJustifyV("TOP")
-    b.value = Text(d, "GameFontHighlight")
+    b.value = Text(d, "GameFontNormalMed1")
+    b.value:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
     b.value:SetWidth(DETAIL_W)
     b.value:SetJustifyV("TOP")
     b.value:SetSpacing(2)
@@ -919,7 +924,7 @@ local function FillDetail(entry)
             b.value:SetText(bloco.value)
             b.value:SetPoint("TOPLEFT", b.label, "BOTTOMLEFT", 0, -2)
             b.value:Show()
-            total = total - y + Altura(b.label, bloco.label, 14) + 2 + Altura(b.value, bloco.value, 14)
+            total = total - y + Altura(b.label, bloco.label, 15) + 2 + Altura(b.value, bloco.value, 15)
             anchor, y = b.value, -10
             -- Under the text that names them, one button for each character named.
             for n, c in ipairs(bloco.chars or {}) do
@@ -942,7 +947,7 @@ local function FillDetail(entry)
             b.label:SetText(bloco.value)
             b.label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y)
             b.label:Show()
-            total = total - y + Altura(b.label, bloco.value, 14)
+            total = total - y + Altura(b.label, bloco.value, 15)
             anchor, y = b.label, -10
         end
     end
