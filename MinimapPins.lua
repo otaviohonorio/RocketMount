@@ -186,10 +186,15 @@ local function Criar()
 end
 
 local function Vestir(f, d)
-    local kind = ns.MapPins.KIND[d.kind] or ns.MapPins.KIND.other
-    f.data = d
-    -- The size of the options, told every time: a recycled marker keeps the one it had.
     local lado = MinimapPins.Size()
+    local preso0 = d.locked and true or false
+    -- (!) DRESSED ONCE, NOT TEN TIMES A SECOND (02/10). While the player moves, every marker
+    -- in reach is placed again at each look; its art, cut, size and dimming only change when
+    -- it is given another place, another size or another state.
+    if f.data == d and f.lado == lado and f.preso == preso0 then return end
+    local kind = ns.MapPins.KIND[d.kind] or ns.MapPins.KIND.other
+    f.data, f.lado, f.preso = d, lado, preso0
+    -- The size of the options: a recycled marker keeps the one it had.
     f:SetSize(lado, lado)
     -- (The cut is the texture's, and stays when the art changes: a recycled marker is told
     -- its cut every time, the whole art included.)
@@ -214,8 +219,11 @@ end
 
 ---Nothing to draw: every marker goes, and the next look draws from scratch.
 local function Nada()
-    Esconder(1)
-    ultimo, desenhados = {}, {}
+    -- (Nothing to draw is the common case -- a zone with no place -- and it runs ten times a
+    -- second: the tables are emptied where they are, never made again.)
+    if usados > 0 then Esconder(1) end
+    if next(ultimo) ~= nil then for k in pairs(ultimo) do ultimo[k] = nil end end
+    for k = #desenhados, 1, -1 do desenhados[k] = nil end
     return desenhados
 end
 
@@ -237,9 +245,10 @@ function MinimapPins.Update(forcar)
         and ultimo.instancia == instancia and ultimo.largura == largura then
         return nil
     end
-    ultimo = { n = n, w = w, raio = raio, rumo = rumo, instancia = instancia, largura = largura }
+    -- (the same tables, filled again: this runs ten times a second while the player moves)
+    ultimo.n, ultimo.w, ultimo.raio, ultimo.rumo, ultimo.instancia, ultimo.largura = n, w, raio, rumo, instancia, largura
 
-    local novos, i = {}, 0
+    local novos, i = desenhados or {}, 0
     for _, l in ipairs(lugares) do
         if l.instance == instancia then
             local dx, dy = MinimapPins.Offset(n, w, l.n, l.w, raio, rumo or nil)
@@ -254,12 +263,15 @@ function MinimapPins.Update(forcar)
                 f:ClearAllPoints()
                 f:SetPoint("CENTER", Minimap, "CENTER", dx * largura / 2, dy * altura / 2)
                 f:Show()
-                novos[#novos + 1] = { data = l.data, x = dx * largura / 2, y = dy * altura / 2, frame = f }
+                local reg = novos[i] or {}
+                reg.data, reg.x, reg.y, reg.frame = l.data, dx * largura / 2, dy * altura / 2, f
+                novos[i] = reg
             end
         end
     end
     Esconder(i + 1)
     usados = i
+    for k = #novos, i + 1, -1 do novos[k] = nil end
     desenhados = novos
     return desenhados
 end

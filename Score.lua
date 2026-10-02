@@ -24,7 +24,7 @@
 -- no lockout at all are years apart, and today both land in the same band. The per-mount
 -- lockout period is missing -- the API does not expose it and no installed catalogue keeps
 -- it. Until it exists, the row shows the method and the player judges.
-local _, ns = ...
+local ADDON, ns = ...
 local L = ns.L
 
 -- (!) A ORDEM DAS FAIXAS É A PROMESSA DO ADDON, e ela estava errada: "requisito desconhecido"
@@ -492,9 +492,12 @@ end
 
 local cache
 
-function ns.GetRanked(force)
-    if cache and not force and not ns.IsDirty() then return cache end
+---@param force boolean|nil build now, whatever the cache says
+---@param fresh boolean|nil the caller shows the list to the player: old numbers will not do
+function ns.GetRanked(force, fresh)
+    if cache and not force and not ns.NeedsRebuild(fresh) then return cache end
 
+    local t0 = debugprofilestop and debugprofilestop() or nil
     local list = ns.BuildList()
     for i = 1, #list do
         ns.Rank(list[i])
@@ -502,6 +505,21 @@ function ns.GetRanked(force)
     table.sort(list, Compare)
 
     cache = list
+    ns.builds = (ns.builds or 0) + 1
+    -- How long it took, for the diary (development only): the number to watch.
+    if t0 and ns.Log and ns.Log.enabled then
+        local ms = math.floor(debugprofilestop() - t0 + 0.5)
+        -- The addon's memory, as the game counts it (asked only here, in development: the
+        -- question itself is not cheap).
+        local kb
+        if UpdateAddOnMemoryUsage and GetAddOnMemoryUsage then
+            pcall(UpdateAddOnMemoryUsage)
+            local ok, v = pcall(GetAddOnMemoryUsage, ADDON)
+            kb = ok and type(v) == "number" and math.floor(v + 0.5) or nil
+        end
+        pcall(ns.Log.Add, "build", { ms = ms, mounts = #list, n = ns.builds, kb = kb,
+                                     forced = force and true or false, fresh = fresh and true or false })
+    end
     ns.MarkClean()
     return cache
 end
@@ -538,7 +556,8 @@ end
 
 -- A lista já ranqueada, depois dos filtros.
 function ns.GetFiltered()
-    local all = ns.GetRanked()
+    -- the list the player looks at: fresh
+    local all = ns.GetRanked(nil, true)
     local modo = ns.db.factionFilter
 
     -- Os termos são quebrados UMA vez, e não dentro do laço.

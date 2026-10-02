@@ -123,9 +123,25 @@ function handlers:NEW_MOUNT_ADDED()
     ns.Invalidate()
 end
 
+-- (!) THE LEDGER IS WRITTEN A LITTLE LATER, ONCE (02/10). Reputation moves at every kill, and
+-- each event read some sixty factions again. Five seconds later, once for however many came.
+local ledgerSoon, ledgerAt = false, 0
+local function RecordSoon()
+    if not ns.Roster then return end
+    local agora = GetTime and GetTime() or 0
+    -- (A wait that never came back -- a timer lost -- does not hold the ledger for ever.)
+    if ledgerSoon and (agora - ledgerAt) < 30 then return end
+    ledgerSoon, ledgerAt = true, agora
+    local function Agora()
+        ledgerSoon = false
+        if ns.Roster then ns.Roster.Record() end
+    end
+    if C_Timer and C_Timer.After then C_Timer.After(5, Agora) else Agora() end
+end
+
 function handlers:UPDATE_FACTION()
-    if ns.Roster then ns.Roster.Record() end
-    ns.Invalidate()
+    RecordSoon()
+    ns.Invalidate(true)
 end
 
 -- (!) EVERYTHING THE LIST READS ABOUT THE CHARACTER HAS ITS EVENT (01/10). The user: *"o addon
@@ -138,8 +154,8 @@ end
 -- CovenantsDocumentation, 12.1.0). Each only marks the list dirty: it is built again when
 -- something asks for it.
 local function CharacterChanged()
-    if ns.Roster then ns.Roster.Record() end
-    ns.Invalidate()
+    RecordSoon()
+    ns.Invalidate(true)
 end
 handlers.MAJOR_FACTION_RENOWN_LEVEL_CHANGED = CharacterChanged
 handlers.MAJOR_FACTION_UNLOCKED = CharacterChanged
@@ -164,7 +180,7 @@ local function ChangedOften()
     soon = true
     local function Now()
         soon = false
-        ns.Invalidate()
+        ns.Invalidate(true)
     end
     if C_Timer and C_Timer.After then C_Timer.After(1, Now) else Now() end
 end
@@ -181,7 +197,7 @@ function handlers:MERCHANT_UPDATE()
 end
 
 function handlers:CURRENCY_DISPLAY_UPDATE()
-    ns.Invalidate()
+    ns.Invalidate(true)
 end
 
 -- The game's list of events changed (a holiday started, the calendar arrived from the server):
@@ -215,13 +231,46 @@ ns.frame = frame
 --------------------------------------------------------------------------------
 -- List cache. Recomputing 400 mounts on every reputation event would be waste; we only
 -- mark it dirty and recompute when the window asks.
+--
+-- (!) "WHEN SOMETHING ASKS" WAS EVERY TWO SECONDS (02/10). The user: *"quando abro o jogo ele
+-- sobe bem o uso de CPU do addon e a memória também"*. The diary of that morning had the
+-- answer: in 1 h 44 of play the whole list (658 mounts, each with its tooltip, reputation,
+-- achievements and price read from the game) was built 265 times -- up to 24 times in one
+-- minute, one every 2 seconds on the median. Two things met: the events that mark the list
+-- dirty are constant while playing (gold, bags, reputation, currency, criteria), and the rare
+-- alert asks for the list at every nameplate, mouseover and vignette. Each build is CPU, and
+-- every table it makes is garbage for the collector.
+--
+-- So the dirt has two kinds:
+--   URGENT  the SET of mounts changed, or the player asked for something (a mount learned, an
+--           option, a vendor read): the next one to ask gets a new list;
+--   LAZY    only numbers changed (gold, a reputation point, a criterion): whoever works in
+--           the background -- the rare alert, the map, the minimap -- goes on with the list it
+--           has, and a new one is made at most every LAZY_INTERVAL seconds. The addon's own
+--           window always shows a fresh list, at most once a second.
 --------------------------------------------------------------------------------
-local dirty = true
+local LAZY_INTERVAL = 20
+local dirty, urgent, builtAt = true, true, 0
+local refreshSoon = false
+ns.LAZY_INTERVAL = LAZY_INTERVAL
 
-function ns.Invalidate()
+local function Clock() return GetTime and GetTime() or 0 end
+
+---@param lazy boolean|nil true when only numbers changed (see above)
+function ns.Invalidate(lazy)
     dirty = true
-    if ns.window and ns.window:IsShown() then
+    if not lazy then urgent = true end
+    if not (ns.window and ns.window:IsShown()) then return end
+    if not lazy then
         ns.RefreshWindow()
+    elseif not refreshSoon then
+        -- The open window follows the numbers, once a second however many events arrive.
+        refreshSoon = true
+        local function Agora()
+            refreshSoon = false
+            if ns.window and ns.window:IsShown() then ns.RefreshWindow() end
+        end
+        if C_Timer and C_Timer.After then C_Timer.After(1, Agora) else Agora() end
     end
 end
 
@@ -229,8 +278,15 @@ function ns.IsDirty()
     return dirty
 end
 
+---Is a new list due? `fresh` is the addon's own window: it does not live with old numbers.
+function ns.NeedsRebuild(fresh)
+    if not dirty then return false end
+    if urgent or fresh then return true end
+    return (Clock() - builtAt) >= LAZY_INTERVAL
+end
+
 function ns.MarkClean()
-    dirty = false
+    dirty, urgent, builtAt = false, false, Clock()
     -- O índice de bichos vive da lista: refaz junto, e não a cada raro que aparece.
     if ns.Sighting then ns.Sighting.Rebuild() end
     -- And the map pins, which read that same index.

@@ -74,7 +74,9 @@ function Achievements.Scan()
     local categorias = GetCategoryList() or {}
     local ci, ai = 1, 1
 
+    local gasto, fatias = 0, 0
     local function Step()
+        local t0 = debugprofilestop and debugprofilestop() or nil
         local feitas = 0
         while ci <= #categorias and feitas < SLICE do
             local cat = categorias[ci]
@@ -91,10 +93,15 @@ function Achievements.Scan()
             end
         end
 
+        if t0 then gasto, fatias = gasto + (debugprofilestop() - t0), fatias + 1 end
         if ci <= #categorias then
             C_Timer.After(0, Step)
         else
             scanning = false
+            -- How long the scan took in all, and in how many slices (development only).
+            if ns.Log and ns.Log.enabled then
+                pcall(ns.Log.Add, "scan", { ms = math.floor(gasto + 0.5), slices = fatias, categories = #categorias })
+            end
             ns.Invalidate()
         end
     end
