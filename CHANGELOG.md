@@ -10,3 +10,5 @@
   you already have shows what it is and how it is obtained.
 - **Wowhead button** on every mount's card: it shows the link of the mount's page, in your
   language, ready to copy.
+- Fixed a Lua error ("C stack overflow") that could happen when the game's calendar was on
+  another month.

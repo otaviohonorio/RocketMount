@@ -427,6 +427,11 @@ end
 --------------------------------------------------------------------------------
 local CALENDAR_TTL = 60
 local hoje, hojeEm
+-- (!) THE READING CANNOT START ITSELF AGAIN (02/10, "C stack overflow" recorded by the game).
+-- `C_Calendar.SetAbsMonth` fires CALENDAR_UPDATE_EVENT_LIST before it returns; the handler of
+-- that event reads the calendar; the reading sets the month again. The recorded stack is that
+-- loop, until the stack ran out. While a reading is at work, the event it causes is not news.
+local lendo = false
 
 ---A moment of the calendar ({ year, month, monthDay, hour, minute }) as one number to compare.
 local function Instante(t)
@@ -460,7 +465,10 @@ local function LerCalendario()
         if (CalendarFrame and CalendarFrame.IsShown and CalendarFrame:IsShown()) or not C_Calendar.SetAbsMonth then
             return nil
         end
-        if not pcall(C_Calendar.SetAbsMonth, agora.month, agora.year) then return nil end
+        lendo = true
+        local moveu = pcall(C_Calendar.SetAbsMonth, agora.month, agora.year)
+        lendo = false
+        if not moveu then return nil end
     end
     local okN, n = pcall(C_Calendar.GetNumDayEvents, 0, agora.monthDay)
     if not okN or type(n) ~= "number" or (issecretvalue and issecretvalue(n)) then return nil end
@@ -509,6 +517,7 @@ end
 ---@return boolean changed whether what is ON changed -- the list is built again only then, and
 ---the event comes every time the player turns a page of the calendar
 function ns.CalendarChanged()
+    if lendo then return false end
     local function Chave(t)
         if type(t) ~= "table" then return "?" end
         local ids = {}
