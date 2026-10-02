@@ -196,6 +196,15 @@ local function BuildDetail(parent)
     d.openMap:SetText(L["Open the map"])
     d.openMap:SetPoint("LEFT", d.waypoint, "RIGHT", 8, 0)
     d.openMap:Hide()
+    -- And the two of the achievement (02/10), on a line of their own.
+    d.achOpen = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.achOpen:SetSize(160, 22)
+    d.achOpen:SetText(L["Open the achievement"])
+    d.achOpen:Hide()
+    d.achTrack = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.achTrack:SetSize(160, 22)
+    d.achTrack:SetPoint("LEFT", d.achOpen, "RIGHT", 8, 0)
+    d.achTrack:Hide()
 
     -- The "no longer exists" buttons, made as they are needed (`ForgetButton`).
     d.forget = {}
@@ -364,6 +373,81 @@ function ns.GoToPlace(place, entry, open)
         ns.Print(string.format(L["arrow pointed at %s."], (entry and entry.name) or L["the mount"]))
     end
     return pinned, opened
+end
+
+--------------------------------------------------------------------------------
+-- THE ACHIEVEMENT OF A MOUNT: OPEN IT, TRACK IT (02/10)
+--
+-- The user, after the map pin of the list: *"fizemos na lista a opção de abrir o mapa, mas tem
+-- montarias que são de conquistas, aí podem abrir a conquista e até rastrear ela"*. A mount
+-- that comes from an achievement has no place to go to -- it has a list of things to do, and
+-- the game already has the window for that list and a tracker for it. So the row of such a
+-- mount carries the game's achievement shield where the others carry the map pin, and the
+-- card has the two actions as buttons.
+--
+-- Both are the game's own doing: `ShowAchievementFrameForAchievement` (what a click on an
+-- achievement link ends in) and `C_ContentTracking` (what the checkbox of the achievement
+-- window calls, with the game's own limit and its own error messages).
+--------------------------------------------------------------------------------
+---The achievement this mount still asks for, or nil: the one it is the reward of, else the one
+---its vendor demands. One already done is no longer something to open.
+function ns.MountAchievement(entry)
+    if type(entry) ~= "table" then return nil end
+    for _, chave in ipairs({ "achievementReward", "achievement" }) do
+        local a = entry[chave]
+        if type(a) == "table" and type(a.achID) == "number" and (a.pct or 0) < 1 then return a.achID end
+    end
+    return nil
+end
+
+---Opens the game's achievement window on the achievement.
+---@return boolean opened
+function ns.OpenAchievement(achID)
+    if type(achID) ~= "number" then return false end
+    if ShowAchievementFrameForAchievement then
+        return (pcall(ShowAchievementFrameForAchievement, achID))
+    end
+    return false
+end
+
+---Is the achievement in the game's tracker?
+function ns.IsTrackingAchievement(achID)
+    local tipo = Enum and Enum.ContentTrackingType and Enum.ContentTrackingType.Achievement
+    if not (tipo and C_ContentTracking and C_ContentTracking.IsTracking) or type(achID) ~= "number" then return false end
+    local ok, sim = pcall(C_ContentTracking.IsTracking, tipo, achID)
+    return ok and sim == true
+end
+
+---Puts the achievement in the game's tracker, or takes it out when it is there.
+---@return string|nil "tracked", "untracked", "full" (the game's limit), or nil when it could not
+function ns.ToggleTrackAchievement(achID)
+    local tipo = Enum and Enum.ContentTrackingType and Enum.ContentTrackingType.Achievement
+    if not (tipo and C_ContentTracking and C_ContentTracking.StartTracking) or type(achID) ~= "number" then return nil end
+    if ns.IsTrackingAchievement(achID) then
+        local como = Enum.ContentTrackingStopType and Enum.ContentTrackingStopType.Manual
+        local ok = pcall(C_ContentTracking.StopTracking, tipo, achID, como)
+        return ok and "untracked" or nil
+    end
+    -- The game's own limit, said in the game's own words (as its achievement window does).
+    local max = Constants and Constants.ContentTrackingConsts and Constants.ContentTrackingConsts.MaxTrackedAchievements
+    if max and C_ContentTracking.GetTrackedIDs then
+        local okN, ids = pcall(C_ContentTracking.GetTrackedIDs, tipo)
+        if okN and type(ids) == "table" and #ids >= max then
+            if UIErrorsFrame and ACHIEVEMENT_WATCH_TOO_MANY then
+                pcall(UIErrorsFrame.AddMessage, UIErrorsFrame, string.format(ACHIEVEMENT_WATCH_TOO_MANY, max), 1.0, 0.1, 0.1, 1.0)
+            end
+            return "full"
+        end
+    end
+    local ok, erro = pcall(C_ContentTracking.StartTracking, tipo, achID)
+    if not ok then return nil end
+    if erro ~= nil then
+        if ContentTrackingUtil and ContentTrackingUtil.DisplayTrackingError then
+            pcall(ContentTrackingUtil.DisplayTrackingError, erro)
+        end
+        return nil
+    end
+    return "tracked"
 end
 
 ---What an achievement asks and what is still missing of it, in the game's words.
@@ -754,6 +838,8 @@ local function FillDetail(entry)
     end
     d.waypoint:Hide()
     d.openMap:Hide()
+    d.achOpen:Hide()
+    d.achTrack:Hide()
 
     if not entry then
         d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
@@ -836,6 +922,27 @@ local function FillDetail(entry)
         d.openMap:SetScript("OnClick", function() ns.GoToPlace(wp, entry, true) end)
         d.openMap:Show()
         total = total + 14 + 22
+        anchor = d.waypoint
+    end
+
+    -- The achievement the mount still asks for: open it, and track it (`ns.MountAchievement`).
+    local conquista = ns.MountAchievement(entry)
+    if conquista then
+        local vao = wp and 6 or 14
+        d.achOpen:ClearAllPoints()
+        d.achOpen:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -vao)
+        d.achOpen:SetScript("OnClick", function() ns.OpenAchievement(conquista) end)
+        d.achOpen:Show()
+        local function Rotulo()
+            d.achTrack:SetText(ns.IsTrackingAchievement(conquista) and L["Stop tracking"] or L["Track"])
+        end
+        Rotulo()
+        d.achTrack:SetScript("OnClick", function()
+            ns.ToggleTrackAchievement(conquista)
+            Rotulo()
+        end)
+        d.achTrack:Show()
+        total = total + vao + 22
     end
 
     -- The card is as tall as what it says, and the scroll box is told: a short card has no bar.
@@ -923,6 +1030,40 @@ local function BuildRow(row)
     end)
     row.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- THE ACHIEVEMENT SHIELD (02/10), in the same column, for the mount with no place to go to
+    -- and an achievement to do: a click opens it in the game's window, the right button puts
+    -- it in the game's tracker (or takes it out).
+    row.ach = CreateFrame("Button", nil, row)
+    row.ach:SetSize(PIN_W, PIN_W)
+    row.ach:SetPoint("LEFT", PIN_X, 0)
+    row.ach:SetNormalAtlas("ui-achievement-shield-nopoints")
+    row.ach:SetHighlightAtlas("ui-achievement-shield-nopoints")
+    row.ach:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row.ach:SetScript("OnClick", function(self, button)
+        local id = ns.MountAchievement(self:GetParent().entry)
+        if not id then return end
+        if button == "RightButton" then
+            ns.ToggleTrackAchievement(id)
+            if GameTooltip:IsOwned(self) then self:GetScript("OnEnter")(self) end
+        else
+            ns.OpenAchievement(id)
+        end
+    end)
+    row.ach:SetScript("OnEnter", function(self)
+        local id = ns.MountAchievement(self:GetParent().entry)
+        if not id then return end
+        local ok, _, nome = pcall(GetAchievementInfo, id)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip_SetTitle(GameTooltip, L["Achievement"])
+        if ok and type(nome) == "string" then GameTooltip_AddNormalLine(GameTooltip, nome, true) end
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: open the achievement"], true)
+        GameTooltip_AddInstructionLine(GameTooltip, ns.IsTrackingAchievement(id)
+            and L["Right-click: stop tracking it"] or L["Right-click: track it"], true)
+        GameTooltip:Show()
+    end)
+    row.ach:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     row:SetScript("OnEnter", function(self)
         local e = self.entry
         if e and e.description and e.description ~= "" then
@@ -1002,7 +1143,10 @@ local function FillRow(row, data)
         row.headline:SetTextColor(1, 1, 1)
     end
     row.selectedTexture:SetShown(Same(e, selected))
-    row.pin:SetShown(ns.MountPlace(e) ~= nil)
+    local temLugar = ns.MountPlace(e) ~= nil
+    row.pin:SetShown(temLugar)
+    -- One thing in the column: the place when there is one, else the achievement.
+    row.ach:SetShown(not temLugar and ns.MountAchievement(e) ~= nil)
 end
 
 ---What the scroll box shows: one element per mount, in the window's order.

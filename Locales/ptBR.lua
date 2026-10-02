@@ -501,3 +501,11 @@ L["Suggestions are welcome"] = "Sugestões são bem-vindas"
 L["A mount in the wrong place of the list, a place that is missing, a description that is wrong or could say more: tell us, and the next version has it."] =
     "Uma montaria no lugar errado da lista, um local que falta, uma descrição errada ou que poderia dizer mais: conte para nós, e a próxima versão já traz."
 L["Click: where to send it"] = "Clique: para onde enviar"
+
+-- The achievement of a mount, from the list (02/10).
+L["Open the achievement"] = "Abrir a conquista"
+L["Track"] = "Rastrear"
+L["Stop tracking"] = "Parar de rastrear"
+L["Click: open the achievement"] = "Clique: abrir a conquista"
+L["Right-click: track it"] = "Botão direito: rastrear"
+L["Right-click: stop tracking it"] = "Botão direito: parar de rastrear"
