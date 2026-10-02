@@ -24,6 +24,18 @@ local MinimapPins = {}
 ns.MinimapPins = MinimapPins
 
 local SIZE = 14         -- a marker, in pixels: the game's own tracking icons are of this order
+-- (!) THE SIZE IS THE PLAYER'S TO CHOOSE HERE TOO (02/10). The world map got its slider, and
+-- the user, asked whether the minimap should have one: *"pode pôr também"*. The same limits,
+-- 80% to 150%: from 11 to 21 points, around the size of the game's own tracking icons.
+local PIN_SCALE = { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
+MinimapPins.PIN_SCALE = PIN_SCALE
+
+---The side of a marker, in points, by the options and inside the limits.
+function MinimapPins.Size()
+    local v = tonumber(ns.db and ns.db.minimapPinScale) or PIN_SCALE.DEFAULT
+    if v < PIN_SCALE.MIN then v = PIN_SCALE.MIN elseif v > PIN_SCALE.MAX then v = PIN_SCALE.MAX end
+    return math.floor(SIZE * v / 100 + 0.5)
+end
 local REACH = 0.9       -- of the radius: beyond it the minimap's border art covers the marker
 local STEP = 0.1        -- seconds between two looks at where the player is
 local LEVEL = 4         -- above the minimap's own art, below its buttons
@@ -176,6 +188,9 @@ end
 local function Vestir(f, d)
     local kind = ns.MapPins.KIND[d.kind] or ns.MapPins.KIND.other
     f.data = d
+    -- The size of the options, told every time: a recycled marker keeps the one it had.
+    local lado = MinimapPins.Size()
+    f:SetSize(lado, lado)
     -- (The cut is the texture's, and stays when the art changes: a recycled marker is told
     -- its cut every time, the whole art included.)
     f.Art:SetAtlas(kind.atlas)

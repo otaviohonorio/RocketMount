@@ -41,6 +41,7 @@ ns.defaults = {
     sightingVolume = 60,
     -- The size of the markers on the world map, in percent of the game's quest pin (02/10).
     mapPinScale = 100,
+    minimapPinScale = 100,
     sightingPos = nil,
 }
 

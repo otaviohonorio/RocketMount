@@ -198,6 +198,24 @@ function ns.SetupOptions()
             filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
                 L["How large the markers are on the world map. 100% is the size of the game's own quest marker."])
         end
+        -- And of the ones on the MINIMAP, with the same limits.
+        do
+            local P = ns.MinimapPins and ns.MinimapPins.PIN_SCALE or { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
+            local s = Settings.RegisterProxySetting(category, ADDON .. "MinimapPinScale",
+                Settings.VarType.Number, L["Size on the minimap"], P.DEFAULT,
+                function() return tonumber(ns.db.minimapPinScale) or P.DEFAULT end,
+                function(value)
+                    ns.db.minimapPinScale = value
+                    if ns.MinimapPins then ns.MinimapPins.Refresh() end
+                end)
+            local options = Settings.CreateSliderOptions(P.MIN, P.MAX, P.STEP)
+            if options.SetLabelFormatter and MinimalSliderWithSteppersMixin then
+                options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right,
+                    function(value) return string.format("%d%%", value) end)
+            end
+            filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
+                L["How large the markers are on the minimap."])
+        end
         -- The game's own way of hanging an option under another (Blizzard_SettingControls.lua:
         -- `SetParentInitializer`, the 15 px indent); older clients simply list them.
         for _, filha in ipairs(filhas) do

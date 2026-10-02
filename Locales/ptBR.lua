@@ -491,3 +491,5 @@ L["Click: mark it and open the map"] = "Clique: marcar e abrir o mapa"
 L["Marker size"] = "Tamanho do marcador"
 L["How large the markers are on the world map. 100% is the size of the game's own quest marker."] =
     "O tamanho dos marcadores no mapa-múndi. 100% é o tamanho do marcador de missão do próprio jogo."
+L["Size on the minimap"] = "Tamanho no minimapa"
+L["How large the markers are on the minimap."] = "O tamanho dos marcadores no minimapa."
