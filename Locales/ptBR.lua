@@ -483,9 +483,10 @@ L["Click a character that no longer exists to take it out"] = "Clique em um pers
 L["Click: the characters read, to take out one that no longer exists"] = "Clique: os personagens lidos, para tirar um que não existe mais"
 
 -- The place of a mount, from the list (02/10).
-L["Open the map"] = "Abrir o mapa"
 L["The way in"] = "A entrada"
-L["Click: mark it and open the map"] = "Clique: marcar e abrir o mapa"
+L["Click: mark it on the map"] = "Clique: marcar no mapa"
+L["(click the link to open the map)"] = "(clique no link para abrir o mapa)"
+L["%s: %s (this map takes no pin)"] = "%s: %s (este mapa não aceita marcação)"
 
 -- The size of the markers on the world map (02/10).
 L["Marker size"] = "Tamanho do marcador"

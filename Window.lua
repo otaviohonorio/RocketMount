@@ -190,12 +190,6 @@ local function BuildDetail(parent)
     d.waypoint:SetSize(160, 22)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
-    -- And the one that opens the map on the place (02/10), beside it.
-    d.openMap = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
-    d.openMap:SetSize(160, 22)
-    d.openMap:SetText(L["Open the map"])
-    d.openMap:SetPoint("LEFT", d.waypoint, "RIGHT", 8, 0)
-    d.openMap:Hide()
     -- And the two of the achievement (02/10), on a line of their own.
     d.achOpen = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
     d.achOpen:SetSize(160, 22)
@@ -280,7 +274,7 @@ end
 -- chest -- or, for a mount that drops inside an instance, the DOOR of the instance. The door is
 -- where the game says (`C_EncounterJournal.GetDungeonEntrancesForMap`, the call its own map
 -- icons are made of): no coordinate of an entrance is kept by the addon. Every row has the
--- game's map pin; a click marks the place and opens the map on it.
+-- game's map pin; a click marks the place (and the chat line carries the game's link to it).
 --------------------------------------------------------------------------------
 local entrances     -- [journalInstanceID] = { m, x, y, name }, built once, on the first question
 
@@ -341,12 +335,25 @@ function ns.MountPlace(entry)
     return nil
 end
 
----Marks the place with the game's map pin (when its map takes one) and, with `open`, opens the
----world map there.
----@return boolean pinned, boolean opened
-function ns.GoToPlace(place, entry, open)
-    if type(place) ~= "table" or not place.m then return false, false end
-    local pinned, opened = false, false
+---(!) THE ADDON NEVER OPENS OR CHANGES THE WORLD MAP ITSELF (02/10, a bug report with the
+---0.24.x in the field). The first version of this called `OpenWorldMap(mapID)`. A player then
+---got, hovering one of the GAME'S event icons on that map: *"Blizzard_UIWidgetTemplateTextWithState
+---.lua:35: attempt to perform arithmetic on local 'textHeight' (a secret number value, while
+---execution tainted by 'RocketMount')"*. `OpenWorldMap` ends in `MapCanvasMixin:SetMapID`, which
+---writes the map's id and asks EVERY data provider to draw again -- the game's own included --
+---and all of that runs marked by the addon that called it. The game's icons made in that pass
+---carry the mark, and in Midnight marked code reading a widget's text gets a secret value: the
+---icon's tooltip breaks. The same error with the same stack is recorded on the development
+---machine against two other addons that open the map from a click.
+---
+---So this only does what an addon can do cleanly: the game's map pin (`C_Map.SetUserWaypoint`,
+---an API, not the map's Lua) and the arrow to it. Opening the map is left to the player --
+---with the game's own link of the pin in the chat line, whose click is handled by the GAME,
+---unmarked, and opens the map on the pin.
+---@return boolean pinned
+function ns.GoToPlace(place, entry)
+    if type(place) ~= "table" or not place.m then return false end
+    local pinned = false
     if C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.SetUserWaypoint and UiMapPoint then
         local ok, can = pcall(C_Map.CanSetUserWaypointOnMap, place.m)
         if ok and can then
@@ -359,20 +366,20 @@ function ns.GoToPlace(place, entry, open)
             pinned = okP
         end
     end
-    if open then
-        if OpenWorldMap then
-            opened = (pcall(OpenWorldMap, place.m))
-        elseif WorldMapFrame and WorldMapFrame.SetMapID then
-            opened = (pcall(function()
-                if not WorldMapFrame:IsShown() and ToggleWorldMap then ToggleWorldMap() end
-                WorldMapFrame:SetMapID(place.m)
-            end))
-        end
-    end
+    local nome = (entry and entry.name) or L["the mount"]
     if pinned then
-        ns.Print(string.format(L["arrow pointed at %s."], (entry and entry.name) or L["the mount"]))
+        -- The game's own link of the pin just set: a click on it opens the map there.
+        local link
+        if C_Map.GetUserWaypointHyperlink then
+            local ok, l = pcall(C_Map.GetUserWaypointHyperlink)
+            if ok and type(l) == "string" and l ~= "" then link = l end
+        end
+        ns.Print(string.format(L["arrow pointed at %s."], nome)
+            .. (link and ("  " .. link .. "  " .. L["(click the link to open the map)"]) or ""))
+    else
+        ns.Print(string.format(L["%s: %s (this map takes no pin)"], nome, place.text or "?"))
     end
-    return pinned, opened
+    return pinned
 end
 
 --------------------------------------------------------------------------------
@@ -837,7 +844,6 @@ local function FillDetail(entry)
         b:Hide()
     end
     d.waypoint:Hide()
-    d.openMap:Hide()
     d.achOpen:Hide()
     d.achTrack:Hide()
 
@@ -917,10 +923,8 @@ local function FillDetail(entry)
     if wp then
         d.waypoint:ClearAllPoints()
         d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
-        d.waypoint:SetScript("OnClick", function() ns.GoToPlace(wp, entry, false) end)
+        d.waypoint:SetScript("OnClick", function() ns.GoToPlace(wp, entry) end)
         d.waypoint:Show()
-        d.openMap:SetScript("OnClick", function() ns.GoToPlace(wp, entry, true) end)
-        d.openMap:Show()
         total = total + 14 + 22
         anchor = d.waypoint
     end
@@ -1007,7 +1011,7 @@ local function BuildRow(row)
     row.headline:SetWidth(PCT_W)
 
     -- THE MAP PIN (02/10): the game's own waypoint diamond. One click marks where the mount is
-    -- and opens the map there; a row with no known place has no pin.
+    -- (the map is the player's to open: see `ns.GoToPlace`); a row with no known place has no pin.
     row.pin = CreateFrame("Button", nil, row)
     row.pin:SetSize(PIN_W, PIN_W)
     row.pin:SetPoint("LEFT", PIN_X, 0)
@@ -1016,7 +1020,7 @@ local function BuildRow(row)
     row.pin:SetScript("OnClick", function(self)
         local e = self:GetParent().entry
         local lugar = ns.MountPlace(e)
-        if lugar then ns.GoToPlace(lugar, e, true) end
+        if lugar then ns.GoToPlace(lugar, e) end
     end)
     row.pin:SetScript("OnEnter", function(self)
         local lugar = ns.MountPlace(self:GetParent().entry)
@@ -1025,7 +1029,7 @@ local function BuildRow(row)
         GameTooltip_SetTitle(GameTooltip, lugar.door and L["The way in"] or L["Where"])
         GameTooltip_AddNormalLine(GameTooltip, lugar.text, true)
         GameTooltip_AddBlankLineToTooltip(GameTooltip)
-        GameTooltip_AddInstructionLine(GameTooltip, L["Click: mark it and open the map"], true)
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: mark it on the map"], true)
         GameTooltip:Show()
     end)
     row.pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
