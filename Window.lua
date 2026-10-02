@@ -1231,7 +1231,17 @@ function ns.UpdateCollectionBoxes()
     end
 end
 
+local activeTab = "list"
+
 local function Redraw()
+    -- The Collection tab draws itself (Collection.lua); the counters at the top are of both.
+    if activeTab == "collection" and ns.Collection then
+        if loading then loading:Hide() end
+        ns.Collection.Refresh()
+        ns.UpdateCollectionBoxes()
+        if window.tips then window.tips:Update() end
+        return
+    end
     ns.UpdateLoading()
     if ns.ValidationDone and not ns.ValidationDone() then return end
     local entries, total = ns.GetFiltered()
@@ -1268,6 +1278,47 @@ local function Fresh(entry)
         if e.mountID == entry.mountID then return e end
     end
     return nil
+end
+
+---Which tab is on: "list" or "collection".
+function ns.SetWindowTab(tab)
+    if not window then return end
+    activeTab = tab == "collection" and ns.Collection and "collection" or "list"
+    local lista = activeTab == "list"
+    for _, h in pairs(window.headers or {}) do h:SetShown(lista) end
+    if window.pctHelp then window.pctHelp:SetShown(lista) end
+    if window.listBar then window.listBar:SetShown(lista) end
+    list:SetShown(lista)
+    if not lista and loading then loading:Hide() end
+    if ns.Collection then ns.Collection.Show(not lista) end
+    if PanelTemplates_SetTab then PanelTemplates_SetTab(window, lista and 1 or 2) end
+    ns.RefreshWindow()
+end
+
+function ns.WindowTab() return activeTab end
+
+---The footer of the Collection tab: whose it is, how many collected, and how many are shown
+---when the filter hides some.
+function ns.CollectionFooter(modelo)
+    if not (window and modelo) then return end
+    local texto = string.format(L["%d of %d collected (%d%%)"], modelo.have, modelo.total,
+        modelo.total > 0 and math.floor(modelo.have / modelo.total * 100 + 0.5) or 0)
+    if modelo.shown ~= modelo.total then
+        texto = texto .. string.format(L["  ·  showing %d"], modelo.shown)
+    end
+    window.footer:SetText((UnitName("player") or "?") .. "  ·  " .. texto)
+end
+
+---Puts a mount of the list on the card (a click on its row, or on its slot of the Collection).
+function ns.SelectEntry(entry)
+    if not (window and entry) then return end
+    selected = entry
+    FillDetail(selected)
+    if list and list.ForEachFrame then
+        list:ForEachFrame(function(f)
+            if type(f.selectedTexture) == "table" then f.selectedTexture:SetShown(Same(f.entry, selected)) end
+        end)
+    end
 end
 
 function ns.RefreshWindow()
@@ -1400,6 +1451,7 @@ local function PctHelp(host, pctHeader)
         GameTooltip:Show()
     end)
     ajuda:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return ajuda
 end
 
 --------------------------------------------------------------------------------
@@ -1637,7 +1689,7 @@ local function Build()
     Header(host, "expansion", L["Expansion"], EXP_X, EXP_W, ExpMenu)
     local pctHeader = Header(host, "pct", "%", PCT_X, PCT_W,
         function() ns.db.sortBy = "pct"; ns.RefreshWindow() end, "RIGHT")
-    PctHelp(host, pctHeader.text)
+    window.pctHelp = PctHelp(host, pctHeader.text)
     window.headers = headers
 
     list = CreateFrame("Frame", nil, host, "WowScrollBoxList")
@@ -1656,7 +1708,31 @@ local function Build()
         { CreateAnchor("TOPLEFT", host, "TOPLEFT", 3, -SEARCH_ROW),
           CreateAnchor("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3, 3) })
     window.list = list
+    window.listBar = bar
     BuildLoading(host)
+
+    -- (!) TWO TABS (02/10): "List" is what the window always was; "Collection" is every mount
+    -- of the game by expansion and kind (Collection.lua). The tabs are the game's, under the
+    -- frame as in its own windows. The search box, the counters and the card serve both.
+    if ns.Collection then
+        ns.Collection.Build(host, SEARCH_H + 2, LIST_W - 6 - SCROLLBAR_W)
+        window.tabs = {}
+        for i, tab in ipairs({ { "list", L["List"] }, { "collection", L["Collection"] } }) do
+            local b = CreateFrame("Button", window:GetName() .. "Tab" .. i, window, "PanelTabButtonTemplate")
+            b:SetID(i)
+            b:SetText(tab[2])
+            b:SetScript("OnClick", function() ns.SetWindowTab(tab[1]) end)
+            if i == 1 then
+                b:SetPoint("TOPLEFT", window, "BOTTOMLEFT", 11, 2)
+            else
+                b:SetPoint("TOPLEFT", window.tabs[i - 1], "TOPRIGHT", 3, 0)
+            end
+            if PanelTemplates_TabResize then PanelTemplates_TabResize(b, 0) end
+            window.tabs[i] = b
+        end
+        if PanelTemplates_SetNumTabs then PanelTemplates_SetNumTabs(window, #window.tabs) end
+        if PanelTemplates_SetTab then PanelTemplates_SetTab(window, 1) end
+    end
 
     detail = BuildDetail(window)
     detail.box:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
