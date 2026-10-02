@@ -764,10 +764,10 @@ end
 -- corrigir caso montarias tenham alguma aproximação e deixar uma distância segura e talvez uma
 -- linha sutil com ponto no local exato"*.
 --
--- Markers closer than SPREAD.MIN on the SCREEN are a group, and the group opens around its
--- middle: two side by side (the label is under each, so sideways is where there is room),
--- three or more on a circle, each on the side it already was. What moved gets a thin line of
--- the game's flight-path art back to where the thing is, and a dot there. The arrow, the
+-- Markers closer than SPREAD.MIN on the SCREEN step apart, each only as much as it takes and
+-- never far from its place (see SPREAD.REACH): two on the same spot side by side (the label
+-- is under each, so sideways is where there is room). What moved gets a thin line of the
+-- game's flight-path art back to where the thing is, and a dot there. The arrow, the
 -- tooltip's coordinates and the minimap keep the exact place: only the drawing moves.
 --
 -- The distance is the screen's, so the group is made again when the map zooms: what is a pile
@@ -775,8 +775,21 @@ end
 --------------------------------------------------------------------------------
 local SPREAD = {
     MIN = 26,               -- between the centres of two markers: the disc is 28 across
-    PASSES = 4,             -- a group that opened may reach a neighbour: then they are one group
-    RELAX = 8,              -- rounds of pushing apart, once the icons of others are in the count
+    -- (!) NEVER FAR FROM ITS PLACE (02/10). The first rule made ONE group of every marker that
+    -- touched another and opened the group on a circle: on the map of the Eastern Kingdoms some
+    -- fifty markers became one ring half the map wide, each a hand away from its place. The
+    -- user: *"marcações muito distantes, fazendo esse círculo enorme (...) não tem que ficar tão
+    -- longe assim, tem que distribuir melhor, neste mapa digamos continental eles podem ficar
+    -- mais próximos, porque a visão melhora no mapa da região"*.
+    -- Now each marker steps aside only as much as it takes, pair by pair, and is held on a
+    -- LEASH: it never goes farther from its place than REACH times the safe distance. Where
+    -- there is no room for all, they stay close and overlap a little rather than fly away.
+    REACH = 2.0,            -- the leash, in safe distances
+    -- On a continent the markers may sit closer still: it is an overview, and the zone's map
+    -- is where each one is seen. 16 leaves the mount's icon of each (15 across) in sight.
+    MIN_TIGHT = 16, REACH_TIGHT = 1.5,
+    NEAR = 0.25,            -- two markers closer than this part of the safe distance open SIDEWAYS
+    RELAX = 16,             -- rounds of stepping aside
     OTHER_MAX = 64,         -- an icon of others wider than this is not an icon (a frame over the map)
     THICK = 9,              -- of the line's art, which is mostly glow (the route's is 18)
     ALPHA = 0.75, ALPHA_LOCKED = 0.35,
@@ -792,99 +805,33 @@ MapPins.SpreadRule = SPREAD
 ---Gives each marker of `lista` where it is DRAWN: `drawX, drawY` (map fractions, like `x, y`)
 ---and `moved` when that is not the place itself.
 ---
+---Two markers closer than the safe distance step apart, half the way each, along the line
+---between them; two on (almost) the same spot open sideways, because the label is under each.
+---Round after round, until nobody is on top of anybody or the rounds end; after every round
+---each marker is pulled back to its leash.
+---
 ---(!) THE ICONS OF OTHERS COUNT TOO (01/10, the second screenshot). In Silvermoon our
----"Reputation" marker sat right on an icon of the game's own, and the first version only knew
----about OUR markers: *"existem outros ícones e precisamos dar um espaço para ficar visível, como
----fez nos outros"*. `fixos` are those icons -- the GAME'S own, and only those
----(`RocketMountMapDataProviderMixin:OtherPins`). They do not move: ours steps aside, away
----from the icon, and keeps its line to the exact place.
+---"Reputation" marker sat right on an icon of the game's own: *"existem outros ícones e
+---precisamos dar um espaço para ficar visível, como fez nos outros"*. `fixos` are those icons
+----- the GAME'S own, and only those (`RocketMountMapDataProviderMixin:OtherPins`). They do
+---not move: ours steps aside, the whole distance, and keeps its line to the exact place.
 ---@param w number canvas width @param h number canvas height (canvas units)
 ---@param escala number canvas scale: canvas units times it are screen points
 ---@param fixos table|nil `{ { x, y }, ... }` in map fractions: icons that are not ours
+---@param apertado boolean|nil a continent: the markers may sit closer (MIN_TIGHT, REACH_TIGHT)
 ---@return number moved how many markers were moved
-function MapPins.Spread(lista, w, h, escala, fixos)
+function MapPins.Spread(lista, w, h, escala, fixos, apertado)
     for _, d in ipairs(lista) do d.drawX, d.drawY, d.moved = d.x, d.y, nil end
     local n = #lista
     local temFixos = type(fixos) == "table" and #fixos > 0
     if (n < 2 and not temFixos) or n < 1 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
     -- larger markers need more room between them
-    local min = SPREAD.MIN * MapPins.PinScale() / escala
-    local px, py, dx, dy, pai = {}, {}, {}, {}, {}
+    local min = (apertado and SPREAD.MIN_TIGHT or SPREAD.MIN) * MapPins.PinScale() / escala
+    local trela = min * (apertado and SPREAD.REACH_TIGHT or SPREAD.REACH)
+    local px, py, dx, dy = {}, {}, {}, {}
     for i, d in ipairs(lista) do
         px[i], py[i] = d.x * w, d.y * h
         dx[i], dy[i] = px[i], py[i]
-        pai[i] = i
-    end
-    local function Raiz(i)
-        while pai[i] ~= i do pai[i] = pai[pai[i]]; i = pai[i] end
-        return i
-    end
-    local function Unir(a, b)
-        a, b = Raiz(a), Raiz(b)
-        if a == b then return false end
-        if a < b then pai[b] = a else pai[a] = b end
-        return true
-    end
-    local function Perto2(i, j)
-        local ex, ey = dx[i] - dx[j], dy[i] - dy[j]
-        return ex * ex + ey * ey < min * min * 0.98
-    end
-
-    for _ = 1, (n > 1 and SPREAD.PASSES or 0) do
-        local mudou = false
-        for i = 1, n do
-            for j = i + 1, n do
-                if Raiz(i) ~= Raiz(j) and Perto2(i, j) then mudou = Unir(i, j) or mudou end
-            end
-        end
-        if not mudou then break end
-        -- every group, opened around the middle of its exact places
-        local grupos, ordem = {}, {}
-        for i = 1, n do
-            local r = Raiz(i)
-            if not grupos[r] then grupos[r] = {}; ordem[#ordem + 1] = r end
-            grupos[r][#grupos[r] + 1] = i
-        end
-        for _, r in ipairs(ordem) do
-            local g = grupos[r]
-            if #g == 1 then
-                dx[g[1]], dy[g[1]] = px[g[1]], py[g[1]]
-            else
-                local cx, cy = 0, 0
-                for _, i in ipairs(g) do cx, cy = cx + px[i], cy + py[i] end
-                cx, cy = cx / #g, cy / #g
-                if #g == 2 then
-                    table.sort(g, function(a, b)
-                        if px[a] ~= px[b] then return px[a] < px[b] end
-                        return a < b
-                    end)
-                    dx[g[1]], dy[g[1]] = cx - min / 2, cy
-                    dx[g[2]], dy[g[2]] = cx + min / 2, cy
-                else
-                    local raio = min / (2 * math.sin(math.pi / #g))
-                    local ang = {}
-                    for _, i in ipairs(g) do ang[i] = math.atan2(py[i] - cy, px[i] - cx) end
-                    table.sort(g, function(a, b)
-                        if ang[a] ~= ang[b] then return ang[a] < ang[b] end
-                        return a < b
-                    end)
-                    for k, i in ipairs(g) do
-                        local a = -math.pi + (k - 0.5) * 2 * math.pi / #g
-                        dx[i], dy[i] = cx + raio * math.cos(a), cy + raio * math.sin(a)
-                    end
-                end
-                -- the whole group inside the map
-                local folga = min / 2
-                local menorX, maiorX, menorY, maiorY = math.huge, -math.huge, math.huge, -math.huge
-                for _, i in ipairs(g) do
-                    menorX, maiorX = math.min(menorX, dx[i]), math.max(maiorX, dx[i])
-                    menorY, maiorY = math.min(menorY, dy[i]), math.max(maiorY, dy[i])
-                end
-                local sx = (menorX < folga and folga - menorX) or (maiorX > w - folga and (w - folga) - maiorX) or 0
-                local sy = (menorY < folga and folga - menorY) or (maiorY > h - folga and (h - folga) - maiorY) or 0
-                for _, i in ipairs(g) do dx[i], dy[i] = dx[i] + sx, dy[i] + sy end
-            end
-        end
     end
 
     -- THE ICONS OF OTHERS: only the ones near a marker of ours matter, and they stay put.
@@ -902,47 +849,80 @@ function MapPins.Spread(lista, w, h, escala, fixos)
             end
         end
     end
-    if #ox > 0 then
-        local limite = min * min * 0.98
-        for _ = 1, SPREAD.RELAX do
-            local mudou = false
-            for i = 1, n do
-                -- away from an icon of others: the whole distance, since that one does not move
-                for k = 1, #ox do
-                    local ex, ey = dx[i] - ox[k], dy[i] - oy[k]
-                    local d2 = ex * ex + ey * ey
-                    if d2 < limite then
-                        local dist = math.sqrt(d2)
-                        if dist < 0.001 then ex, ey, dist = 1, 0, 1 end      -- right on it: to the right
-                        dx[i], dy[i] = ox[k] + ex / dist * min, oy[k] + ey / dist * min
-                        mudou = true
-                    end
-                end
-                -- and away from each other: half the way each
-                for j = i + 1, n do
-                    local ex, ey = dx[j] - dx[i], dy[j] - dy[i]
-                    local d2 = ex * ex + ey * ey
-                    if d2 < limite then
-                        local dist = math.sqrt(d2)
-                        if dist < 0.001 then ex, ey, dist = 1, 0, 1 end
-                        local falta = (min - (d2 < 0.000001 and 0 or dist)) / 2
-                        dx[i], dy[i] = dx[i] - ex / dist * falta, dy[i] - ey / dist * falta
-                        dx[j], dy[j] = dx[j] + ex / dist * falta, dy[j] + ey / dist * falta
-                        mudou = true
-                    end
+
+    local limite = min * min * 0.98
+    local perto = (min * SPREAD.NEAR) * (min * SPREAD.NEAR)
+    -- THREE OR MORE ON ONE SPOT would open along one line (the first two go sideways, and the
+    -- third is then pushed along that same line). So the third and the ones after it start a
+    -- step off the spot, each at a turn of the golden angle: the pile opens as a cluster.
+    for i = 3, n do
+        local juntos = 0
+        for j = 1, i - 1 do
+            local ex, ey = px[i] - px[j], py[i] - py[j]
+            if ex * ex + ey * ey < perto then juntos = juntos + 1 end
+        end
+        if juntos >= 2 then
+            local ang, passo = (juntos - 1) * 2.39996, min * SPREAD.NEAR * 1.5
+            dx[i], dy[i] = px[i] + math.cos(ang) * passo, py[i] + math.sin(ang) * passo
+        end
+    end
+    for _ = 1, SPREAD.RELAX do
+        local mudou = false
+        for i = 1, n do
+            -- away from an icon of others: the whole distance, since that one does not move
+            for k = 1, #ox do
+                local ex, ey = dx[i] - ox[k], dy[i] - oy[k]
+                local d2 = ex * ex + ey * ey
+                if d2 < limite then
+                    local dist = math.sqrt(d2)
+                    if dist < 0.001 then ex, ey, dist = 1, 0, 1 end      -- right on it: to the right
+                    dx[i], dy[i] = ox[k] + ex / dist * min, oy[k] + ey / dist * min
+                    mudou = true
                 end
             end
-            if not mudou then break end
+            -- and away from each other: half the way each
+            for j = i + 1, n do
+                local ex, ey = dx[j] - dx[i], dy[j] - dy[i]
+                local d2 = ex * ex + ey * ey
+                if d2 < limite then
+                    local dist = math.sqrt(d2)
+                    local falta = (min - dist) / 2
+                    if d2 < perto then
+                        -- On (almost) the same spot there is no line to follow. Neighbours in
+                        -- the list open sideways -- two rares of one place sit side by side,
+                        -- each with its label under it -- and the others at a turn of the
+                        -- golden angle, so three or more do not end on one line.
+                        local ang = (j - i - 1) * 2.39996
+                        ex, ey, dist = math.cos(ang), math.sin(ang), 1
+                        -- the one that was at the left stays at the left
+                        if ex * (px[j] - px[i]) < 0 then ex, ey = -ex, -ey end
+                    end
+                    dx[i], dy[i] = dx[i] - ex / dist * falta, dy[i] - ey / dist * falta
+                    dx[j], dy[j] = dx[j] + ex / dist * falta, dy[j] + ey / dist * falta
+                    mudou = true
+                end
+            end
         end
-        local folga = min / 2
+        -- THE LEASH: nobody farther from its place than `trela`.
         for i = 1, n do
+            local vx, vy = dx[i] - px[i], dy[i] - py[i]
+            local len = math.sqrt(vx * vx + vy * vy)
+            if len > trela then
+                dx[i], dy[i] = px[i] + vx / len * trela, py[i] + vy / len * trela
+            end
+        end
+        if not mudou then break end
+    end
+
+    -- inside the map
+    local folga = min / 2
+    for i = 1, n do
+        if dx[i] ~= px[i] or dy[i] ~= py[i] then
             dx[i] = math.max(folga, math.min(w - folga, dx[i]))
             dy[i] = math.max(folga, math.min(h - folga, dy[i]))
         end
-        -- a marker that needed no moving stays EXACTLY where it is (the clamp may not touch it)
-        for i = 1, n do
-            if math.abs(dx[i] - px[i]) < 0.001 and math.abs(dy[i] - py[i]) < 0.001 then dx[i], dy[i] = px[i], py[i] end
-        end
+        -- a marker that needed no moving stays EXACTLY where it is
+        if math.abs(dx[i] - px[i]) < 0.001 and math.abs(dy[i] - py[i]) < 0.001 then dx[i], dy[i] = px[i], py[i] end
     end
 
     local movidos = 0
@@ -1013,7 +993,16 @@ function RocketMountMapDataProviderMixin:SpreadPins()
         local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
         local outros = self:OtherPins()
         self.others = #outros
-        movidos = MapPins.Spread(self.places, w, h, escala, outros)
+        -- A continent (or the world) is an overview: the markers may sit closer there.
+        local apertado = false
+        if C_Map and C_Map.GetMapInfo and map.GetMapID then
+            local okI, info = pcall(C_Map.GetMapInfo, map:GetMapID())
+            local T = Enum and Enum.UIMapType
+            if okI and type(info) == "table" and T then
+                apertado = info.mapType == T.Continent or info.mapType == T.World or info.mapType == T.Cosmic
+            end
+        end
+        movidos = MapPins.Spread(self.places, w, h, escala, outros, apertado)
         if map.EnumeratePinsByTemplate then
             for pin in map:EnumeratePinsByTemplate(TEMPLATE) do
                 local d = pin.data
