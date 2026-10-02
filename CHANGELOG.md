@@ -1,4 +1,4 @@
-# Rocket Mount 0.22.1
+# Rocket Mount 0.23.0
 
 - **Markers no longer pile up.** Two rares that spawn almost on the same spot (Konthrogz and
   Reliwik in Korthia, the seven of the Theater of Pain) had their markers on top of each
