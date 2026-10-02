@@ -634,6 +634,19 @@ function ns.WhenBuilt(fn)
     end
 end
 
+---The entry of ANY mount, for the card: the one of the list when the mount is in it; else one
+---built for that mount alone (a collected mount, or one the list's options leave out).
+function ns.EntryOf(mountID)
+    if type(mountID) ~= "number" then return nil end
+    for _, e in ipairs(cache or EMPTY) do
+        if e.mountID == mountID then return e end
+    end
+    local ok, lista = pcall(ns.BuildList, mountID)
+    local e = ok and type(lista) == "table" and lista[1] or nil
+    if e then pcall(ns.Rank, e) end
+    return e
+end
+
 ---Is a sliced build at work? (For the window's loading bar and for the harness.)
 function ns.IsBuilding() return building ~= nil end
 

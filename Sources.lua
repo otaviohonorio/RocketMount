@@ -1352,9 +1352,11 @@ local function Playable(isFactionSpecific, faction, shouldHideOnChar)
     return true
 end
 
-function ns.BuildList()
+---@param onlyID number|nil build the entry of THIS mount alone, collected or not, usable by this
+---character or not: the card of the Collection tab (02/10) describes any mount of the game.
+function ns.BuildList(onlyID)
     local out = {}
-    local ids = C_MountJournal.GetMountIDs()
+    local ids = onlyID and { onlyID } or C_MountJournal.GetMountIDs()
     if not ids then return out end
 
     for _, mountID in ipairs(ids) do
@@ -1363,11 +1365,12 @@ function ns.BuildList()
         local name, spellID, icon, _, _, sourceType, _, isFactionSpecific,
               faction, shouldHideOnChar, isCollected = C_MountJournal.GetMountInfoByID(mountID)
 
-        if name and not isCollected then
+        if name and (not isCollected or onlyID) then
             local playable = Playable(isFactionSpecific, faction, shouldHideOnChar)
-            if playable or not ns.db.hideUnavailable then
+            if playable or not ns.db.hideUnavailable or onlyID then
                 local e = {
                     mountID = mountID,
+                    collected = isCollected and true or nil,
                     spellID = spellID,
                     name = name,
                     icon = icon,

@@ -92,6 +92,7 @@ ns.Geometry = {
 
 local window, list, detail
 local selected           -- the entry on the card, matched by mountID across rebuilds
+local activeTab = "list" -- "list" or "collection" (see ns.SetWindowTab)
 -- Which recycled frames were already built. A field on the frame (`row.built`) would do in the
 -- game, but the harness answers every unknown field with a function -- truthy -- and the row
 -- was never built there. A table of our own means the same thing in both.
@@ -190,6 +191,11 @@ local function BuildDetail(parent)
     d.waypoint:SetSize(160, 22)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
+    -- "Wowhead" (02/10), for every mount: the address in the game's copy box.
+    d.wowhead = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.wowhead:SetSize(110, 22)
+    d.wowhead:SetText("Wowhead")
+    d.wowhead:Hide()
     -- And the two of the achievement (02/10), on a line of their own.
     d.achOpen = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
     d.achOpen:SetSize(160, 22)
@@ -579,6 +585,24 @@ function ns.DetailBlocks(entry)
         Add("where", L["Where"], table.concat(linhas, string.char(10)))
     end
 
+    -- (!) A MOUNT THE PLAYER ALREADY HAS (the Collection tab, 02/10). The user: *"tentei abrir as
+    -- que já possuo e fica vazio (…) pode trazer a descrição da montaria e link do wowhead só"*.
+    -- Its card says what the mount IS and how it was got; chance, requirements and warnings are
+    -- about getting it, and there is nothing left to get.
+    if entry.collected then
+        if entry.expansionName then Add("expansion", L["Expansion"], entry.expansionName) end
+        if entry.factionOnly then
+            Add("faction", L["Faction"], entry.factionOnly == "Horde" and L["Horde only"] or L["Alliance only"])
+        end
+        if ns.Tips then
+            local dica, nota = ns.Tips.For(entry.mountID)
+            if dica then
+                Add("tip", L["Players' tip"], dica .. string.char(10) .. "|cff808080" .. nota .. "|r")
+            end
+        end
+        return blocks, wp
+    end
+
     if entry.chance and entry.chance > 0 then
         -- (Era "1 em %d" em portugues fixo no codigo: saia em portugues para quem joga em ingles.)
         local linhas = { ns.FormatChance(entry.chance) }
@@ -844,6 +868,7 @@ local function FillDetail(entry)
         b:Hide()
     end
     d.waypoint:Hide()
+    d.wowhead:Hide()
     d.achOpen:Hide()
     d.achTrack:Hide()
 
@@ -868,6 +893,10 @@ local function FillDetail(entry)
     local linha = table.concat(nomes, " · ")
     local exp = entry.expansion and ns.ExpansionLabel(entry.expansion, entry.expansionName)
     if exp then linha = (linha ~= "" and (linha .. "  —  ") or "") .. exp end
+    -- A mount already collected (the card of the Collection tab) says so first, in the game's word.
+    if entry.collected then
+        linha = (COLLECTED or L["Collected"]) .. (linha ~= "" and ("  ·  " .. linha) or "")
+    end
     d.tier:SetText(linha)
     d.tier:SetTextColor(S.dim[1], S.dim[2], S.dim[3])
 
@@ -925,14 +954,28 @@ local function FillDetail(entry)
         d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
         d.waypoint:SetScript("OnClick", function() ns.GoToPlace(wp, entry) end)
         d.waypoint:Show()
+    end
+    -- Wowhead, for every mount: beside "Set map pin" when there is one, else in its place.
+    local endereco = ns.WowheadURL and ns.WowheadURL(entry)
+    if endereco then
+        d.wowhead:ClearAllPoints()
+        if wp then
+            d.wowhead:SetPoint("LEFT", d.waypoint, "RIGHT", 8, 0)
+        else
+            d.wowhead:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
+        end
+        d.wowhead:SetScript("OnClick", function() ns.ShowLink(entry.name, endereco) end)
+        d.wowhead:Show()
+    end
+    if wp or endereco then
         total = total + 14 + 22
-        anchor = d.waypoint
+        anchor = wp and d.waypoint or d.wowhead
     end
 
     -- The achievement the mount still asks for: open it, and track it (`ns.MountAchievement`).
-    local conquista = ns.MountAchievement(entry)
+    local conquista = not entry.collected and ns.MountAchievement(entry)
     if conquista then
-        local vao = wp and 6 or 14
+        local vao = (wp or endereco) and 6 or 14
         d.achOpen:ClearAllPoints()
         d.achOpen:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -vao)
         d.achOpen:SetScript("OnClick", function() ns.OpenAchievement(conquista) end)
@@ -1231,8 +1274,6 @@ function ns.UpdateCollectionBoxes()
     end
 end
 
-local activeTab = "list"
-
 local function Redraw()
     -- The Collection tab draws itself (Collection.lua); the counters at the top are of both.
     if activeTab == "collection" and ns.Collection then
@@ -1277,6 +1318,9 @@ local function Fresh(entry)
     for _, e in ipairs(ns.GetRanked()) do
         if e.mountID == entry.mountID then return e end
     end
+    -- A mount put on the card from the Collection tab may not be in the list at all (it is
+    -- collected, or the list's options leave it out): its entry is built again for it alone.
+    if (entry.collected or activeTab == "collection") and ns.EntryOf then return ns.EntryOf(entry.mountID) end
     return nil
 end
 

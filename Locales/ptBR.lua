@@ -522,3 +522,5 @@ L["%d of %d collected (%d%%)"] = "%d de %d coletadas (%d%%)"
 L["  ·  showing %d"] = "  ·  mostrando %d"
 L["No mount matches the filter."] = "Nenhuma montaria passa pelo filtro."
 L["Click: see it on the card"] = "Clique: ver na ficha"
+L["%s on Wowhead.|n|nPress Ctrl+C to copy the link, then paste it in your browser."] =
+    "%s no Wowhead.|n|nAperte Ctrl+C para copiar o endereço e cole no navegador."

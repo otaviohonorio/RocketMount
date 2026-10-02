@@ -110,6 +110,40 @@ ns.REPORT = {
 local reporting
 
 ---The addon's version, which is the first thing a report needs.
+-- (!) "OPEN ON WOWHEAD" (02/10). The user: *"podemos também colocar um botão para abrir no
+-- wowhead, em todas elas, vai ajudar"*. An addon cannot open a browser: the game gives no such
+-- call. What every addon does, and the game's own "copy the link" boxes do, is to show the
+-- address already selected for Ctrl+C -- the same box the support and the report links use.
+local LINK_POPUP = "ROCKETMOUNT_LINK"
+local linking
+
+-- Wowhead's own prefix for each language of the game.
+local WOWHEAD_LOCALE = { ptBR = "pt/", deDE = "de/", esES = "es/", esMX = "es/", frFR = "fr/", itIT = "it/",
+                         ruRU = "ru/", koKR = "ko/", zhCN = "cn/", zhTW = "tw/" }
+
+---The address of a mount on Wowhead, in the player's language: the page of the spell that
+---summons it, which every mount has.
+function ns.WowheadURL(entry)
+    local id = type(entry) == "table" and entry.spellID
+    if type(id) ~= "number" then return nil end
+    local loc = GetLocale and WOWHEAD_LOCALE[GetLocale()] or ""
+    return ("https://www.wowhead.com/%sspell=%d"):format(loc or "", id)
+end
+
+---The box with a link ready to copy.
+---@param what string what the link is of (the mount's name)
+function ns.ShowLink(what, url)
+    if not (url and StaticPopupDialogs and StaticPopup_Show) then return false end
+    linking = url
+    if not StaticPopupDialogs[LINK_POPUP] then
+        StaticPopupDialogs[LINK_POPUP] = CopyBox(
+            L["%s on Wowhead.|n|nPress Ctrl+C to copy the link, then paste it in your browser."],
+            function() return linking or "" end)
+    end
+    StaticPopup_Show(LINK_POPUP, what or "")
+    return true
+end
+
 function ns.ReportVersion()
     local v = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(ADDON, "Version")
     return type(v) == "string" and v ~= "" and v or "?"

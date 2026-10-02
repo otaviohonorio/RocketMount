@@ -250,15 +250,20 @@ local function Slot(parent)
             if m.entry then
                 local why = ns.RowWhy and ns.RowWhy(m.entry)
                 if why and why ~= "" then GameTooltip_AddNormalLine(GameTooltip, why, true) end
-                GameTooltip_AddInstructionLine(GameTooltip, L["Click: see it on the card"], true)
             end
         end
+        GameTooltip_AddInstructionLine(GameTooltip, L["Click: see it on the card"], true)
         GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function() GameTooltip:Hide() end)
     b:SetScript("OnClick", function(self)
+        -- (!) EVERY MOUNT GOES TO THE CARD (02/10). The first version only did it for the ones
+        -- in the list. The user: *"o clique na montaria poderia abrir as descrições ao lado, e
+        -- com todos os recursos, abrir mapa, abrir conquista e etc como tem na lista"*.
         local m = self.mount
-        if m and m.entry and ns.SelectEntry then ns.SelectEntry(m.entry) end
+        if not (m and ns.SelectEntry) then return end
+        local e = m.entry or (ns.EntryOf and ns.EntryOf(m.mountID))
+        if e then ns.SelectEntry(e) end
     end)
     return b
 end
