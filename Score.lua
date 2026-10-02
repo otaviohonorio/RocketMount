@@ -492,23 +492,45 @@ end
 
 local cache
 
----@param force boolean|nil build now, whatever the cache says
----@param fresh boolean|nil the caller shows the list to the player: old numbers will not do
-function ns.GetRanked(force, fresh)
-    if cache and not force and not ns.NeedsRebuild(fresh) then return cache end
+--------------------------------------------------------------------------------
+-- (!) THE LIST IS BUILT IN SLICES (02/10). Building it at once is a few hundred mounts, each
+-- reading its tooltip, reputation, achievements and price from the game, in ONE frame: a hitch,
+-- and the worst of them right when the game opens. The user: *"pode fatiar então, fazer aos
+-- poucos para minimizar um lag inicial"*.
+--
+-- So a build asked for in the BACKGROUND (the rare alert, the map, the minimap, the opening of
+-- the game) runs as a coroutine: it works SLICE_MS milliseconds of a frame, gives the frame
+-- back, and goes on in the next one. Whoever asked gets the list there is (none, at the very
+-- start) and the new one when it is done. A build the PLAYER is waiting for -- the addon's
+-- window, a command -- is still made at once: a list that fills in over a second while you
+-- look at it is worse than a pause you asked for.
+--------------------------------------------------------------------------------
+local SLICE_MS = 4
+ns.SLICE_MS = SLICE_MS
+local EMPTY = {}
+local building, buildSerial      -- the coroutine at work, and the state of the dirt when it began
+local waiting = {}               -- who asked to be told when a list exists
+local sliceBroken = false        -- a sliced build that failed once is not tried again
 
-    local t0 = debugprofilestop and debugprofilestop() or nil
+local function CanSlice()
+    return not sliceBroken and coroutine and debugprofilestop and C_Timer and C_Timer.After and true or false
+end
+
+local function BuildNow()
     local list = ns.BuildList()
     for i = 1, #list do
+        if ns.buildYield then ns.buildYield() end
         ns.Rank(list[i])
     end
     table.sort(list, Compare)
+    return list
+end
 
+local function Finish(list, ms, how)
     cache = list
     ns.builds = (ns.builds or 0) + 1
     -- How long it took, for the diary (development only): the number to watch.
-    if t0 and ns.Log and ns.Log.enabled then
-        local ms = math.floor(debugprofilestop() - t0 + 0.5)
+    if ns.Log and ns.Log.enabled then
         -- The addon's memory, as the game counts it (asked only here, in development: the
         -- question itself is not cheap).
         local kb
@@ -517,12 +539,89 @@ function ns.GetRanked(force, fresh)
             local ok, v = pcall(GetAddOnMemoryUsage, ADDON)
             kb = ok and type(v) == "number" and math.floor(v + 0.5) or nil
         end
-        pcall(ns.Log.Add, "build", { ms = ms, mounts = #list, n = ns.builds, kb = kb,
-                                     forced = force and true or false, fresh = fresh and true or false })
+        pcall(ns.Log.Add, "build", { ms = ms and math.floor(ms + 0.5) or nil, mounts = #list, n = ns.builds,
+                                     kb = kb, how = how.kind, slices = how.slices, worst = how.worst })
     end
+    -- Something changed WHILE the slices ran: the list is new, and already due again.
+    local mudou = buildSerial ~= nil and ns.DirtySerial and ns.DirtySerial() ~= buildSerial
+    buildSerial = nil
     ns.MarkClean()
+    if mudou then ns.Invalidate(true) end
+    local fila = waiting
+    waiting = {}
+    for _, fn in ipairs(fila) do pcall(fn, cache) end
+end
+
+---Starts a sliced build, if none is at work. The list arrives some frames later.
+local function StartBuild()
+    if building then return end
+    buildSerial = ns.DirtySerial and ns.DirtySerial() or nil
+    local co = coroutine.create(BuildNow)
+    building = co
+    local gasto, fatias, pior = 0, 0, 0
+    local function Step()
+        if building ~= co then return end          -- a build made at once took its place
+        local t0 = debugprofilestop()
+        ns.buildYield = function()
+            if debugprofilestop() - t0 >= SLICE_MS then coroutine.yield() end
+        end
+        local ok, list = coroutine.resume(co)
+        ns.buildYield = nil
+        local ms = debugprofilestop() - t0
+        gasto, fatias, pior = gasto + ms, fatias + 1, math.max(pior, ms)
+        if not ok then
+            -- It broke: say so once, and from now on every list is made at once, as before.
+            building, sliceBroken = nil, true
+            if ns.Log and ns.Log.Add then pcall(ns.Log.Add, "build", { error = tostring(list) }) end
+            ns.Invalidate()
+            return
+        end
+        if coroutine.status(co) == "dead" then
+            building = nil
+            Finish(list or {}, gasto, { kind = "sliced", slices = fatias, worst = math.floor(pior + 0.5) })
+        else
+            C_Timer.After(0, Step)
+        end
+    end
+    Step()
+end
+
+---@param force boolean|nil build now, whatever the cache says
+---@param fresh boolean|nil the caller shows the list to the player: old numbers will not do
+function ns.GetRanked(force, fresh)
+    if cache and not force and not ns.NeedsRebuild(fresh) then return cache end
+
+    -- In the background, and able to slice: the work starts (or goes on), and the answer is the
+    -- list there is.
+    if not force and not fresh and CanSlice() then
+        StartBuild()
+        return cache or EMPTY
+    end
+
+    -- At once: the player is waiting. A sliced build half way is dropped.
+    building = nil
+    ns.buildYield = nil
+    buildSerial = nil
+    local t0 = debugprofilestop and debugprofilestop() or nil
+    local list = BuildNow()
+    Finish(list, t0 and (debugprofilestop() - t0) or nil, { kind = force and "forced" or (fresh and "fresh" or "plain") })
     return cache
 end
+
+---Calls `fn(list)` when a list exists: now, if there is one that is not due; else when the
+---build that this starts (or that is already at work) ends.
+function ns.WhenBuilt(fn)
+    if cache and not ns.NeedsRebuild() and not building then return fn(cache) end
+    waiting[#waiting + 1] = fn
+    if CanSlice() then
+        StartBuild()
+    else
+        ns.GetRanked(true)
+    end
+end
+
+---Is a sliced build at work? (For the window's loading bar and for the harness.)
+function ns.IsBuilding() return building ~= nil end
 
 -- The ranked list, after the source filter.
 ---Todos os termos da busca têm que aparecer, e não um deles.

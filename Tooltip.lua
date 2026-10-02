@@ -233,6 +233,8 @@ end
 -- (`C_Item.RequestLoadItemDataByID`, answered by `ITEM_DATA_LOAD_RESULT` -- both in the 12.1.0
 -- API docs), and a tooltip is read only once its item is in the cache.
 --------------------------------------------------------------------------------
+local REQUESTS_PER_FRAME = 25
+Tooltip.REQUESTS_PER_FRAME = REQUESTS_PER_FRAME
 local falhou = {}          -- itemID -> true: the server said no, or it never answered
 local pendentes = {}       -- itemID -> true while waiting
 local total, feitos = 0, 0
@@ -289,9 +291,25 @@ function Tooltip.Preload(itemIDs, onDone)
         pcall(frameEv.RegisterEvent, frameEv, "ITEM_DATA_LOAD_RESULT")
         frameEv:SetScript("OnEvent", function(_, _, itemID, sucesso) Uma(itemID, sucesso) end)
     end
-    for id in pairs(pendentes) do pcall(C_Item.RequestLoadItemDataByID, id) end
+    -- (!) A FEW PER FRAME (02/10): several hundred requests in one frame were part of the hitch
+    -- when the game opened. The answers come by event, as before.
+    local fila = {}
+    for id in pairs(pendentes) do fila[#fila + 1] = id end
+    table.sort(fila)
+    local proximo = 1
+    local function Lote()
+        local ate = math.min(#fila, proximo + REQUESTS_PER_FRAME - 1)
+        for k = proximo, ate do
+            if pendentes[fila[k]] then pcall(C_Item.RequestLoadItemDataByID, fila[k]) end
+        end
+        proximo = ate + 1
+        if proximo <= #fila and aoTerminar and C_Timer and C_Timer.After then C_Timer.After(0, Lote) end
+    end
     if C_Timer and C_Timer.After then
+        Lote()
         C_Timer.After(TIMEOUT, function() if aoTerminar then Terminar() end end)
+    else
+        for _, id in ipairs(fila) do pcall(C_Item.RequestLoadItemDataByID, id) end
     end
 end
 

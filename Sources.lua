@@ -1358,6 +1358,8 @@ function ns.BuildList()
     if not ids then return out end
 
     for _, mountID in ipairs(ids) do
+        -- A sliced build stops here when its share of the frame is spent (Score.lua).
+        if ns.buildYield then ns.buildYield() end
         local name, spellID, icon, _, _, sourceType, _, isFactionSpecific,
               faction, shouldHideOnChar, isCollected = C_MountJournal.GetMountInfoByID(mountID)
 

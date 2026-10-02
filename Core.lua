@@ -99,20 +99,41 @@ function handlers:ADDON_LOADED(addon)
     end
 end
 
+-- (!) THE OPENING OF THE GAME IS NOT THE ADDON'S TO SPEND (02/10). Everything used to happen
+-- inside PLAYER_LOGIN, in the one frame the game is busiest: the ledger, the calendar, the
+-- Trading Post, the first list. Now only what costs nothing is done there (the button, the
+-- modules that listen); the rest waits START_DELAY seconds for the world to be on screen and
+-- then goes one step per frame, each step of the heavy ones sliced in turn (the list in
+-- Score.lua, the achievements in Achievements.lua, the items in Tooltip.lua).
+local START_DELAY = 3
+ns.START_DELAY = START_DELAY
+
 function handlers:PLAYER_LOGIN()
     ns.CreateMinimapButton()
-    -- O livro-caixa se escreve ao entrar, que é quando a API fala deste personagem.
-    if ns.Roster then ns.Roster.Record() end
     if ns.Sighting then ns.Sighting.Enable() end
     if ns.MapPins then ns.MapPins.Enable() end
     if ns.MinimapPins then ns.MinimapPins.Enable() end
     if ns.MapButton then ns.MapButton.Enable() end
-    -- The calendar of events is asked of the server (no window opens): the vendors of an event
-    -- count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
-    if C_Calendar and C_Calendar.OpenCalendar then pcall(C_Calendar.OpenCalendar) end
-    -- And the Trading Post is asked what is on offer, in case the game already knows.
-    if ns.ReadPerks then pcall(ns.ReadPerks) end
-    ns.Start()
+
+    local passos = {
+        -- O livro-caixa se escreve ao entrar, que é quando a API fala deste personagem.
+        function() if ns.Roster then ns.Roster.Record() end end,
+        -- The calendar of events is asked of the server (no window opens): the vendors of an
+        -- event count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
+        function() if C_Calendar and C_Calendar.OpenCalendar then pcall(C_Calendar.OpenCalendar) end end,
+        -- And the Trading Post is asked what is on offer, in case the game already knows.
+        function() if ns.ReadPerks then pcall(ns.ReadPerks) end end,
+        function() ns.Start() end,
+    }
+    local function Proximo(i)
+        local passo = passos[i]
+        if not passo then return end
+        pcall(passo)
+        if passos[i + 1] then
+            if C_Timer and C_Timer.After then C_Timer.After(0, function() Proximo(i + 1) end) else Proximo(i + 1) end
+        end
+    end
+    if C_Timer and C_Timer.After then C_Timer.After(START_DELAY, function() Proximo(1) end) else Proximo(1) end
 end
 
 function handlers:COMPANION_LEARNED()
@@ -256,9 +277,15 @@ ns.LAZY_INTERVAL = LAZY_INTERVAL
 
 local function Clock() return GetTime and GetTime() or 0 end
 
+local serial = 0
+---A number that changes at every Invalidate: a sliced build compares it at its end to know
+---whether something changed while it worked.
+function ns.DirtySerial() return serial end
+
 ---@param lazy boolean|nil true when only numbers changed (see above)
 function ns.Invalidate(lazy)
     dirty = true
+    serial = serial + 1
     if not lazy then urgent = true end
     if not (ns.window and ns.window:IsShown()) then return end
     if not lazy then
@@ -299,10 +326,12 @@ end
 --------------------------------------------------------------------------------
 function ns.Start()
     ns.Invalidate()
-    -- The achievement scan starts only once the list exists: it matches the reward text against
-    -- the mounts that are MISSING.
-    if ns.Achievements then ns.Achievements.Scan() end
-    ns.StartValidation()
+    -- The first list, in slices; and only once it exists, the achievement scan (it matches the
+    -- reward text against the mounts that are MISSING) and the validation of the items.
+    ns.WhenBuilt(function()
+        if ns.Achievements then ns.Achievements.Scan() end
+        ns.StartValidation()
+    end)
 end
 
 --------------------------------------------------------------------------------
@@ -338,7 +367,9 @@ function ns.StartValidation()
     local espera = 0
     local function Itens()
         local ids = {}
-        local ok, lista = pcall(ns.GetRanked, true)
+        -- The list that is there: the opening just built it, and the scan's end marked it
+        -- due again -- the items are the same either way.
+        local ok, lista = pcall(ns.GetRanked)
         local vistos = {}
         for _, e in ipairs(ok and lista or {}) do
             if e.itemID then ids[#ids + 1] = e.itemID end
