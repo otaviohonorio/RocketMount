@@ -292,10 +292,12 @@ local function BuildRow(row)
     row.count = Text(row, "GameFontHighlightSmall", "RIGHT")
     row.count:SetPoint("RIGHT", -8, -2)
     -- a row of icons: the kind's name and its count at the left, the slots after them
-    row.label = Text(row, "GameFontNormalSmall")
-    row.label:SetPoint("LEFT", 6, 5)
+    -- Two points over the small font (02/10, asked by the user): the game's 12 in place of its 10.
+    row.label = Text(row, "GameFontNormal")
+    row.label:SetPoint("LEFT", 6, 7)
     row.label:SetWidth(LABEL_W - 12)
-    row.sub = Text(row, "GameFontDisableSmall")
+    row.label:SetWordWrap(false)
+    row.sub = Text(row, "GameFontDisable")
     row.sub:SetPoint("TOPLEFT", row.label, "BOTTOMLEFT", 0, -2)
     row.slots = {}
 end
