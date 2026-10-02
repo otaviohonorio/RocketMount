@@ -572,8 +572,22 @@ local function StartBuild()
         if not ok then
             -- It broke: say so once, and from now on every list is made at once, as before.
             building, sliceBroken = nil, true
+            buildSerial = nil
             if ns.Log and ns.Log.Add then pcall(ns.Log.Add, "build", { error = tostring(list) }) end
             ns.Invalidate()
+            -- (!) AND WHOEVER WAITS FOR THE LIST GETS ONE, made at once. The opening of the
+            -- game waits for the first list to scan the achievements and validate the items:
+            -- with nobody told, the window would stay on its loading bar for ever.
+            if #waiting > 0 then
+                local okB, feita = pcall(BuildNow)
+                if okB then
+                    Finish(feita, nil, { kind = "after-error" })
+                else
+                    local fila = waiting
+                    waiting = {}
+                    for _, fn in ipairs(fila) do pcall(fn, cache or EMPTY) end
+                end
+            end
             return
         end
         if coroutine.status(co) == "dead" then
