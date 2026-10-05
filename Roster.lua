@@ -34,6 +34,8 @@ local function WantedFactions()
     local wanted = {}
     for _, r in pairs(type(ns.MountReputation) == "table" and ns.MountReputation or {}) do
         if type(r) == "table" and r.factionId then wanted[r.factionId] = true end
+        -- The other side's faction of the same mount (the talbuks: the Mag'har and the Kurenai).
+        if type(r) == "table" and r.altFactionId then wanted[r.altFactionId] = true end
     end
     return wanted
 end

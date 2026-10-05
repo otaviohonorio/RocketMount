@@ -1,14 +1,15 @@
-# Rocket Mount 0.26.0
+# Rocket Mount 0.26.1
 
-- **New tab: Collection.** Every mount of the game, by expansion and by kind of source, the
-  newest expansion first: the ones you have in colour with the game's gold frame, the ones you
-  do not have dimmed. Each expansion and each kind says how many you have of how many.
-- **Filters**, on the game's own Filter button: all, collected or not collected, and which
-  kinds of source to show. The window's search box filters the collection too.
-- Hover a mount for the game's own tooltip; click any mount to see it on the card at the side,
-  with the same buttons the list has (set the map pin, open and track the achievement). A mount
-  you already have shows what it is and how it is obtained.
-- **Wowhead button** on every mount's card: it shows the link of the mount's page, in your
-  language, ready to copy.
-- Fixed a Lua error ("C stack overflow") that could happen when the game's calendar was on
-  another month.
+Reputation and renown mounts that sat at 0% for no reason:
+
+- **Friendship reputations are measured now.** Nat Pagle, Conjurer Margoss, the Archivists'
+  Codex, the Weaver, the General and the Vizier, the Brawler's Guild, Captain Tokka, Marasmius
+  and the Court of Night showed 0% whatever you had. The number is now how far you are to the
+  rank the mount asks for.
+- **The faction of your side.** Mounts sold by one faction to the Alliance and by another to
+  the Horde (the Nagrand talbuks, the Drake of the West Wind, the Deathtusk Felboar, the
+  Brawler's Guild mounts) were measured against one side's faction only, and the other side
+  saw 0%.
+- **Renown levels corrected:** Ferocious Jawcrawler asks for renown 22 with The Severed Threads
+  and Aquamarine Swarmite for 23. With the lower levels the list had, the mount fell to 0% as
+  soon as you passed them.

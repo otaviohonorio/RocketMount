@@ -159,6 +159,43 @@ local function ReputationProgressHere(rep)
         }
     end
 
+    -- (!) FRIENDSHIP IS MEASURED IN POINTS (05/10). Reported by players: reputation mounts
+    -- stuck at 0%. Every friendship was: the table knew the NAME of the rank asked for ("Best
+    -- Friend", "Rank 6"), which is no standing of `C_Reputation`, and the mount fell into "asks
+    -- for X, which I cannot measure" whatever the character had. The game answers in points
+    -- (`C_GossipInfo.GetFriendshipReputation(...).standing`, what its own reputation panel
+    -- reads), and the table has how many points reach the rank (`need`, from the game's
+    -- FriendshipRepReaction). The rank's name on the line is the game's, in the player's
+    -- language.
+    if rep.friendship and type(rep.need) == "number" and rep.need > 0 then
+        if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then return desconhecida end
+        local ok, f = pcall(C_GossipInfo.GetFriendshipReputation, rep.factionId)
+        if not ok or type(f) ~= "table" or (issecretvalue and issecretvalue(f.standing))
+            or type(f.friendshipFactionID) ~= "number" or f.friendshipFactionID <= 0
+            or type(f.standing) ~= "number" then
+            return desconhecida
+        end
+        if type(f.name) == "string" and f.name ~= "" and not (issecretvalue and issecretvalue(f.name)) then
+            nome = f.name
+        end
+        local grau = type(f.reaction) == "string" and not (issecretvalue and issecretvalue(f.reaction))
+            and f.reaction or "?"
+        local tenho = math.max(0, f.standing)
+        if tenho >= rep.need then
+            return {
+                kind = "rep", factionName = nome, pct = 1, have = tenho, need = rep.need,
+                scope = ReputationScope(rep.factionId),
+                label = string.format(L["%s: rank reached (%s)"], nome, grau),
+            }
+        end
+        return {
+            kind = "rep", factionName = nome, pct = tenho / rep.need, have = tenho, need = rep.need,
+            scope = ReputationScope(rep.factionId),
+            label = string.format(L["%s: %s of %s (%s)"], nome,
+                BreakUpLargeNumbers(tenho), BreakUpLargeNumbers(rep.need), grau),
+        }
+    end
+
     -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
     if rep.renown and C_MajorFactions and C_MajorFactions.GetMajorFactionRenownInfo then
         -- The faction's name in the player's language: the table's is English.
@@ -291,7 +328,37 @@ local function BestAlt(factionId, alvo)
     return melhor
 end
 
+-- (!) ONE FACTION PER SIDE OF THE WAR (05/10). The talbuks are sold by the Mag'har to the Horde
+-- and by the Kurenai to the Alliance; the table had one of the two, and the other side read "no
+-- reputation with this faction", 0%, whatever it had. The table now has the pair
+-- (`altFactionId`), with the side of each, and the character is measured against its own.
+-- A character of neither side yet is measured against the first.
+local function ForMySide(rep)
+    if type(rep) ~= "table" or not rep.altFactionId then return rep end
+    local lado = UnitFactionGroup and UnitFactionGroup("player")
+    lado = (lado == "Alliance" and "A") or (lado == "Horde" and "H") or nil
+    if lado and rep.altSide == lado and rep.side ~= lado then
+        local outra = {}
+        for k, v in pairs(rep) do outra[k] = v end
+        outra.factionId, outra.factionName = rep.altFactionId, rep.altFactionName or rep.factionName
+        if rep.altNeed ~= nil then outra.need = rep.altNeed end
+        outra.altFactionId, outra.altFactionName, outra.altNeed = nil, nil, nil
+        return outra
+    end
+    return rep
+end
+
+local ReputationOfMySide
+
 local function ReputationProgress(rep)
+    local r = ReputationOfMySide(ForMySide(rep))
+    -- One of a pair: the item at hand may be the other side's, and its line names a faction
+    -- this character can never have (BuildList sets that line aside).
+    if r and type(rep) == "table" and rep.altFactionId then r.paired = true end
+    return r
+end
+
+ReputationOfMySide = function(rep)
     local aqui = ReputationProgressHere(rep)
     if aqui and rep and rep.factionId then aqui.factionId = aqui.factionId or rep.factionId end
     if not (rep and rep.factionId) or rep.renown or rep.friendship then return aqui end
@@ -1541,8 +1608,14 @@ function ns.BuildList(onlyID)
                     -- - %s"). That is safe on our own data: of the 110 mounts whose item has
                     -- such a line, all 110 name the faction of the table
                     -- (`tools/auditar_reputacao.py`).
+                    -- (!) ONE OF A PAIR (05/10): the item read may be the OTHER side's (the
+                    -- talbuk's names the Kurenai to a character of the Horde), and that line is
+                    -- no requirement of this character at all. The reputation line of such an
+                    -- item steps aside whatever it names; the table measures the right one.
                     local aside
-                    if e.rep and e.rep.char then
+                    if e.rep and e.rep.paired then
+                        aside = { e.rep.factionName }
+                    elseif e.rep and e.rep.char then
                         aside = { e.rep.factionName }
                     elseif e.rep and e.rep.pct and e.rep.pct < 1
                         and type(e.rep.factionName) == "string" and e.rep.factionName ~= "" then
