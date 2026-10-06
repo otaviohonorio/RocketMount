@@ -710,14 +710,70 @@ end
 -- Sizes are in SCREEN points and divided by the canvas scale when drawn, so that a dash is the
 -- same on the screen whatever the zoom -- a line of the canvas grows and shrinks with it.
 --------------------------------------------------------------------------------
+--
+-- (!) "INCOMPLETA, MUITO SIMPLES E POUCO VISIVEL" (06/10), the user's screenshot of Huolon's
+-- route. Three things, each measured before it was changed:
+--   barely visible  the art is a BLACK core with a soft white glow, and at 18 the core was two
+--                   points of black on a green map. The game draws it at 45 at least
+--                   (`FM_FlightPathDataProvider.lua`: `Lerp(1, 2, ...) * 45`), and lights the
+--                   route under the mouse with the same art again in ADD
+--                   (`FlightMap_HighlightFlightLineTemplate`). Both are done here.
+--   too simple      straight lines between a handful of sightings. The road now bends through
+--                   them (`MapPins.Smooth`).
+--   incomplete      the table had it as an open line; it is a loop (tools/rotas/nossas.json).
 local ROUTE = {
     ATLAS = "_UI-Taxi-Line-horizontal",
-    THICK = 18,             -- of the art, which carries its own glow: the core is about a quarter
-    DASH = 10, GAP = 7,
-    ALPHA = 0.9, ALPHA_LOCKED = 0.35,
+    THICK = 45,             -- the game's own for a flight line; the dark core is about a tenth
+    DASH = 16, GAP = 9,
+    GLOW = 2,               -- passes of the same art in ADD over each dash (the game's highlight)
+    ALPHA = 1, ALPHA_LOCKED = 0.35,
+    STEPS = 8,              -- pieces of curve between two points of the route
     MAX_DASHES = 400,       -- per route: a canvas scale that came wrong cannot ask for thousands
 }
 MapPins.Route = ROUTE
+
+---The same road, bent: a centripetal Catmull-Rom curve through EVERY point of the path (the
+---marker sits on one of them, and has to stay on the road), in `steps` pieces per stretch.
+---Centripetal because the sightings are unevenly spaced -- two a point apart, then ten -- and
+---the plain curve loops and overshoots there. A path of two points is returned as it came.
+---@param path table `{ { x, y }, ... }`
+---@param loop boolean|nil the path closes on its first point
+---@return table path the curve, NOT repeating the first point when it closes
+function MapPins.Smooth(path, loop, steps)
+    local n = type(path) == "table" and #path or 0
+    steps = (type(steps) == "number" and steps >= 1) and math.floor(steps) or 1
+    if n < 3 or steps == 1 then return path end
+    local function P(i)
+        if loop then return path[(i - 1) % n + 1] end
+        if i < 1 then return { 2 * path[1][1] - path[2][1], 2 * path[1][2] - path[2][2] } end
+        if i > n then return { 2 * path[n][1] - path[n - 1][1], 2 * path[n][2] - path[n - 1][2] } end
+        return path[i]
+    end
+    local function Knot(a, b)
+        local d = math.sqrt((b[1] - a[1]) ^ 2 + (b[2] - a[2]) ^ 2)
+        return math.sqrt(math.max(d, 1e-6))
+    end
+    local out = {}
+    for i = 1, (loop and n or n - 1) do
+        local p0, p1, p2, p3 = P(i - 1), P(i), P(i + 1), P(i + 2)
+        local t0 = 0
+        local t1 = t0 + Knot(p0, p1)
+        local t2 = t1 + Knot(p1, p2)
+        local t3 = t2 + Knot(p2, p3)
+        for k = 0, steps - 1 do
+            local u = t1 + (t2 - t1) * k / steps
+            local function Mix(a, b, ta, tb)
+                local w = (u - ta) / (tb - ta)
+                return { a[1] + (b[1] - a[1]) * w, a[2] + (b[2] - a[2]) * w }
+            end
+            local a1, a2, a3 = Mix(p0, p1, t0, t1), Mix(p1, p2, t1, t2), Mix(p2, p3, t2, t3)
+            local b1, b2 = Mix(a1, a2, t0, t2), Mix(a2, a3, t1, t3)
+            out[#out + 1] = Mix(b1, b2, t1, t2)
+        end
+    end
+    if not loop then out[#out + 1] = path[n] end
+    return out
+end
 
 ---The dashes of a path: `{ { x1, y1, x2, y2 }, ... }`, in the units the path came in.
 ---The pattern runs along the whole path, so a dash that meets a corner bends there (two lines).
@@ -1018,7 +1074,8 @@ end
 ---@return number lines drawn
 function RocketMountMapDataProviderMixin:LayoutRoutes()
     self.routeLines = self.routeLines or {}
-    local usadas, guias = 0, 0
+    self.routeGlow = self.routeGlow or {}
+    local usadas, guias, brilhos = 0, 0, 0
     local ok = pcall(function()
         local map = self:GetMap()
         local canvas = map and map.GetCanvas and map:GetCanvas()
@@ -1046,6 +1103,7 @@ function RocketMountMapDataProviderMixin:LayoutRoutes()
         for _, rota in ipairs(self.routes or {}) do
             local pontos = {}
             for i, p in ipairs(rota.path) do pontos[i] = { p[1] * w, p[2] * h } end
+            pontos = MapPins.Smooth(pontos, rota.loop, ROUTE.STEPS)
             local tracos = MapPins.Dashes(pontos, rota.loop, ROUTE.DASH / escala, ROUTE.GAP / escala)
             for _, t in ipairs(tracos) do
                 usadas = usadas + 1
@@ -1061,6 +1119,22 @@ function RocketMountMapDataProviderMixin:LayoutRoutes()
                 linha:SetAlpha(rota.locked and ROUTE.ALPHA_LOCKED or ROUTE.ALPHA)
                 linha:SetDesaturated(rota.locked and true or false)
                 linha:Show()
+                -- Lit, as the game lights a flight line: the same art again, in ADD. Not for
+                -- the route of a rare already looted, which is meant to fade.
+                for _ = 1, (rota.locked and 0 or ROUTE.GLOW) do
+                    brilhos = brilhos + 1
+                    local brilho = self.routeGlow[brilhos]
+                    if not brilho then
+                        brilho = self.routeFrame:CreateLine(nil, "ARTWORK", nil, 1)
+                        brilho:SetAtlas(ROUTE.ATLAS)
+                        brilho:SetBlendMode("ADD")
+                        self.routeGlow[brilhos] = brilho
+                    end
+                    brilho:SetThickness(ROUTE.THICK / escala)
+                    brilho:SetStartPoint("TOPLEFT", canvas, t[1], -t[2])
+                    brilho:SetEndPoint("TOPLEFT", canvas, t[3], -t[4])
+                    brilho:Show()
+                end
             end
         end
 
@@ -1094,6 +1168,7 @@ function RocketMountMapDataProviderMixin:LayoutRoutes()
         end
     end)
     for i = usadas + 1, #self.routeLines do self.routeLines[i]:Hide() end
+    for i = brilhos + 1, #self.routeGlow do self.routeGlow[i]:Hide() end
     for i = guias + 1, #(self.leaderLines or {}) do
         self.leaderLines[i]:Hide()
         self.leaderDots[i]:Hide()

@@ -17,3 +17,6 @@
 - **The mount in 3D on its card.** Pick a mount and the card shows it the way the game's Mount
   Journal does: drag to turn it, scroll to zoom, and your character rides it when the journal's
   own "show character" switch is on.
+- **The route of a rare that moves is easier to see.** The line on the map is thicker and lit,
+  it bends through the places the rare is seen instead of cutting straight between them, and
+  Huolon's route on the Timeless Isle now goes all the way around.
