@@ -1625,6 +1625,29 @@ function ns.BuildList(onlyID)
                 end
                 -- What a vendor told THIS character, when it stood in front of one.
                 e.vendorCheck = ns.VendorVerdict(mountID)
+                -- (!) THE VENDOR'S "NO" IS NOT A SECOND REQUIREMENT WHEN WE KNOW WHY (06/10).
+                -- Screenshot: the Tillers' goats at 0% for a character Revered with The Tillers,
+                -- 80% of the way -- "the vendor does not sell it to you yet (seen 10/05) · and 1
+                -- more requirement(s)". The vendor's "no" is worth 0 or 1; it won from the 80%
+                -- by being the smallest, and counted as a requirement of its own. But it says
+                -- nothing new: the vendor refuses BECAUSE of the reputation the table already
+                -- measures. It is the defect of 01/10 (the item's red line) once more, in the
+                -- other source that answers yes or no -- and what the players reported
+                -- ("reputation mounts at 0%"): whoever has walked up to the vendor once.
+                --
+                -- So, while a requirement that is MEASURED (not "could not read") is short, the
+                -- vendor's "no" steps aside and the number is the measured one. Once everything
+                -- measured is met and the vendor still says no, the "no" counts again: it is
+                -- still the negative signal, at the moment it has something to say.
+                if e.vendorCheck and e.vendorCheck.pct < 1 then
+                    local function Short(p)
+                        return type(p) == "table" and type(p.pct) == "number" and p.pct < 1 and not p.unreadable
+                    end
+                    if Short(e.rep) or Short(e.achievement) or Short(e.achievementReward) or Short(e.quest) then
+                        e.vendorNo = e.vendorCheck
+                        e.vendorCheck = nil
+                    end
+                end
                 -- Montado uma vez por varredura, e não a cada tecla digitada.
                 e.expansion, e.expansionName = ns.Expansion and ns.Expansion.Of(mountID)
                 e.busca = Haystack(e)

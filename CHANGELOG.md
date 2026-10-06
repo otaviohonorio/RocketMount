@@ -1,5 +1,6 @@
-# Rocket Mount 0.26.2
+# Rocket Mount 0.26.3
 
-- **Search box:** the example text ("name, boss, zone, vendor") no longer stays under what you
-  type, and the box's clear button brings the whole list back.
-- **New icon** for the addon, in the addon list, on the minimap button and on the window.
+- **Reputation mounts no longer drop to 0% after you visit the vendor.** Once a vendor had told
+  the addon "not for you yet", that answer counted as a second requirement and pulled the number
+  to 0%, even with most of the reputation done (the Tillers' goats at Revered, for one). The
+  number is now how far the reputation is.
