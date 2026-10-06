@@ -378,6 +378,16 @@ function ns.GoToPlace(place, entry)
         end
     end
     local nome = (entry and entry.name) or L["the mount"]
+    -- (!) WHOSE REPUTATION IT IS, IN THE CHAT TOO (06/10). The user, on another character: *"na
+    -- janela mostrou quem tem a reputacao, mas no chat nao, so que ele nao tem essa reputacao"*.
+    -- The number of a legacy reputation is the BEST character's, and the window says whose; the
+    -- chat line sent this character to a vendor that will not sell to it, without a word. The
+    -- sentence is the same one the window shows.
+    local deQuem = ""
+    if type(entry) == "table" and type(entry.rep) == "table" and entry.rep.char
+        and type(entry.rep.label) == "string" and entry.rep.label ~= "" then
+        deQuem = "  " .. entry.rep.label .. "."
+    end
     if pinned then
         -- The game's own link of the pin just set: a click on it opens the map there.
         local link
@@ -386,9 +396,9 @@ function ns.GoToPlace(place, entry)
             if ok and type(l) == "string" and l ~= "" then link = l end
         end
         ns.Print(string.format(L["arrow pointed at %s."], nome)
-            .. (link and ("  " .. link .. "  " .. L["(click the link to open the map)"]) or ""))
+            .. (link and ("  " .. link .. "  " .. L["(click the link to open the map)"]) or "") .. deQuem)
     else
-        ns.Print(string.format(L["%s: %s (this map takes no pin)"], nome, place.text or "?"))
+        ns.Print(string.format(L["%s: %s (this map takes no pin)"], nome, place.text or "?") .. deQuem)
     end
     return pinned
 end

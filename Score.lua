@@ -222,6 +222,29 @@ function ns.WholePercent(v)
     return math.max(1, math.min(99, math.floor(v * 100 + 0.5)))
 end
 
+---The progress of a requirement as the screen writes it.
+---
+---(!) TWO DECIMALS AT THE ENDS (06/10). The user's idea, after the 99: *"se precisar podemos usar
+---xx.xx% duas casas decimais nestes casos para garantir mais assertividade"*. In the middle a
+---whole number says enough (80%). In the last point before done, and in the first point after
+---nothing, a whole number hides exactly what the player wants to know -- how close: 41,850 of
+---42,000 is "99.64%", 100 of 42,000 is "0.24%". Cut, never rounded up: "100%" stays only for
+---what is done, and "0%" only for nothing walked. The decimal mark is the translation's.
+function ns.PercentText(v)
+    if type(v) ~= "number" then return nil end
+    if v >= 1 then return "100%" end
+    if v <= 0 then return "0%" end
+    local pct = v * 100
+    if pct >= 99 or pct < 1 then
+        -- (the tiny sum undoes the binary dust: 99.12 is stored as 99.11999...)
+        local cortado = math.floor(pct * 100 + 1e-6) / 100
+        if cortado >= 100 then cortado = 99.99 end
+        if cortado <= 0 then cortado = 0.01 end
+        return (string.format("%.2f", cortado):gsub("%.", L["."])) .. "%"
+    end
+    return string.format("%d%%", ns.WholePercent(v))
+end
+
 function ns.Rank(entry)
     local e = entry
 
@@ -366,7 +389,7 @@ function ns.Rank(entry)
             -- existe para NÃO dizer. Preço é informação: quem lê decide.
             e.headline = (e.cost and e.cost.price) or "—"
         elseif req then
-            e.headline = string.format("%d%%", ns.WholePercent(req))
+            e.headline = ns.PercentText(req)
         else
             e.headline = "—"
         end
@@ -828,8 +851,7 @@ function ns.RowPercentText(e)
     local v = ns.RowPercent(e)
     if not v then return "?" end
     if not e.deterministic and e.chance and e.chance > 0 then return ns.FormatChance(e.chance) end
-    if v > 0 and v < 0.01 then return "<1%" end
-    return string.format("%d%%", ns.WholePercent(v))
+    return ns.PercentText(v)
 end
 
 ---The window's order: an optional column first (tag or expansion), then ALWAYS the number
