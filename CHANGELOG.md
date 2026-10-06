@@ -2,3 +2,4 @@
 
 - **Search box:** the example text ("name, boss, zone, vendor") no longer stays under what you
   type, and the box's clear button brings the whole list back.
+- **New icon** for the addon, in the addon list, on the minimap button and on the window.

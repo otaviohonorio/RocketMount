@@ -39,8 +39,8 @@ function ns.CreateMinimapButton()
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(19, 19)
     icon:SetPoint("CENTER", -1, 1)
-    icon:SetTexture("Interface\\Icons\\Ability_Mount_RidingHorse")
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    icon:SetTexture(ns.LOGO)
+    icon:SetTexCoord(0, 1, 0, 1)
     -- Máscara redonda: é o que a UI moderna do jogo faz, e quadrado com borda preta
     -- dentro da moldura redonda do minimapa parece recorte colado.
     icon:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")

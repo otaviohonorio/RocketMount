@@ -1649,7 +1649,7 @@ local function Build()
 
     if window.SetTitle then window:SetTitle(L["Rocket Mount — where to start"]) end
     if window.SetPortraitToAsset then
-        window:SetPortraitToAsset("Interface\\Icons\\Ability_Mount_RidingHorse")
+        window:SetPortraitToAsset(ns.LOGO)
     end
 
     -- The counter, in the attic between the title and the inset, right of the portrait (x >= 58).

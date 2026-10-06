@@ -2,6 +2,12 @@
 -- Addon namespace: everything shared between files lives in `ns`.
 local ADDON, ns = ...
 
+-- (!) THE ADDON'S OWN ICON (06/10/2026). The three addons had the game's icons (two of them the
+-- SAME one, so the list of addons showed them alike). The art is ours and ships in `Textures/`:
+-- the rocket of the three addons with this addon's badge. One file serves every place: the
+-- addon list (`## IconTexture`), the minimap button (masked round) and the window's portrait.
+ns.LOGO = "Interface\\AddOns\\" .. ADDON .. "\\Textures\\Logo.png"
+
 ns.defaults = {
     -- (!) `topN` WAS REMOVED in 0.10.0. It capped the list at 100 rows "because building 400
     -- frames on open is expensive", and the price was the player finding no recent-expansion
