@@ -1718,9 +1718,18 @@ local function Build()
     end
     -- FILTERS ON EVERY KEY, not only on Enter: a list answering while you type is what lets
     -- you search by trial.
-    busca:SetScript("OnTextChanged", function(self, byUser)
-        if not byUser then return end
-        ns.search = self:GetText()
+    -- (!) THE GAME'S OWN PART FIRST (05/10). The user: *"o placeholder de busca no mount nao sai
+    -- quando digita, entao fica os textos sobrepostos"*. `SetScript` REPLACES the template's
+    -- `OnTextChanged`, and the template's is what hides the instructions and shows the clear
+    -- button (`SearchBoxTemplate_OnTextChanged`, InputBoxTemplates.lua). The game's own boxes
+    -- that listen to the text call it first (`ToyBox_OnSearchTextChanged`): the same here.
+    -- And the list follows the TEXT, not who typed it: the clear button empties the box by
+    -- code, and the list has to come back whole.
+    busca:SetScript("OnTextChanged", function(self)
+        if SearchBoxTemplate_OnTextChanged then SearchBoxTemplate_OnTextChanged(self) end
+        local texto = self:GetText() or ""
+        if texto == (ns.search or "") then return end
+        ns.search = texto
         ns.RefreshWindow()
     end)
     busca:SetScript("OnEscapePressed", function(self)
