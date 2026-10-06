@@ -14,3 +14,6 @@
   collections use, instead of hanging off its left edge, and there is a little air between rows.
 - **A Filter button beside the search box.** Type, expansion, "only what I can get" and "removed
   mounts" in one menu. The filters on the column headers are still there.
+- **The mount in 3D on its card.** Pick a mount and the card shows it the way the game's Mount
+  Journal does: drag to turn it, scroll to zoom, and your character rides it when the journal's
+  own "show character" switch is on.

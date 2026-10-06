@@ -158,6 +158,81 @@ local CARD_BAR_W = 8
 local CARD_H = WINDOW_H + LIST_TOP - FOOTER - 6
 ns.Geometry.cardBarGap, ns.Geometry.cardBarW, ns.Geometry.cardH = CARD_BAR_GAP, CARD_BAR_W, CARD_H
 
+-- (!) THE MOUNT IN 3D, ON TOP OF THE CARD (06/10). The user: *"queria ter o 3d/4d da montaria
+-- quando seleciona ela"*. It is the scene of the game's own Mount Journal, built the way
+-- `MountJournal_UpdateMountDisplay` builds it (Blizzard_MountCollection.lua, 12.1.0): the scene
+-- the game names for that mount, the actor tagged "unwrapped" with the mount's display, the
+-- player on its back when the journal's own switch says so, the journal's backdrop and shadow,
+-- and the game's rotate/zoom/reset buttons on mouse-over. It stays FIXED above the text: the
+-- scene takes the mouse wheel to zoom, and inside the scrolling card it would steal the scroll.
+local MODEL_H = 210
+local MODEL_GAP = 10
+ns.Geometry.modelH, ns.Geometry.modelGap = MODEL_H, MODEL_GAP
+
+local function BuildModel(parent)
+    local m = CreateFrame("Frame", nil, parent)
+    m:SetSize(DETAIL_W, MODEL_H)
+    m.bg = m:CreateTexture(nil, "BACKGROUND")
+    m.bg:SetAllPoints()
+    m.bg:SetTexture("Interface\\PetBattles\\MountJournal-BG")
+    m.bg:SetTexCoord(0, 0.78515625, 0, 1)
+    m.shadow = CreateFrame("Frame", nil, m, "ShadowOverlayTemplate")
+    m.shadow:SetAllPoints()
+    m.scene = CreateFrame("ModelScene", nil, m, "ModelSceneMixinTemplate")
+    m.scene:SetAllPoints()
+    -- `ModelSceneMixin:OnEnter` shows `self.ControlFrame`, and `OnLeave` hides it.
+    local c = CreateFrame("Frame", nil, m.scene, "ModelSceneControlFrameTemplate")
+    c:SetPoint("BOTTOM", 0, 10)
+    if c.SetModelScene then c:SetModelScene(m.scene) end
+    m.scene.ControlFrame = c
+    m:Hide()
+    return m
+end
+
+---Puts a mount in the scene. Returns whether there is something to see; whatever the game
+---refuses goes to the diary, and the card stays as it was before the scene existed.
+local function ShowModel(m, entry)
+    local id = type(entry) == "table" and entry.mountID or nil
+    if not (m and id and C_MountJournal and C_MountJournal.GetMountInfoExtraByID) then return false end
+    if m.mountID == id then return m.ok == true end
+    m.mountID, m.ok = id, false
+    local nota = { mount = id }
+    local ok, erro = pcall(function()
+        local display, _, _, isSelfMount, _, sceneID, animID, kitID, noPlayer = C_MountJournal.GetMountInfoExtraByID(id)
+        if not display and C_MountJournal.GetMountAllCreatureDisplayInfoByID then
+            local todos = C_MountJournal.GetMountAllCreatureDisplayInfoByID(id)
+            display = todos and todos[1] and todos[1].creatureDisplayID
+        end
+        nota.display, nota.scene = display, sceneID
+        if not (display and display ~= 0 and sceneID) then return end
+        local scene = m.scene
+        scene:TransitionToModelSceneID(sceneID, CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD, true)
+        local actor = scene:GetActorByTag("unwrapped")
+        nota.actor = actor ~= nil
+        if not actor then return end
+        actor:Hide()
+        actor:SetOnModelLoadedCallback(function() actor:Show() end)
+        actor:SetModelByCreatureDisplayID(display, true)
+        if isSelfMount then
+            actor:SetAnimationBlendOperation(Enum.ModelBlendOperation.None)
+            actor:SetAnimation(618)   -- MountSelfIdle
+        else
+            actor:SetAnimationBlendOperation(Enum.ModelBlendOperation.Anim)
+            actor:SetAnimation(0)
+        end
+        -- The player on its back follows the journal's own switch.
+        if not noPlayer and not (GetCVarBool and GetCVarBool("mountJournalShowPlayer")) then noPlayer = true end
+        local nativa = PlayerUtil and PlayerUtil.ShouldUseNativeFormInModelScene and PlayerUtil.ShouldUseNativeFormInModelScene()
+        scene:AttachPlayerToMount(actor, animID, isSelfMount, noPlayer, kitID, nativa)
+        m.ok = true
+    end)
+    if not ok then nota.error = tostring(erro) end
+    nota.shown = m.ok
+    ns.Log.Add("model", nota)
+    return m.ok
+end
+ns.__showModel = ShowModel
+
 local function BuildDetail(parent)
     -- (!) THE CARD SCROLLS. It used to have six slots and drop the rest: "Where" was the ninth
     -- block of a vendor mount behind a reputation and never reached the screen. The game's own
@@ -173,6 +248,20 @@ local function BuildDetail(parent)
     d.scrollable = true
     d:SetSize(DETAIL_W, CARD_H)
     d.box, d.bar = box, bar
+    d.model = BuildModel(parent)
+    d.model:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X, LIST_TOP - 6)
+    -- The text takes what the scene leaves: the whole column without it.
+    function d.Place(comModelo)
+        d.model:SetShown(comModelo)
+        box:ClearAllPoints()
+        if comModelo then
+            box:SetPoint("TOPLEFT", d.model, "BOTTOMLEFT", 0, -MODEL_GAP)
+            box:SetHeight(CARD_H - MODEL_H - MODEL_GAP)
+        else
+            box:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X, LIST_TOP - 6)
+            box:SetHeight(CARD_H)
+        end
+    end
     if ScrollUtil and ScrollUtil.InitScrollBoxWithScrollBar and CreateScrollBoxLinearView then
         ScrollUtil.InitScrollBoxWithScrollBar(box, bar, CreateScrollBoxLinearView())
         if ScrollUtil.AddManagedScrollBarVisibilityBehavior then
@@ -902,7 +991,10 @@ local function FillDetail(entry)
     d.achOpen:Hide()
     d.achTrack:Hide()
 
+    d.Place(ShowModel(d.model, entry))
+
     if not entry then
+        d.model.mountID = nil
         d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
         d.empty:Show()
         d:SetHeight(CARD_H)
@@ -1886,7 +1978,7 @@ local function Build()
     end
 
     detail = BuildDetail(window)
-    detail.box:SetPoint("TOPLEFT", window, "TOPLEFT", COL_X, LIST_TOP - 6)
+    detail.Place(false)
     window.detail = detail
 
     -- The footer band the template reserves.
