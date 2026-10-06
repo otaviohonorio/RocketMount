@@ -10,3 +10,7 @@
 - **The chat line says whose reputation it is.** Pointing the arrow at a vendor from a character
   that does not have the reputation now names the character of yours that does, as the window
   already did.
+- **The list rows are cards now.** The mount's icon sits inside the row, in the frame the game's
+  collections use, instead of hanging off its left edge, and there is a little air between rows.
+- **A Filter button beside the search box.** Type, expansion, "only what I can get" and "removed
+  mounts" in one menu. The filters on the column headers are still there.

@@ -63,11 +63,25 @@ local WINDOW_H = 660 + DONATE_ROW   -- 580 -> 660 with the width; + the support 
 
 -- The row and its columns. Every x is derived from the one before it, so a column that grows
 -- pushes the next instead of sitting on it -- the geometry test checks every gap.
-local ROW_H = 54              -- 46 in the journal; "engrossar um pouco" (25/09)
-local ROW_ICON = 42
+-- (!) THE ROW IS A CARD (06/10). The user: *"a imagem da montaria ta muito grudada no canto
+-- esquerdo, tu acha que fazer a linha sendo um card mais bonito fica melhor?"*. The row copied
+-- the journal's, whose icon HANGS OFF the plate: on a list this wide it sat two points outside
+-- the list's left edge, alone. Now the plate runs from edge to edge with the icon INSIDE it, in
+-- the frame the game's collections use, and there is air between one row and the next. The
+-- columns did not move: only the name starts after the icon. Seen first in a preview made out
+-- of the game with the client's art (`.release/previa_lista.py`); the little progress bar of
+-- that preview was dropped at the user's word.
+local ROW_H = 58              -- 46 in the journal; 54 until 06/10
+local ROW_ICON = 40
+local ROW_GAP = 4             -- between one card and the next
+local ICON_INSET = 12         -- from the plate's left edge to the icon
+local ICON_FRAME = math.floor(56 * ROW_ICON / 42 + 0.5)   -- the game's frame is 56 around an icon of 42
 local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
 local COL_GAP = 10
-local NAME_X, NAME_W = 6, 296           -- name, and the "why" line under it
+-- The name starts 14 after the icon; the icon ends at ICON_INSET + ROW_ICON of the plate, and the
+-- plate starts ROW_PAD to the left of the row's own frame.
+local NAME_X = ICON_INSET + ROW_ICON + 14 - ROW_PAD
+local NAME_W = 302 - NAME_X             -- the type column stays where it was (312)
 local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 210   -- three tags
 local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 124
 local PCT_W, PCT_INSET = 64, 8
@@ -81,7 +95,8 @@ ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
     detailW = DETAIL_W, rightMargin = RIGHT_MARGIN, listTopY = LIST_TOP,
-    scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD,
+    scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD, rowGap = ROW_GAP, iconInset = ICON_INSET,
+    rowIcon = ROW_ICON, iconFrame = ICON_FRAME,
     rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
@@ -1027,23 +1042,39 @@ local function BuildRow(row)
     built[row] = true
     row:SetSize(ROW_W, ROW_H)
 
+    -- The plate, the selection and the highlight cover the icon's side too: the row's own frame
+    -- starts ROW_PAD in (the columns are measured from there), the card starts at the list's edge.
+    local function Plate(t)
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", row, "TOPLEFT", -ROW_PAD, 0)
+        t:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
+    end
     row.background = row:CreateTexture(nil, "BACKGROUND")
-    row.background:SetAllPoints()
+    Plate(row.background)
     row.background:SetAtlas("PetList-ButtonBackground")
 
     row.icon = row:CreateTexture(nil, "BORDER")
     row.icon:SetSize(ROW_ICON, ROW_ICON)
-    row.icon:SetPoint("LEFT", -(ROW_ICON + 4), 0)
+    row.icon:SetPoint("LEFT", row, "LEFT", ICON_INSET - ROW_PAD, 0)
+    -- The frame of the game's collections around it (`collections-itemborder-collected`).
+    row.iconFrame = row:CreateTexture(nil, "ARTWORK")
+    row.iconFrame:SetSize(ICON_FRAME, ICON_FRAME)
+    row.iconFrame:SetPoint("CENTER", row.icon, "CENTER", 0, 0)
+    row.iconFrame:SetAtlas("collections-itemborder-collected")
 
     row.selectedTexture = row:CreateTexture(nil, "OVERLAY")
-    row.selectedTexture:SetAllPoints()
+    Plate(row.selectedTexture)
     row.selectedTexture:SetAtlas("PetList-ButtonSelect")
     row.selectedTexture:Hide()
 
     row:SetHighlightAtlas("PetList-ButtonHighlight")
+    local brilho = row.GetHighlightTexture and row:GetHighlightTexture()
+    if type(brilho) == "table" and brilho.ClearAllPoints then Plate(brilho) end
+    -- And a click on the icon is a click on the row.
+    if row.SetHitRectInsets then row:SetHitRectInsets(-ROW_PAD, 0, 0, 0) end
 
     row.name = Text(row, "GameFontNormal")
-    row.name:SetPoint("TOPLEFT", NAME_X, -10)
+    row.name:SetPoint("TOPLEFT", NAME_X, -13)
     row.name:SetWidth(NAME_W)
     row.name:SetWordWrap(false)
 
@@ -1347,6 +1378,7 @@ function ns.SetWindowTab(tab)
     for _, h in pairs(window.headers or {}) do h:SetShown(lista) end
     if window.pctHelp then window.pctHelp:SetShown(lista) end
     if window.listBar then window.listBar:SetShown(lista) end
+    if window.listFilter then window.listFilter:SetShown(lista) end
     list:SetShown(lista)
     if not lista and loading then loading:Hide() end
     if ns.Collection then ns.Collection.Show(not lista) end
@@ -1750,6 +1782,57 @@ local function Build()
     end)
     window.search = busca
 
+    -- (!) THE FILTER BUTTON, BESIDE THE SEARCH BOX (06/10). The user: *"ao lado do campo de busca,
+    -- coloca um icone para os filtros, nao tem nessa tela"*. The filters existed, hidden in the
+    -- column headers (a click on "Type" or "Expansion"); the Collection tab has the game's
+    -- "Filter" button and this tab had none. The same button (`WowStyle1FilterDropdownTemplate`,
+    -- the one of the game's journals), with everything that filters this list in one menu.
+    do
+        local filtro = CreateFrame("DropdownButton", nil, host, "WowStyle1FilterDropdownTemplate")
+        filtro:SetPoint("LEFT", busca, "RIGHT", 10, 0)
+        if filtro.SetupMenu then
+            filtro:SetupMenu(function(_, root)
+                root:CreateTitle(L["Type"])
+                for _, k in ipairs(ns.TAG_ORDER) do
+                    root:CreateCheckbox(ns.TAG_NAME[k],
+                        function() return ns.db.tagFilter and ns.db.tagFilter[k] end,
+                        function()
+                            ns.db.tagFilter = ns.db.tagFilter or {}
+                            ns.db.tagFilter[k] = not ns.db.tagFilter[k] or nil
+                            ns.RefreshWindow()
+                        end)
+                end
+                root:CreateDivider()
+                local exp = root:CreateButton(L["Expansion"])
+                local faixas = ns.Expansion and ns.Expansion.RANGES or {}
+                for i = #faixas, 1, -1 do
+                    local id = faixas[i].id
+                    exp:CreateCheckbox(ns.ExpansionLabel(id, faixas[i].name),
+                        function() return ns.db.expFilter and ns.db.expFilter[id] end,
+                        function()
+                            ns.db.expFilter = ns.db.expFilter or {}
+                            ns.db.expFilter[id] = not ns.db.expFilter[id] or nil
+                            ns.RefreshWindow()
+                        end)
+                end
+                root:CreateDivider()
+                -- The two switches of the options panel that decide WHICH mounts are listed.
+                root:CreateCheckbox(L["Only what I can get"],
+                    function() return ns.db.hideUnavailable end,
+                    function() ns.db.hideUnavailable = not ns.db.hideUnavailable; ns.Invalidate(); ns.RefreshWindow() end)
+                root:CreateCheckbox(L["Removed mounts"],
+                    function() return ns.db.showUnobtainable end,
+                    function() ns.db.showUnobtainable = not ns.db.showUnobtainable; ns.Invalidate(); ns.RefreshWindow() end)
+                root:CreateDivider()
+                root:CreateButton(L["Show all"], function()
+                    ns.db.tagFilter, ns.db.expFilter = nil, nil
+                    ns.RefreshWindow()
+                end)
+            end)
+        end
+        window.listFilter = filtro
+    end
+
     -- The column headers, aligned with the row's columns.
     Header(host, "name", L["Mount"], NAME_X, NAME_W,
         function() ns.db.sortBy = "name"; ns.RefreshWindow() end)
@@ -1766,7 +1849,7 @@ local function Build()
     bar:SetPoint("BOTTOMRIGHT", host, "BOTTOMRIGHT", -3, 3)
 
     local view = CreateScrollBoxListLinearView()
-    view:SetPadding(0, 0, ROW_PAD, 0, 0)
+    view:SetPadding(0, 0, ROW_PAD, 0, ROW_GAP)
     view:SetElementExtentCalculator(function() return ROW_H end)
     view:SetElementFactory(function(factory) factory("Button", FillRow) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(list, bar, view)
