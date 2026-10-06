@@ -208,6 +208,20 @@ local function Price(e)
     return p.goldPct or p.otherPct
 end
 
+---A fraction as the whole percentage the screen shows.
+---
+---(!) 100% IS ONLY FOR WHAT IS DONE (06/10). The user, less than 200 points from Exalted: *"agora
+---eles ficaram 100%, mas eu nao entreguei a ultima quest (...) nao deveria ta 99%?"*. Rounding
+---41,850 of 42,000 gives 100, and 100% on a row means "go and get it". Anything short of whole
+---stops at 99, and anything above nothing starts at 1: the two ends are statements, not
+---roundings.
+function ns.WholePercent(v)
+    if type(v) ~= "number" then return nil end
+    if v >= 1 then return 100 end
+    if v <= 0 then return 0 end
+    return math.max(1, math.min(99, math.floor(v * 100 + 0.5)))
+end
+
 function ns.Rank(entry)
     local e = entry
 
@@ -352,7 +366,7 @@ function ns.Rank(entry)
             -- existe para NÃO dizer. Preço é informação: quem lê decide.
             e.headline = (e.cost and e.cost.price) or "—"
         elseif req then
-            e.headline = string.format("%d%%", math.floor(req * 100 + 0.5))
+            e.headline = string.format("%d%%", ns.WholePercent(req))
         else
             e.headline = "—"
         end
@@ -815,7 +829,7 @@ function ns.RowPercentText(e)
     if not v then return "?" end
     if not e.deterministic and e.chance and e.chance > 0 then return ns.FormatChance(e.chance) end
     if v > 0 and v < 0.01 then return "<1%" end
-    return string.format("%d%%", math.floor(v * 100 + 0.5))
+    return string.format("%d%%", ns.WholePercent(v))
 end
 
 ---The window's order: an optional column first (tag or expansion), then ALWAYS the number
