@@ -15,8 +15,8 @@
 - **A Filter button beside the search box.** Type, expansion, "only what I can get" and "removed
   mounts" in one menu. The filters on the column headers are still there.
 - **The mount in 3D on its card.** Pick a mount and the card shows it the way the game's Mount
-  Journal does: drag to turn it, scroll to zoom, and your character rides it when the journal's
-  own "show character" switch is on.
+  Journal does: drag to turn it, drag with the right button to move it, scroll to zoom, and
+  your character rides it when the journal's own "show character" switch is on.
 - **The route of a rare that moves is easier to see.** It is one continuous golden line now,
   like a highlighter, instead of thin dashes; it bends through the places the rare is seen
   instead of cutting straight between them; and Huolon's route on the Timeless Isle goes all

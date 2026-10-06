@@ -163,11 +163,32 @@ ns.Geometry.cardBarGap, ns.Geometry.cardBarW, ns.Geometry.cardH = CARD_BAR_GAP, 
 -- `MountJournal_UpdateMountDisplay` builds it (Blizzard_MountCollection.lua, 12.1.0): the scene
 -- the game names for that mount, the actor tagged "unwrapped" with the mount's display, the
 -- player on its back when the journal's own switch says so, the journal's backdrop and shadow,
--- and the game's rotate/zoom/reset buttons on mouse-over. It stays FIXED above the text: the
+-- and the game's rotate/zoom/reset buttons on mouse-over. (The scene template became the
+-- PANNING one the same day: see `FrameMount`.) It stays FIXED above the text: the
 -- scene takes the mouse wheel to zoom, and inside the scrolling card it would steal the scroll.
 local MODEL_H = 210
 local MODEL_GAP = 10
 ns.Geometry.modelH, ns.Geometry.modelGap = MODEL_H, MODEL_GAP
+
+-- (!) THE WHOLE MOUNT IN THE FRAME, AND A WAY TO MOVE IT (06/10, the user's screenshot of the
+-- first version: *"No 3d não consigo subir a montaria para ver melhor, por que ela não tá bem
+-- centralizada"* -- Anu'shalla with its feet cut off by the bottom of the frame).
+-- Measured in the game's own tables (`UiModelSceneCamera`, `UiModelSceneActor`): the scene of
+-- 1,403 of the mounts (id 4) aims the camera 2.2 ABOVE the mount's feet, from 14 away, in a
+-- range of 8 to 18. That is framed for the journal's display, which is TALL (about 407 x 514);
+-- ours is wide and short, and at 14 the bottom of the frame cut the feet. So the scene opens
+-- at the far end of the game's own range, where the whole mount fits, and the scroll wheel
+-- comes closer from there. And the scene is the game's PANNING one: the right button drags
+-- the mount up, down and sideways (`PanningModelSceneMixin`), the left one turns it.
+local function FrameMount(scene)
+    local cam = scene.GetActiveCamera and scene:GetActiveCamera()
+    if not (cam and cam.GetMaxZoomDistance and cam.SetZoomDistance) then return nil end
+    local longe = cam:GetMaxZoomDistance()
+    if type(longe) ~= "number" then return nil end
+    cam:SetZoomDistance(longe)
+    if cam.SnapAllInterpolatedValues then cam:SnapAllInterpolatedValues() end
+    return longe
+end
 
 local function BuildModel(parent)
     local m = CreateFrame("Frame", nil, parent)
@@ -178,8 +199,10 @@ local function BuildModel(parent)
     m.bg:SetTexCoord(0, 0.78515625, 0, 1)
     m.shadow = CreateFrame("Frame", nil, m, "ShadowOverlayTemplate")
     m.shadow:SetAllPoints()
-    m.scene = CreateFrame("ModelScene", nil, m, "ModelSceneMixinTemplate")
+    m.scene = CreateFrame("ModelScene", nil, m, "PanningModelSceneMixinTemplate")
     m.scene:SetAllPoints()
+    -- The game's reset button goes back to the scene's own distance: ours again after it.
+    m.scene.resetCallback = function(scene) pcall(FrameMount, scene) end
     -- `ModelSceneMixin:OnEnter` shows `self.ControlFrame`, and `OnLeave` hides it.
     local c = CreateFrame("Frame", nil, m.scene, "ModelSceneControlFrameTemplate")
     c:SetPoint("BOTTOM", 0, 10)
@@ -207,6 +230,7 @@ local function ShowModel(m, entry)
         if not (display and display ~= 0 and sceneID) then return end
         local scene = m.scene
         scene:TransitionToModelSceneID(sceneID, CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD, true)
+        nota.zoom = FrameMount(scene)
         local actor = scene:GetActorByTag("unwrapped")
         nota.actor = actor ~= nil
         if not actor then return end
