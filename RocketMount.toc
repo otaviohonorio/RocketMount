@@ -1,0 +1,60 @@
+## Interface: 120100, 120105
+## Title: |cffff6a00Rocket|r Mount
+## Notes: The mounts you are missing, easiest first.
+## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
+## Author: Otto Rocket (Otávio Honório)
+## Version: 0.31.0
+## X-Curse-Project-ID: 1717377
+#@debug@
+## SavedVariables: RocketMountDB, RocketMountLogDB
+#@end-debug@
+#@non-debug@
+# ## SavedVariables: RocketMountDB
+#@end-non-debug@
+## Category: Collections
+## Category-ptBR: Coleções do Bando de Guerra
+## IconTexture: Interface\AddOns\RocketMount\Textures\Logo.png
+## AddonCompartmentFunc: RocketMount_OnCompartmentClick
+## X-Donate: PayPal:https://www.paypal.com/donate/?business=HH4PHH48DPG9J&no_recurring=0&currency_code=USD
+
+Locales\enUS.lua
+Locales\ptBR.lua
+Locales\ptBR_Tips.lua
+Locales\ptBR_Places.lua
+Data\MobDrops.lua
+Data\MountItems.lua
+Data\AchievementMounts.lua
+Data\MountReputation.lua
+Data\RareLockout.lua
+Data\MountTips.lua
+Data\MountPlaces.lua
+Data\MountBosses.lua
+Data\MountStats.lua
+Data\MountExpansion.lua
+Data\MountChances.lua
+Data\MountGone.lua
+Data\RareTimers.lua
+Core.lua
+Donate.lua
+#@debug@
+Log.lua
+#@end-debug@
+Skin.lua
+Expansion.lua
+Tooltip.lua
+Achievements.lua
+Roster.lua
+Tips.lua
+Sources.lua
+Score.lua
+Collection.lua
+Window.lua
+Sighting.lua
+Attempts.lua
+MapPins.lua
+MinimapPins.lua
+MapButton.lua
+MapPins.xml
+Minimap.lua
+Options.lua
+Commands.lua

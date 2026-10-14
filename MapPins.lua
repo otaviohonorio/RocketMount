@@ -1,0 +1,1769 @@
+-- RocketMount | MapPins.lua
+-- Where the mounts you are missing come from, on the world map, with a tooltip.
+--
+-- The user (23/09) asked for the rares, elites and world bosses on the map, with a popup on
+-- mouse-over saying which mount drops and the chance. And on 27/09: better icons on the map,
+-- showing vendors, drops, reputations and rares -- with one condition: *"sempre vamos seguir o
+-- padrão de skin blizzard, o que tem de mais recente nativo dela"*.
+--
+-- So a pin is the MOUNT's icon, and what kind of source it is -- drawn the way
+-- Blizzard draws a world quest: the marker disc, the icon inside it, the dragon around an elite,
+-- a small glyph at the lower right (MapPins.xml). The tooltip is the game's own, written with the
+-- game's own helpers, so it has the colours every other map tooltip has.
+--
+-- Built on the map's OWN pin system, the one Blizzard uses for its dig sites
+-- (`DigSiteDataProvider.lua`, 12.1.0): a data provider added to `WorldMapFrame`, which acquires
+-- one pin per place on the map being viewed. No library: the game's own system is enough.
+--
+--   where   a PLACE: a creature's spawn point (`ns.MobDrops[npc].where`), a vendor, a chest
+--           or a quest giver (`Data/MountPlaces.lua`), or the door of an instance, which the
+--           game itself places on the map being viewed
+--   what    the mounts THIS character is missing there, easiest first; for a creature it is
+--           `Sighting.MountsOf(npc)`, the SAME index the alert uses, so the two never disagree
+--   state   `Sighting.LockedOut`: looted today (or this week, for a world boss) goes dim
+--   which   the map being viewed and the maps INSIDE it (a cave, a sub-zone), projected; on a
+--           continent a creature is one pin, not one per spawn point
+--   where not  instance maps (dungeons, raids): the alert is open-world only, and so is this
+local ADDON, ns = ...
+local L = ns.L
+
+local MapPins = {}
+ns.MapPins = MapPins
+
+local TEMPLATE = "RocketMountMapPinTemplate"
+
+-- The same numbers as MapPins.xml, for the harness to check the two against each other. The ring
+-- of `worldquest-questmarker-epic` is 40 of the art's 64: drawn at 32 it is 20 across.
+--
+-- (!) THE SIZE IS THE GAME'S QUEST PIN (27/09). It was born the size of a world-quest pin (disc
+-- at 40, ring of 25) and the user asked for smaller: *"pode reduzir um pouco o tamanho dos icones
+-- do mapa?"*. The game's own quest marker is a button of 20 with its art at 32
+-- (`POIButton.xml`, POIButtonTemplate), which is 80% of what we had -- so that is the size, and
+-- every other number went down by the same 80%.
+--
+-- (!) THE WORD UNDER THE MARKER, SMALLER (28/09). The user: *"pode diminuir um pouco o texto"*.
+-- It was the game's small outlined font as it comes, 10 high (GameFontNormalSmallOutline,
+-- Fonts.xml: SystemFont_Shadow_Small_Outline). The game has no outlined font object below 10 --
+-- its 9 and 8 (SystemFont_Tiny, SystemFont_Tiny2) have no outline, and a word over the map
+-- needs one. So the object stays, with the height the game's smallest text has: 8, the same
+-- 80% the marker itself was brought down to (`FontString:SetFontHeight`).
+--
+-- (!) AND A LITTLE SMALLER STILL (28/09). The user, looking at the map with the new sizes:
+-- *"reduzir mais um pouquinho bem levemente o tamanho do ícone e texto, bem pouca coisa, 5px no
+-- máximo"*. The disc went from 32 to 28 (4 px), and everything else by the same 7/8: the pin
+-- 18, the ring 18, the mount's icon 15, the glyph 11 -- which is the least an art can be drawn
+-- at before it is a smudge, so the glyphs that were already 11 stay. The word went from 8 to 7.
+MapPins.Geometry = { PIN = 18, DISC = 28, ICON = 15, RING = 18, BADGE = 11, BADGE_X = 6, BADGE_Y = -6,
+                     LABEL = 7 }
+
+-- (!) THE SIZE OF THE MARKERS IS THE PLAYER'S TO CHOOSE, WITHIN LIMITS (02/10). The user:
+-- *"podemos também adicionar a configuração de tamanho de ícone de mapa? claro, dentro de um
+-- limite aceitável, nada gigante e também nada minúsculo"*. 100% is the size of the game's own
+-- quest pin (the geometry above). The limits: at 80% the mount's icon inside the ring is still
+-- 12 points; at 150% the disc is 42, about the size of the game's dungeon entrance.
+-- The size is applied the way the game sizes any pin (`SetScalingLimits`), so every piece of
+-- the marker -- disc, icon, badge, label -- grows by the same ratio, and the safe distance
+-- between markers (`SPREAD.MIN`) grows with it.
+local PIN_SCALE = { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
+MapPins.PIN_SCALE = PIN_SCALE
+
+---The marker's size as a factor (1 = the game's quest pin), from the options, inside the limits.
+function MapPins.PinScale()
+    local v = tonumber(ns.db and ns.db.mapPinScale) or PIN_SCALE.DEFAULT
+    if v < PIN_SCALE.MIN then v = PIN_SCALE.MIN elseif v > PIN_SCALE.MAX then v = PIN_SCALE.MAX end
+    return v / 100
+end
+
+-- Points of the SAME creature closer than this (in map fractions) become one pin. Wowhead gives
+-- up to a dozen spawn points, and a patrol drew a cluster where one icon says the same thing.
+local NEAR = 0.035
+-- A vendor or a quest giver is ONE place however many mounts it has: points this close (and of
+-- the same sort) are the same place, and the tooltip lists the mounts.
+local SAME_PLACE = 0.012
+local TIP_ICON = 22     -- the mount's icon in the tooltip
+local TIP_MOUNTS = 8    -- then "and N more"
+
+--------------------------------------------------------------------------------
+-- What kind of source a place is
+--
+-- `atlas` is the glyph, `size` how big it is drawn (each art has its own padding), `dragon` the
+-- elite underlay, `group` what may be merged into one place. Every name was checked against the
+-- client's atlas table (tools/ver_atlas.py --check RocketMount).
+--
+-- A reputation has no glyph of its own in the game, and a mount behind one is bought from a
+-- vendor: same glyph as the vendor, its own label.
+--------------------------------------------------------------------------------
+local KIND = {
+    rare       = { atlas = "VignetteKill",              size = 11, label = L["Rare"],       group = "creature" },
+    -- (!) A RARE IS A RARE (28/09). The user: *"não precisa diferenciar raro de elite de raro,
+    -- deixa os dois como Raro"*. The word is the same; the elite still wears the dragon frame.
+    rareelite  = { atlas = "VignetteKill",              size = 11, label = L["Rare"],       group = "creature", dragon = true },
+    elite      = { atlas = "VignetteKill",              size = 11, label = L["Elite"],      group = "creature", dragon = true },
+    boss       = { atlas = "worldquest-icon-boss",      size = 11, label = L["Boss"],       group = "creature", dragon = true },
+    raid       = { atlas = "Raid",                      size = 14, label = L["Raid"],       group = "instance" },
+    dungeon    = { atlas = "Dungeon",                   size = 14, label = L["Dungeon"],    group = "instance" },
+    vendor     = { atlas = "auctioneer",                size = 11, label = L["Vendor"],     group = "vendor" },
+    reputation = { atlas = "auctioneer",                size = 11, label = L["Reputation"], group = "vendor" },
+    quest      = { atlas = "QuestNormal",               size = 12, label = L["Quest"],      group = "quest" },
+    treasure   = { atlas = "VignetteLoot",              size = 11, label = L["Treasure"],   group = "treasure" },
+    -- (!) THE WAY IN, NOT THE THING (28/09). The user: *"este raro em especifico ele não spawna
+    -- no mapa, mas sim um portal, veja como indicar isto no mapa"* -- the Voidtalon of the Dark
+    -- Star is in an egg on the other side of a portal that appears at one of some thirty
+    -- places. The art is the game's own portal; measured (tools/ver_atlas.py), its ink is the
+    -- middle 16 of the 32, so it is cut to the middle half or it would be a smudge of 6 px.
+    portal     = { atlas = "portalpurple",              size = 12, label = L["Portal"],     group = "portal",
+                   crop = { 0.25, 0.75, 0.25, 0.75 } },
+    -- (!) WHERE IT STARTS (28/09). A mount of puzzle has no creature to kill and no vendor: an
+    -- animal that is fed, a book that is read, a nest that takes eggs. The art is the game's
+    -- own sign for "this can be interacted with" (the gear of the cursor over such a thing);
+    -- measured (tools/ver_atlas.py), its ink is 28 of the 32, as the chest's and the vendor's.
+    start      = { atlas = "crosshair_interact_32",     size = 11, label = L["Starts here"], group = "start" },
+    -- (!) THE DOOR OF A DELVE (28/09). The art is the game's own marker of a delve on the map
+    -- (`delves-regular`, MapLegendFrame.lua), and the word is the game's (MAP_LEGEND_DELVE).
+    -- Measured (tools/ver_atlas.py): the door is the middle 44 of the 64, inside a glow; cut to
+    -- it, the door is as big as the coins of a vendor.
+    delve      = { atlas = "delves-regular",            size = 11, label = MAP_LEGEND_DELVE or L["Delve"],
+                   group = "delve", crop = { 0.12, 0.88, 0.12, 0.88 } },
+    -- (!) THE WAY IN TO A RITUAL SITE (30/09). The art is the game's own marker of a ritual site
+    -- on the map (`ritual-sites-map-icon`, the atlas of the landmark itself in the game's
+    -- table). Measured (tools/ver_atlas.py): the ink fills the 32, nothing to cut. The word is
+    -- the game's: the landmark is "Ritual Site: ..." / "Sítio Ritualístico: ...".
+    ritual     = { atlas = "ritual-sites-map-icon",     size = 11, label = L["Ritual Site"], group = "ritual" },
+    -- (!) THE WAY IN TO THE HORRIFIC VISIONS (30/09). The art is the game's own marker of that
+    -- landmark (`ui-eventpoi-horrificvision`, the 32 px twin of the atlas the game's table
+    -- names). Measured (tools/ver_atlas.py): the eye is the middle 11 by 14 of the 32, so it
+    -- is cut to the middle half, as the portal is. The words are the landmark's own.
+    vision     = { atlas = "ui-eventpoi-horrificvision", size = 12, label = L["Horrific Visions"], group = "vision",
+                   crop = { 0.25, 0.75, 0.25, 0.75 } },
+    loot       = { atlas = "VignetteLoot",             size = 11, label = L["Drop"],       group = "loot" },
+    fishing    = { atlas = "professions_tracking_fish", size = 11, label = L["Fishing"],    group = "fishing" },
+    other      = { atlas = "worldquest-icon",           size = 11, label = L["Other"],      group = "other" },
+}
+MapPins.KIND = KIND
+
+-- Wowhead's classification of a creature -> kind.
+local KIND_OF_CLASS = { [4] = "rare", [2] = "rareelite", [1] = "elite", [3] = "boss" }
+
+---The kind of a place as it reaches the pin and the tooltip. A record that only says which
+---creature it is (no `kind`) is that creature's class.
+local function KindDe(data)
+    local nome = data.kind or (data.rec and KIND_OF_CLASS[data.rec.c]) or (data.npc and "rare")
+    return KIND[nome] or KIND.other, nome or "other"
+end
+
+---An art that is mostly margin, cut to its ink: `crop` is { left, right, top, bottom } in
+---fractions of the art; without one, the art whole.
+---
+---(!) THE BLACK SQUARE (28/09). The user's screenshot of Revendreth: every portal marker with a
+---black rectangle where its glyph should be. The cut used to be computed on the SHEET the art
+---lives in (`C_Texture.GetAtlasInfo`: the art's rectangle, and the cut inside it), and after
+---`SetAtlas` the game reads `SetTexCoord` as a fraction of THE ART ITSELF: what was drawn was a
+---sliver of the inside of the portal, stretched. Read in the client's own documentation
+---(`SetAtlas` has a `resetTexCoords` argument: the coordinates are the texture's, and stay
+---when the art changes): an atlas' art is turned and reset with coordinates from 0 to 1.
+---
+---And for the same reason the art WITHOUT a cut says so: the markers are recycled, and the one
+---that was a portal would keep the portal's cut as a vendor.
+function MapPins.Crop(texture, crop)
+    if not (texture and texture.SetTexCoord) then return false end
+    if type(crop) == "table" and #crop == 4 then
+        texture:SetTexCoord(crop[1], crop[2], crop[3], crop[4])
+        return true
+    end
+    texture:SetTexCoord(0, 1, 0, 1)
+    return false
+end
+
+---What the options let through: the master switch, then the two families that can be turned off
+---apart. A creature is what the map started with, and stays with the master switch.
+local function KindShown(kind)
+    local db = ns.db
+    if db and db.mapPins == false then return false end
+    local grupo = KIND[kind] and KIND[kind].group
+    if grupo == "creature" then return true end
+    if grupo == "instance" then return not (db and db.mapInstances == false) end
+    return not (db and db.mapSources == false)
+end
+
+local function MapaAberto(mapID)
+    if not (C_Map and C_Map.GetMapInfo) then return true end
+    local ok, info = pcall(C_Map.GetMapInfo, mapID)
+    if not ok or type(info) ~= "table" then return true end
+    -- Dungeon maps are instance floors; the rest (zones, sub-zones, caves) is open world.
+    local dungeon = Enum and Enum.UIMapType and Enum.UIMapType.Dungeon
+    return not (dungeon and info.mapType == dungeon)
+end
+
+--------------------------------------------------------------------------------
+-- The creature's name in the player's language
+--
+-- The table carries Wowhead's English name. The game knows the creature by id in the client's
+-- language: the tooltip of the link `unit:Creature-0-0-0-0-<npc>` starts with its name (the same
+-- API `C_TooltipInfo.GetHyperlink` that the rest of this addon uses for items). The first ask may
+-- come back empty while the client fetches it, so the map asks when it draws the pins, and the
+-- tooltip asks again when hovered.
+--------------------------------------------------------------------------------
+local nomes = {}
+
+function MapPins.NpcName(npc, fallback)
+    if nomes[npc] then return nomes[npc] end
+    if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
+        local ok, info = pcall(C_TooltipInfo.GetHyperlink, "unit:Creature-0-0-0-0-" .. npc)
+        local linha = ok and type(info) == "table" and type(info.lines) == "table" and info.lines[1]
+        local nome = type(linha) == "table" and linha.leftText
+        -- (!) SECRET FIRST, THEN EVERYTHING ELSE. The comparison with "" came before the question
+        -- and a secret string cannot be compared: "attempt to compare local 'nome' (a secret
+        -- string value)", recorded in the error log on 27/09 from inside the list's own ranking.
+        if type(nome) == "string" and not (issecretvalue and issecretvalue(nome))
+            and nome ~= "" and nome ~= UNKNOWNOBJECT then
+            nomes[npc] = nome
+            return nome
+        end
+    end
+    -- Seen in the world by this addon (Sighting.lua keeps it), or Wowhead's English one.
+    return ns.db and ns.db.npcNames and ns.db.npcNames[npc] or fallback
+end
+
+---A creature's ENGLISH name ("Sha of Anger") in the client's language, when
+---the drop table knows it -- the id is what lets the game answer. Unknown names come back as is.
+local porNomeIngles
+---The npc id the drop table has for a creature's English name, or nil.
+function ns.CreatureId(nomeIngles)
+    if type(nomeIngles) ~= "string" then return nil end
+    if not porNomeIngles then
+        porNomeIngles = {}
+        for npc, rec in pairs(ns.MobDrops or {}) do
+            if rec.name then porNomeIngles[rec.name] = npc end
+        end
+    end
+    return porNomeIngles[nomeIngles]
+end
+
+function ns.LocalizedCreature(nomeIngles)
+    if type(nomeIngles) ~= "string" then return nomeIngles end
+    local npc = ns.CreatureId(nomeIngles)
+    return npc and MapPins.NpcName(npc, nomeIngles) or nomeIngles
+end
+
+local function Perto(pontos, x, y, raio)
+    raio = raio or NEAR
+    for _, p in ipairs(pontos) do
+        local dx, dy = p[1] - x, p[2] - y
+        if dx * dx + dy * dy < raio * raio then return true end
+    end
+    return false
+end
+
+--------------------------------------------------------------------------------
+-- The places, by map
+--
+-- Built once per list (a mount learned, a reputation gained -- `MapPins.Refresh` drops it) and
+-- not per map opened: walking 300 creatures and 600 mounts at every zoom of the map would be
+-- work done again for the same answer. What changes between two looks at the same list -- the
+-- lockout -- is asked when the pins are drawn.
+--------------------------------------------------------------------------------
+local indice
+
+---How much a mount weighs at a place, to put the easiest first: its chance there, or the number
+---the list shows for it.
+local function Peso(m)
+    local d = m.drop
+    if d and d.count and d.outof and d.outof > 0 then return d.count / d.outof end
+    local e = m.entry
+    if e and e.chance and e.chance > 0 and not e.deterministic then return 1 / e.chance end
+    return (e and ns.RowPercent and ns.RowPercent(e)) or -1
+end
+
+local function Ordenar(montarias)
+    local peso = {}
+    for _, m in ipairs(montarias) do peso[m] = Peso(m) end
+    table.sort(montarias, function(a, b)
+        if peso[a] ~= peso[b] then return peso[a] > peso[b] end
+        return (a.entry.name or "") < (b.entry.name or "")
+    end)
+    return montarias
+end
+
+---What kind of source one point is: the table says (Sources.lua, `ns.OwnPlaces`). A kind the
+---map does not know how to draw is "other", never a guess.
+local function KindOf(wp)
+    if wp and wp.kind and KIND[wp.kind] then return wp.kind end
+    return "other"
+end
+
+---A point the player has already spent for good: a treasure looted, a one-time quest done.
+local function Gasto(wp)
+    if not (wp and wp.q and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted) then return false end
+    local ok, feito = pcall(C_QuestLog.IsQuestFlaggedCompleted, wp.q)
+    return ok and feito and true or false
+end
+
+---The routes of the table that pass through one marker: a creature that walks has one marker
+---per route, ON the route (tools/rotas.py puts it at the point where it was seen most).
+---@return table|nil `{ { loop = boolean, { x, y }, ... }, ... }`, in fractions of the map
+local function RotasDe(rec, mapID, px, py)
+    local lista = type(rec.route) == "table" and rec.route[mapID]
+    if type(lista) ~= "table" then return nil end
+    local out
+    for _, r in ipairs(lista) do
+        local passa = false
+        for i = 1, #r - 1, 2 do
+            if math.abs(r[i] - px) < 0.05 and math.abs(r[i + 1] - py) < 0.05 then passa = true end
+        end
+        if passa and #r >= 4 then
+            local caminho = { loop = r.loop and true or false }
+            for i = 1, #r - 1, 2 do caminho[#caminho + 1] = { r[i] / 100, r[i + 1] / 100 } end
+            out = out or {}
+            out[#out + 1] = caminho
+        end
+    end
+    return out
+end
+
+local function Construir()
+    local idx = {}
+    local function Lista(m)
+        idx[m] = idx[m] or {}
+        return idx[m]
+    end
+
+    -- 1. THE CREATURES OF THE TABLE: one place per spawn point.
+    if type(ns.MobDrops) == "table" and ns.Sighting then
+        for npc, rec in pairs(ns.MobDrops) do
+            -- (!) A creature of an event (Doomwalker of the anniversary, the Treasure Goblin) is
+            -- in the world only while the calendar says the event is on (12/10).
+            if rec.where and (rec.event == nil or (ns.EventOn and ns.EventOn(rec.event))) then
+                local montarias = ns.Sighting.MountsOf(npc)
+                if #montarias > 0 then
+                    Ordenar(montarias)
+                    for m, pontos in pairs(rec.where) do
+                        local postos = {}
+                        for i = 1, #pontos - 1, 2 do
+                            local x, y = pontos[i] / 100, pontos[i + 1] / 100
+                            if not Perto(postos, x, y) then
+                                postos[#postos + 1] = { x, y }
+                                local lista = Lista(m)
+                                lista[#lista + 1] = {
+                                    kind = KIND_OF_CLASS[rec.c] or "rare",
+                                    npc = npc, rec = rec, name = rec.name, mounts = montarias,
+                                    mapID = m, x = x, y = y, first = #postos == 1,
+                                    routes = RotasDe(rec, m, pontos[i], pontos[i + 1]),
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- 2. THE PLACES OF EACH MOUNT: vendors, chests, quest givers.
+    local ok, ranqueadas = pcall(ns.GetRanked or error)
+    if not ok or type(ranqueadas) ~= "table" then return idx end
+
+    local function Juntar(kind, m, x, y, nome, e, wp)
+        local grupo = KIND[kind].group
+        local lista = Lista(m)
+        local lugar
+        for _, p in ipairs(lista) do
+            if p.fromCatalogue and KIND[p.kind].group == grupo
+                and Perto({ { p.x, p.y } }, x, y, SAME_PLACE) then
+                lugar = p
+                break
+            end
+        end
+        if not lugar then
+            lugar = {
+                kind = kind, name = nome, rec = { name = nome },
+                mounts = {}, mapID = m, x = x, y = y, fromCatalogue = true,
+                -- One of SEVERAL places of the same thing (a portal that appears here or there)
+                -- says which is the first of its map, as a creature's spawn points do.
+                first = not (wp and wp.first == false),
+            }
+            lista[#lista + 1] = lugar
+        end
+        for _, mt in ipairs(lugar.mounts) do
+            if mt.entry == e then return end
+        end
+        lugar.mounts[#lugar.mounts + 1] = { entry = e }
+        -- Who or what the place is, by id: the name comes from the game, in its language.
+        if wp then
+            lugar.nameNpc = lugar.nameNpc or wp.npcId
+            lugar.nameQuest = lugar.nameQuest or wp.questId
+            lugar.namePoi = lugar.namePoi or wp.poiId
+            -- The event a vendor is of, by the name the calendar gave it.
+            lugar.event = lugar.event or wp.event
+        end
+        -- A vendor is "Reputation" only while EVERY mount there is behind one.
+        if grupo == "vendor" and kind == "vendor" then lugar.kind = "vendor" end
+    end
+
+    for _, e in ipairs(ranqueadas) do
+        if not e.unobtainable then
+            for _, wp in ipairs(e.coords or {}) do
+                if wp.m and wp.x and wp.y and not Gasto(wp) then
+                    Juntar(KindOf(wp), wp.m, wp.x / 100, wp.y / 100, wp.n, e, wp)
+                end
+            end
+            for _, v in ipairs(e.vendors or {}) do
+                if v.m and v.x and v.y then
+                    Juntar(e.rep and "reputation" or "vendor", v.m, v.x / 100, v.y / 100, v.npc, e,
+                        v.npcId and { npcId = v.npcId, event = v.event } or nil)
+                end
+            end
+        end
+    end
+    for _, lista in pairs(idx) do
+        for _, p in ipairs(lista) do
+            if p.fromCatalogue then Ordenar(p.mounts) end
+        end
+    end
+
+    -- 3. THE INSTANCES: which mounts are behind each door. The door itself is not here -- the
+    -- game says where it is, on the map being looked at (PinsFor).
+    idx.instances = {}
+    for _, e in ipairs(ranqueadas) do
+        if not e.unobtainable and type(e.instanceID) == "number" and not e.worldBoss then
+            local lista = idx.instances[e.instanceID] or {}
+            idx.instances[e.instanceID] = lista
+            lista[#lista + 1] = { entry = e }
+        end
+    end
+    for _, lista in pairs(idx.instances) do Ordenar(lista) end
+    return idx
+end
+
+--------------------------------------------------------------------------------
+-- Which maps are drawn on the one being viewed
+--
+-- (!) A RARE IN A CAVE IS STILL A RARE OF THE ZONE (27/09). The pins were drawn only on the exact
+-- map a point belongs to, so Rakshur and Eruundi -- in Slayer's Rise, a map inside Voidstorm --
+-- were on nobody's zone map. A rare of a child map is a rare of the parent map too, so every
+-- child map is projected. The game does the arithmetic: map position -> world position
+-- -> position on the other map.
+--------------------------------------------------------------------------------
+---@return table|nil set of mapIDs (nil: nothing is drawn on this map), boolean isContinent
+local function Familia(mapID)
+    local T = Enum and Enum.UIMapType or {}
+    local tipo
+    if C_Map and C_Map.GetMapInfo then
+        local ok, info = pcall(C_Map.GetMapInfo, mapID)
+        tipo = ok and type(info) == "table" and info.mapType or nil
+    end
+    -- The whole world is not a place to look for a rare.
+    if tipo ~= nil and (tipo == T.Cosmic or tipo == T.World) then return nil end
+    local set = { [mapID] = true }
+    if C_Map and C_Map.GetMapChildrenInfo then
+        local ok, filhos = pcall(C_Map.GetMapChildrenInfo, mapID, nil, true)
+        for _, f in ipairs(ok and type(filhos) == "table" and filhos or {}) do
+            if f.mapID and f.mapType ~= T.Dungeon then set[f.mapID] = true end
+        end
+    end
+    return set, tipo ~= nil and tipo == T.Continent
+end
+
+---A point of one map on another. The same map answers itself; anything the game cannot place,
+---or places outside the map, is nil.
+function MapPins.Project(deMapa, x, y, paraMapa)
+    if deMapa == paraMapa then return x, y end
+    if not (C_Map and C_Map.GetWorldPosFromMapPos and C_Map.GetMapPosFromWorldPos and CreateVector2D) then
+        return nil
+    end
+    local ok, continente, mundo = pcall(C_Map.GetWorldPosFromMapPos, deMapa, CreateVector2D(x, y))
+    if not (ok and continente and mundo) then return nil end
+    local ok2, _, pos = pcall(C_Map.GetMapPosFromWorldPos, continente, mundo, paraMapa)
+    if not (ok2 and pos and pos.GetXY) then return nil end
+    local px, py = pos:GetXY()
+    if not (px and py) or px < 0 or px > 1 or py < 0 or py > 1 then return nil end
+    return px, py
+end
+
+---Why a map came out with nothing, in a word, for the diary: the user's question *"o mapa novo
+---da ilha enrolada não aparece montaria"* (28/09) had no line to be answered from, because a
+---drawing that asked for nothing wrote nothing.
+function MapPins.WhyEmpty(mapID)
+    if ns.db and ns.db.mapPins == false then return "off" end
+    if not MapaAberto(mapID) then return "instance floor" end
+    local familia = Familia(mapID)
+    if not familia then return "world" end
+    local lugares = 0
+    for m in pairs(familia) do lugares = lugares + #((indice or {})[m] or {}) end
+    if lugares == 0 then return "no place here" end
+    return lugares .. " places, none shown"
+end
+
+--------------------------------------------------------------------------------
+-- (!) ONE PLACE, ONE MARKER (29/09)
+--
+-- The user: *"to achando que tem marcação duplicada e tem uma duplicada com categoria
+-- diferente, vendedor e missão"*. Measured with the real tables, for a character with no mount
+-- at all: 32 places of the 155 maps had more than one marker within 1.2 of each other, 103
+-- markers in all. Three sorts:
+--   * the vendor and the quest of the SAME mounts, at the same point (in Harandar the quest
+--     giver IS the vendor): two markers, two kinds, one thing to do;
+--   * a vendor and a quest of different mounts at the same point: one marker hid the other;
+--   * creatures at the same point -- the same name under several ids (each colour of a mount
+--     has its own), or different creatures that take turns there and drop the same mount.
+-- It is done when the markers are DRAWN, on the map being looked at, because a place of a cave
+-- and one of the zone only meet once both are put on the zone's map.
+--
+-- What is joined: two places of the table (vendor, quest, chest, where it starts...) at the
+-- same point, whatever their kind; two creatures at the same point that have the same name or
+-- drop the same mounts. A creature and a vendor stay two markers, and so do two creatures of
+-- different names and different mounts: those are two things to do.
+--------------------------------------------------------------------------------
+-- Which kind names the marker when places of several kinds are one: where the mount is HANDED
+-- OVER comes first.
+local PRIMEIRO = { vendor = 1, reputation = 2, quest = 3, treasure = 4, loot = 5, fishing = 6,
+                   delve = 7, ritual = 7, vision = 7, portal = 8, start = 9, other = 10,
+                   boss = 1, rareelite = 2, elite = 3, rare = 4 }
+
+local function MesmasMontarias(a, b)
+    if #a.mounts ~= #b.mounts then return false end
+    local tem = {}
+    for _, m in ipairs(a.mounts) do tem[m.entry] = true end
+    for _, m in ipairs(b.mounts) do
+        if not tem[m.entry] then return false end
+    end
+    return true
+end
+
+local function Juntam(a, b)
+    if a.instance or b.instance then return false end
+    local ca = KIND[a.kind] and KIND[a.kind].group == "creature"
+    local cb = KIND[b.kind] and KIND[b.kind].group == "creature"
+    if ca ~= cb then return false end
+    if not ca then return true end
+    local na, nb = a.rec and a.rec.name, b.rec and b.rec.name
+    return (na ~= nil and na == nb) or MesmasMontarias(a, b)
+end
+
+---`b` becomes part of `a`. Each part is kept whole (`parts`): the tooltip names every one.
+local function Somar(a, b)
+    if not a.parts then
+        local eu = {}
+        for k, v in pairs(a) do eu[k] = v end
+        a.parts = { eu }
+    end
+    a.parts[#a.parts + 1] = b
+    -- the mounts of the two, each one once: with the better chance, where there are two
+    local novas, onde = {}, {}
+    for _, lista in ipairs({ a.mounts, b.mounts }) do
+        for _, m in ipairs(lista) do
+            local i = onde[m.entry]
+            if not i then
+                novas[#novas + 1] = m
+                onde[m.entry] = #novas
+            elseif Peso(m) > Peso(novas[i]) then
+                novas[i] = m
+            end
+        end
+    end
+    a.mounts = Ordenar(novas)
+    -- the kind that names the marker, and where the arrow goes: the part that comes first
+    if (PRIMEIRO[b.kind] or 99) < (PRIMEIRO[a.kind] or 99) then
+        for _, k in ipairs({ "kind", "npc", "rec", "name", "nameNpc", "nameQuest", "namePoi", "event",
+                             "x", "y", "homeMap", "homeX", "homeY", "fromCatalogue" }) do
+            a[k] = b[k]
+        end
+    end
+    -- a vendor is "Reputation" only while EVERY vendor there is behind one
+    if a.kind == "reputation" then
+        for _, p in ipairs(a.parts) do
+            if p.kind == "vendor" then a.kind = "vendor" end
+        end
+    end
+    a.first = a.first or b.first
+    -- looted only when every creature of the place is: one that can still drop is worth the trip
+    if a.locked and not b.locked then
+        a.locked, a.lockSource, a.lockLeft = nil, nil, nil
+    elseif a.locked and b.locked and a.lockLeft and b.lockLeft and b.lockLeft < a.lockLeft then
+        a.lockLeft = b.lockLeft
+    end
+    if b.routes then
+        a.routes = a.routes or {}
+        for _, r in ipairs(b.routes) do a.routes[#a.routes + 1] = r end
+    end
+end
+
+-- (!) ONE THING SEEN AT TWO POINTS IS ONE MARKER (12/10). The user saw the Sundancer of Bastion
+-- twice, and asked for every mount to be looked at again. The probe (the map code over the real
+-- tables, every map, a character with no mount) found two sorts:
+--   * the same creature under two ids: the Sundancer is 170439 and 170548, same name, same
+--     mount, 1.7 apart (one walks, and its road starts there). Points of ONE id already become
+--     one pin at NEAR; two ids of one creature join at the same distance. It was the only pair
+--     of same name and same mounts between 1.2 and 5 apart;
+--   * a vendor Wowhead saw at two spots: Chachi the Artiste 2.6 apart (10 and 9 sightings),
+--     Waxmonger Squick 4.0, Nat Pagle 4.7, the Lunar Festival Vendor of Moonglade 5.1, Agent
+--     Malley 6.7. A vendor is one person: same name on one map, closer than SAME_PERSON, is one
+--     marker, at the spot seen most. Farther apart it is a phase, and stays two: the
+--     quartermasters of the Isle of Thunder move 20 and 33 as the isle is taken, Kil'rip 35
+--     with the garrison, the nearest of those 9.7.
+-- Chests, pools, portals and mirrors of one name are NOT joined: each one is a thing to click.
+local SAME_PERSON = 0.07
+
+local function Raio(a, b)
+    local ga = KIND[a.kind] and KIND[a.kind].group
+    local gb = KIND[b.kind] and KIND[b.kind].group
+    local na, nb = a.rec and a.rec.name or a.name, b.rec and b.rec.name or b.name
+    if ga ~= gb or na == nil or na ~= nb then return SAME_PLACE end
+    if ga == "creature" and MesmasMontarias(a, b) then return NEAR end
+    if ga == "vendor" then return SAME_PERSON end
+    return SAME_PLACE
+end
+
+---The markers of one map, the ones of the same place made one.
+function MapPins.Merge(lista)
+    local out = {}
+    for _, p in ipairs(lista) do
+        local alvo
+        for _, q in ipairs(out) do
+            local raio = Raio(q, p)
+            if Perto({ { q.x, q.y } }, p.x, p.y, raio) and Juntam(q, p) then
+                alvo = q
+                break
+            end
+        end
+        if alvo then Somar(alvo, p) else out[#out + 1] = p end
+    end
+    return out
+end
+
+---What goes on this map: one entry per place that still has a mount for you.
+function MapPins.PinsFor(mapID)
+    local out = {}
+    if not (mapID and ns.Sighting) then return out end
+    if ns.db and ns.db.mapPins == false then return out end
+    if not MapaAberto(mapID) then return out end
+    local familia, continente = Familia(mapID)
+    if not familia then return out end
+    -- (!) A DIRTY LIST IS BUILT AGAIN BEFORE DRAWING (01/10). A reputation that moved with the
+    -- addon's window closed only marked the list dirty: the map kept its index, and its tooltip
+    -- the number of before. `Construir` asks for the list, which rebuilds it.
+    if ns.NeedsRebuild and ns.NeedsRebuild() then indice = nil end
+    indice = indice or Construir()
+
+    for m in pairs(familia) do
+        for _, p in ipairs(indice[m] or {}) do
+            local criatura = KIND[p.kind].group == "creature"
+            -- On a continent a creature is ONE pin: forty-five points of a flight path, times
+            -- every rare of every zone, is a map nobody can read. The same for a portal with
+            -- seven places in a zone (`first` is only ever false for a thing of several places).
+            if KindShown(p.kind) and not (continente and not p.first) then
+                local x, y = MapPins.Project(m, p.x, p.y, mapID)
+                if x then
+                    local kind, nome = p.kind, p.name
+                    local preso, fonte, falta
+                    if criatura then
+                        preso, fonte, falta = ns.Sighting.LockedOut(p.npc)
+                        if p.npc then MapPins.NpcName(p.npc) end   -- warms the name for the tooltip
+                    end
+                    -- The road, on the map being viewed. Not on a continent (a zone's roads
+                    -- there are scribbles), and whole or not at all: a road with a point
+                    -- the game cannot place would be drawn cut.
+                    local rotas
+                    if p.routes and not continente and not (ns.db and ns.db.mapRoutes == false) then
+                        for _, r in ipairs(p.routes) do
+                            local caminho, inteiro = {}, true
+                            for i, v in ipairs(r) do
+                                local rx, ry = MapPins.Project(m, v[1], v[2], mapID)
+                                if rx then caminho[i] = { rx, ry } else inteiro = false end
+                            end
+                            if inteiro and #caminho >= 2 then
+                                rotas = rotas or {}
+                                rotas[#rotas + 1] = { path = caminho, loop = r.loop, locked = preso and true or false,
+                                                      owner = p.npc or nome }
+                            end
+                        end
+                    end
+                    out[#out + 1] = {
+                        kind = kind, npc = p.npc, rec = p.rec or { name = nome }, name = nome,
+                        mounts = p.mounts, fromCatalogue = p.fromCatalogue, routes = rotas,
+                        nameNpc = p.nameNpc, nameQuest = p.nameQuest, first = p.first, event = p.event,
+                        namePoi = p.namePoi,
+                        -- Where it is drawn, and where it IS: the arrow goes to the place's own map.
+                        x = x, y = y, mapID = mapID, homeMap = p.mapID, homeX = p.x, homeY = p.y,
+                        locked = preso, lockSource = fonte, lockLeft = falta,
+                    }
+                end
+            end
+        end
+    end
+
+    -- (!) THE DOOR IS WHERE THE GAME SAYS (28/09). No coordinate of an entrance is kept: the
+    -- game answers for the map being looked at, in that map's own coordinates and with the name
+    -- in the player's language -- the same call its own entrance markers are made of
+    -- (`DungeonEntranceDataProvider.lua`).
+    out = MapPins.Merge(out)
+
+    local portas = indice.instances
+    if portas and next(portas) and C_EncounterJournal and C_EncounterJournal.GetDungeonEntrancesForMap then
+        local ok, lista = pcall(C_EncounterJournal.GetDungeonEntrancesForMap, mapID)
+        for _, d in ipairs(ok and type(lista) == "table" and lista or {}) do
+            local montarias = type(d) == "table" and portas[d.journalInstanceID]
+            local x, y
+            if montarias and type(d.position) == "table" and d.position.GetXY then
+                x, y = d.position:GetXY()
+            end
+            local kind = d and d.atlasName == "Raid" and "raid" or "dungeon"
+            if x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 and KindShown(kind) then
+                out[#out + 1] = {
+                    kind = kind, name = d.name, rec = { name = d.name }, mounts = montarias,
+                    instance = d.journalInstanceID, first = true,
+                    x = x, y = y, mapID = mapID, homeMap = mapID, homeX = x, homeY = y,
+                }
+            end
+        end
+    end
+    return out
+end
+
+--------------------------------------------------------------------------------
+-- The route of a creature that walks
+--
+-- (!) ONE MARKER AND ITS ROUTE (28/09). The user's screenshot of the Timeless Isle had the same
+-- rare elite drawn seven times around the island, with the road drawn over it by hand: *"Reduzir
+-- o número de icones quando o raro fizer uma rota, ou seja, deixa um icone apenas e faça uma
+-- marcação tracejando a rota, apenas repita icones quando o spawn do raro for diferente e não
+-- houver rota"*. The table says which creature walks and through where (`route`, from
+-- tools/rotas.py); here the road is drawn.
+--
+-- THE LINE IS THE GAME'S: an art of the client on a `Line` of a frame of the map's canvas --
+-- how Blizzard draws the flight paths (`FM_FlightPathDataProvider.lua`). It began as the flight
+-- line in dashes (28/09) and is a continuous soft line since 06/10: see ROUTE below.
+--
+-- Sizes are in SCREEN points and divided by the canvas scale when drawn, so that a dash is the
+-- same on the screen whatever the zoom -- a line of the canvas grows and shrinks with it.
+--------------------------------------------------------------------------------
+--
+-- (!) "INCOMPLETA, MUITO SIMPLES E POUCO VISIVEL" (06/10), the user's screenshot of Huolon's
+-- route. Three things, each measured before it was changed:
+--   barely visible  the flight line's art is a BLACK core with a soft white glow, and at 18
+--                   the core was two points of black on a green map. Thicker and lit it
+--                   showed, and was still ugly: see the next note.
+--   too simple      straight lines between a handful of sightings. The road now bends through
+--                   them (`MapPins.Smooth`).
+--   incomplete      the table had it as an open line; it is a loop (tools/rotas/nossas.json).
+--
+-- (!) A LINE, LIKE A HIGHLIGHTER (06/10, the same day). The dashes, thicker and lit, were still
+-- ugly; the user asked for *"como se fosse uma linha de marca texto"*: ONE continuous line,
+-- thin, see-through, in a flat colour. The art is the game's: `_animachannel-channel-line-horizontal`, a white
+-- line with soft edges made to be stretched along a `Line` and tinted, here in the game's own
+-- gold (`NORMAL_FONT_COLOR`). The flight line went out with the dashes: its core is black, and a
+-- continuous black line reads as a border of the map. Four variants were drawn over the user's
+-- screenshot before choosing (`prints-analisados/PREVIA-rota-huolon-4.png`, top right).
+local ROUTE = {
+    ATLAS = "_animachannel-channel-line-horizontal",
+    THICK = 32,             -- of the art, which is mostly soft edge: the bright core is a fifth
+    DASH = 64, GAP = 0,     -- no gap: a continuous line, in pieces that follow the curve
+    ALPHA = 0.85, ALPHA_LOCKED = 0.35,
+    STEPS = 8,              -- pieces of curve between two points of the route
+    MAX_DASHES = 800,       -- per route (the longest has 57 points, 456 pieces of curve)
+}
+MapPins.Route = ROUTE
+
+-- (!) ROUTES THAT MEET, IN DIFFERENT COLOURS (13/10). The user: *"se tiver raros no mesmo mapa que as rotas
+-- se colidem, vai precisar usar cores diferentes para fazer o tracejado delas"*. Gold stays the colour of
+-- a route alone; when the routes of two creatures cross or pass closer than ROUTE_NEAR on the map being
+-- viewed, the next colour goes to the second, and so on (the fewest colours, the same creature always
+-- the same, by its id). The colours are the game's own (its GlobalColor table), and none of the three
+-- that already say something here: red (what blocks), green (what is done), grey (already looted).
+MapPins.ROUTE_COLOURS = { "NORMAL_FONT_COLOR", "LIGHTBLUE_FONT_COLOR", "ORANGE_FONT_COLOR",
+                          "TRANSMOGRIFY_FONT_COLOR", "VISUAL_ALERT_COLOR_CYAN" }
+local ROUTE_NEAR = 0.03          -- of the map's width/height: 3 in the 0-100 scale
+
+local function DistSeg(px, py, ax, ay, bx, by)
+    local dx, dy = bx - ax, by - ay
+    local l2 = dx * dx + dy * dy
+    local t = l2 > 0 and math.max(0, math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) or 0
+    local qx, qy = ax + t * dx - px, ay + t * dy - py
+    return math.sqrt(qx * qx + qy * qy)
+end
+
+---Do two paths (`{ {x, y}, ... }`, fractions of the map) cross or pass closer than ROUTE_NEAR?
+function MapPins.RoutesMeet(a, b)
+    local function Segs(p, loop)
+        local out = {}
+        for i = 1, #p - 1 do out[#out + 1] = { p[i], p[i + 1] } end
+        if loop and #p > 2 then out[#out + 1] = { p[#p], p[1] } end
+        return out
+    end
+    local sa, sb = Segs(a.path, a.loop), Segs(b.path, b.loop)
+    for _, s in ipairs(sa) do
+        for _, t in ipairs(sb) do
+            -- the nearest two segments come: at one of the four ends, unless they cross
+            local d = math.min(DistSeg(s[1][1], s[1][2], t[1][1], t[1][2], t[2][1], t[2][2]),
+                DistSeg(s[2][1], s[2][2], t[1][1], t[1][2], t[2][1], t[2][2]),
+                DistSeg(t[1][1], t[1][2], s[1][1], s[1][2], s[2][1], s[2][2]),
+                DistSeg(t[2][1], t[2][2], s[1][1], s[1][2], s[2][1], s[2][2]))
+            if d < ROUTE_NEAR then return true end
+            local function Lado(p, q, r) return (q[1] - p[1]) * (r[2] - p[2]) - (q[2] - p[2]) * (r[1] - p[1]) end
+            if Lado(s[1], s[2], t[1]) * Lado(s[1], s[2], t[2]) < 0 and Lado(t[1], t[2], s[1]) * Lado(t[1], t[2], s[2]) < 0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+---Gives each route of the map its colour (`route.colour`, a name of MapPins.ROUTE_COLOURS) and returns
+---{ [owner] = name }. The routes of one owner (a creature) share a colour; owners whose routes meet get
+---different ones, the first free in the list, owners taken in a stable order.
+function MapPins.ColourRoutes(rotas)
+    local donos, de = {}, {}
+    for _, r in ipairs(rotas or {}) do
+        local k = r.owner or "?"
+        if not de[k] then de[k] = {}; donos[#donos + 1] = k end
+        de[k][#de[k] + 1] = r
+    end
+    table.sort(donos, function(a, b) return tostring(a) < tostring(b) end)
+    local cor = {}
+    for _, k in ipairs(donos) do
+        local usadas = {}
+        for _, j in ipairs(donos) do
+            if cor[j] and j ~= k then
+                local encontra = false
+                for _, r in ipairs(de[k]) do
+                    for _, s in ipairs(de[j]) do
+                        if not encontra and MapPins.RoutesMeet(r, s) then encontra = true end
+                    end
+                end
+                if encontra then usadas[cor[j]] = true end
+            end
+        end
+        local escolha = MapPins.ROUTE_COLOURS[1]
+        for _, nome in ipairs(MapPins.ROUTE_COLOURS) do
+            if not usadas[nome] then escolha = nome; break end
+        end
+        cor[k] = escolha
+        for _, r in ipairs(de[k]) do r.colour = escolha end
+    end
+    return cor
+end
+
+---The same road, bent: a centripetal Catmull-Rom curve through EVERY point of the path (the
+---marker sits on one of them, and has to stay on the road), in `steps` pieces per stretch.
+---Centripetal because the sightings are unevenly spaced -- two a point apart, then ten -- and
+---the plain curve loops and overshoots there. A path of two points is returned as it came.
+---@param path table `{ { x, y }, ... }`
+---@param loop boolean|nil the path closes on its first point
+---@return table path the curve, NOT repeating the first point when it closes
+function MapPins.Smooth(path, loop, steps)
+    local n = type(path) == "table" and #path or 0
+    steps = (type(steps) == "number" and steps >= 1) and math.floor(steps) or 1
+    if n < 3 or steps == 1 then return path end
+    local function P(i)
+        if loop then return path[(i - 1) % n + 1] end
+        if i < 1 then return { 2 * path[1][1] - path[2][1], 2 * path[1][2] - path[2][2] } end
+        if i > n then return { 2 * path[n][1] - path[n - 1][1], 2 * path[n][2] - path[n - 1][2] } end
+        return path[i]
+    end
+    local function Knot(a, b)
+        local d = math.sqrt((b[1] - a[1]) ^ 2 + (b[2] - a[2]) ^ 2)
+        return math.sqrt(math.max(d, 1e-6))
+    end
+    local out = {}
+    for i = 1, (loop and n or n - 1) do
+        local p0, p1, p2, p3 = P(i - 1), P(i), P(i + 1), P(i + 2)
+        local t0 = 0
+        local t1 = t0 + Knot(p0, p1)
+        local t2 = t1 + Knot(p1, p2)
+        local t3 = t2 + Knot(p2, p3)
+        for k = 0, steps - 1 do
+            local u = t1 + (t2 - t1) * k / steps
+            local function Mix(a, b, ta, tb)
+                local w = (u - ta) / (tb - ta)
+                return { a[1] + (b[1] - a[1]) * w, a[2] + (b[2] - a[2]) * w }
+            end
+            local a1, a2, a3 = Mix(p0, p1, t0, t1), Mix(p1, p2, t1, t2), Mix(p2, p3, t2, t3)
+            local b1, b2 = Mix(a1, a2, t0, t2), Mix(a2, a3, t1, t3)
+            out[#out + 1] = Mix(b1, b2, t1, t2)
+        end
+    end
+    if not loop then out[#out + 1] = path[n] end
+    return out
+end
+
+---The dashes of a path: `{ { x1, y1, x2, y2 }, ... }`, in the units the path came in.
+---The pattern runs along the whole path, so a dash that meets a corner bends there (two lines).
+---@param path table `{ { x, y }, ... }`
+---@param loop boolean|nil the path closes on its first point
+function MapPins.Dashes(path, loop, dash, gap)
+    local out = {}
+    if type(path) ~= "table" or #path < 2 then return out end
+    if type(dash) ~= "number" or dash <= 0 then return out end
+    gap = (type(gap) == "number" and gap > 0) and gap or 0
+    local pontos = {}
+    for _, p in ipairs(path) do pontos[#pontos + 1] = p end
+    if loop and #pontos > 2 then pontos[#pontos + 1] = pontos[1] end
+
+    local tinta, resta = true, dash
+    for i = 1, #pontos - 1 do
+        local ax, ay, bx, by = pontos[i][1], pontos[i][2], pontos[i + 1][1], pontos[i + 1][2]
+        local len = math.sqrt((bx - ax) ^ 2 + (by - ay) ^ 2)
+        local pos = 0
+        while len - pos > 1e-9 do
+            local passo = math.min(resta, len - pos)
+            if tinta then
+                if #out >= ROUTE.MAX_DASHES then return out end
+                local a, b = pos / len, (pos + passo) / len
+                out[#out + 1] = { ax + (bx - ax) * a, ay + (by - ay) * a,
+                                  ax + (bx - ax) * b, ay + (by - ay) * b }
+            end
+            pos, resta = pos + passo, resta - passo
+            if resta <= 1e-9 then
+                tinta = (gap == 0) or not tinta
+                resta = tinta and dash or gap
+            end
+        end
+    end
+    return out
+end
+
+--------------------------------------------------------------------------------
+-- Markers that would sit on top of each other
+--
+-- (!) A SAFE DISTANCE, AND A LINE TO THE EXACT PLACE (01/10). The user's screenshot of Korthia:
+-- Konthrogz and Reliwik spawn 0.2 apart, they are two creatures with two mounts (so they are
+-- NOT one place, `Merge` leaves them alone), and the two markers were one pile. *"teria que
+-- corrigir caso montarias tenham alguma aproximação e deixar uma distância segura e talvez uma
+-- linha sutil com ponto no local exato"*.
+--
+-- Markers closer than SPREAD.MIN on the SCREEN step apart, each only as much as it takes and
+-- never far from its place (see SPREAD.REACH): two on the same spot side by side (the label
+-- is under each, so sideways is where there is room). What moved gets a thin line of the
+-- game's flight-path art back to where the thing is, and a dot there. The arrow, the
+-- tooltip's coordinates and the minimap keep the exact place: only the drawing moves.
+--
+-- The distance is the screen's, so the group is made again when the map zooms: what is a pile
+-- on the continent has room of its own in the zone, and goes back to its place.
+--------------------------------------------------------------------------------
+local SPREAD = {
+    MIN = 26,               -- between the centres of two markers: the disc is 28 across
+    -- (!) NEVER FAR FROM ITS PLACE (02/10). The first rule made ONE group of every marker that
+    -- touched another and opened the group on a circle: on the map of the Eastern Kingdoms some
+    -- fifty markers became one ring half the map wide, each a hand away from its place. The
+    -- user: *"marcações muito distantes, fazendo esse círculo enorme (...) não tem que ficar tão
+    -- longe assim, tem que distribuir melhor, neste mapa digamos continental eles podem ficar
+    -- mais próximos, porque a visão melhora no mapa da região"*.
+    -- Now each marker steps aside only as much as it takes, pair by pair, and is held on a
+    -- LEASH: it never goes farther from its place than REACH times the safe distance. Where
+    -- there is no room for all, they stay close and overlap a little rather than fly away.
+    REACH = 2.0,            -- the leash, in safe distances
+    -- On a continent the markers may sit closer still: it is an overview, and the zone's map
+    -- is where each one is seen. 16 leaves the mount's icon of each (15 across) in sight.
+    MIN_TIGHT = 16, REACH_TIGHT = 1.5,
+    NEAR = 0.25,            -- two markers closer than this part of the safe distance open SIDEWAYS
+    RELAX = 16,             -- rounds of stepping aside
+    OTHER_MAX = 64,         -- an icon of others wider than this is not an icon (a frame over the map)
+    THICK = 9,              -- of the line's art, which is mostly glow (the route's is 18)
+    ALPHA = 0.75, ALPHA_LOCKED = 0.35,
+    -- The dot: a black centre in a white ring in a black ring (seen on the sheet of
+    -- tools/ver_atlas.py). It reads on light and on dark ground, and it is the line's own
+    -- colours -- the flight-path art is a dark core with a light fringe. At 9 the ring still
+    -- shows; at 7 it was a smudge.
+    DOT = 9, DOT_ATLAS = "WhiteDotCircle-RaidBlips",
+    LINE_ATLAS = "_UI-Taxi-Line-horizontal",
+}
+MapPins.SpreadRule = SPREAD
+
+---Gives each marker of `lista` where it is DRAWN: `drawX, drawY` (map fractions, like `x, y`)
+---and `moved` when that is not the place itself.
+---
+---Two markers closer than the safe distance step apart, half the way each, along the line
+---between them; two on (almost) the same spot open sideways, because the label is under each.
+---Round after round, until nobody is on top of anybody or the rounds end; after every round
+---each marker is pulled back to its leash.
+---
+---(!) THE ICONS OF OTHERS COUNT TOO (01/10, the second screenshot). In Silvermoon our
+---"Reputation" marker sat right on an icon of the game's own: *"existem outros ícones e
+---precisamos dar um espaço para ficar visível, como fez nos outros"*. `fixos` are those icons
+----- the GAME'S own, and only those (`RocketMountMapDataProviderMixin:OtherPins`). They do
+---not move: ours steps aside, the whole distance, and keeps its line to the exact place.
+---@param w number canvas width @param h number canvas height (canvas units)
+---@param escala number canvas scale: canvas units times it are screen points
+---@param fixos table|nil `{ { x, y }, ... }` in map fractions: icons that are not ours
+---@param apertado boolean|nil a continent: the markers may sit closer (MIN_TIGHT, REACH_TIGHT)
+---@return number moved how many markers were moved
+function MapPins.Spread(lista, w, h, escala, fixos, apertado)
+    for _, d in ipairs(lista) do d.drawX, d.drawY, d.moved = d.x, d.y, nil end
+    local n = #lista
+    local temFixos = type(fixos) == "table" and #fixos > 0
+    if (n < 2 and not temFixos) or n < 1 or not (w and h and escala) or w <= 0 or h <= 0 or escala <= 0 then return 0 end
+    -- larger markers need more room between them
+    local min = (apertado and SPREAD.MIN_TIGHT or SPREAD.MIN) * MapPins.PinScale() / escala
+    local trela = min * (apertado and SPREAD.REACH_TIGHT or SPREAD.REACH)
+    local px, py, dx, dy = {}, {}, {}, {}
+    for i, d in ipairs(lista) do
+        px[i], py[i] = d.x * w, d.y * h
+        dx[i], dy[i] = px[i], py[i]
+    end
+
+    -- THE ICONS OF OTHERS: only the ones near a marker of ours matter, and they stay put.
+    local ox, oy = {}, {}
+    if temFixos then
+        local alcance = (min * 4) * (min * 4)
+        for _, f in ipairs(fixos) do
+            local fx, fy = (f[1] or f.x) * w, (f[2] or f.y) * h
+            for i = 1, n do
+                local ex, ey = px[i] - fx, py[i] - fy
+                if ex * ex + ey * ey < alcance then
+                    ox[#ox + 1], oy[#oy + 1] = fx, fy
+                    break
+                end
+            end
+        end
+    end
+
+    local limite = min * min * 0.98
+    local perto = (min * SPREAD.NEAR) * (min * SPREAD.NEAR)
+    -- THREE OR MORE ON ONE SPOT would open along one line (the first two go sideways, and the
+    -- third is then pushed along that same line). So the third and the ones after it start a
+    -- step off the spot, each at a turn of the golden angle: the pile opens as a cluster.
+    for i = 3, n do
+        local juntos = 0
+        for j = 1, i - 1 do
+            local ex, ey = px[i] - px[j], py[i] - py[j]
+            if ex * ex + ey * ey < perto then juntos = juntos + 1 end
+        end
+        if juntos >= 2 then
+            local ang, passo = (juntos - 1) * 2.39996, min * SPREAD.NEAR * 1.5
+            dx[i], dy[i] = px[i] + math.cos(ang) * passo, py[i] + math.sin(ang) * passo
+        end
+    end
+    for _ = 1, SPREAD.RELAX do
+        local mudou = false
+        for i = 1, n do
+            -- away from an icon of others: the whole distance, since that one does not move
+            for k = 1, #ox do
+                local ex, ey = dx[i] - ox[k], dy[i] - oy[k]
+                local d2 = ex * ex + ey * ey
+                if d2 < limite then
+                    local dist = math.sqrt(d2)
+                    if dist < 0.001 then ex, ey, dist = 1, 0, 1 end      -- right on it: to the right
+                    dx[i], dy[i] = ox[k] + ex / dist * min, oy[k] + ey / dist * min
+                    mudou = true
+                end
+            end
+            -- and away from each other: half the way each
+            for j = i + 1, n do
+                local ex, ey = dx[j] - dx[i], dy[j] - dy[i]
+                local d2 = ex * ex + ey * ey
+                if d2 < limite then
+                    local dist = math.sqrt(d2)
+                    local falta = (min - dist) / 2
+                    if d2 < perto then
+                        -- On (almost) the same spot there is no line to follow. Neighbours in
+                        -- the list open sideways -- two rares of one place sit side by side,
+                        -- each with its label under it -- and the others at a turn of the
+                        -- golden angle, so three or more do not end on one line.
+                        local ang = (j - i - 1) * 2.39996
+                        ex, ey, dist = math.cos(ang), math.sin(ang), 1
+                        -- the one that was at the left stays at the left
+                        if ex * (px[j] - px[i]) < 0 then ex, ey = -ex, -ey end
+                    end
+                    dx[i], dy[i] = dx[i] - ex / dist * falta, dy[i] - ey / dist * falta
+                    dx[j], dy[j] = dx[j] + ex / dist * falta, dy[j] + ey / dist * falta
+                    mudou = true
+                end
+            end
+        end
+        -- THE LEASH: nobody farther from its place than `trela`.
+        for i = 1, n do
+            local vx, vy = dx[i] - px[i], dy[i] - py[i]
+            local len = math.sqrt(vx * vx + vy * vy)
+            if len > trela then
+                dx[i], dy[i] = px[i] + vx / len * trela, py[i] + vy / len * trela
+            end
+        end
+        if not mudou then break end
+    end
+
+    -- inside the map
+    local folga = min / 2
+    for i = 1, n do
+        if dx[i] ~= px[i] or dy[i] ~= py[i] then
+            dx[i] = math.max(folga, math.min(w - folga, dx[i]))
+            dy[i] = math.max(folga, math.min(h - folga, dy[i]))
+        end
+        -- a marker that needed no moving stays EXACTLY where it is
+        if math.abs(dx[i] - px[i]) < 0.001 and math.abs(dy[i] - py[i]) < 0.001 then dx[i], dy[i] = px[i], py[i] end
+    end
+
+    local movidos = 0
+    for i, d in ipairs(lista) do
+        if dx[i] ~= px[i] or dy[i] ~= py[i] then
+            d.drawX, d.drawY, d.moved = dx[i] / w, dy[i] / h, true
+            movidos = movidos + 1
+        end
+    end
+    return movidos
+end
+
+--------------------------------------------------------------------------------
+-- The data provider
+--------------------------------------------------------------------------------
+RocketMountMapDataProviderMixin = CreateFromMixins(MapCanvasDataProviderMixin)
+
+function RocketMountMapDataProviderMixin:RemoveAllData()
+    self:GetMap():RemoveAllPinsByTemplate(TEMPLATE)
+    self.routes = nil
+    self.places = nil
+    self:LayoutRoutes()
+end
+
+---Where the GAME'S own icons are, on the map as it is now: `{ { x, y }, ... }` in map
+---fractions. The game's own way of walking every pin (`MapCanvasMixin:ExecuteOnAllPins`, the
+---call its nudging uses) and of asking where one is (`MapCanvasPinMixin:GetPosition`).
+---
+---(!) THE GAME'S, NOT OTHER ADDONS' (01/10). The first version counted every icon on the map.
+---The user: *"mais do jogo, de outros addons é difícil, o usuário pode usar muitos addons, aí
+---complica"*. A player with several map addons would have our markers pushed around by
+---hundreds of icons nobody chose. A pin is the game's when the game's own code handed it out:
+---`pinTemplate` is written inside `AcquirePin`, and `issecurevariable` tells whether that was
+---done by Blizzard's code or by an addon's. What cannot be told is left out.
+---A pin wider than an icon (the frames the game lays over the whole map: the player and the
+---group, the fog, the highlights) is not an obstacle.
+---@return table list
+function RocketMountMapDataProviderMixin:OtherPins()
+    local out = {}
+    local map = self:GetMap()
+    if not (map and map.ExecuteOnAllPins) then return out end
+    pcall(map.ExecuteOnAllPins, map, function(pin)
+        if type(pin) ~= "table" or pin.pinTemplate == TEMPLATE then return end
+        if not (issecurevariable and issecurevariable(pin, "pinTemplate")) then return end
+        if pin.IsShown and not pin:IsShown() then return end
+        if not pin.GetPosition then return end
+        local x, y = pin:GetPosition()
+        if type(x) ~= "number" or type(y) ~= "number" then return end
+        if issecretvalue and (issecretvalue(x) or issecretvalue(y)) then return end
+        if x < 0 or x > 1 or y < 0 or y > 1 then return end
+        local largura = pin.GetWidth and pin:GetWidth()
+        if type(largura) == "number" and largura > SPREAD.OTHER_MAX then return end
+        out[#out + 1] = { x, y }
+    end)
+    return out
+end
+
+---Opens the markers that would be a pile, for the canvas as it is now (see `MapPins.Spread`),
+---and puts the pins already on the map where they are drawn.
+---@return number moved
+function RocketMountMapDataProviderMixin:SpreadPins()
+    local movidos = 0
+    pcall(function()
+        local map = self:GetMap()
+        local canvas = map and map.GetCanvas and map:GetCanvas()
+        if not (canvas and self.places) then return end
+        local w, h = canvas:GetSize()
+        local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
+        local outros = self:OtherPins()
+        self.others = #outros
+        -- A continent (or the world) is an overview: the markers may sit closer there.
+        local apertado = false
+        if C_Map and C_Map.GetMapInfo and map.GetMapID then
+            local okI, info = pcall(C_Map.GetMapInfo, map:GetMapID())
+            local T = Enum and Enum.UIMapType
+            if okI and type(info) == "table" and T then
+                apertado = info.mapType == T.Continent or info.mapType == T.World or info.mapType == T.Cosmic
+            end
+        end
+        movidos = MapPins.Spread(self.places, w, h, escala, outros, apertado)
+        if map.EnumeratePinsByTemplate then
+            for pin in map:EnumeratePinsByTemplate(TEMPLATE) do
+                local d = pin.data
+                if type(d) == "table" and d.x then pin:SetPosition(d.drawX or d.x, d.drawY or d.y) end
+            end
+        end
+    end)
+    return movidos
+end
+
+---Draws `self.routes` on the canvas as it is now. Called when the pins are drawn and whenever
+---the canvas changes scale or size: the dashes are sized for the screen (see ROUTE).
+---@return number lines drawn
+function RocketMountMapDataProviderMixin:LayoutRoutes()
+    self.routeLines = self.routeLines or {}
+    local usadas, guias = 0, 0
+    local ok = pcall(function()
+        local map = self:GetMap()
+        local canvas = map and map.GetCanvas and map:GetCanvas()
+        local movidos = false
+        for _, d in ipairs(self.places or {}) do if d.moved then movidos = true end end
+        if not (canvas and ((self.routes and #self.routes > 0) or movidos)) then return end
+        local w, h = canvas:GetSize()
+        local escala = map.GetCanvasScale and map:GetCanvasScale() or 1
+        if not (w and h and w > 0 and h > 0) or not escala or escala <= 0 then return end
+
+        if not self.routeFrame then
+            self.routeFrame = CreateFrame("Frame", nil, canvas)
+            self.routeFrame:SetAllPoints(canvas)
+            -- Under our own pins: the marker sits ON its road.
+            local gerente = map.GetPinFrameLevelsManager and map:GetPinFrameLevelsManager()
+            if gerente and gerente.GetValidFrameLevel then
+                local okN, nivel = pcall(gerente.GetValidFrameLevel, gerente, "PIN_FRAME_LEVEL_VIGNETTE")
+                if okN and type(nivel) == "number" and nivel > 1 then
+                    self.routeFrame:SetFrameLevel(nivel - 1)
+                end
+            end
+        end
+        self.routeFrame:Show()
+
+        for _, rota in ipairs(self.routes or {}) do
+            local pontos = {}
+            for i, p in ipairs(rota.path) do pontos[i] = { p[1] * w, p[2] * h } end
+            pontos = MapPins.Smooth(pontos, rota.loop, ROUTE.STEPS)
+            local tracos = MapPins.Dashes(pontos, rota.loop, ROUTE.DASH / escala, ROUTE.GAP / escala)
+            for _, t in ipairs(tracos) do
+                usadas = usadas + 1
+                local linha = self.routeLines[usadas]
+                if not linha then
+                    linha = self.routeFrame:CreateLine(nil, "ARTWORK")
+                    linha:SetAtlas(ROUTE.ATLAS)
+                    self.routeLines[usadas] = linha
+                end
+                linha:SetThickness(ROUTE.THICK / escala)
+                linha:SetStartPoint("TOPLEFT", canvas, t[1], -t[2])
+                linha:SetEndPoint("TOPLEFT", canvas, t[3], -t[4])
+                linha:SetAlpha(rota.locked and ROUTE.ALPHA_LOCKED or ROUTE.ALPHA)
+                linha:SetDesaturated(rota.locked and true or false)
+                -- The art is white: the colour is the game's gold (another of its colours when routes
+                -- meet, MapPins.ColourRoutes), or its grey once looted.
+                local cor = rota.locked and DISABLED_FONT_COLOR or _G[rota.colour or ""] or NORMAL_FONT_COLOR
+                linha:SetVertexColor(cor:GetRGB())
+                linha:Show()
+            end
+        end
+
+        -- The markers that were moved out of a pile: a thin line back to the place, a dot there.
+        self.leaderLines, self.leaderDots = self.leaderLines or {}, self.leaderDots or {}
+        for _, d in ipairs(self.places or {}) do
+            if d.moved then
+                guias = guias + 1
+                local linha, ponto = self.leaderLines[guias], self.leaderDots[guias]
+                if not linha then
+                    linha = self.routeFrame:CreateLine(nil, "ARTWORK")
+                    linha:SetAtlas(SPREAD.LINE_ATLAS)
+                    self.leaderLines[guias] = linha
+                    ponto = self.routeFrame:CreateTexture(nil, "OVERLAY")
+                    ponto:SetAtlas(SPREAD.DOT_ATLAS)
+                    self.leaderDots[guias] = ponto
+                end
+                local preso = d.locked and true or false
+                linha:SetThickness(SPREAD.THICK / escala)
+                linha:SetStartPoint("TOPLEFT", canvas, d.x * w, -d.y * h)
+                linha:SetEndPoint("TOPLEFT", canvas, d.drawX * w, -d.drawY * h)
+                linha:SetAlpha(preso and SPREAD.ALPHA_LOCKED or SPREAD.ALPHA)
+                linha:SetDesaturated(preso)
+                linha:Show()
+                ponto:SetSize(SPREAD.DOT / escala, SPREAD.DOT / escala)
+                ponto:ClearAllPoints()
+                ponto:SetPoint("CENTER", canvas, "TOPLEFT", d.x * w, -d.y * h)
+                ponto:SetAlpha(preso and SPREAD.ALPHA_LOCKED or 1)
+                ponto:Show()
+            end
+        end
+    end)
+    for i = usadas + 1, #self.routeLines do self.routeLines[i]:Hide() end
+    for i = guias + 1, #(self.leaderLines or {}) do
+        self.leaderLines[i]:Hide()
+        self.leaderDots[i]:Hide()
+    end
+    self.leaders = guias
+    if self.routeFrame and usadas == 0 and guias == 0 then self.routeFrame:Hide() end
+    self.routeError = not ok
+    return usadas
+end
+
+-- The zoom changes what is a pile: the markers are opened again for the new scale.
+function RocketMountMapDataProviderMixin:OnCanvasScaleChanged() self:SpreadPins(); self:LayoutRoutes() end
+function RocketMountMapDataProviderMixin:OnCanvasSizeChanged() self:SpreadPins(); self:LayoutRoutes() end
+
+-- What the last drawing asked for and got, for `/rmt pins` and the diary.
+local ultimo = { map = nil, asked = 0, drawn = 0, failed = 0, err = nil }
+-- The maps that came out empty and were already written down, each with its reason.
+local vazios = {}
+
+function RocketMountMapDataProviderMixin:RefreshAllData()
+    self:RemoveAllData()
+    local map = self:GetMap()
+    local mapID = map:GetMapID()
+    local lista = MapPins.PinsFor(mapID)
+    local juntos = 0
+    for _, data in ipairs(lista) do
+        if type(data.parts) == "table" then juntos = juntos + #data.parts - 1 end
+    end
+    ultimo = { map = mapID, asked = #lista, drawn = 0, failed = 0, err = nil, kinds = {},
+               routes = 0, dashes = 0, merged = juntos }
+    self.routes = {}
+    -- Where each one is drawn, before any is: the pin is put there as it is handed out.
+    self.places = lista
+    ultimo.moved = self:SpreadPins()
+    for _, data in ipairs(lista) do
+        for _, r in ipairs(data.routes or {}) do self.routes[#self.routes + 1] = r end
+        -- (!) ONE PIN THAT FAILS DOES NOT TAKE THE REST WITH IT. For four days an assert inside
+        -- `AcquirePin` stopped this loop at the first NEW pin, and the map showed whatever pins
+        -- earlier openings had left in the pool (MapPins.xml tells the story). The cause is gone;
+        -- the loop no longer depends on that.
+        local ok, err = pcall(map.AcquirePin, map, TEMPLATE, data)
+        if ok then
+            ultimo.drawn = ultimo.drawn + 1
+            ultimo.kinds[data.kind] = (ultimo.kinds[data.kind] or 0) + 1
+        else
+            ultimo.failed = ultimo.failed + 1
+            ultimo.err = ultimo.err or tostring(err)
+        end
+    end
+    ultimo.routes = #self.routes
+    -- each pin keeps the colour of its routes, for its tooltip
+    local cores = MapPins.ColourRoutes(self.routes)
+    for _, data in ipairs(lista) do
+        if data.routes then data.routeColour = cores[data.npc or data.name] end
+    end
+    ultimo.dashes = self:LayoutRoutes()
+    ultimo.others = self.others
+    -- (!) AGAIN ON THE NEXT FRAME. The map asks every provider in turn, and the game's own
+    -- icons may be drawn AFTER ours: on this pass they are not on the map yet. One frame later
+    -- they are, and ours step aside from them.
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function()
+            if self.places ~= lista then return end
+            ultimo.moved = self:SpreadPins()
+            ultimo.others = self.others
+            self:LayoutRoutes()
+        end)
+    end
+    if self.routeError then ultimo.err = ultimo.err or "routes" end
+    -- One line per drawing that has something to say: pins asked for, or a failure.
+    if ultimo.asked > 0 or ultimo.failed > 0 then
+        ns.Log.Add("pins", { map = mapID, asked = ultimo.asked, drawn = ultimo.drawn,
+                             routes = ultimo.routes, dashes = ultimo.dashes,
+                             merged = ultimo.merged, moved = ultimo.moved, others = ultimo.others,
+                             failed = ultimo.failed, error = ultimo.err })
+    elseif mapID then
+        -- And one line for the map that came out empty, with why: once per map, and again
+        -- only if the reason changes (the list is made again dozens of times in a session).
+        local porque = MapPins.WhyEmpty(mapID)
+        if vazios[mapID] ~= porque then
+            vazios[mapID] = porque
+            ns.Log.Add("pins", { map = mapID, asked = 0, why = porque })
+        end
+    end
+end
+
+---What the last drawing did, for `/rmt pins`.
+function MapPins.LastDraw() return ultimo end
+
+--------------------------------------------------------------------------------
+-- The pin
+--------------------------------------------------------------------------------
+RocketMountMapPinMixin = CreateFromMixins(MapCanvasPinMixin)
+
+function RocketMountMapPinMixin:OnLoad()
+    self:UseFrameLevelType("PIN_FRAME_LEVEL_VIGNETTE")
+    self:SetScalingLimits(1, 1.0, 1.2)
+    -- (!) OUT OF THE WAY OF THE ENTRANCE, THE WAY THE GAME DOES IT. The user, with a screenshot:
+    -- *"montarias de raid e dungeons levemente deslocada para não ficar em cima do icone de raid e
+    -- dungeon"*. The map has this built in: an entrance is a nudge SOURCE
+    -- (`DungeonEntrancePinMixin:OnLoad`, radius 1, magnitude 2) and any pin that declares itself a
+    -- TARGET is pushed away from it, more when zoomed out. These are the numbers Blizzard gives
+    -- its own flight points (`FlightPointDataProvider.lua:71-73`).
+    self:SetNudgeTargetFactor(0.015)
+    self:SetNudgeZoomedOutFactor(1.25)
+    self:SetNudgeZoomedInFactor(1)
+end
+
+---(!) NOT IN COMBAT. The map sets which buttons a pin lets through every time it hands one out,
+---and `SetPassThroughButtons` is protected while fighting: "[ADDON_ACTION_BLOCKED] RocketMount
+---tentou chamar a função protegida 'Frame:SetPassThroughButtons()'", seven times on 27/09, from
+---a redraw after a loot. The function is not emptied for good: the right button
+---keeps zooming the map out, which is what the game's own
+---pins do, and only the call made in combat is skipped.
+function RocketMountMapPinMixin:CheckMouseButtonPassthrough(...)
+    if InCombatLockdown and InCombatLockdown() then return end
+    MapCanvasPinMixin.CheckMouseButtonPassthrough(self, ...)
+end
+
+function RocketMountMapPinMixin:OnAcquired(data)
+    self.data = data
+    -- The size chosen in the options, through the game's own limits (1.0 zoomed out, 1.2
+    -- zoomed in, as set in OnLoad): both ends by the same factor.
+    local k = MapPins.PinScale()
+    self:SetScalingLimits(1, 1.0 * k, 1.2 * k)
+    -- Where it is DRAWN: its place, or beside it when it would sit on another (`MapPins.Spread`).
+    self:SetPosition(data.drawX or data.x, data.drawY or data.y)
+
+    local kind = KindDe(data)
+    local primeira = data.mounts and data.mounts[1]
+    self.Icon:SetTexture(primeira and primeira.entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+    self.Underlay:SetShown(kind.dragon and true or false)
+    self.Badge:SetAtlas(kind.atlas)
+    MapPins.Crop(self.Badge, kind.crop)
+    self.Badge:SetSize(kind.size, kind.size)
+
+    local rotulo = not (ns.db and ns.db.mapLabels == false)
+    if self.Label.SetFontHeight then self.Label:SetFontHeight(MapPins.Geometry.LABEL) end
+    self.Label:SetText(rotulo and kind.label or "")
+    self.Label:SetShown(rotulo)
+
+    -- LOOTED goes dim, not away: the place is still worth knowing for tomorrow's run.
+    local preso = data.locked and true or false
+    self.Icon:SetDesaturated(preso)
+    self.Disc:SetDesaturated(preso)
+    self.Underlay:SetDesaturated(preso)
+    self.Badge:SetDesaturated(preso)
+    self:SetAlpha(preso and 0.5 or 1)
+end
+
+local function Horas(segundos)
+    if not segundos then return nil end
+    local h = math.floor(segundos / 3600)
+    if h >= 24 then return string.format(L["%dd"], math.floor(h / 24)) end
+    if h >= 1 then return string.format(L["%dh"], h) end
+    return string.format(L["%dmin"], math.max(1, math.floor(segundos / 60)))
+end
+
+--------------------------------------------------------------------------------
+-- The tooltip
+--
+-- Written with the game's own helpers (`SharedTooltipTemplates.lua`), so it has the colours of
+-- every other tooltip of the map: the title white, what it is in gold, what stands in the way in
+-- red, what a click does in green. The names are in the client's language: the mount's from the
+-- journal, the creature's from the game (NpcName), the entrance's from the dungeon journal.
+--------------------------------------------------------------------------------
+local function Cor(nome, r, g, b)
+    local c = _G[nome]
+    if type(c) == "table" and c.GetRGB then return c:GetRGB() end
+    return r, g, b
+end
+
+local function Titulo(tip, texto)
+    if GameTooltip_SetTitle then return GameTooltip_SetTitle(tip, texto) end
+    tip:SetText(texto, Cor("HIGHLIGHT_FONT_COLOR", 1, 1, 1))
+end
+
+local function Linha(tip, texto, cor, r, g, b, quebra)
+    local cr, cg, cb = Cor(cor, r, g, b)
+    tip:AddLine(texto, cr, cg, cb, quebra and true or false)
+end
+
+local HEADER = {
+    creature = L["Can drop:"], instance = L["Can drop:"], loot = L["Can drop:"],
+    treasure = L["Can drop:"], fishing = L["Can drop:"], portal = L["Leads to:"],
+    start = L["Leads to:"], vendor = L["Sells:"], quest = L["Rewards:"], other = L["Mounts here:"],
+}
+
+-- What of the mount's card the tooltip quotes, and in which order. "Where" stays out: the pin IS
+-- where. The chance stays out at a creature, whose line already carries the chance THERE.
+local TIP_BLOCKS = { flavor = 1, howto = 2, chance = 3, requirements = 4, about = 5, achievement = 6,
+                     tip = 7 }
+
+---A text the game or the card wrote in several lines, one tooltip line each: the journal's
+---source text separates them with `|n`, ours with a line break.
+local function Linhas(texto)
+    local out = {}
+    texto = tostring(texto or ""):gsub("|n", string.char(10))
+    for linha in (texto .. string.char(10)):gmatch("(.-)" .. string.char(10)) do
+        if linha:gsub("%s", "") ~= "" then out[#out + 1] = linha end
+    end
+    return out
+end
+
+---(!) THE DESCRIPTION, for a place with ONE mount (27/09). The user: *"com uma boa descrição tanto na popup quanto na janela do addon"*. It is the card's
+---own text (`ns.DetailBlocks`), quoted: the mount's flavour line in the gold the game writes
+---flavour in, then each block under its title. A place with several mounts keeps the list --
+---six descriptions in one tooltip is a wall -- and the card has each of them. The exception is
+---the players' tip the mounts of the place SHARE (`Tips.Shared`), which is one text.
+local function Descricao(tooltip, e, criatura)
+    if not ns.DetailBlocks then return end
+    local ok, blocos = pcall(ns.DetailBlocks, e)
+    if not ok or type(blocos) ~= "table" then return end
+    for _, b in ipairs(blocos) do
+        if TIP_BLOCKS[b.key] and not (criatura and b.key == "chance") then
+            tooltip:AddLine(" ")
+            if b.label then
+                Linha(tooltip, b.label, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+                for _, l in ipairs(Linhas(b.value)) do
+                    Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+                end
+            else
+                Linha(tooltip, b.value, "NORMAL_FONT_COLOR", 1, 0.82, 0, true)
+            end
+        end
+    end
+end
+
+---The names of a marker that is several places: each one once, in the order of the parts.
+local TIP_NAMES = 3
+
+local function NomeDeUm(data)
+    return MapPins.PlaceName(data, true)
+end
+
+function MapPins.PlaceName(data, sozinho)
+    if not sozinho and type(data.parts) == "table" then
+        local nomes, visto = {}, {}
+        -- the part that names the marker first
+        local n0 = NomeDeUm(data)
+        if n0 then nomes[1], visto[n0] = n0, true end
+        for _, p in ipairs(data.parts) do
+            local n = NomeDeUm(p)
+            if n and not visto[n] then
+                visto[n] = true
+                nomes[#nomes + 1] = n
+            end
+        end
+        if #nomes > TIP_NAMES then
+            return string.format(L["%s and %d more"], nomes[1], #nomes - 1)
+        end
+        return table.concat(nomes, ", ")
+    end
+    local kind = KindDe(data)
+    if data.npc then return MapPins.NpcName(data.npc, data.rec and data.rec.name or data.name) end
+    if data.nameNpc then return MapPins.NpcName(data.nameNpc, data.name) end
+    if data.nameQuest and C_QuestLog and C_QuestLog.GetTitleForQuestID then
+        local ok, titulo = pcall(C_QuestLog.GetTitleForQuestID, data.nameQuest)
+        if ok and type(titulo) == "string" and titulo ~= ""
+            and not (issecretvalue and issecretvalue(titulo)) then
+            return titulo
+        end
+    end
+    -- A landmark of the game's map, by the name the game gives it on the map it is of.
+    if data.namePoi and C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo then
+        local ok, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, data.homeMap or data.mapID, data.namePoi)
+        local nome = ok and type(info) == "table" and info.name
+        if type(nome) == "string" and nome ~= "" and not (issecretvalue and issecretvalue(nome)) then
+            return nome
+        end
+    end
+    if kind.group == "creature" and data.name then return ns.LocalizedCreature(data.name) end
+    if data.name and data.name ~= "" then return data.name end
+    -- A place with no name: one mount, its boss; several, what kind of place it is.
+    local unica = data.mounts and #data.mounts == 1 and data.mounts[1].entry
+    if unica and unica.bossName then return ns.LocalizedCreature(unica.bossName) end
+    return kind.label
+end
+
+---"The Jade Forest  42.6, 27.0": the map the place is on, by the game's name for it, and the
+---coordinates in the scale the game's own waypoints use. nil when the place has no coordinates.
+function MapPins.WhereText(data)
+    if type(data) ~= "table" then return nil end
+    local m, x, y = data.homeMap or data.mapID, data.homeX or data.x, data.homeY or data.y
+    if type(x) ~= "number" or type(y) ~= "number" then return nil end
+    local zona
+    if m and C_Map and C_Map.GetMapInfo then
+        local ok, info = pcall(C_Map.GetMapInfo, m)
+        zona = ok and type(info) == "table" and type(info.name) == "string" and info.name ~= "" and info.name or nil
+    end
+    local onde = string.format("%.1f, %.1f", x * 100, y * 100)
+    return zona and (zona .. "  " .. onde) or onde
+end
+
+function MapPins.Tooltip(tooltip, data)
+    local kind = KindDe(data)
+    local criatura = kind.group == "creature"
+    Titulo(tooltip, MapPins.PlaceName(data))
+    -- A marker that is several places says every kind it is, and its list has no single verb.
+    local rotulo, cabecalho = kind.label, HEADER[kind.group] or HEADER.other
+    if type(data.parts) == "table" then
+        local rotulos, visto = { kind.label }, { [kind.label] = true }
+        for _, p in ipairs(data.parts) do
+            local k = KindDe(p)
+            if not visto[k.label] then
+                visto[k.label] = true
+                rotulos[#rotulos + 1] = k.label
+            end
+            if (HEADER[k.group] or HEADER.other) ~= cabecalho then cabecalho = HEADER.other end
+        end
+        rotulo = table.concat(rotulos, ", ")
+    end
+    Linha(tooltip, rotulo, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+    -- (!) WHERE, IN WORDS (28/09). The user stood on a marker, found nobody and had nothing to
+    -- check the place against: *"adicionar o nome dos vendedores e coordenadas"*. The name is the
+    -- title; the zone and the coordinates are the place's own (a cave's, not the zone's it is
+    -- drawn on), the same the arrow is pointed at.
+    Linha(tooltip, MapPins.WhereText(data), "HIGHLIGHT_FONT_COLOR", 1, 1, 1)
+    if type(data.event) == "string" and data.event ~= "" then
+        Linha(tooltip, string.format(L["Only during: %s"], data.event), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+    end
+    tooltip:AddLine(" ")
+    Linha(tooltip, cabecalho, "NORMAL_FONT_COLOR", 1, 0.82, 0)
+
+    local wr, wg, wb = Cor("HIGHLIGHT_FONT_COLOR", 1, 1, 1)
+    local gr, gg, gb = Cor("NORMAL_FONT_COLOR", 1, 0.82, 0)
+    local total = #data.mounts
+    -- The mounts that have the same sentence of their own go together, and the sentence once
+    -- under them (`Tips.Groups`): six mounts of one seed are one thing to read, not six.
+    local grupos = ns.Tips and ns.Tips.Groups and ns.Tips.Groups(data.mounts, TIP_MOUNTS)
+    if not grupos then
+        grupos = {}
+        for i = 1, math.min(total, TIP_MOUNTS) do grupos[i] = { mounts = { data.mounts[i] } } end
+    end
+    local comFrase = false
+    for _, g in ipairs(grupos) do
+        if g.own and total > 1 then comFrase = true end
+    end
+    for k, g in ipairs(grupos) do
+      -- A line of air between two groups, when a group ends in a sentence: without it the
+      -- sentence of one reads as the title of the next.
+      if comFrase and k > 1 then tooltip:AddLine(" ") end
+      for _, m in ipairs(g.mounts) do
+        local e = m.entry
+        -- At a creature the number is the chance THERE; anywhere else, the one the list shows.
+        local numero
+        if criatura or m.drop then
+            numero = ns.Sighting.ChanceText(m) or "?"
+        else
+            numero = ns.RowPercentText and ns.RowPercentText(e) or "?"
+        end
+        local icone = e.icon and string.format("|T%s:%d:%d:0:0|t ", tostring(e.icon), TIP_ICON, TIP_ICON) or ""
+        tooltip:AddDoubleLine(icone .. e.name, numero, wr, wg, wb, gr, gg, gb)
+        -- Why that number, when there is room to say it: what is asked, the price, the boss.
+        -- (One mount alone gets the whole description instead, below.)
+        if not criatura and total > 1 and total <= 3 then
+            local porque = ns.RowWhy and ns.RowWhy(e) or e.why
+            if kind.group == "instance" and e.bossName then
+                porque = ns.LocalizedCreature(e.bossName)
+            end
+            if type(porque) == "string" and porque ~= "" then
+                Linha(tooltip, porque, "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5, true)
+            end
+        end
+      end
+      -- (One mount alone has its sentence in the description, below, with the rest of its tip.)
+      if g.own and total > 1 then
+          for _, l in ipairs(Linhas(g.own)) do
+              Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+          end
+      end
+    end
+    if total > TIP_MOUNTS then
+        Linha(tooltip, string.format(L["and %d more"], total - TIP_MOUNTS),
+            "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+    end
+    if total == 1 then
+        Descricao(tooltip, data.mounts[1].entry, criatura)
+    elseif ns.Tips and ns.Tips.Shared then
+        -- Several mounts, ONE tip (the two a zone's rares drop): said once, under the list.
+        local ok, dica, nota = pcall(ns.Tips.Shared, data.mounts)
+        if ok and dica then
+            tooltip:AddLine(" ")
+            Linha(tooltip, L["Players' tip"], "NORMAL_FONT_COLOR", 1, 0.82, 0)
+            for _, l in ipairs(Linhas(dica)) do
+                Linha(tooltip, l, "HIGHLIGHT_FONT_COLOR", 1, 1, 1, true)
+            end
+            if nota then Linha(tooltip, nota, "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5, true) end
+            if criatura then tooltip:AddLine(" ") end
+        end
+    end
+
+    if criatura then
+        if total == 1 then tooltip:AddLine(" ") end
+        -- How often its loot comes back: daily, weekly, every kill -- or plainly not known yet.
+        -- (!) WHITE WHEN KNOWN (01/10): it was grey, the colour of a footnote, and the user
+        -- could hardly see it. Grey stays for "not known yet", which IS a footnote.
+        if ns.Sighting.LootFrequency(data.npc) then
+            Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "HIGHLIGHT_FONT_COLOR", 1, 1, 1)
+        else
+            Linha(tooltip, ns.Sighting.FrequencyText(data.npc), "DISABLED_FONT_COLOR", 0.5, 0.5, 0.5)
+        end
+        -- The rare that comes on a clock: when it comes next, from the game's clock (30/09).
+        local janela = ns.Sighting.WindowText(data.npc)
+        if janela then Linha(tooltip, janela, "HIGHLIGHT_FONT_COLOR", 1, 1, 1) end
+        -- (13/10) when routes meet and this one is not the gold: which line is its
+        if data.routeColour and data.routeColour ~= MapPins.ROUTE_COLOURS[1] and _G[data.routeColour] then
+            local c = _G[data.routeColour]
+            tooltip:AddLine(L["Its route is the line in this colour."], c.r, c.g, c.b, true)
+        end
+        if data.locked then
+            tooltip:AddLine(" ")
+            local volta = Horas(data.lockLeft)
+            local semanal = ns.Sighting.LootFrequency(data.npc) == "weekly"
+            Linha(tooltip, volta and string.format(L["Already looted — back in %s"], volta)
+                or (semanal and L["Already looted this week"]) or L["Already looted today"],
+                "RED_FONT_COLOR", 1, 0.125, 0.125)
+        end
+    end
+    tooltip:AddLine(" ")
+    Linha(tooltip, L["Click: point the arrow here"], "GREEN_FONT_COLOR", 0.1, 1, 0.1)
+    Linha(tooltip, L["Alt+click: Wowhead link"], "GREEN_FONT_COLOR", 0.1, 1, 0.1)
+end
+
+function RocketMountMapPinMixin:OnMouseEnter()
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    MapPins.Tooltip(GameTooltip, self.data)
+    GameTooltip:Show()
+end
+
+function RocketMountMapPinMixin:OnMouseLeave()
+    GameTooltip:Hide()
+end
+
+---The click, where the map delivers it. `OnMouseUp` is Blizzard's, and overriding it (as this
+---file did) takes the pin out of the map's own click handling.
+function RocketMountMapPinMixin:OnMouseClickAction(button)
+    if button ~= "LeftButton" then return end
+    if IsAltKeyDown and IsAltKeyDown() then return MapPins.Wowhead(self.data, self) end
+    MapPins.PointArrow(self.data)
+end
+
+---(!) ALT+CLICK: THE MOUNT ON WOWHEAD (12/10). The user: *"teria alguma forma de talvez alt+clique
+---e ele abre o wowhead da montaria em questão?"*. An addon cannot open a browser: the address
+---goes in the box the card's Wowhead button already uses, selected, for Ctrl+C. A place of
+---several mounts asks which, with the game's menu.
+function MapPins.Wowhead(d, owner)
+    local lista = {}
+    for _, m in ipairs(d and d.mounts or {}) do
+        if m.entry and ns.WowheadURL and ns.WowheadURL(m.entry) then lista[#lista + 1] = m.entry end
+    end
+    if #lista == 0 or not ns.ShowLink then return end
+    if #lista == 1 or not (MenuUtil and MenuUtil.CreateContextMenu) then
+        return ns.ShowLink(lista[1].name, ns.WowheadURL(lista[1]))
+    end
+    MenuUtil.CreateContextMenu(owner, function(_, root)
+        root:CreateTitle(L["Which mount, on Wowhead?"])
+        for _, e in ipairs(lista) do
+            root:CreateButton(e.name or "?", function() ns.ShowLink(e.name, ns.WowheadURL(e)) end)
+        end
+    end)
+end
+
+---The game's own arrow, pointed at a place: the click of a marker, on the map and on the minimap.
+function MapPins.PointArrow(d)
+    if not (d and C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.SetUserWaypoint) then return end
+    -- The place's own map first (a cave is where the arrow has to lead); the map being looked
+    -- at when that one takes no pin.
+    local m, x, y = d.homeMap or d.mapID, d.homeX or d.x, d.homeY or d.y
+    if not C_Map.CanSetUserWaypointOnMap(m) then m, x, y = d.mapID, d.x, d.y end
+    if C_Map.CanSetUserWaypointOnMap(m) then
+        C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m, x, y))
+        if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+            C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+        end
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Wiring
+--------------------------------------------------------------------------------
+local provider
+
+function MapPins.Enable()
+    if provider or not WorldMapFrame or not WorldMapFrame.AddDataProvider then return end
+    provider = CreateFromMixins(RocketMountMapDataProviderMixin)
+    WorldMapFrame:AddDataProvider(provider)
+end
+
+---Redraw with fresh data: a mount learned, a rare looted, the option toggled.
+function MapPins.Refresh()
+    indice = nil
+    -- the minimap draws the same places
+    if ns.MinimapPins then ns.MinimapPins.Refresh() end
+    local map = provider and provider.GetMap and provider:GetMap()
+    if not map then return end
+    -- A closed map draws nothing: it asks every provider again when it opens
+    -- (`MapCanvasMixin:OnShow`), and the list changes far more often than the map is looked at.
+    if map.IsShown and not map:IsShown() then return end
+    pcall(provider.RefreshAllData, provider)
+end
+
+function MapPins.GetProvider() return provider end

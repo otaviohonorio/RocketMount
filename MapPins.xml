@@ -1,0 +1,86 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<!-- The world-map pin (MapPins.lua), built the way Blizzard builds a world-quest pin: the
+	     marker disc, what it is about inside it, an underlay for an elite, a small glyph at the
+	     lower right. Every piece is the game's own art (tools/ver_atlas.py shows each one).
+
+	     (!) NO SCRIPTS HERE, AND THAT IS THE RULE OF THE MAP (27/09). This template used to carry
+	     OnLoad, OnEnter, OnLeave and OnMouseUp. `MapCanvasMixin:AcquirePin` asserts that a NEW pin
+	     has no OnEnter and no OnLeave (Blizzard_MapCanvas.lua:280, 12.1.0) - the map sets them
+	     itself, from the mixin's OnMouseEnter / OnMouseLeave - and the assert broke our loop on
+	     every new pin: each time the map opened one more pin was born and the rest never were.
+	     The map also calls OnLoad on its own, and routes the click to OnMouseClickAction.
+
+	     The numbers, measured on the art (worldquest-questmarker-epic is 64 wide, its ring 40,
+	     the dark disc inside it 35). The size was the game's own quest marker (POIButton.xml: a
+	     button of 20 with the art at 32), and the user asked for a little less (28/09: "5px no
+	     maximo"): 7/8 of it. Drawn at 28 the ring is 17.5 across and the dark disc 15.3, so the
+	     mount's icon is a circle of 15. The glyph sits where Blizzard puts the clock of a world
+	     quest (WorldQuestDataProvider.xml: CENTER, x 9, y -9), brought down with the rest:
+	     x 6, y -6. -->
+	<Frame name="RocketMountMapPinTemplate" mixin="RocketMountMapPinMixin" enableMouse="true" virtual="true">
+		<Size x="18" y="18"/>
+		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Underlay" atlas="worldquest-questmarker-dragon" hidden="true">
+					<Size x="28" y="28"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND">
+				<Texture parentKey="Disc" atlas="worldquest-questmarker-epic">
+					<Size x="28" y="28"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<!-- Every icon of the game carries its own square frame in the outer 8%. A
+				     round mask touches the square at the middle of each side, so without the
+				     crop four slivers of that frame show inside the ring. -->
+				<Texture parentKey="Icon">
+					<Size x="15" y="15"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<TexCoords left="0.08" right="0.92" top="0.08" bottom="0.92"/>
+				</Texture>
+				<MaskTexture parentKey="IconMask" file="Interface\CharacterFrame\TempPortraitAlphaMask" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Icon"/>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Icon"/>
+					</Anchors>
+					<MaskedTextures>
+						<MaskedTexture childKey="Icon"/>
+					</MaskedTextures>
+				</MaskTexture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture parentKey="Badge">
+					<Size x="11" y="11"/>
+					<Anchors>
+						<Anchor point="CENTER" x="6" y="-6"/>
+					</Anchors>
+				</Texture>
+				<FontString parentKey="Label" inherits="GameFontNormalSmallOutline" justifyH="CENTER" wordwrap="false" hidden="true">
+					<Anchors>
+						<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="-2"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="HIGHLIGHT">
+				<!-- The glow Blizzard lights inside a quest marker under the mouse
+				     (POIButton.lua, POIButton_GetAtlasInfoHighlight). Same nominal size as the
+				     disc: in both arts the ring is 40 of 64, and the glow sits just inside it. -->
+				<Texture parentKey="Highlight" atlas="UI-QuestPoi-InnerGlow" alphaMode="ADD">
+					<Size x="28" y="28"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
+</Ui>

@@ -1,0 +1,900 @@
+-- RocketMount | Score.lua
+-- The order. It is the one thing this addon does that the others do not.
+--
+-- The criterion is stated, not a magic number: every mount lands in a band by a RULE,
+-- and the row shows the number that put it there. If the order looks wrong, you can
+-- disagree with the criterion by looking at the list itself.
+--
+-- (!) The distinction that holds everything up, and that the first version did not make:
+--
+--    REQUIREMENT != ACQUISITION.
+--
+-- Reputation, currency and achievements are **requirements**: they say whether you may
+-- *try*. What delivers the mount is something else -- buying from a vendor delivers,
+-- killing a boss with a 1-in-100 chance does not. The previous version merged the two and
+-- called it all progress, so the Blackwater Bonecrusher showed up first with "100%"
+-- because the reputation was met -- except it drops from a cache, at 1 in 3. A hundred
+-- percent of the requirement, zero percent of the mount.
+--
+-- Hence the hard rule: **only a deterministic acquisition can be "ready to grab".** With a
+-- drop chance in the way, the requirement at most unlocks the farm; it never completes it.
+--
+-- What this model still does NOT consider, and it is the largest known gap: attempt
+-- lockouts. A 1/100 drop from a boss on a weekly lockout and a 1/100 drop from a mob with
+-- no lockout at all are years apart, and today both land in the same band. The per-mount
+-- lockout period is missing -- the API does not expose it and no catalogue keeps
+-- it. Until it exists, the row shows the method and the player judges.
+local ADDON, ns = ...
+local L = ns.L
+
+-- (!) A ORDEM DAS FAIXAS É A PROMESSA DO ADDON, e ela estava errada: "requisito desconhecido"
+-- ficava em SEGUNDO, logo abaixo de "é só ir pegar". Posição é recomendação — pôr "eu não sei"
+-- perto do topo faz a lista recomendar justamente o que ela não consegue avaliar. Agora ela cai
+-- para o fim, ao lado de "sem estimativa", que é onde a falta de informação pertence.
+ns.TIER = {
+    READY     = 1,
+    CLOSE     = 2,
+    UNDERWAY  = 3,
+    SHORTFARM = 4,
+    LONGFARM  = 5,
+    CHECK     = 6,
+    UNKNOWN   = 7,
+    -- Depois de tudo, e só quando o jogador pede para ver: não é difícil, é impossível.
+    GONE      = 8,
+}
+
+-- The names carry the split the collector community actually uses -- **guaranteed** against
+-- **luck** ("guaranteed" vs "RNG" in the English guides; "obtenção fácil" against "sorte"
+-- and "camperar" in the Brazilian ones). It is the same boundary the engine computes in
+-- `Deterministic`, so the label now says in words what the rule already did in code. Band 6
+-- carries neither name because it mixes both kinds.
+--
+--
+-- (!) THE KEY IS THE ENGLISH TEXT, and the band name is where that matters most: it is the
+-- longest label the list draws, and a translation that outgrows `TIER_TITLE_WIDTH` crosses the
+-- list border. The harness counts LETTERS, not bytes, because of the accents.
+-- (!) WHERE EACH BAND SITS IN THE LIST, apart from its number. The number is the band's identity
+-- (colour, name, hint are indexed by it); this is the ORDER, and the two had to come apart.
+--
+-- The user, 23/09, at a vendor with the gold for a mount the list put at the very end: *"a ideia é
+-- uma ordem do mais fácil para o mais difícil (...) esse aí é só ter o gold e ir no NPC agora"*.
+-- "Check with the vendor" -- price met, no access requirement known, ordinary vendor -- had been
+-- sent BELOW every luck band after the Black Phoenix. That overcorrected: the Phoenix is a GUILD
+-- vendor, and guild vendors already go to the long road on their own rule. What is left in this
+-- band is gold in hand and a walk to an NPC, which is the second easiest thing there is. The
+-- README always listed it second; the code had drifted from it.
+ns.TIER_RANK = {
+    [ns.TIER.READY]     = 1,
+    [ns.TIER.CLOSE]     = 2,
+    [ns.TIER.UNDERWAY]  = 3,
+    [ns.TIER.SHORTFARM] = 4,
+    [ns.TIER.LONGFARM]  = 5,
+    -- (!) AND BACK AT THE BOTTOM, THE SAME DAY. Moving it second put every mount the addon
+    -- could not check -- Dark Phoenix, covenant and Brawler's Guild mounts -- among the easy ones,
+    -- and the user: *"se não tem [certeza], vai pra sessão de que não sabe"*. The rule that came
+    -- out of it: the top is only what is CERTAIN. A purchase is certain when the vendor said so
+    -- (Sources.lua, vendorCheck); everything else waits here, next to "no estimate".
+    [ns.TIER.CHECK]     = 6,
+    [ns.TIER.UNKNOWN]   = 7,
+    [ns.TIER.GONE]      = 8,
+}
+
+ns.TIER_NAME = {
+    [1] = L["Guaranteed — just go get it"],
+    [2] = L["Guaranteed — nearly unlocked"],
+    [3] = L["Guaranteed — halfway there"],
+    [4] = L["Down to luck — good odds"],
+    [5] = L["Long road"],
+    [6] = L["Not confirmed"],
+    [7] = L["No estimate"],
+    [8] = L["Cannot be obtained any more"],
+}
+
+-- The hint is short because it shares a line with the band name, which grew. Practical
+-- ceiling: ~36 characters. Past that it crosses the list border (see the width check in
+-- the harness, which counts LETTERS, not bytes).
+-- A dica fala do que a MONTARIA exige, e não do que o addon sabe. A dica da faixa 6 chegou a
+-- ser *"sei o preço; o resto não sei"* e foi reprovada na hora: o jogador não quer saber o que
+-- o addon sabe, quer saber o que falta para ele pegar a montaria.
+---A 1-in-n chance as a percentage, the ONE formatter for the window, the card, the alert and chat.
+---
+---The user (23/09): *"esse 1/200 por exemplo, poderia ser tudo convertido em percentual, tanto
+---na janela, quanto nos avisos"*. Two significant figures below 1% (1/200 is 0.5%, 1/910 is
+---0.11%, 1/2000 is 0.05%), one decimal from 1% to 10% (1/60 is 1.7%), whole numbers above.
+---Trailing zeros go (1/100 is "1%", not "1.0%"). `rough` puts "~" in front: a Wowhead sample
+---with fewer than ten drops.
+---
+---The decimal point comes from the translation (`L["."]`): "0,5%" in Portuguese is the correct
+---form, and Blizzard's own `FormattingUtil.lua` only localises the THOUSANDS separator.
+function ns.FormatChance(n, rough)
+    if type(n) ~= "number" or n <= 0 then return nil end
+    local pct = 100 / n
+    local casas
+    if pct >= 10 then
+        casas = 0
+    elseif pct >= 1 then
+        casas = 1
+    else
+        casas = -math.floor(math.log10(pct)) + 1
+    end
+    local txt = string.format("%." .. casas .. "f", pct)
+    if casas > 0 then txt = txt:gsub("0+$", ""):gsub("%.$", "") end
+    txt = txt:gsub("%.", L["."]) .. "%"
+    return rough and ("~" .. txt) or txt
+end
+
+ns.TIER_HINT = {
+    [1] = L["requirement met and checked"],
+    [2] = L["a little left on the requirement"],
+    [3] = L["road already walked"],
+    [4] = L["1% or better"],
+    [5] = L["bad odds, or a distant requirement"],
+    [6] = L["open the vendor to confirm"],
+    [7] = L["no data to estimate from"],
+    [8] = L["left the game"],
+}
+
+-- The chance above which a farm stops being an afternoon's work. Not a measurement: it is
+-- the cut the game itself settled on (a "1% drop" is the tier where people talk of farming).
+local SHORT_FARM_CHANCE = 100
+
+-- Sources where the mount arrives by luck rather than by meeting a requirement. A drop is
+-- obvious; a discovery is finding it by accident. In those two, a met requirement never
+-- means ready.
+local LUCK_SOURCE = {
+    [1] = true,    -- Drop
+    [11] = true,   -- Discovery
+}
+
+-- The acquisition is deterministic when nothing in it depends on luck: buying from the
+-- vendor, handing in the quest, closing the achievement. A drop chance on the record is
+-- proof of the opposite.
+local function Deterministic(e)
+    if e.chance and e.chance > 0 then return false end
+    if LUCK_SOURCE[e.sourceType] then return false end
+    return true
+end
+
+-- (!) ACCESS IS NOT PRICE, and confusing the two was the defect reported on 21/09.
+--
+-- The Blackwater Bonecrusher opened the list as "just go get it". The catalogue knows exactly
+-- one thing about it: it costs 3,000 gold. The player has the gold -> requirement met ->
+-- ready. Except it requires **Exalted with your guild plus the "Guild Glory of the Cataclysm
+-- Raider" achievement**, and there is not one line about either in the data this addon reads.
+--
+-- The lesson is not about that mount: it is that **the absence of a known requirement was
+-- being read as the absence of a requirement**. And gold is almost never what blocks anyone
+-- -- what blocks is reputation, achievements, guild, rating. Knowing only the price is
+-- knowing almost nothing.
+--
+-- So requirements became two families:
+--
+--   ACCESS  reputation, renown, achievement -- decides whether you CAN
+--   PRICE   gold, currency, item            -- decides whether you PAY
+--
+-- "Just go get it" demands a known AND met access requirement. Knowing only the price sends
+-- the mount to "check with the vendor", which promises exactly what can be proven.
+-- `tooltipGate` entra como acesso: ele é o jogo dizendo "você não pode comprar isto ainda", e
+-- isso é exatamente um requisito de acesso. Vem por último na lista porque é o mais genérico —
+-- quando reputação e conquista já explicam, a frase do tooltip costuma repetir o que elas dizem.
+-- `vendorCheck` is the vendor's own verdict (Sources.lua): the only source that can say "met"
+-- on its own, because it is the game answering, not the catalogue being silent.
+local ACCESS_KEYS = { "rep", "achievement", "achievementReward", "quest", "tooltipGate", "vendorCheck" }
+
+local function Access(e)
+    local worst, from = nil, nil
+    for _, key in ipairs(ACCESS_KEYS) do
+        local p = e[key]
+        if p and p.pct then
+            if not worst or p.pct < worst then
+                worst, from = p.pct, key
+            end
+        end
+    end
+    return worst, from
+end
+
+-- (!) GOLD COUNTS LAST (25/09). The user: *"o quanto falta de gold só pode ser considerado no
+-- percentual quando todos os outros requisitos forem cumpridos"*. Gold is the easy part and the
+-- last step -- a mount at 80% of its reputation and 10% of its gold is 80% along, not 10%.
+-- Currencies and items stay requirements like any other (2,000 crystals is a grind).
+
+---The cost's share of the number: currencies and items; gold only once they are all met.
+local function Price(e)
+    local p = e.cost
+    if not (p and p.pct) then return nil end
+    if p.goldPct == nil and p.otherPct == nil then return p.pct end
+    if p.otherPct and p.otherPct < 1 then return p.otherPct end
+    return p.goldPct or p.otherPct
+end
+
+---A fraction as the whole percentage the screen shows.
+---
+---(!) 100% IS ONLY FOR WHAT IS DONE (06/10). The user, less than 200 points from Exalted: *"agora
+---eles ficaram 100%, mas eu nao entreguei a ultima quest (...) nao deveria ta 99%?"*. Rounding
+---41,850 of 42,000 gives 100, and 100% on a row means "go and get it". Anything short of whole
+---stops at 99, and anything above nothing starts at 1: the two ends are statements, not
+---roundings.
+function ns.WholePercent(v)
+    if type(v) ~= "number" then return nil end
+    if v >= 1 then return 100 end
+    if v <= 0 then return 0 end
+    return math.max(1, math.min(99, math.floor(v * 100 + 0.5)))
+end
+
+---The progress of a requirement as the screen writes it.
+---
+---(!) TWO DECIMALS AT THE ENDS (06/10). The user's idea, after the 99: *"se precisar podemos usar
+---xx.xx% duas casas decimais nestes casos para garantir mais assertividade"*. In the middle a
+---whole number says enough (80%). In the last point before done, and in the first point after
+---nothing, a whole number hides exactly what the player wants to know -- how close: 41,850 of
+---42,000 is "99.64%", 100 of 42,000 is "0.24%". Cut, never rounded up: "100%" stays only for
+---what is done, and "0%" only for nothing walked. The decimal mark is the translation's.
+function ns.PercentText(v)
+    if type(v) ~= "number" then return nil end
+    if v >= 1 then return "100%" end
+    if v <= 0 then return "0%" end
+    local pct = v * 100
+    if pct >= 99 or pct < 1 then
+        -- (the tiny sum undoes the binary dust: 99.12 is stored as 99.11999...)
+        local cortado = math.floor(pct * 100 + 1e-6) / 100
+        if cortado >= 100 then cortado = 99.99 end
+        if cortado <= 0 then cortado = 0.01 end
+        return (string.format("%.2f", cortado):gsub("%.", L["."])) .. "%"
+    end
+    return string.format("%d%%", ns.WholePercent(v))
+end
+
+function ns.Rank(entry)
+    local e = entry
+
+    -- SAIU DO JOGO: nenhuma das regras abaixo se aplica. Ranquear esforço de uma montaria que
+    -- ninguém mais consegue seria responder a pergunta errada com preciso.
+    if e.unobtainable then
+        e.tier = ns.TIER.GONE
+        e.headline = "—"
+        e.why = (e.sourceText and e.sourceText ~= "" and (e.sourceText:gsub("%s+", " ")))
+            or ns.SOURCE_NAMES[e.sourceType]
+        return e
+    end
+    local access, from = Access(e)
+    local price = Price(e)
+    e.outside = nil
+
+    -- The requirement the row shows is the one furthest behind -- except gold, which counts only
+    -- once everything else is met (`Price` above holds it back from the currencies too).
+    local req = access
+    if price and (not req or price < req) then
+        local soOuro = e.cost.goldPct ~= nil and price == e.cost.goldPct
+            and not (e.cost.otherPct and e.cost.otherPct < 1)
+        if not soOuro or not req or req >= 1 then
+            req, from = price, "cost"
+        end
+    end
+
+    -- (!) TODOS OS REQUISITOS, e não só o pior (defeito de 22/09).
+    --
+    -- Relato: *"falta cristal de ressonância mas que também falta reputação"*. A tela mostrava
+    -- um dos dois — o mais atrasado — e calava sobre o outro. Quem lê "faltam 2.000 cristais"
+    -- vai farmar cristal, chega no vendedor e descobre a reputação lá.
+    --
+    -- O `min` continua decidindo a FAIXA (o requisito mais atrasado é que diz o quanto falta),
+    -- mas a lista inteira vai junto para a linha e para a ficha. Esconder metade do preço é pior
+    -- que mostrar um número grande.
+    e.requisitos = {}
+    for _, key in ipairs({ "rep", "achievement", "achievementReward", "quest",
+                          "tooltipGate", "vendorCheck", "cost" }) do
+        local p = e[key]
+        if p and p.pct then
+            e.requisitos[#e.requisitos + 1] = {
+                key = key, pct = p.pct, label = p.label, cumprido = p.pct >= 1,
+            }
+        end
+    end
+    table.sort(e.requisitos, function(x, y) return x.pct < y.pct end)
+
+    -- Quantos ainda faltam, que é o que a linha precisa dizer em uma palavra.
+    e.faltando = 0
+    for _, r in ipairs(e.requisitos) do
+        if not r.cumprido then e.faltando = e.faltando + 1 end
+    end
+
+    e.access = access
+    e.price = price
+    e.requirement = req
+    e.requirementFrom = from
+    e.deterministic = Deterministic(e)
+    e.gated = (req ~= nil and req < 1)
+
+    if e.deterministic then
+        if access == nil then
+            -- NO KNOWN ACCESS. We cannot say "just go get it": what we know is the price,
+            -- and price is almost never what blocks.
+            if price == nil then
+                e.tier = ns.TIER.UNKNOWN
+            elseif price >= 1 then
+                e.tier = ns.TIER.CHECK
+            elseif price >= 0.75 then
+                e.tier = ns.TIER.CLOSE
+            elseif price > 0 then
+                e.tier = ns.TIER.UNDERWAY
+            else
+                e.tier = ns.TIER.LONGFARM
+            end
+        elseif req >= 1 then
+            e.tier = ns.TIER.READY
+        elseif req >= 0.75 then
+            e.tier = ns.TIER.CLOSE
+        elseif req > 0 then
+            e.tier = ns.TIER.UNDERWAY
+        else
+            e.tier = ns.TIER.LONGFARM
+        end
+    end
+
+    -- (!) CERTAINTY FOR A PURCHASE (23/09). "Just go get it" on a vendor mount is a promise the
+    -- player acts on -- a trip to the NPC -- and the user: *"isso é frustrante chegar no NPC e não
+    -- poder comprar"*. What the addon can read about a purchase is never the whole of it: a catalogue may
+    -- not know the vendor's condition, and an item tooltip does not show an achievement the
+    -- vendor asks for. The one source that is the whole of it is the vendor itself.
+    -- So a vendor mount is "ready" ONLY with the vendor's verdict for this character; otherwise it
+    -- waits in "not confirmed". A known requirement that is NOT met still pushes it down, as always.
+    if e.isVendorMount and e.tier == ns.TIER.READY
+        and not (e.vendorCheck and e.vendorCheck.pct >= 1) then
+        e.tier = ns.TIER.CHECK
+    end
+    -- And no tooltip still loading can be read as clean.
+    if e.tier == ns.TIER.READY and (e.tooltipState == "pending" or e.tooltipState == "failed") then
+        e.tier = ns.TIER.CHECK
+    end
+    -- (!) THE JOURNAL'S PRICE IS A REQUIREMENT, NEVER A PERMISSION (27/09). It names the first
+    -- part of a price that may have several (Great Red Elekk: 500 gold written, and the vendor
+    -- also asks for 5 Champion's Seals), and it can be plainly wrong (Blessed Amani Burrower:
+    -- 1,600 written, 6,400 charged). Short of it, the mount is short; holding it proves nothing.
+    -- The same for a vendor's price the addon could only read in part.
+    e.priceUnconfirmed = e.cost and (e.cost.from == "journal" or e.cost.partial) and true or false
+    if e.tier == ns.TIER.READY and e.priceUnconfirmed then
+        e.tier = ns.TIER.CHECK
+    end
+
+    if e.deterministic then
+        -- decided in the block above
+    elseif e.gated then
+        -- Depends on luck AND is not even unlocked yet: the worst of both worlds.
+        e.tier = ns.TIER.LONGFARM
+    elseif e.chance and e.chance > 0 then
+        e.tier = (e.chance <= SHORT_FARM_CHANCE) and ns.TIER.SHORTFARM or ns.TIER.LONGFARM
+        -- The chance of a bag or a trove says how often the mount is INSIDE; how often the bag
+        -- comes, nobody told the addon (Sources.lua). Not knowing pushes down, never up.
+        if e.chanceIndirect then e.tier = ns.TIER.LONGFARM end
+    else
+        -- Aqui cai o método "à parte" (`SPECIAL`) sem chance: não é determinístico, não tem
+        -- requisito e não tem sorte medida — sobra "sem estimativa", que é a verdade.
+        --
+        -- Houve aqui um `elseif` só para esse caso. Ele saiu: nenhuma sabotagem conseguia
+        -- derrubá-lo, porque este `else` já levava ao mesmo lugar. Regra que não muda nada é
+        -- código que alguém vai ter que entender à toa depois.
+        e.tier = ns.TIER.UNKNOWN
+    end
+
+    -- The number on the right. The rule: **a percentage only where the percentage is the
+    -- whole story**. Where luck decides, the number is the chance, never the requirement --
+    -- it was that mix that made a 1-in-3 cache announce itself as 100%.
+    if e.deterministic then
+        if e.tier == ns.TIER.READY then
+            e.headline = L["ready to grab"]
+        elseif e.tier == ns.TIER.CHECK then
+            -- (!) O NÚMERO É O PREÇO, e não um veredito. "preço ok" foi reprovado na hora —
+            -- ele parecia um "pode ir" com outro nome, que é exatamente o que esta faixa
+            -- existe para NÃO dizer. Preço é informação: quem lê decide.
+            e.headline = (e.cost and e.cost.price) or "—"
+        elseif req then
+            e.headline = ns.PercentText(req)
+        else
+            e.headline = "—"
+        end
+    elseif e.chance and e.chance > 0 then
+        e.headline = ns.FormatChance(e.chance, e.chanceRough)
+    else
+        e.headline = "—"
+    end
+
+    -- The sentence that explains the position.
+    local reqLabel = from and e[from] and e[from].label or nil
+
+    if e.gated and not e.deterministic then
+        -- First what blocks, then the luck: that is the order in which the player acts.
+        e.why = string.format(L["Not unlocked yet — %s"], reqLabel or L["requirement not met"])
+        if e.faltando > 1 then
+            e.why = e.why .. string.format(L[" (and %d more)"], e.faltando - 1)
+        end
+        if e.chance then
+            e.why = e.why .. string.format(L["  ·  then, a %s chance"], ns.FormatChance(e.chance))
+        end
+    elseif e.tier == ns.TIER.CHECK then
+        -- A FRASE COMEÇA PELO QUE O JOGO DIZ, e não pela minha ressalva. O `sourceText` da
+        -- Blizzard costuma nomear o vendedor e a condição ("Guild Vendor", "Requires ..."), e
+        -- isso vale mais que qualquer frase minha. A ressalva vem depois, curta.
+        -- `%s+` colapsa qualquer espaco em branco, inclusive a quebra de linha que a Blizzard
+        -- poe no meio do texto -- e faz isso sem escape nenhum no padrao.
+        local doJogo = e.sourceText and e.sourceText ~= ""
+            and (e.sourceText:gsub("%s+", " ")) or nil
+        e.why = doJogo or ns.SOURCE_NAMES[e.sourceType]
+        if e.vendorGuilda then
+            e.why = e.why .. L["  ·  guild vendor: asks for reputation and an achievement OF THE GUILD, which I cannot read"]
+        elseif e.priceUnconfirmed and (e.access or 0) >= 1 then
+            e.why = e.why .. L["  ·  the price is the journal's: the vendor may charge more"]
+        else
+            e.why = e.why .. L["  ·  there may be a requirement I cannot read"]
+        end
+        if e.cost and e.cost.gap then
+            e.why = e.why .. string.format(L["  ·  %s missing"], e.cost.gap)
+        end
+    elseif e.deterministic and reqLabel then
+        e.why = reqLabel
+        -- E DIZ QUE HÁ MAIS, quando há. A linha não cabe os dois, mas cabe o aviso de que o
+        -- outro existe — e a ficha lista todos.
+        if e.faltando > 1 then
+            e.why = e.why .. string.format(L["  ·  and %d more requirement(s)"], e.faltando - 1)
+        end
+    elseif e.chance then
+        e.why = string.format(L["%s chance"], ns.FormatChance(e.chance, e.chanceRough))
+        if reqLabel then e.why = e.why .. "  ·  " .. reqLabel end
+        -- Who drops it: the boss, or the creature of the table.
+        local quem = e.bossName or (not e.box and e.dropName) or nil
+        if quem then
+            e.why = e.why .. "  ·  " .. (ns.LocalizedCreature and ns.LocalizedCreature(quem) or quem)
+        end
+        if e.box and e.dropName then
+            e.why = e.why .. "  ·  " .. string.format(L["inside %s"], e.dropName)
+        end
+    elseif e.sourceText and e.sourceText ~= "" then
+        -- Blizzard's text comes with line breaks; a list row wants a single line.
+        e.why = (e.sourceText:gsub("[\r\n]+", "  ·  "))
+        -- No chance number for a creature that drops it nearly every time (Sources.lua): the
+        -- row says so, or "no estimate" would read as "nothing is known".
+        if e.sureDrop then
+            local quem = e.sureDrop.name or "?"
+            if ns.MapPins and ns.MapPins.NpcName and e.sureDrop.npc then
+                local ok, nome = pcall(ns.MapPins.NpcName, e.sureDrop.npc, quem)
+                if ok and type(nome) == "string" and nome ~= "" then quem = nome end
+            end
+            e.why = e.why .. string.format(
+                L["  ·  %s drops it nearly every time: getting to it is the task"], quem)
+        end
+    else
+        e.why = ns.SOURCE_NAMES[e.sourceType]
+    end
+
+    -- NOT GOT BY PLAYING, and nothing else known about it: zero, and what it is. A mount of the
+    -- Trading Post whose price the table knows keeps its price, and says what it is too.
+    local fora = ns.OUTSIDE and ns.OUTSIDE[e.sourceType]
+    if fora then
+        if e.tier == ns.TIER.UNKNOWN then
+            e.outside = true
+            e.headline = "0%"
+            e.why = fora
+        elseif not (type(e.why) == "string" and e.why:find(fora, 1, true)) then
+            e.why = (e.why and e.why ~= "" and (e.why .. "  ·  ") or "") .. fora
+        end
+    end
+
+    return e
+end
+
+-- Order within a band: more requirement walked first, then the more generous chance, and
+-- finally how many players already own it -- more common tends to be easier in practice.
+--
+-- There used to be a line here putting deterministic acquisitions first. It was removed for
+-- two reasons: no test could make it fail (in bands 1 to 5 the items are all of the same
+-- kind, so it never decided anything), and in the one place where it would decide -- the
+-- "long road", which mixes both -- it would decide wrongly: grinding reputation from zero to
+-- buy something is a worse bet than a 1-in-3 drop already 80% unlocked.
+local function Compare(a, b)
+    if a.tier ~= b.tier then return ns.TIER_RANK[a.tier] < ns.TIER_RANK[b.tier] end
+
+    -- (!) ONDE A SORTE DECIDE, A CHANCE MANDA — e não o requisito (defeito de 22/09).
+    --
+    -- Relato: *"Portador da Trilha-prado é 5%, tá acima de um que é 33%"*. Estava mesmo. Ele
+    -- pede renome 5 com os Centauros Maruuk (o jogador tem 25, então cumprido) e depois cai a
+    -- 1 em 20 do baú da Caçada Grandiosa. O outro cai a 1 em 3 e não tem requisito conhecido.
+    --
+    -- A regra antiga ordenava por requisito primeiro, e como "cumprido" (1) ganha de
+    -- "desconhecido" (-1), a de 1 em 20 subia na frente da de 1 em 3. Mas **requisito cumprido
+    -- não é progresso rumo à montaria** — ele só abre a porta. Entre duas que dependem de sorte,
+    -- o que separa uma da outra é a chance, e nada mais.
+    --
+    -- O requisito continua mandando onde ele DECIDE alguma coisa: nas faixas determinísticas,
+    -- onde ele é o próprio caminho, e na classificação de faixa (gated vai para o fim).
+    -- In "not confirmed", what is known and met goes first: it is the best bet for the trip.
+    if a.tier == ns.TIER.CHECK then
+        local ka, kb = (a.access or 0) >= 1, (b.access or 0) >= 1
+        if ka ~= kb then return ka end
+    end
+
+    local sorte = not a.deterministic and not b.deterministic
+    if sorte then
+        local ca, cb = a.chance or math.huge, b.chance or math.huge
+        if ca ~= cb then return ca < cb end
+    end
+
+    local ra, rb = a.requirement or -1, b.requirement or -1
+    if ra ~= rb then return ra > rb end
+
+    local ca, cb = a.chance or math.huge, b.chance or math.huge
+    if ca ~= cb then return ca < cb end
+
+    return (a.name or "") < (b.name or "")
+end
+
+local cache
+
+--------------------------------------------------------------------------------
+-- (!) THE LIST IS BUILT IN SLICES (02/10). Building it at once is a few hundred mounts, each
+-- reading its tooltip, reputation, achievements and price from the game, in ONE frame: a hitch,
+-- and the worst of them right when the game opens. The user: *"pode fatiar então, fazer aos
+-- poucos para minimizar um lag inicial"*.
+--
+-- So a build asked for in the BACKGROUND (the rare alert, the map, the minimap, the opening of
+-- the game) runs as a coroutine: it works SLICE_MS milliseconds of a frame, gives the frame
+-- back, and goes on in the next one. Whoever asked gets the list there is (none, at the very
+-- start) and the new one when it is done. A build the PLAYER is waiting for -- the addon's
+-- window, a command -- is still made at once: a list that fills in over a second while you
+-- look at it is worse than a pause you asked for.
+--------------------------------------------------------------------------------
+local SLICE_MS = 4
+ns.SLICE_MS = SLICE_MS
+local EMPTY = {}
+local building, buildSerial      -- the coroutine at work, and the state of the dirt when it began
+local waiting = {}               -- who asked to be told when a list exists
+local sliceBroken = false        -- a sliced build that failed once is not tried again
+
+local function CanSlice()
+    return not sliceBroken and coroutine and debugprofilestop and C_Timer and C_Timer.After and true or false
+end
+
+local function BuildNow()
+    local list = ns.BuildList()
+    for i = 1, #list do
+        if ns.buildYield then ns.buildYield() end
+        ns.Rank(list[i])
+    end
+    table.sort(list, Compare)
+    return list
+end
+
+local function Finish(list, ms, how)
+    cache = list
+    ns.builds = (ns.builds or 0) + 1
+    -- How long it took, for the diary (development only): the number to watch.
+    if ns.Log and ns.Log.enabled then
+        -- The addon's memory, as the game counts it (asked only here, in development: the
+        -- question itself is not cheap).
+        local kb
+        if UpdateAddOnMemoryUsage and GetAddOnMemoryUsage then
+            pcall(UpdateAddOnMemoryUsage)
+            local ok, v = pcall(GetAddOnMemoryUsage, ADDON)
+            kb = ok and type(v) == "number" and math.floor(v + 0.5) or nil
+        end
+        pcall(ns.Log.Add, "build", { ms = ms and math.floor(ms + 0.5) or nil, mounts = #list, n = ns.builds,
+                                     kb = kb, how = how.kind, slices = how.slices, worst = how.worst })
+    end
+    -- Something changed WHILE the slices ran: the list is new, and already due again.
+    local mudou = buildSerial ~= nil and ns.DirtySerial and ns.DirtySerial() ~= buildSerial
+    buildSerial = nil
+    ns.MarkClean()
+    if mudou then ns.Invalidate(true) end
+    local fila = waiting
+    waiting = {}
+    for _, fn in ipairs(fila) do pcall(fn, cache) end
+end
+
+---Starts a sliced build, if none is at work. The list arrives some frames later.
+local function StartBuild()
+    if building then return end
+    buildSerial = ns.DirtySerial and ns.DirtySerial() or nil
+    local co = coroutine.create(BuildNow)
+    building = co
+    local gasto, fatias, pior = 0, 0, 0
+    local function Step()
+        if building ~= co then return end          -- a build made at once took its place
+        local t0 = debugprofilestop()
+        ns.buildYield = function()
+            if debugprofilestop() - t0 >= SLICE_MS then coroutine.yield() end
+        end
+        local ok, list = coroutine.resume(co)
+        ns.buildYield = nil
+        local ms = debugprofilestop() - t0
+        gasto, fatias, pior = gasto + ms, fatias + 1, math.max(pior, ms)
+        if not ok then
+            -- It broke: say so once, and from now on every list is made at once, as before.
+            building, sliceBroken = nil, true
+            buildSerial = nil
+            if ns.Log and ns.Log.Add then pcall(ns.Log.Add, "build", { error = tostring(list) }) end
+            ns.Invalidate()
+            -- (!) AND WHOEVER WAITS FOR THE LIST GETS ONE, made at once. The opening of the
+            -- game waits for the first list to scan the achievements and validate the items:
+            -- with nobody told, the window would stay on its loading bar for ever.
+            if #waiting > 0 then
+                local okB, feita = pcall(BuildNow)
+                if okB then
+                    Finish(feita, nil, { kind = "after-error" })
+                else
+                    local fila = waiting
+                    waiting = {}
+                    for _, fn in ipairs(fila) do pcall(fn, cache or EMPTY) end
+                end
+            end
+            return
+        end
+        if coroutine.status(co) == "dead" then
+            building = nil
+            Finish(list or {}, gasto, { kind = "sliced", slices = fatias, worst = math.floor(pior + 0.5) })
+        else
+            C_Timer.After(0, Step)
+        end
+    end
+    Step()
+end
+
+---@param force boolean|nil build now, whatever the cache says
+---@param fresh boolean|nil the caller shows the list to the player: old numbers will not do
+function ns.GetRanked(force, fresh)
+    if cache and not force and not ns.NeedsRebuild(fresh) then return cache end
+
+    -- In the background, and able to slice: the work starts (or goes on), and the answer is the
+    -- list there is.
+    if not force and not fresh and CanSlice() then
+        StartBuild()
+        return cache or EMPTY
+    end
+
+    -- At once: the player is waiting. A sliced build half way is dropped.
+    building = nil
+    ns.buildYield = nil
+    buildSerial = nil
+    local t0 = debugprofilestop and debugprofilestop() or nil
+    local list = BuildNow()
+    Finish(list, t0 and (debugprofilestop() - t0) or nil, { kind = force and "forced" or (fresh and "fresh" or "plain") })
+    return cache
+end
+
+---Calls `fn(list)` when a list exists: now, if there is one that is not due; else when the
+---build that this starts (or that is already at work) ends.
+function ns.WhenBuilt(fn)
+    if cache and not ns.NeedsRebuild() and not building then return fn(cache) end
+    waiting[#waiting + 1] = fn
+    if CanSlice() then
+        StartBuild()
+    else
+        ns.GetRanked(true)
+    end
+end
+
+---The entry of ANY mount, for the card: the one of the list when the mount is in it; else one
+---built for that mount alone (a collected mount, or one the list's options leave out).
+function ns.EntryOf(mountID)
+    if type(mountID) ~= "number" then return nil end
+    for _, e in ipairs(cache or EMPTY) do
+        if e.mountID == mountID then return e end
+    end
+    local ok, lista = pcall(ns.BuildList, mountID)
+    local e = ok and type(lista) == "table" and lista[1] or nil
+    if e then pcall(ns.Rank, e) end
+    return e
+end
+
+---Is a sliced build at work? (For the window's loading bar and for the harness.)
+function ns.IsBuilding() return building ~= nil end
+
+-- The ranked list, after the source filter.
+---Todos os termos da busca têm que aparecer, e não um deles.
+---
+---"fyrakk aberrus" acha o que está nos dois; com "um deles" bastaria, a busca ficaria mais larga
+---quanto mais se escreve, que é o contrário do que digitar mais significa.
+local function PassaBusca(e, termos)
+    if not termos then return true end
+    local alvo = e.busca or ""
+    for i = 1, #termos do
+        if not alvo:find(termos[i], 1, true) then return false end
+    end
+    return true
+end
+
+---A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
+local function MyFaction()
+    return UnitFactionGroup and UnitFactionGroup("player") or nil
+end
+
+---A montaria passa no filtro de facção?
+---
+---Quatro modos, e o padrão (`nil`) mostra tudo. `"mine"` é o útil no dia a dia — some o que este
+---personagem não pode usar — e os dois nomes servem para quem está planejando o outro lado.
+local function PassaFaccao(e, modo)
+    if not modo then return true end
+    if not e.factionOnly then return true end       -- serve para os dois lados
+    if modo == "mine" then return e.factionOnly == MyFaction() end
+    return e.factionOnly == modo
+end
+
+-- A lista já ranqueada, depois dos filtros.
+function ns.GetFiltered()
+    -- the list the player looks at: fresh
+    local all = ns.GetRanked(nil, true)
+    local modo = ns.db.factionFilter
+
+    -- Os termos são quebrados UMA vez, e não dentro do laço.
+    local termos
+    if ns.search and ns.search ~= "" then
+        termos = {}
+        for termo in ns.Fold(ns.search):gmatch("%S+") do
+            termos[#termos + 1] = termo
+        end
+        if #termos == 0 then termos = nil end
+    end
+
+    local out = {}
+    for i = 1, #all do
+        local e = all[i]
+        -- (The old source filter and the single-expansion filter live on as the Type and
+        -- Expansion columns: `ns.PassesColumnFilters`. A filter kept but no longer shown would
+        -- hide mounts with nothing on screen saying why.)
+        if PassaFaccao(e, modo)
+            and (ns.db.showUnobtainable or not e.unobtainable)
+            and PassaBusca(e, termos)
+            and ns.PassesColumnFilters(e) then
+            out[#out + 1] = e
+        end
+    end
+    return out, #all
+end
+
+--------------------------------------------------------------------------------
+-- THE WINDOW'S LIST: one list, tags, one number (25/09)
+--
+-- (!) The user: *"a lista com o percentual do lado confunde, por que aparece em um bloco de
+-- garantido 71% e termina com 0%, dai o proximo bloco começa com 33% que é na sorte... Melhor ser
+-- uma lista única com tags"*. The bands still exist INSIDE the addon -- they carry the certainty
+-- rules and the alert -- but the window shows one list, ordered by one number, and says WHAT each
+-- mount is with tags, filterable like columns.
+--------------------------------------------------------------------------------
+
+-- Tag keys, in the order they are shown on a row (the most telling first).
+ns.TAG_ORDER = { "raid", "dungeon", "drop", "quest", "achievement", "renown", "reputation",
+                 "vendor", "profession", "event", "petbattle", "discovery",
+                 "tradingpost", "shop", "promotion", "tcg" }
+ns.TAG_NAME = {
+    raid = L["Raid"], dungeon = L["Dungeon"], drop = L["Drop"], quest = L["Quest"],
+    achievement = L["Achievement"], renown = L["Renown"], reputation = L["Reputation"],
+    vendor = L["Vendor"], profession = L["Profession"], event = L["World Event"],
+    petbattle = L["Pet Battle"], discovery = L["Discovery"],
+    -- (!) EACH ONE SAYS WHAT IT IS (28/09). The user: *"é bom ter todas, mesmo que seja 0%, pelo
+    -- menos avisa, essa é de loja, e etc"*. They were one tag, "Shop / promotion", and the
+    -- Trading Post had none. The names are the game's own, in the player's language.
+    tradingpost = ns.SOURCE_NAMES[12], shop = ns.SOURCE_NAMES[10],
+    promotion = ns.SOURCE_NAMES[8], tcg = ns.SOURCE_NAMES[9],
+}
+local TAG_RANK = {}
+for i, k in ipairs(ns.TAG_ORDER) do TAG_RANK[k] = i end
+
+-- Blizzard's own source type (`C_MountJournal` source) -> tag.
+local TAG_OF_SOURCE = {
+    [1] = "drop", [2] = "quest", [3] = "vendor", [4] = "profession", [5] = "petbattle",
+    [6] = "achievement", [7] = "event", [8] = "promotion", [9] = "tcg", [10] = "shop",
+    [11] = "discovery", [12] = "tradingpost",
+}
+
+-- (!) NOT GOT BY PLAYING (28/09): the shop, the Trading Post, a promotion, a card of the card
+-- game. There is no road to walk and no luck to try, so there is no number to show but zero --
+-- and the row says what the mount is, which is what the player needs to know to stop looking
+-- for where it drops.
+local OUTSIDE = {
+    [8] = L["From a promotion outside the game"],
+    [9] = L["From the Trading Card Game"],
+    [10] = L["Sold in the in-game shop"],
+    [12] = L["From the Trading Post, when it is on offer"],
+}
+ns.OUTSIDE = OUTSIDE
+
+---What a mount IS, as a set of tags and an ordered list. Built from what the game says (source
+---type) and what the catalogue adds (reputation, renown, the group an encounter needs).
+function ns.Tags(e)
+    local set = {}
+    local function Add(k) if k then set[k] = true end end
+    Add(TAG_OF_SOURCE[e.sourceType])
+    if e.chance and e.chance > 0 then Add("drop") end
+    if e.groupSize then
+        if e.groupSize >= 10 then Add("raid") elseif e.groupSize >= 2 then Add("dungeon") end
+    end
+    if e.quest then Add("quest") end
+    if e.achievement or e.achievementReward then Add("achievement") end
+    if e.rep then Add(e.isRenown and "renown" or "reputation") end
+    if e.isVendorMount or e.cost then Add("vendor") end
+    local list = {}
+    for _, k in ipairs(ns.TAG_ORDER) do
+        if set[k] then list[#list + 1] = k end
+    end
+    return set, list
+end
+
+-- (!) ONE NUMBER, AND IT IS WHAT THE MOUNT DEPENDS ON (25/09). Two readings were offered and
+-- the user tried both: *"nem um nem outro (...) se a chance de drop de algo é 33% então é 33% mesmo
+-- que seja de paragon de reputação ou de drop, se for de alguma conquista depende de quantas já
+-- fez e falta, de reputação é o que falta da reputação, de 0% a 100%"*.
+--
+--   luck         the drop chance -- a rare's, a paragon cache's, a boss's -- even while a
+--                requirement still locks it: the number is what the mount itself costs you
+--   achievement  how much of it is done, criteria partial included
+--   reputation   the whole road to the standing asked for, 0 to 100% (renown: levels)
+--   ready        100%
+--   ?            what cannot be measured: an unconfirmed purchase, or no data at all
+
+---The row's number, 0..1, or nil when it cannot be measured (it goes last, shown as "?").
+function ns.RowPercent(e)
+    -- Not got by playing: nothing walked, and nothing to walk.
+    if e.outside then return 0 end
+    if e.tier == ns.TIER.GONE or e.tier == ns.TIER.UNKNOWN or e.tier == ns.TIER.CHECK then
+        return nil
+    end
+    if not e.deterministic and e.chance and e.chance > 0 then
+        return 1 / e.chance
+    end
+    if e.tier == ns.TIER.READY then return 1 end
+    if e.requirement then return math.max(0, math.min(1, e.requirement)) end
+    return nil
+end
+
+---As the row shows it: a drop keeps the chance format (33%, 1%, 0.05%, ~0.11%), the rest is a
+---whole percentage.
+function ns.RowPercentText(e)
+    local v = ns.RowPercent(e)
+    if not v then return "?" end
+    if not e.deterministic and e.chance and e.chance > 0 then return ns.FormatChance(e.chance) end
+    return ns.PercentText(v)
+end
+
+---The window's order: an optional column first (tag or expansion), then ALWAYS the number
+---(highest first, unmeasurable last), then the name.
+function ns.SortForWindow(list, by)
+    local key = {}
+    for _, e in ipairs(list) do
+        local _, tags = ns.Tags(e)
+        key[e] = {
+            pct = ns.RowPercent(e),
+            tag = TAG_RANK[tags[1] or ""] or 99,
+            exp = -(e.expansion or -1),
+            name = e.name or "",
+        }
+    end
+    table.sort(list, function(a, b)
+        local ka, kb = key[a], key[b]
+        if by == "tag" and ka.tag ~= kb.tag then return ka.tag < kb.tag end
+        if by == "expansion" and ka.exp ~= kb.exp then return ka.exp < kb.exp end
+        if by == "name" and ka.name ~= kb.name then return ka.name < kb.name end
+        if (ka.pct == nil) ~= (kb.pct == nil) then return ka.pct ~= nil end
+        if ka.pct and kb.pct and ka.pct ~= kb.pct then return ka.pct > kb.pct end
+        return ka.name < kb.name
+    end)
+    return list
+end
+
+---The column filters: tags (a mount passes when it has ANY chosen tag) and expansions.
+function ns.PassesColumnFilters(e)
+    local t = ns.db and ns.db.tagFilter
+    if t and next(t) then
+        local set = ns.Tags(e)
+        local ok = false
+        for k in pairs(t) do if set[k] then ok = true; break end end
+        if not ok then return false end
+    end
+    local x = ns.db and ns.db.expFilter
+    if x and next(x) and not x[e.expansion or -1] then return false end
+    return true
+end
+
+---The expansion's name in the game's language (`EXPANSION_NAME<n>`), our English as reserve.
+function ns.ExpansionLabel(id, fallback)
+    local g = id and _G["EXPANSION_NAME" .. id]
+    if type(g) == "string" and g ~= "" then return g end
+    return fallback or "?"
+end
