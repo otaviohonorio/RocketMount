@@ -47,8 +47,15 @@ local function CopyBox(text, url)
             box:SetText(url())
             box:HighlightText()
             box:SetFocus()
-            -- The popup's box is SHARED with every other popup of the game: the scripts go on
-            -- here and come off in OnHide, or they would follow into someone else's dialog.
+            -- The popup's box is SHARED with every other popup of the game. (14/10) Its own
+            -- OnTextChanged is the game's (it feeds "DELETE" to destroy an item, and the name
+            -- autocomplete): never replaced, the dialog's EditBoxOnTextChanged below is the hook.
+            -- It has no OnKeyDown of its own; ours goes on here and the original comes back in
+            -- OnHide.
+            -- Shown again while open (another place chosen): the original was already kept.
+            if not self.rocketHooked then
+                self.rocketKeyDown, self.rocketHooked = box:GetScript("OnKeyDown"), true
+            end
             box:SetScript("OnKeyDown", function(_, key)
                 if key == "C" and IsControlKeyDown and IsControlKeyDown() then
                     C_Timer.After(0.1, function()
@@ -57,19 +64,19 @@ local function CopyBox(text, url)
                     end)
                 end
             end)
-            -- Typing over it would lose the link: whatever is typed, the link comes back.
-            box:SetScript("OnTextChanged", function(b, userInput)
-                if userInput then
-                    b:SetText(url())
-                    b:HighlightText()
-                end
-            end)
+        end,
+        -- Typing over it would lose the link: whatever is typed, the link comes back.
+        EditBoxOnTextChanged = function(box)
+            if box:GetText() ~= url() then
+                box:SetText(url())
+                box:HighlightText()
+            end
         end,
         OnHide = function(self)
             local box = EditBoxOf(self)
             if box then
-                box:SetScript("OnKeyDown", nil)
-                box:SetScript("OnTextChanged", nil)
+                box:SetScript("OnKeyDown", self.rocketKeyDown)
+                self.rocketKeyDown, self.rocketHooked = nil, nil
             end
         end,
         EditBoxOnEscapePressed = function(box) box:GetParent():Hide() end,
