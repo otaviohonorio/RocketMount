@@ -1386,13 +1386,19 @@ local ACENTOS = {
     ["ç"]="c", ["ñ"]="n",
 }
 
+-- (!) ONE PASS, AND REMEMBERED (14/10). "script ran too long" in this function, 186 times in two sessions:
+-- the end of the list's last slice rebuilt the rare index, which folds every creature's name, and the
+-- loop of 25 `gsub` per name used the frame's time up. Every accented letter here is two bytes starting
+-- with byte 195: one `gsub` with the table does them all (the same result on the 355 names of the tables,
+-- 15 times faster without the JIT), and a name folded once is not folded again.
+local dobrados = {}
 function ns.Fold(texto)
     if type(texto) ~= "string" then return "" end
-    texto = texto:lower()
-    for acentuado, simples in pairs(ACENTOS) do
-        texto = texto:gsub(acentuado, simples)
-    end
-    return texto
+    local feito = dobrados[texto]
+    if feito then return feito end
+    feito = (texto:lower():gsub("\195[\128-\191]", ACENTOS))
+    dobrados[texto] = feito
+    return feito
 end
 
 ---Tudo que dá para pesquisar numa montaria, junto e sem acento.

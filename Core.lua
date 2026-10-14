@@ -330,9 +330,15 @@ end
 function ns.MarkClean()
     dirty, urgent, builtAt = false, false, Clock()
     -- O índice de bichos vive da lista: refaz junto, e não a cada raro que aparece.
-    if ns.Sighting then ns.Sighting.Rebuild() end
-    -- And the map pins, which read that same index.
-    if ns.MapPins then ns.MapPins.Refresh() end
+    -- (!) ON THE NEXT FRAMES (14/10): this runs in the list's last slice, and the index and the map pins
+    -- done in that same frame went over the game's time limit ("script ran too long", Sources.lua's Fold).
+    -- The index takes the next frame and the pins the one after; until then the old index answers.
+    local function Pinos() if ns.MapPins then ns.MapPins.Refresh() end end
+    local function Indice()
+        if ns.Sighting then ns.Sighting.Rebuild() end
+        if C_Timer and C_Timer.After then C_Timer.After(0, Pinos) else Pinos() end
+    end
+    if C_Timer and C_Timer.After then C_Timer.After(0, Indice) else Indice() end
 end
 
 --------------------------------------------------------------------------------

@@ -9,3 +9,4 @@
 - When the routes of two rares meet on a map, they are drawn in different colours, and the marker's
   tooltip says which line is its own.
 - Beledar's Spawn now says when its event ends, not only when it starts, in your computer's time.
+- Fixed a "script ran too long" error that could appear when the list finished updating.
