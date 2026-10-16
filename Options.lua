@@ -183,7 +183,7 @@ function ns.SetupOptions()
             (Caixa("mapLabels", "MapLabels", L["Source names"],
                 L["Writes Rare, Vendor, Quest, Raid… under each marker. Unchecked, the small symbol on the marker still says it."])),
             (Caixa("mapButton", "MapButton", L["Map button"],
-                L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."])),
+                L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. Its menu hides every marker of Rocket Mount, for when you need the map clean, shows only the mounts you are missing, or the collected ones too, with a gold ring."])),
             (Caixa("minimapPins", "MinimapPins", L["On the minimap"],
                 L["Marks the places within the minimap's reach too, each with the symbol of what it is: a rare, a vendor, a treasure. Hover one for the same details as on the world map; click it to point the arrow there."])),
             (Caixa("mapRoutes", "MapRoutes", L["Rare routes"],

@@ -382,12 +382,9 @@ L["%s is the character you are playing: it would be recorded again right away."]
 L["takes a character that no longer exists out of the records"] = "tira dos registros um personagem que não existe mais"
 L["%s no longer exists"] = "%s não existe mais"
 L["The markers of the mounts you are missing are on the map."] = "As marcações das montarias que faltam estão no mapa."
-L["The markers of the mounts you are missing are hidden."] = "As marcações das montarias que faltam estão escondidas."
-L["Click: hide them"] = "Clique: esconder"
-L["Click: show them"] = "Clique: mostrar"
 L["Map button"] = "Botão no mapa"
-L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. One click hides every marker of Rocket Mount, for when you need the map clean; another brings them back."] =
-    "Um botão redondo com uma ferradura no mapa-múndi, na coluna dos botões do próprio mapa, no alto à direita. Um clique esconde todas as marcações do Rocket Mount, para quando você precisa do mapa limpo; outro traz de volta."
+L["A round button with a horseshoe on the world map, in the column of the map's own buttons at the top right. Its menu hides every marker of Rocket Mount, for when you need the map clean, shows only the mounts you are missing, or the collected ones too, with a gold ring."] =
+    "Um botão redondo com uma ferradura no mapa-múndi, na coluna dos botões do próprio mapa, no alto à direita. O menu dele esconde todas as marcações do Rocket Mount, para quando você precisa do mapa limpo, mostra só as montarias que faltam ou também as já coletadas, com um aro dourado."
 L['Quest "%s": %d of the %d quests that lead to it done'] = 'Missão "%s": %d das %d missões que levam a ela feitas'
 L['  ·  next: "%s"'] = '  ·  a próxima: "%s"'
 L["By difficulty, as players measured it:"] = "Por dificuldade, como os jogadores mediram:"
@@ -548,3 +545,11 @@ L["From the game's statistics of each character, so also from before the addon: 
     "Das estatísticas do jogo de cada personagem, então também de antes do addon: %s. Cada personagem entra na conta quando faz login com o addon."
 L["Counted by the addon since it was installed: the game keeps no count of these tries."] =
     "Contadas pelo addon desde que foi instalado: o jogo não guarda a contagem destas tentativas."
+-- (16/10) the map button's menu: what the map shows
+L["Hide all the markers"] = "Esconder todas as marcações"
+L["Only the mounts you are missing"] = "Só as montarias que faltam"
+L["The collected ones too"] = "Também as já coletadas"
+L["The markers of the mounts are hidden."] = "As marcações das montarias estão escondidas."
+L["On the map: the mounts you are missing, and the collected ones with a gold ring."] =
+    "No mapa: as montarias que faltam, e as já coletadas com o aro dourado."
+L["Click: choose what to show"] = "Clique: escolher o que mostrar"

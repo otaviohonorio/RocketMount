@@ -36,6 +36,17 @@
 					</Anchors>
 				</Texture>
 			</Layer>
+			<Layer level="ARTWORK" textureSubLevel="1">
+				<!-- (16/10) A place of collected mounts only, on request (the map button's menu): the game's
+				     gold ring over the disc's rim. Measured on the art: adventures-ring-gold is 36 of its 40 wide,
+				     the disc's rim 40 of its 64; drawn at 20 the ring is 18 across, over the rim's 17.5. -->
+				<Texture parentKey="Collected" atlas="adventures-ring-gold" hidden="true">
+					<Size x="20" y="20"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
 			<Layer level="ARTWORK">
 				<!-- Every icon of the game carries its own square frame in the outer 8%. A
 				     round mask touches the square at the middle of each side, so without the

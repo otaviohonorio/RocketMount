@@ -1,6 +1,14 @@
 -- RocketMount | MapButton.lua
 -- A button on the world map that hides and shows the markers of the mounts.
 --
+-- (!) A MENU OF THREE (16/10). The user: *"faz o icone ser clicavel aparecendo opcoes uma delas e
+-- esconder todas, outra e mostrar as ja coletadas e dai deixa com uma borda mais dourada para realcar
+-- que foi pega e a opcao padrao que vem marcada de mostrar apenas as nao coletadas"*. The click opens
+-- the game's menu (`MenuUtil`, as the Collection tab's filter) with three radios: hide every marker /
+-- only the mounts you are missing (the default) / the collected ones too, a collected place with the
+-- game's gold ring (MapPins.lua). The same two settings as before: `mapPins` (the master switch of the
+-- options panel) and `mapCollected`.
+--
 -- (!) THE USER (28/09): an icon to hide the mounts' markers, *"caso o jogador precise do mapa
 -- limpo"*. The button is the game's. It is built with the pieces and the measures of
 -- the game's own map buttons (`WorldMapTrackingPinButtonTemplate`, Blizzard_WorldMapTemplates.xml,
@@ -34,6 +42,39 @@ local button
 ---Whether the markers are on the map: the same switch the options panel has.
 function MapButton.On()
     return not (ns.db and ns.db.mapPins == false)
+end
+
+---What the map shows: "none", "missing" (the default) or "all" (the collected ones too).
+function MapButton.Mode()
+    if not MapButton.On() then return "none" end
+    return (ns.db and ns.db.mapCollected == true) and "all" or "missing"
+end
+
+function MapButton.SetMode(mode)
+    if not ns.db or MapButton.Mode() == mode then return end
+    ns.db.mapPins = mode ~= "none"
+    ns.db.mapCollected = mode == "all" or nil
+    if PlaySound and SOUNDKIT then
+        PlaySound(mode ~= "none" and SOUNDKIT.UI_MAP_WAYPOINT_BUTTON_CLICK_ON
+            or SOUNDKIT.UI_MAP_WAYPOINT_BUTTON_CLICK_OFF)
+    end
+    MapButton.Update()
+    if ns.MapPins then ns.MapPins.Refresh() end
+end
+
+MapButton.MODES = {
+    { "none", "Hide all the markers" },
+    { "missing", "Only the mounts you are missing" },
+    { "all", "The collected ones too" },
+}
+
+---The menu: the three ways of showing, the one in use marked.
+function MapButton.Menu(_, root)
+    root:CreateTitle("Rocket Mount")
+    for _, m in ipairs(MapButton.MODES) do
+        root:CreateRadio(L[m[2]], function() return MapButton.Mode() == m[1] end,
+            function() MapButton.SetMode(m[1]) end, m[1])
+    end
 end
 
 ---Whether the button itself is wanted.
@@ -101,10 +142,11 @@ end
 ---What the tooltip says: the title, what the map is showing, what the click does.
 ---@return string title, string line, string instruction
 function MapButton.TooltipText()
-    if MapButton.On() then
-        return "Rocket Mount", L["The markers of the mounts you are missing are on the map."], L["Click: hide them"]
-    end
-    return "Rocket Mount", L["The markers of the mounts you are missing are hidden."], L["Click: show them"]
+    local mode = MapButton.Mode()
+    local linha = mode == "none" and L["The markers of the mounts are hidden."]
+        or mode == "all" and L["On the map: the mounts you are missing, and the collected ones with a gold ring."]
+        or L["The markers of the mounts you are missing are on the map."]
+    return "Rocket Mount", linha, L["Click: choose what to show"]
 end
 
 function MapButton.Toggle()
@@ -157,8 +199,12 @@ local function Build()
         self.Icon:SetPoint("TOPLEFT", G.ICON_X, G.ICON_Y)
     end)
     b:SetScript("OnClick", function(self)
-        MapButton.Toggle()
-        if GameTooltip.IsOwned and GameTooltip:IsOwned(self) then Tooltip(self) end
+        GameTooltip:Hide()
+        if MenuUtil and MenuUtil.CreateContextMenu then
+            MenuUtil.CreateContextMenu(self, MapButton.Menu)
+        else
+            MapButton.Toggle()                    -- a client without the menu: the old switch
+        end
     end)
     b:SetScript("OnEnter", Tooltip)
     b:SetScript("OnLeave", function() GameTooltip:Hide() end)

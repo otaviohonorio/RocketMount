@@ -148,7 +148,9 @@ local function Ler()
     for _, d in ipairs(pinos) do
         -- The place's own map and coordinates (a cave's), the ones the arrow is pointed at.
         local instancia, n, w = NoMundo(d.homeMap or d.mapID, d.homeX or d.x, d.homeY or d.y)
-        if instancia then
+        -- (16/10) a place of collected mounts only is the world map's, on request: the minimap keeps
+        -- to the places with something still to get
+        if instancia and not (ns.MapPins.AllCollected and ns.MapPins.AllCollected(d)) then
             lugares[#lugares + 1] = { data = d, instance = instancia, n = n, w = w }
         end
     end

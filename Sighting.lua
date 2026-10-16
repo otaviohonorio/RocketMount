@@ -96,6 +96,7 @@ local function MountOfItem(item)
     if id then mountOfItem[item] = id end
     return id
 end
+Sighting.MountOfItem = MountOfItem             -- the map's collected markers (MapPins.lua) ask it too
 
 ---(!) THE WOWHEAD TABLE IS WHAT KNOWS WHO DROPS WHAT. Rootstalker Grimlynx is not Rhazul's alone:
 ---Wowhead records fifteen rares in Harandar dropping it. The table is keyed by npc id, read from

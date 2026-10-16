@@ -278,6 +278,9 @@ local function Ordenar(montarias)
     local peso = {}
     for _, m in ipairs(montarias) do peso[m] = Peso(m) end
     table.sort(montarias, function(a, b)
+        -- the ones still missing first: a collected one is said, not chased
+        local ca, cb = a.entry.collected and true or false, b.entry.collected and true or false
+        if ca ~= cb then return cb end
         if peso[a] ~= peso[b] then return peso[a] > peso[b] end
         return (a.entry.name or "") < (b.entry.name or "")
     end)
@@ -320,8 +323,61 @@ local function RotasDe(rec, mapID, px, py)
     return out
 end
 
+-- (!) THE COLLECTED ONES TOO, WHEN ASKED (16/10). The user: *"mostrar as ja coletadas e dai deixa com uma
+-- borda mais dourada para realcar que foi pega"* (the map button's menu, MapButton.lua). The list the map is
+-- built from has only the mounts still missing; the collected ones get an entry each the way the Collection
+-- tab's card gets one (`ns.BuildList(id)`), and only while the option is on. A mount that left the game is
+-- not drawn: its places are gone.
+function MapPins.ShowCollected()
+    return ns.db and ns.db.mapCollected == true and ns.db.mapPins ~= false
+end
+
+local function Coletadas()
+    local out = {}
+    if not (C_MountJournal and C_MountJournal.GetMountIDs and ns.BuildList) then return out end
+    for _, id in ipairs(C_MountJournal.GetMountIDs() or {}) do
+        local ok, _, _, _, _, _, _, _, _, _, _, isCollected = pcall(C_MountJournal.GetMountInfoByID, id)
+        if ok and isCollected then
+            local okB, lista = pcall(ns.BuildList, id)
+            local e = okB and type(lista) == "table" and lista[1] or nil
+            if e and not e.unobtainable then
+                e.collected = true
+                out[#out + 1] = e
+            end
+        end
+    end
+    return out
+end
+
+---Whether every mount of a marker is one the player has: the marker of a collected place.
+function MapPins.AllCollected(p)
+    if not (p and type(p.mounts) == "table" and #p.mounts > 0) then return false end
+    for _, m in ipairs(p.mounts) do
+        if not (m.entry and m.entry.collected) then return false end
+    end
+    return true
+end
+
 local function Construir()
     local idx = {}
+    local coletadas = MapPins.ShowCollected() and Coletadas() or {}
+    -- the creatures that drop a collected mount: the table's lines, as Sighting reads them for the missing
+    local porNpcColetada = {}
+    if #coletadas > 0 and type(ns.MobDrops) == "table" and ns.Sighting and ns.Sighting.MountOfItem then
+        local porMontaria = {}
+        for _, e in ipairs(coletadas) do porMontaria[e.mountID] = e end
+        for npc, rec in pairs(ns.MobDrops) do
+            for _, d in ipairs(type(rec) == "table" and rec or {}) do
+                local n = type(d) == "table" and tonumber(d.count)
+                local larga = (n and n > 0) or (type(d) == "table" and d.unknown == true)
+                local e = larga and d.item and porMontaria[ns.Sighting.MountOfItem(d.item)]
+                if e then
+                    porNpcColetada[npc] = porNpcColetada[npc] or {}
+                    table.insert(porNpcColetada[npc], { entry = e, drop = d })
+                end
+            end
+        end
+    end
     local function Lista(m)
         idx[m] = idx[m] or {}
         return idx[m]
@@ -334,6 +390,12 @@ local function Construir()
             -- in the world only while the calendar says the event is on (12/10).
             if rec.where and (rec.event == nil or (ns.EventOn and ns.EventOn(rec.event))) then
                 local montarias = ns.Sighting.MountsOf(npc)
+                if porNpcColetada[npc] then
+                    local copia = {}
+                    for _, m in ipairs(montarias) do copia[#copia + 1] = m end
+                    for _, m in ipairs(porNpcColetada[npc]) do copia[#copia + 1] = m end
+                    montarias = copia
+                end
                 if #montarias > 0 then
                     Ordenar(montarias)
                     for m, pontos in pairs(rec.where) do
@@ -398,7 +460,13 @@ local function Construir()
         if grupo == "vendor" and kind == "vendor" then lugar.kind = "vendor" end
     end
 
-    for _, e in ipairs(ranqueadas) do
+    local todas = ranqueadas
+    if #coletadas > 0 then
+        todas = {}
+        for _, e in ipairs(ranqueadas) do todas[#todas + 1] = e end
+        for _, e in ipairs(coletadas) do todas[#todas + 1] = e end
+    end
+    for _, e in ipairs(todas) do
         if not e.unobtainable then
             for _, wp in ipairs(e.coords or {}) do
                 if wp.m and wp.x and wp.y and not Gasto(wp) then
@@ -422,7 +490,7 @@ local function Construir()
     -- 3. THE INSTANCES: which mounts are behind each door. The door itself is not here -- the
     -- game says where it is, on the map being looked at (PinsFor).
     idx.instances = {}
-    for _, e in ipairs(ranqueadas) do
+    for _, e in ipairs(todas) do
         if not e.unobtainable and type(e.instanceID) == "number" and not e.worldBoss then
             local lista = idx.instances[e.instanceID] or {}
             idx.instances[e.instanceID] = lista
@@ -1396,6 +1464,8 @@ function RocketMountMapPinMixin:OnAcquired(data)
     local primeira = data.mounts and data.mounts[1]
     self.Icon:SetTexture(primeira and primeira.entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     self.Underlay:SetShown(kind.dragon and true or false)
+    -- a place of collected mounts only: the game's gold ring over the disc's rim (16/10)
+    self.Collected:SetShown(MapPins.AllCollected(data))
     self.Badge:SetAtlas(kind.atlas)
     MapPins.Crop(self.Badge, kind.crop)
     self.Badge:SetSize(kind.size, kind.size)
@@ -1616,7 +1686,13 @@ function MapPins.Tooltip(tooltip, data)
             numero = ns.RowPercentText and ns.RowPercentText(e) or "?"
         end
         local icone = e.icon and string.format("|T%s:%d:%d:0:0|t ", tostring(e.icon), TIP_ICON, TIP_ICON) or ""
-        tooltip:AddDoubleLine(icone .. e.name, numero, wr, wg, wb, gr, gg, gb)
+        if e.collected then
+            -- (16/10) a collected one, shown on request: said in the game's word and green, no chance
+            local vr, vg, vb = Cor("GREEN_FONT_COLOR", 0.1, 1, 0.1)
+            tooltip:AddDoubleLine(icone .. e.name, COLLECTED or L["Collected"], wr, wg, wb, vr, vg, vb)
+        else
+            tooltip:AddDoubleLine(icone .. e.name, numero, wr, wg, wb, gr, gg, gb)
+        end
         -- Why that number, when there is room to say it: what is asked, the price, the boss.
         -- (One mount alone gets the whole description instead, below.)
         if not criatura and total > 1 and total <= 3 then
