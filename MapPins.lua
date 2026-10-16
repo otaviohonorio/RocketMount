@@ -332,10 +332,17 @@ function MapPins.ShowCollected()
     return ns.db and ns.db.mapCollected == true and ns.db.mapPins ~= false
 end
 
-local function Coletadas()
+-- (!) IN SLICES (16/10): every collected mount's entry is hundreds of `BuildList` calls, and 0.31.0 had to
+-- slice the list itself for "script ran too long". Built the same way (`ns.SLICE_MS` a frame), once, and kept
+-- until a mount is learned (`MapPins.ForgetCollected`, from Core's NEW_MOUNT_ADDED); the map is drawn again
+-- when they are there. Built at once (the harness), they are used at once.
+local coletadasCache, coletadasBuilding
+
+local function ColetadasAgora(fatiar)
     local out = {}
     if not (C_MountJournal and C_MountJournal.GetMountIDs and ns.BuildList) then return out end
     for _, id in ipairs(C_MountJournal.GetMountIDs() or {}) do
+        if fatiar then fatiar() end
         local ok, _, _, _, _, _, _, _, _, _, _, isCollected = pcall(C_MountJournal.GetMountInfoByID, id)
         if ok and isCollected then
             local okB, lista = pcall(ns.BuildList, id)
@@ -347,6 +354,44 @@ local function Coletadas()
         end
     end
     return out
+end
+
+local function Coletadas()
+    if coletadasCache then return coletadasCache end
+    if coletadasBuilding then return {} end
+    if not (coroutine and debugprofilestop and C_Timer and C_Timer.After) then
+        coletadasCache = ColetadasAgora()
+        return coletadasCache
+    end
+    local t0
+    local co = coroutine.create(function()
+        return ColetadasAgora(function()
+            if debugprofilestop() - t0 >= (ns.SLICE_MS or 4) then coroutine.yield() end
+        end)
+    end)
+    coletadasBuilding = co
+    local primeiro = true
+    local function Passo()
+        if coletadasBuilding ~= co then return end
+        t0 = debugprofilestop()
+        local ok, lista = coroutine.resume(co)
+        if not ok or coroutine.status(co) == "dead" then
+            coletadasBuilding = nil
+            coletadasCache = ok and lista or {}
+            -- done in a later frame: the map drawn now had none of them
+            if not primeiro then MapPins.Refresh() end
+        else
+            C_Timer.After(0, Passo)
+        end
+        primeiro = false
+    end
+    Passo()
+    return coletadasCache or {}
+end
+
+---A mount learned: the collected ones are built again the next time they are shown.
+function MapPins.ForgetCollected()
+    coletadasCache, coletadasBuilding = nil, nil
 end
 
 ---Whether every mount of a marker is one the player has: the marker of a collected place.

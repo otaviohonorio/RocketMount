@@ -157,6 +157,7 @@ end
 
 function handlers:NEW_MOUNT_ADDED()
     ns.Invalidate()
+    if ns.MapPins and ns.MapPins.ForgetCollected then ns.MapPins.ForgetCollected() end
 end
 
 -- (!) THE LEDGER IS WRITTEN A LITTLE LATER, ONCE (02/10). Reputation moves at every kill, and
