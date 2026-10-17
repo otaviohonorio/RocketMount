@@ -868,6 +868,8 @@ function Sighting.RecordLoot()
             local rec = npc and ns.MobDrops[npc]
             if rec and not anotados[npc] then
                 anotados[npc] = true
+                local al = Sighting.Alerted and Sighting.Alerted()
+                if al and al.npc == npc then Sighting.ClearAlerted() end            -- looted: no more pulse
                 -- a looted creature of the drop table is a try at each mount it drops (13/10)
                 if ns.Attempts then ns.Attempts.Looted(npc) end
                 local rl = ns.RareLockout and ns.RareLockout[npc]
@@ -938,6 +940,57 @@ function Sighting.LockedOut(npc, pontos)
     return false
 end
 
+--------------------------------------------------------------------------------
+-- (!) THE RARE OF THE ALERT, MARKED ON THE MAPS (17/10). The user: *"tem como fazer algum tipo de animação no
+-- ícone do raro encontrado? pq aparece o alerta, mas quando abro o raro pode ter outros na volta e dai fico
+-- confuso pra saber qual é o que alertou"*. The alerted creature's marker, on the world map and the minimap,
+-- plays the game's own map ping (`MapPinPingTemplate`, SharedMapPoiTemplates.xml: the minimap's
+-- `UI-Minimap-Ping-Expand` growing and fading) for ALERTED_FOR seconds, or until its loot is taken.
+--------------------------------------------------------------------------------
+local ALERTED_FOR = 300
+Sighting.ALERTED_FOR = ALERTED_FOR
+local alerted
+
+local function PulsesChanged()
+    if ns.MapPins and ns.MapPins.UpdatePulses then pcall(ns.MapPins.UpdatePulses) end
+    if ns.MinimapPins and ns.MinimapPins.UpdatePulses then pcall(ns.MinimapPins.UpdatePulses) end
+end
+
+---The rare of the last alert while it is still marked: `{ npc, name, at }`, or nil.
+function Sighting.Alerted()
+    if alerted and GetTime and GetTime() - alerted.at < ALERTED_FOR then return alerted end
+    return nil
+end
+
+---Marks a creature as the one alerted (the maps pulse its marker).
+function Sighting.MarkAlerted(npc, nome)
+    local agora = GetTime and GetTime() or 0
+    alerted = { npc = npc, name = nome, at = agora }
+    PulsesChanged()
+    -- past the time the maps are told again; `Alerted` itself reads the clock, so nothing here has to clear it
+    if C_Timer and C_Timer.After then C_Timer.After(ALERTED_FOR + 1, PulsesChanged) end
+end
+
+function Sighting.ClearAlerted()
+    if alerted then alerted = nil; PulsesChanged() end
+end
+
+---True when a map marker is the alerted creature's: by its npc (a merged marker by any of its parts), by
+---its name when the alert had no npc.
+function Sighting.IsAlerted(data)
+    local a = Sighting.Alerted()
+    if not (a and data) then return false end
+    local function Is(d)
+        if a.npc then return d.npc == a.npc end
+        return a.name ~= nil and (d.name == a.name or d.rec and d.rec.name == a.name)
+    end
+    if Is(data) then return true end
+    for _, p in ipairs(data.parts or {}) do
+        if Is(p) then return true end
+    end
+    return false
+end
+
 ---@return boolean announced, string|nil reason, number|nil secondsAgo
 local function Announce(chave, nome, pontos, onde, npc)
     if not ns.db or ns.db.sightings == false then return false, "off" end
@@ -965,6 +1018,7 @@ local function Announce(chave, nome, pontos, onde, npc)
         if pts and pts[1] and pts[2] then alvo = { m = mapa, x = pts[1], y = pts[2] } end
     end
     Show(nome, montarias, frequencia, npc, alvo)
+    Sighting.MarkAlerted(npc, nome)
 
     -- The chat line names up to three; the alert's tooltip has them all.
     local partes = {}

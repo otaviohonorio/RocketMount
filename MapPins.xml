@@ -20,6 +20,17 @@
 	<Frame name="RocketMountMapPinTemplate" mixin="RocketMountMapPinMixin" enableMouse="true" virtual="true">
 		<Size x="18" y="18"/>
 		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="-2">
+				<!-- (17/10) The rare of the alert: the game's own map ping (MapPinPingTemplate,
+				     SharedMapPoiTemplates.xml), the minimap's ping ring growing and fading, under the disc.
+				     The game draws it at 50 for a 70 frame around a quest marker; here 40 around a 28 disc. -->
+				<Texture parentKey="Ping" file="Interface/minimap/UI-Minimap-Ping-Expand" alphaMode="ADD" hidden="true">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
 			<Layer level="BACKGROUND" textureSubLevel="-1">
 				<Texture parentKey="Underlay" atlas="worldquest-questmarker-dragon" hidden="true">
 					<Size x="28" y="28"/>
@@ -93,5 +104,13 @@
 				</Texture>
 			</Layer>
 		</Layers>
+		<Animations>
+			<!-- the game's ping grows from half to 1.2 in 0.575 s, again and again; here it also fades as it
+			     grows, so the ring reads as a wave going out of the marker -->
+			<AnimationGroup parentKey="PingAnim" looping="REPEAT">
+				<Scale childKey="Ping" fromScaleX="0.5" fromScaleY="0.5" toScaleX="1.2" toScaleY="1.2" duration="1.1" order="1"/>
+				<Alpha childKey="Ping" fromAlpha="1" toAlpha="0" duration="1.1" order="1"/>
+			</AnimationGroup>
+		</Animations>
 	</Frame>
 </Ui>

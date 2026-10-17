@@ -1527,6 +1527,29 @@ function RocketMountMapPinMixin:OnAcquired(data)
     self.Underlay:SetDesaturated(preso)
     self.Badge:SetDesaturated(preso)
     self:SetAlpha(preso and 0.5 or 1)
+    self:UpdatePulse()
+end
+
+---(17/10) The rare of the alert pulses (Sighting.MarkAlerted): the game's map ping, until it is looted or
+---Sighting.ALERTED_FOR has passed.
+function RocketMountMapPinMixin:UpdatePulse()
+    local on = ns.Sighting and ns.Sighting.IsAlerted and ns.Sighting.IsAlerted(self.data) or false
+    self.Ping:SetShown(on)
+    if on then
+        if not self.PingAnim:IsPlaying() then self.PingAnim:Play() end
+    else
+        self.PingAnim:Stop()
+    end
+end
+
+---Our markers on the open world map, each told again whether it pulses. Only ours, enumerated: the map is
+---never redrawn by the addon (02/10: a redraw from addon code tainted the game's own pins).
+function MapPins.UpdatePulses()
+    local mapa = WorldMapFrame
+    if not (mapa and mapa.EnumeratePinsByTemplate) then return end
+    for pin in mapa:EnumeratePinsByTemplate("RocketMountMapPinTemplate") do
+        if pin.UpdatePulse then pin:UpdatePulse() end
+    end
 end
 
 local function Horas(segundos)

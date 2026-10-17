@@ -168,6 +168,25 @@ local function Criar()
     end
     f.Art = f:CreateTexture(nil, "OVERLAY")
     f.Art:SetAllPoints(f)
+    -- (17/10) the rare of the alert: the game's minimap ping ring, growing and fading under the marker
+    -- (the world map's marker plays the same, MapPins.xml)
+    f.Ping = f:CreateTexture(nil, "ARTWORK")
+    f.Ping:SetTexture("Interface/minimap/UI-Minimap-Ping-Expand")
+    f.Ping:SetBlendMode("ADD")
+    f.Ping:SetPoint("CENTER")
+    f.Ping:Hide()
+    f.PingAnim = f:CreateAnimationGroup()
+    f.PingAnim:SetLooping("REPEAT")
+    local grow = f.PingAnim:CreateAnimation("Scale")
+    grow:SetTarget(f.Ping)
+    grow:SetScaleFrom(0.5, 0.5)
+    grow:SetScaleTo(1.2, 1.2)
+    grow:SetDuration(1.1)
+    local fade = f.PingAnim:CreateAnimation("Alpha")
+    fade:SetTarget(f.Ping)
+    fade:SetFromAlpha(1)
+    fade:SetToAlpha(0)
+    fade:SetDuration(1.1)
     f:EnableMouse(true)
     f:SetScript("OnEnter", function(self)
         if not (self.data and GameTooltip and ns.MapPins) then return end
@@ -264,6 +283,7 @@ function MinimapPins.Update(forcar)
                     pool[i] = f
                 end
                 Vestir(f, l.data)
+                MinimapPins.Pulse(f)
                 f:ClearAllPoints()
                 f:SetPoint("CENTER", Minimap, "CENTER", dx * largura / 2, dy * altura / 2)
                 f:Show()
@@ -278,6 +298,26 @@ function MinimapPins.Update(forcar)
     for k = #novos, i + 1, -1 do novos[k] = nil end
     desenhados = novos
     return desenhados
+end
+
+---(17/10) A marker pulses while it is the rare of the alert (Sighting.MarkAlerted).
+function MinimapPins.Pulse(f)
+    local on = f.data and ns.Sighting and ns.Sighting.IsAlerted and ns.Sighting.IsAlerted(f.data) or false
+    local lado = f.lado or MinimapPins.Size()
+    f.Ping:SetSize(lado * 2.2, lado * 2.2)
+    f.Ping:SetShown(on)
+    if on then
+        if not f.PingAnim:IsPlaying() then f.PingAnim:Play() end
+    else
+        f.PingAnim:Stop()
+    end
+end
+
+---The markers on the minimap now, each told again whether it pulses.
+function MinimapPins.UpdatePulses()
+    for i = 1, usados do
+        if pool[i] then MinimapPins.Pulse(pool[i]) end
+    end
 end
 
 ---What is on the minimap now: `{ { data, x, y }, ... }`, in pixels from its centre.
