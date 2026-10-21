@@ -333,6 +333,12 @@ commands["log"] = function(rest)
     end
 end
 
+-- (21/10) the achievement-style alert of a new mount, shown now with a mount the player has
+commands["toast"] = function()
+    local id = ns.Toast and ns.Toast.AnyCollected()
+    if not (id and ns.Toast.Show(id, true)) then ns.Print(L["no mount to show the alert with."]) end
+end
+
 commands["help"] = function()
     ns.Print(L["commands:"])
     print("    |cffffff00/rmt|r                  " .. L["opens and closes the list"])
@@ -353,6 +359,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt debug|r            " .. L["what the addon managed to read"])
     print("    |cffffff00/rmt debug <name>|r     " .. L["everything it knows about one mount"])
     print("    |cffffff00/rmt pins|r             " .. L["what the world map drew, and what failed"])
+    print("    |cffffff00/rmt toast|r            " .. L["shows the alert of a new mount, to see how it looks"])
     if ns.Log.enabled then
         print("    |cffffff00/rmt log [on||off||clear]|r " .. L["the development log"])
     end
@@ -372,6 +379,7 @@ local ALIASES = {
     fontes = "sources",
     ajuda = "help",
     marcadores = "pins",
+    conquista = "toast",
 }
 
 SLASH_ROCKETMOUNT1 = "/rmt"

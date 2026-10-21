@@ -331,6 +331,13 @@ L["The button opens the list with a click and the options with a right-click. It
     .. "próxima montaria da fila."
 
 L["Rare alert"] = "Aviso de raro"
+-- (21/10) the achievement-style alert when a mount is learned (Toast.lua)
+L["Mount achievement"] = "Conquista de montaria"
+L["When you learn a mount, an alert like the game's achievement one shows its name and icon. It is the addon's, not a real achievement."] =
+    "Ao aprender uma montaria, um aviso igual ao de conquista do jogo mostra o nome e o ícone dela. É do addon, não é uma conquista de verdade."
+L["Click: close"] = "Clique: fechar"
+L["shows the alert of a new mount, to see how it looks"] = "mostra o aviso de montaria nova, para ver como fica"
+L["no mount to show the alert with."] = "nenhuma montaria para mostrar o aviso."
 L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."] =
     "Raro, elite ou chefe do mundo que larga montaria que você não tem: o aviso diz quem é, "
     .. "a montaria e a chance. Só no mundo aberto, e em silêncio depois que você saqueou."

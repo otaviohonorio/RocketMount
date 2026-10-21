@@ -65,6 +65,16 @@ function ns.SetupOptions()
             L["The button opens the list with a click and the options with a right-click. Its tooltip already shows the next mount in line."])
     end
 
+    -- (21/10) the achievement-style alert when a mount comes (Toast.lua)
+    do
+        local setting = Settings.RegisterProxySetting(category, ADDON .. "MountToast",
+            Settings.VarType.Boolean, L["Mount achievement"], true,
+            function() return ns.db.mountToast ~= false end,
+            function(value) ns.db.mountToast = value end)
+        Settings.CreateCheckbox(category, setting,
+            L["When you learn a mount, an alert like the game's achievement one shows its name and icon. It is the addon's, not a real achievement."])
+    end
+
     do
         local name = L["Rare alert"]
         local variable = ADDON .. "Sightings"

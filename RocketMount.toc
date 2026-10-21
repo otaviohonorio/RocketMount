@@ -51,6 +51,7 @@ Collection.lua
 Window.lua
 Sighting.lua
 Attempts.lua
+Toast.lua
 MapPins.lua
 MinimapPins.lua
 MapButton.lua

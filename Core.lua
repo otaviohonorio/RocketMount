@@ -45,6 +45,8 @@ ns.defaults = {
     -- O aviso de bicho que larga montaria. Ligado por padrão, com caixa para desligar: o
     -- usuário foi explícito que nem todo mundo quer receber.
     sightings = true,
+    -- (21/10) the achievement-style alert when a mount is learned (Toast.lua)
+    mountToast = true,
     -- The alert's sound (01/10): on, the chime, at the middle level of five ("leve").
     sightingSound = true,
     sightingSoundKey = "chime",
