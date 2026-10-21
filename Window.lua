@@ -1614,6 +1614,14 @@ function ns.UpdateHeaders()
         if n > 0 then nome = nome .. string.format(" (%d)", n) end
         h.text:SetText(nome)
         h.arrow:SetShown(by == chave)
+        -- (21/10) A RIGHT-ALIGNED TITLE KEEPS ITS ARROW BY THE WORD, not at the column's left edge:
+        -- the "%" arrow and its "?" sat on "Attempts" when that column came in beside it.
+        if h.justify == "RIGHT" then
+            local ok, sw = pcall(h.text.GetStringWidth, h.text)
+            sw = ok and tonumber(sw) or 0
+            h.arrow:ClearAllPoints()
+            h.arrow:SetPoint("RIGHT", h, "RIGHT", -(math.min(sw, h.w) + 2), 0)
+        end
     end
     if headers.pct then headers.pct.arrow:SetShown(true) end   -- the number always orders, at least second
 end
@@ -1663,6 +1671,7 @@ local function Header(host, chave, label, x, w, onClick, justify)
     h:SetSize(w, HEADER_H - 4)
     h:SetPoint("TOPLEFT", host, "TOPLEFT", 3 + ROW_PAD + x, -SEARCH_H)
     h.label = label
+    h.justify, h.w = justify, w
     h.text = Text(h, "GameFontNormalSmall", justify or "LEFT")
     h.text:SetAllPoints()
     -- The game's own sort arrow (guild roster, who list).
@@ -1686,7 +1695,8 @@ end
 local function PctHelp(host, pctHeader)
     local ajuda = CreateFrame("Button", nil, host)
     ajuda:SetSize(16, 16)
-    ajuda:SetPoint("RIGHT", pctHeader, "LEFT", -14, 0)
+    -- beside the sort arrow, which sits by the "%" itself (UpdateHeaders)
+    ajuda:SetPoint("RIGHT", pctHeader.arrow, "LEFT", -4, 0)
     ajuda.tex = ajuda:CreateTexture(nil, "ARTWORK")
     ajuda.tex:SetAllPoints()
     ajuda.tex:SetTexture("Interface\\Common\\help-i")
@@ -2004,7 +2014,7 @@ local function Build()
         function() ns.db.sortBy = "attempts"; ns.RefreshWindow() end, "RIGHT")
     local pctHeader = Header(host, "pct", "%", PCT_X, PCT_W,
         function() ns.db.sortBy = "pct"; ns.RefreshWindow() end, "RIGHT")
-    window.pctHelp = PctHelp(host, pctHeader.text)
+    window.pctHelp = PctHelp(host, pctHeader)
     window.headers = headers
 
     list = CreateFrame("Frame", nil, host, "WowScrollBoxList")
