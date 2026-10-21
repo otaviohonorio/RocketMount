@@ -907,6 +907,23 @@ function Sighting.MountsOf(npc)
     return PorMontaria(byNpc[npc] or {})
 end
 
+---(21/10) Every mount a creature of the drop table gives, as a set -- the ones whose tries the
+---addon counts on loot (Attempts.Looted). Kept until the index is rebuilt: the list asks per row.
+local counted, countedFor
+function Sighting.CountedMounts()
+    if ns.NeedsRebuild and ns.NeedsRebuild() and ns.GetRanked then pcall(ns.GetRanked) end
+    if not byNpc then Sighting.Rebuild() end
+    if countedFor ~= byNpc then
+        counted, countedFor = {}, byNpc
+        for _, pontos in pairs(byNpc or {}) do
+            for _, p in ipairs(pontos) do
+                if p.entry and p.entry.mountID then counted[p.entry.mountID] = true end
+            end
+        end
+    end
+    return counted
+end
+
 ---@return boolean locked, string|nil source ("dq:<quest>" or "loot"), number|nil secondsLeft
 function Sighting.LockedOut(npc, pontos)
     -- THE RARE'S OWN QUEST, when known: the game answers, for any frequency. Not done means the

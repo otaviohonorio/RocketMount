@@ -864,10 +864,16 @@ function ns.SortForWindow(list, by)
             tag = TAG_RANK[tags[1] or ""] or 99,
             exp = -(e.expansion or -1),
             name = e.name or "",
+            -- (21/10) the Attempts column: the counted ones first, the most tried on top
+            att = by == "attempts" and ns.Attempts and ns.Attempts.Number(e.mountID) or nil,
         }
     end
     table.sort(list, function(a, b)
         local ka, kb = key[a], key[b]
+        if by == "attempts" then
+            if (ka.att == nil) ~= (kb.att == nil) then return ka.att ~= nil end
+            if ka.att and kb.att and ka.att ~= kb.att then return ka.att > kb.att end
+        end
         if by == "tag" and ka.tag ~= kb.tag then return ka.tag < kb.tag end
         if by == "expansion" and ka.exp ~= kb.exp then return ka.exp < kb.exp end
         if by == "name" and ka.name ~= kb.name then return ka.name < kb.name end

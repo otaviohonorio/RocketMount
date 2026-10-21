@@ -541,6 +541,8 @@ L["Got on attempt %d"] = "Conseguida na %dª tentativa"
 L["1 attempt so far"] = "1 tentativa até agora"
 L["%d attempts so far"] = "%d tentativas até agora"
 L["By character: %s"] = "Por personagem: %s"
+-- (21/10) the list's Attempts column, over a mount counted and not tried yet
+L["None yet"] = "Nenhuma ainda"
 L["From the game's statistics of each character, so also from before the addon: %s. A character counts once it logs in with the addon."] =
     "Das estatísticas do jogo de cada personagem, então também de antes do addon: %s. Cada personagem entra na conta quando faz login com o addon."
 L["Counted by the addon since it was installed: the game keeps no count of these tries."] =

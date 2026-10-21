@@ -46,7 +46,9 @@ local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (Roc
 -- expansion, *"alarga a tela para incluir mais estes elementos na linha e pode engrossar um
 -- pouco a linha"*. 460 -> 660 buys the Type and Expansion columns; the card keeps its 360.
 -- 660 -> 840 (25/09): *"um pouco mais larga (...) para o conteudo de cada coluna caber melhor"*.
-local LIST_W = 840
+-- 840 -> 910 (21/10): the Attempts column (60 and its gap), so no other column gives up width;
+-- the window is 1314, inside the 1325 a 16:9 screen at scale 1 leaves.
+local LIST_W = 910
 local SEARCH_H = 36
 local HEADER_H = 26
 local SEARCH_ROW = SEARCH_H + HEADER_H   -- where the scroll box starts inside the inset
@@ -90,6 +92,11 @@ local PCT_X = ROW_W - PCT_INSET - PCT_W
 -- name gave 24 and the expansion 6 for it.
 local PIN_W = 22
 local PIN_X = EXP_X + EXP_W + COL_GAP
+-- (21/10) THE ATTEMPTS COLUMN, beside the number it goes with (a drop's chance). The user: *"o
+-- numero de tentativas podia virar colunas para os que é possível contar mesmo lendo a API ou
+-- contando desde o addon instalado"*. 60: "Tentativas" is 50 in the header's font (frizqt, 10).
+local ATT_W = 60
+local ATT_X = PIN_X + PIN_W + COL_GAP
 
 ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
@@ -101,7 +108,7 @@ ns.Geometry = {
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
         { name = "exp", x = EXP_X, w = EXP_W }, { name = "pin", x = PIN_X, w = PIN_W },
-        { name = "pct", x = PCT_X, w = PCT_W },
+        { name = "att", x = ATT_X, w = ATT_W }, { name = "pct", x = PCT_X, w = PCT_W },
     },
 }
 
@@ -1226,6 +1233,32 @@ local function BuildRow(row)
     row.headline:SetPoint("RIGHT", -PCT_INSET, 0)
     row.headline:SetWidth(PCT_W)
 
+    -- THE ATTEMPTS (21/10): the account's tries so far, only for a mount the addon counts (the
+    -- game's statistics or its own count since installed); blank for the rest. Over it, the same
+    -- words the card has: each character's share and how the count is made. A click on it is a
+    -- click on the row.
+    row.att = CreateFrame("Button", nil, row)
+    row.att:SetSize(ATT_W, ROW_H - 16)
+    row.att:SetPoint("LEFT", ATT_X, 0)
+    row.att.text = Text(row.att, "GameFontHighlight", "RIGHT")
+    row.att.text:SetAllPoints()
+    row.att:SetScript("OnClick", function(self)
+        local r = self:GetParent()
+        local click = r:GetScript("OnClick")
+        if click then click(r) end
+    end)
+    row.att:SetScript("OnEnter", function(self)
+        local e = self:GetParent().entry
+        local id = e and e.mountID
+        if not (id and ns.Attempts and ns.Attempts.Countable(id)) then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip_SetTitle(GameTooltip, L["Attempts"])
+        GameTooltip_AddHighlightLine(GameTooltip, ns.Attempts.Text(id) or L["None yet"], true)
+        GameTooltip_AddNormalLine(GameTooltip, ns.Attempts.Source(id), true)
+        GameTooltip:Show()
+    end)
+    row.att:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- THE MAP PIN (02/10): the game's own waypoint diamond. One click marks where the mount is
     -- (the map is the player's to open: see `ns.GoToPlace`); a row with no known place has no pin.
     row.pin = CreateFrame("Button", nil, row)
@@ -1361,6 +1394,9 @@ local function FillRow(row, data)
     else
         row.headline:SetTextColor(1, 1, 1)
     end
+    local tries = ns.Attempts and ns.Attempts.Number(e.mountID)
+    row.att.text:SetText(tries and BreakUpLargeNumbers(tries) or "")
+    row.att:SetShown(tries ~= nil)
     row.selectedTexture:SetShown(Same(e, selected))
     local temLugar = ns.MountPlace(e) ~= nil
     row.pin:SetShown(temLugar)
@@ -1964,6 +2000,8 @@ local function Build()
         function() ns.db.sortBy = "name"; ns.RefreshWindow() end)
     Header(host, "tag", L["Type"], TAG_X, TAG_W, TagMenu)
     Header(host, "expansion", L["Expansion"], EXP_X, EXP_W, ExpMenu)
+    Header(host, "attempts", L["Attempts"], ATT_X, ATT_W,
+        function() ns.db.sortBy = "attempts"; ns.RefreshWindow() end, "RIGHT")
     local pctHeader = Header(host, "pct", "%", PCT_X, PCT_W,
         function() ns.db.sortBy = "pct"; ns.RefreshWindow() end, "RIGHT")
     window.pctHelp = PctHelp(host, pctHeader.text)

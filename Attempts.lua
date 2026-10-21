@@ -110,6 +110,32 @@ function Attempts.Of(mountID)
     return book and book[mountID]
 end
 
+---(21/10) Does the addon count the tries at this mount? A boss of the Adventure Guide with its
+---encounter id (ENCOUNTER_END), a creature of the drop table (its loot), or a count already made.
+---The list's Attempts column shows a number only for these; the rest stay blank.
+function Attempts.Countable(mountID)
+    if not mountID then return false end
+    local r = Attempts.Of(mountID)
+    if r and (r.n or 0) > 0 then return true end
+    local b = type(ns.MountBosses) == "table" and ns.MountBosses[mountID]
+    for _, boss in ipairs(b and b.bosses or {}) do
+        if type(boss[3]) == "number" and boss[3] > 0 then return true end
+    end
+    if ns.Sighting and ns.Sighting.CountedMounts then
+        local ok, set = pcall(ns.Sighting.CountedMounts)
+        if ok and type(set) == "table" and set[mountID] then return true end
+    end
+    return false
+end
+
+---The number for the list: the account's tries so far (0 when counted and none yet), nil when the
+---addon does not count this mount.
+function Attempts.Number(mountID)
+    if not Attempts.Countable(mountID) then return nil end
+    local r = Attempts.Of(mountID)
+    return r and r.n or 0
+end
+
 ---"372 attempts so far" / "Got on attempt 372", and under it, with more than one character, each
 ---one's share: "By character: Eldriss 210, Ezra 162" (13/10, the user: *"x tentativas nas que não
 ---dropou e pega com x tentativas as que já pegou (...) com o texto melhorado"*).
