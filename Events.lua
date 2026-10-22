@@ -148,16 +148,102 @@ function Events.Why(e, wait, claimed)
     return nil
 end
 
----The chat line for an event `wait` seconds away.
+-- (22/10) WHAT THE EVENT CAN GIVE, AND HOW OFTEN. The user: *"e no aviso mostra o percental de chance e se é diario,
+-- semanal, se pode repetir e etc"* and *"e quais montarias podem dar também"*. Per mount the player lacks: the chance
+-- (a drop: our data, the same `ns.FormatChance` as the list), the price and what the player holds (a currency: our
+-- price table and the game's count), or the renown it asks and the one reached (renown: the game's). Then how often the
+-- event gives it: once a week, once a day, or again at every event.
+
+---How often the event gives what leads to its mounts, as the line says it, or nil when not known.
+function Events.RewardText(e)
+    local f = e.reward
+    if not f and e.npc and ns.Sighting and ns.Sighting.LootFrequency then f = ns.Sighting.LootFrequency(e.npc) end
+    if f == "weekly" then return L["once a week"] end
+    if f == "daily" then return L["once a day"] end
+    if f == "repeat" or f == "unlimited" then return L["again at every event"] end
+    return nil
+end
+
+---The chance of a dropped mount: `{ count, outof, itemID }` from our tables (the chest of MountPlaces, a rare's loot).
+local function Drop(e, id)
+    local T = ns.MountPlaces
+    local m = type(T) == "table" and type(T.mount) == "table" and T.mount[id]
+    local box = type(m) == "table" and m.box
+    if type(box) == "table" and box.count and box.outof then return box.count, box.outof, box.kind == "item" and box.id end
+    local rec = e.npc and type(ns.MobDrops) == "table" and ns.MobDrops[e.npc]
+    local item = type(ns.MountItems) == "table" and ns.MountItems[id]
+    for _, d in ipairs(type(rec) == "table" and rec or {}) do
+        if type(d) == "table" and d.item == item and d.count and d.outof then return d.count, d.outof end
+    end
+    return nil
+end
+
+---What one mount of the event takes: "3.8% per <chest>", "3,000 Paracausal Flakes, you have 1,250", "renown 18,
+---you are at 12" -- or nil when nothing is known.
+function Events.MountDetail(e, id)
+    if e.how == "drop" then
+        local count, outof, item = Drop(e, id)
+        local chance = count and count > 0 and ns.FormatChance and ns.FormatChance(outof / count, count < 10)
+        if not chance then return nil end
+        local nome = item and C_Item and C_Item.GetItemNameByID and select(2, pcall(C_Item.GetItemNameByID, item))
+        return type(nome) == "string" and string.format(L["%s per %s"], chance, nome) or chance
+    elseif e.how == "currency" then
+        local lista = ns.OwnCost and ns.OwnCost(id)
+        for _, c in ipairs(lista and lista[1] or {}) do
+            if c.type == "currency" and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
+                local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, c.id)
+                if ok and type(info) == "table" and info.name then
+                    local num = BreakUpLargeNumbers or tostring
+                    return string.format(L["%s %s, you have %s"], num(c.amount), info.name, num(info.quantity or 0))
+                end
+            end
+        end
+    elseif e.how == "renown" then
+        local rep = type(ns.MountReputation) == "table" and ns.MountReputation[id]
+        if type(rep) == "table" and rep.level then
+            local tenho = C_MajorFactions and C_MajorFactions.GetMajorFactionRenownInfo
+                and select(2, pcall(C_MajorFactions.GetMajorFactionRenownInfo, rep.factionId))
+            local nivel = type(tenho) == "table" and tenho.renownLevel
+            return type(nivel) == "number" and string.format(L["renown %d, you are at %d"], rep.level, nivel)
+                or string.format(L["renown %d"], rep.level)
+        end
+    end
+    return nil
+end
+
+local SHOWN = 3      -- mounts named on the line; the rest counted
+
+---The chat line for an event `wait` seconds away: when, where, each mount it can give that the player lacks with
+---what it takes, and how often.
 function Events.Line(e, wait)
-    local nomes = {}
-    for _, m in ipairs(Events.Missing(e)) do nomes[#nomes + 1] = m.name end
+    local faltam = Events.Missing(e)
+    local partes = {}
+    -- the same detail for every mount (one price, one renown): said once, after the names
+    local detalhes, iguais = {}, true
+    for i, m in ipairs(faltam) do
+        detalhes[i] = Events.MountDetail(e, m.id)
+        if detalhes[i] ~= detalhes[1] then iguais = false end
+    end
+    for i, m in ipairs(faltam) do
+        if i > SHOWN then
+            partes[#partes + 1] = string.format(L["and %d more"], #faltam - SHOWN)
+            break
+        end
+        partes[i] = (detalhes[i] and not (iguais and #faltam > 1)) and string.format("%s (%s)", m.name, detalhes[i]) or m.name
+    end
+    local montarias = table.concat(partes, ", ")
+    if iguais and #faltam > 1 and detalhes[1] then montarias = montarias .. " — " .. string.format(L["%s each"], detalhes[1]) end
+    local tem = #(e.mounts or {}) - #faltam
     local hora = select(2, pcall(date, "%H:%M", time() + wait))
     local onde = Events.Zone(e)
     local quando = type(hora) == "string" and (onde and string.format("%s, %s", hora, onde) or hora) or onde
     local texto = string.format(L["|cffffff00%s|r starts in %s"], L[e.name], Minutos(wait))
     if quando then texto = texto .. " (" .. quando .. ")" end
-    return texto .. "  ·  " .. string.format(L["mounts you lack: %s"], table.concat(nomes, ", "))
+    texto = texto .. "  ·  " .. string.format(L["can give: %s"], montarias)
+    if tem > 0 then texto = texto .. " " .. string.format(L["(you have %d of %d)"], tem, #e.mounts) end
+    local vez = Events.RewardText(e)
+    if vez then texto = texto .. "  ·  " .. vez end
+    return texto
 end
 
 function Events.Tick()
@@ -193,6 +279,17 @@ function Events.Report()
         local estado = ({ off = L["turned off"], ["no-missing-mount"] = L["you have its mounts"],
                           claimed = L["reward taken this week"], ["no-clock"] = L["no known start"] })[porque] or L["will alert"]
         print(string.format("    %s: %s  ·  %s", L[e.name], wait and string.format(L["in %s"], Minutos(wait)) or "-", estado))
+        -- every mount the event can give, the ones this character has marked, each with what it takes
+        local nomes = {}
+        for _, id in ipairs(e.mounts or {}) do
+            local ok, nome, _, _, _, _, _, _, _, _, _, tem = pcall(C_MountJournal and C_MountJournal.GetMountInfoByID or error, id)
+            if ok and type(nome) == "string" then
+                local d = not tem and Events.MountDetail(e, id)
+                nomes[#nomes + 1] = tem and string.format(L["%s (you have it)"], nome) or (d and string.format("%s (%s)", nome, d) or nome)
+            end
+        end
+        local vez = Events.RewardText(e)
+        print("        " .. string.format(L["can give: %s"], table.concat(nomes, ", ")) .. (vez and ("  ·  " .. vez) or ""))
     end
 end
 
