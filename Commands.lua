@@ -333,6 +333,11 @@ commands["log"] = function(rest)
     end
 end
 
+-- (22/10) the events that lead to a mount: when each starts and whether it alerts (Events.lua)
+commands["events"] = function()
+    if ns.Events then ns.Events.Report() end
+end
+
 -- (21/10) the achievement-style alert of a new mount, shown now with a mount the player has
 commands["toast"] = function()
     local id = ns.Toast and ns.Toast.AnyCollected()
@@ -360,6 +365,7 @@ commands["help"] = function()
     print("    |cffffff00/rmt debug <name>|r     " .. L["everything it knows about one mount"])
     print("    |cffffff00/rmt pins|r             " .. L["what the world map drew, and what failed"])
     print("    |cffffff00/rmt toast|r            " .. L["shows the alert of a new mount, to see how it looks"])
+    print("    |cffffff00/rmt events|r           " .. L["the events with a mount, when they start and whether they alert"])
     if ns.Log.enabled then
         print("    |cffffff00/rmt log [on||off||clear]|r " .. L["the development log"])
     end
@@ -380,6 +386,7 @@ local ALIASES = {
     ajuda = "help",
     marcadores = "pins",
     conquista = "toast",
+    eventos = "events",
 }
 
 SLASH_ROCKETMOUNT1 = "/rmt"

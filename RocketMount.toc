@@ -34,6 +34,7 @@ Data\MountExpansion.lua
 Data\MountChances.lua
 Data\MountGone.lua
 Data\RareTimers.lua
+Data\MountEvents.lua
 Core.lua
 Donate.lua
 #@debug@
@@ -50,6 +51,7 @@ Score.lua
 Collection.lua
 Window.lua
 Sighting.lua
+Events.lua
 Attempts.lua
 Toast.lua
 MapPins.lua

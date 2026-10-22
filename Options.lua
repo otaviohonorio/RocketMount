@@ -161,6 +161,65 @@ function ns.SetupOptions()
             L["Also lists the mounts that left the game: closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."])
     end
 
+    -- (22/10) THE ALERT BEFORE A MOUNT'S EVENT (Events.lua), under its own header: the switch, how many
+    -- minutes before, and one box per event -- the user: *"no addon tem que ter a lista desses eventos por
+    -- que ele pode querer desativar algum"*. Every box on by default; the event's name is the game's.
+    do
+        local layout = SettingsPanel and SettingsPanel.GetLayout and SettingsPanel:GetLayout(category)
+        if layout and layout.AddInitializer and CreateSettingsListSectionHeaderInitializer then
+            layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Mount events"]))
+        end
+        local mestreSetting = Settings.RegisterProxySetting(category, ADDON .. "EventAlerts",
+            Settings.VarType.Boolean, L["Event alert"], true,
+            function() return ns.db.eventAlerts ~= false end,
+            function(value) ns.db.eventAlerts = value end)
+        local mestre = Settings.CreateCheckbox(category, mestreSetting,
+            L["A line in the chat and the chime a few minutes before an event that leads to a mount you do not have starts. Quiet once the event's reward of the week is taken."])
+        local filhas = {}
+        do
+            local P = ns.Events and ns.Events.LEAD or { MIN = 1, MAX = 15, STEP = 1, DEFAULT = 5 }
+            local s = Settings.RegisterProxySetting(category, ADDON .. "EventLead",
+                Settings.VarType.Number, L["Minutes before"], P.DEFAULT,
+                function() return tonumber(ns.db.eventLead) or P.DEFAULT end,
+                function(value) ns.db.eventLead = value end)
+            local options = Settings.CreateSliderOptions(P.MIN, P.MAX, P.STEP)
+            if options.SetLabelFormatter and MinimalSliderWithSteppersMixin then
+                options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right,
+                    function(value) return string.format(L["%dmin"], value) end)
+            end
+            filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
+                L["How long before the start the alert comes."])
+        end
+        local COMO = { drop = L["The event's reward can bring it."], currency = L["The event's currency buys it."],
+                       renown = L["The event's reputation unlocks it."] }
+        for _, e in ipairs(ns.Events and ns.Events.List() or {}) do
+            local s = Settings.RegisterProxySetting(category, ADDON .. "Event_" .. e.key,
+                Settings.VarType.Boolean, L[e.name], true,
+                function() return not (type(ns.db.eventOff) == "table" and ns.db.eventOff[e.key]) end,
+                function(value)
+                    ns.db.eventOff = type(ns.db.eventOff) == "table" and ns.db.eventOff or {}
+                    ns.db.eventOff[e.key] = (not value) or nil
+                end)
+            -- the tooltip: where, the mounts (named by the game) and how the event leads to them
+            local nomes = {}
+            for _, id in ipairs(e.mounts or {}) do
+                local ok, nome = pcall(C_MountJournal and C_MountJournal.GetMountInfoByID or error, id)
+                if ok and type(nome) == "string" then nomes[#nomes + 1] = nome end
+            end
+            local partes = {}
+            local zona = ns.Events.Zone(e)
+            if zona then partes[#partes + 1] = zona .. "." end
+            if #nomes > 0 then partes[#partes + 1] = string.format(L["Mounts: %s."], table.concat(nomes, ", ")) end
+            partes[#partes + 1] = COMO[e.how]
+            filhas[#filhas + 1] = Settings.CreateCheckbox(category, s, table.concat(partes, " "))
+        end
+        for _, filha in ipairs(filhas) do
+            if type(filha) == "table" and filha.SetParentInitializer and mestre then
+                filha:SetParentInitializer(mestre, function() return mestreSetting:GetValue() end)
+            end
+        end
+    end
+
     -- THE WORLD MAP, under its own header: four switches about one subject are a section
     -- (wow-ui-design: a section is a subject, and Blizzard marks it with a title, not with air).
     -- The three below the first are its sub-options, and go grey with it.

@@ -47,6 +47,10 @@ ns.defaults = {
     sightings = true,
     -- (21/10) the achievement-style alert when a mount is learned (Toast.lua)
     mountToast = true,
+    -- (22/10) the alert before a mount's event (Events.lua): on, 5 minutes before (the game's own reminder: 300 s),
+    -- every event on; `eventOff[key] = true` turns one off
+    eventAlerts = true,
+    eventLead = 5,
     -- The alert's sound (01/10): on, the chime, at the middle level of five ("leve").
     sightingSound = true,
     sightingSoundKey = "chime",
@@ -128,6 +132,7 @@ ns.START_DELAY = START_DELAY
 function handlers:PLAYER_LOGIN()
     ns.CreateMinimapButton()
     if ns.Sighting then ns.Sighting.Enable() end
+    if ns.Events then ns.Events.Enable() end
     if ns.MapPins then ns.MapPins.Enable() end
     if ns.MinimapPins then ns.MinimapPins.Enable() end
     if ns.MapButton then ns.MapButton.Enable() end
