@@ -1,9 +1,10 @@
-# Rocket Mount 0.34.0
+# Rocket Mount 0.35.0
 
-- New **Attempts** column in the list, beside the %: how many times your account tried for each
-  mount the addon can count (bosses from the game's statistics, rares since the addon was
-  installed). Hover it for each character's share; click the header to sort by it.
-- When you learn a mount, an alert just like the game's achievement one shows its name and icon,
-  above the game's own "You collected" toast. Hover it for the attempts it took. It can be turned
-  off in the options ("Mount achievement"), and `/rmt toast` shows it now to see how it looks.
-- The "?" and the sort arrow of the % header no longer sit on top of the column beside it.
+- Mount events: an alert a few minutes before a world event whose reward can bring a mount you
+  do not have yet. It says each mount's drop chance, price or renown, and whether the event's
+  reward is weekly, daily or once per event. On by default; in the options you choose how many
+  minutes before and can turn off each event. `/rmt events` lists them all.
+- New **Attempts** tab: every mount you have tried for, with the chance you had of getting it by
+  now, your tries today and this week, and the time spent.
+- Lockouts per character: the list, the card and the Attempts tab show which of your characters
+  already did each source in the current lockout.
