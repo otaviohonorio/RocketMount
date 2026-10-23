@@ -34,8 +34,19 @@ local Attempts = {}
 ns.Attempts = Attempts
 
 local SAME_TRY = 300            -- seconds: an encounter and its loot window are one try
+-- (22/10) THE TIME SPENT, our own measure. Two tries at the same mount less than TIME_GAP apart are
+-- one sitting: the gap between them is time spent on that mount. A boss fight adds its own length
+-- (ENCOUNTER_START to ENCOUNTER_END). The gap runs from one try to the START of the next fight, so
+-- a fight is never counted twice. A first try after a pause adds only its fight.
+local TIME_GAP = 600
+local MAX_FIGHT = 2 * 3600      -- a longer "fight" is a clock that went wrong, not a fight
+-- (22/10) TODAY AND THIS WEEK: the tries of each mount by game day (the day that starts at the
+-- daily reset, not at midnight), kept for HISTORY_DAYS -- a week and a day, enough for "since the
+-- last weekly reset".
+local DAY = 86400
+local HISTORY_DAYS = 8
 local recent = {}               -- mountID -> time() of the last count
-local pending = {}              -- dungeon encounter id -> { counts = bool } from ENCOUNTER_START
+local pending = {}              -- dungeon encounter id -> { counts = bool, at = time() } from ENCOUNTER_START
 local byEncounter               -- dungeon encounter id -> { { mount, difficulties }, ... }
 
 local function CharKey()
@@ -87,8 +98,71 @@ local function Total(r)
     return n
 end
 
+-- The game's clock for the resets, or nil when it does not answer (or answers a secret).
+local function SecondsUntil(weekly)
+    if not C_DateAndTime then return nil end
+    local f
+    if weekly then f = C_DateAndTime.GetSecondsUntilWeeklyReset else f = C_DateAndTime.GetSecondsUntilDailyReset end
+    if not f then return nil end
+    local ok, s = pcall(f)
+    if not ok or type(s) ~= "number" or (issecretvalue and issecretvalue(s)) then return nil end
+    return s
+end
+Attempts.SecondsUntil = SecondsUntil
+
+-- A reset's moment, rounded to a quarter of an hour: `now + secondsUntil` read a second apart
+-- must name the same day.
+local function Round(t) return math.floor((t + 450) / 900) * 900 end
+
+-- The start of the period of `length` that holds `now`: the game's clock says when the CURRENT one
+-- ends, and another moment is that start moved by whole periods.
+local function PeriodStart(now, weekly, length)
+    local s = SecondsUntil(weekly)
+    if not s then return nil end
+    local present = time and time() or now
+    local start = Round(present + s - length)
+    return start + math.floor((now - start) / length) * length
+end
+
+---When the game day that holds `now` started: the last daily reset. Without the game's clock, the
+---UTC midnight (a day still, just not the game's).
+function Attempts.DayStart(now)
+    now = now or (time and time() or 0)
+    return PeriodStart(now, false, DAY) or (now - now % DAY)
+end
+
+---When the week that holds `now` started: the weekly reset, or nil when the game does not say.
+function Attempts.WeekStart(now)
+    now = now or (time and time() or 0)
+    return PeriodStart(now, true, 7 * DAY)
+end
+
+-- One more try today; days older than HISTORY_DAYS go.
+local function AddToDay(r, now)
+    r.days = type(r.days) == "table" and r.days or {}
+    local key = Attempts.DayStart(now)
+    r.days[key] = (r.days[key] or 0) + 1
+    for k in pairs(r.days) do
+        if type(k) ~= "number" or k < now - HISTORY_DAYS * DAY then r.days[k] = nil end
+    end
+end
+Attempts.AddToDay = AddToDay      -- for the tests
+
+-- The time of this try: the gap since the last one, when it is the same sitting, and the fight.
+local function AddTime(r, now, fight)
+    fight = type(fight) == "number" and fight > 0 and math.min(fight, MAX_FIGHT) or 0
+    local start = now - fight
+    local last = tonumber(r.lastAt)
+    local gap = last and start - last
+    local t = tonumber(r.time) or 0
+    if gap and gap >= 0 and gap <= TIME_GAP then t = t + gap end
+    r.time = t + fight
+    r.lastAt = now
+end
+
 ---One more try at `mountID` for this character (nothing when it is collected, or just counted).
-function Attempts.Count(mountID, why)
+---`fight` is how long the boss fight took, in seconds, when the try was a boss.
+function Attempts.Count(mountID, why, fight)
     local book, char = Book(), CharKey()
     if not (book and char and mountID) or Collected(mountID) then return false end
     local now = time and time() or 0
@@ -97,11 +171,159 @@ function Attempts.Count(mountID, why)
     local r = book[mountID] or { n = 0, chars = {} }
     book[mountID] = r
     if r.got then return false end
+    r.chars = r.chars or {}
     r.chars[char] = (r.chars[char] or 0) + 1
     r.n = Total(r)
     r.last = date and date("%Y-%m-%d") or nil
-    if ns.Log then pcall(ns.Log.Add, "attempt", { mount = mountID, n = r.n, why = why }) end
+    AddTime(r, now, fight)
+    AddToDay(r, now)
+    if ns.Log then pcall(ns.Log.Add, "attempt", { mount = mountID, n = r.n, why = why, fight = fight, time = r.time }) end
     return true
+end
+
+---Tries at a mount today (since the daily reset) and this week (since the weekly reset); the
+---week is nil when the game does not say when it reset.
+function Attempts.Recent(mountID, now)
+    local r = Attempts.Of(mountID)
+    now = now or (time and time() or 0)
+    local day, week = Attempts.DayStart(now), Attempts.WeekStart(now)
+    local today, thisWeek = 0, week and 0 or nil
+    for k, n in pairs(r and type(r.days) == "table" and r.days or {}) do
+        if type(k) == "number" and type(n) == "number" and k <= now then
+            if k >= day - 450 then today = today + n end
+            if week and k >= week - 450 then thisWeek = thisWeek + n end
+        end
+    end
+    return today, thisWeek
+end
+
+---The time spent on a mount, in seconds (0 when none was measured).
+function Attempts.Time(mountID)
+    local r = Attempts.Of(mountID)
+    return r and tonumber(r.time) or 0
+end
+
+---The share of players who would already have the mount after `n` tries at `p` each: 1-(1-p)^n.
+function Attempts.Cumulative(p, n)
+    if type(p) ~= "number" or type(n) ~= "number" or p <= 0 or n <= 0 then return nil end
+    if p >= 1 then return 1 end
+    -- short of certain stays short of certain, even where the float rounds it to 1
+    return math.min(1 - (1 - p) ^ n, 1 - 1e-12)
+end
+
+---The chance of each try at a mount, 0..1, from the list's entry (`chance` is "1 in n"), and
+---whether it is a rough sample.
+function Attempts.Chance(entry)
+    local c = type(entry) == "table" and tonumber(entry.chance)
+    if not c or c <= 0 then return nil end
+    return 1 / c, entry.chanceRough and true or false
+end
+
+---A share as the player reads it: one decimal ("97,6%"), never "100%" short of certain, and two
+---significant figures under 1% ("0,35%").
+function Attempts.FormatShare(v)
+    if type(v) ~= "number" then return nil end
+    if v >= 1 then return "100%" end
+    if v <= 0 then return "0%" end
+    local pct = v * 100
+    local casas = pct >= 1 and 1 or math.max(1, -math.floor(math.log10(pct)) + 1)
+    local m = 10 ^ casas
+    local cut = math.floor(pct * m + 0.5) / m
+    if cut >= 100 then cut = 100 - 1 / m end
+    if cut <= 0 then cut = 1 / m end
+    local txt = string.format("%." .. casas .. "f", cut):gsub("0+$", ""):gsub("%.$", "")
+    return (txt:gsub("%.", ns.L["."])) .. "%"
+end
+
+---Time spent: "1 h 05 min", "12 min", "45 s".
+function Attempts.FormatDuration(s)
+    s = math.floor(tonumber(s) or 0)
+    local L = ns.L
+    if s < 60 then return L["%d s"]:format(s) end
+    local h, m = math.floor(s / 3600), math.floor((s % 3600) / 60)
+    if h > 0 then return L["%d h %02d min"]:format(h, m) end
+    return L["%d min"]:format(m)
+end
+
+---Time until something comes back: "3 d 4 h", "5 h 12 min", "12 min".
+function Attempts.FormatLeft(s)
+    s = math.max(0, math.floor(tonumber(s) or 0))
+    local L = ns.L
+    local d, h, m = math.floor(s / DAY), math.floor((s % DAY) / 3600), math.floor((s % 3600) / 60)
+    if d > 0 then return L["%d d %d h"]:format(d, h) end
+    if h > 0 then return L["%d h %02d min"]:format(h, m) end
+    return L["%d min"]:format(math.max(1, m))
+end
+
+---(22/10) How lucky the count is, in plain words, for the card and the tooltips: the share of
+---players who would already have the mount after as many tries (1-(1-p)^n), and that the next try
+---still has the same chance; for a mount that came, the share who would have needed fewer tries
+---(1-(1-p)^(n-1)). Returns the share and the sentence, or nil when the chance or the count is not known.
+function Attempts.LuckText(mountID, entry)
+    local p = Attempts.Chance(entry)
+    local r = Attempts.Of(mountID)
+    if not (p and r) then return nil end
+    local L = ns.L
+    local chance = ns.FormatChance(entry.chance, entry.chanceRough)
+    if r.got then
+        local n = r.got.n or 0
+        if n < 1 then return nil end
+        local v = Attempts.Cumulative(p, n - 1) or 0
+        return v, L["It came on attempt %d. At %s each, %s of players would have needed fewer attempts."]:format(
+            n, chance, Attempts.FormatShare(v))
+    end
+    local n = r.n or 0
+    if n < 1 then return nil end
+    local v = Attempts.Cumulative(p, n)
+    return v, L["With %d attempts at %s, %s of players would already have it. The chance of the next attempt is still %s."]:format(
+        n, chance, Attempts.FormatShare(v), chance)
+end
+
+---"Today: 3 · This week: 12" (the week left out when the game does not say when it began).
+function Attempts.RecentText(today, week)
+    local L = ns.L
+    if week then return L["Today: %d · This week: %d"]:format(today or 0, week) end
+    return L["Today: %d"]:format(today or 0)
+end
+
+---The lines the card adds under the count: luck, time spent, today and this week.
+function Attempts.DetailLines(mountID, entry, now)
+    local out = {}
+    local _, luck = Attempts.LuckText(mountID, entry)
+    if luck then out[#out + 1] = luck end
+    local t = Attempts.Time(mountID)
+    if t > 0 then out[#out + 1] = ns.L["Time spent: %s"]:format(Attempts.FormatDuration(t)) end
+    local r = Attempts.Of(mountID)
+    if r and not r.got then
+        local today, week = Attempts.Recent(mountID, now)
+        if today > 0 or (week or 0) > 0 then out[#out + 1] = Attempts.RecentText(today, week) end
+    end
+    return out
+end
+
+---Every mount with a count, for the Attempts tab: the ones still being tried and the ones that
+---came on a counted try. `{ mountID, n, got, today, week, time }`.
+function Attempts.Rows(now)
+    local out = {}
+    for mountID, r in pairs(Book() or {}) do
+        if type(mountID) == "number" and type(r) == "table" and ((r.n or 0) > 0 or r.got) then
+            local today, week = Attempts.Recent(mountID, now)
+            out[#out + 1] = { mountID = mountID, n = r.got and r.got.n or r.n or 0, got = r.got ~= nil,
+                              today = today, week = week, time = tonumber(r.time) or 0 }
+        end
+    end
+    return out
+end
+
+---The line over the tab: today N tries at M mounts, and this week (nil when the game does not
+---say when the week began).
+function Attempts.Summary(now)
+    local t = { todayN = 0, todayM = 0, weekN = 0, weekM = 0, weekKnown = Attempts.WeekStart(now) ~= nil }
+    for _, row in ipairs(Attempts.Rows(now)) do
+        if row.today > 0 then t.todayN, t.todayM = t.todayN + row.today, t.todayM + 1 end
+        if row.week and row.week > 0 then t.weekN, t.weekM = t.weekN + row.week, t.weekM + 1 end
+    end
+    return t
 end
 
 ---The count of a mount: { n, chars, got = { n, at } } or nil.
@@ -245,6 +467,8 @@ function Attempts.Looted(npc)
         local id = m.entry and m.entry.mountID
         if id then Attempts.Count(id, "loot:" .. npc) end
     end
+    -- the rare's hidden quest is flagged with the loot: this character's ledger (Lockouts.lua)
+    if ns.Lockouts and C_Timer and C_Timer.After then C_Timer.After(2, function() ns.Lockouts.Record(false) end) end
 end
 
 local frame = CreateFrame("Frame")
@@ -272,7 +496,7 @@ frame:SetScript("OnEvent", function(_, event, a1, _, a3, _, a5)
             local ok, v = pcall(C_RaidLocks.IsEncounterComplete, mapID, a1, difficultyID)
             done = ok and v == true
         end
-        pending[a1] = { counts = not done }
+        pending[a1] = { counts = not done, at = time and time() or nil }
         return
     end
     -- ENCOUNTER_END: id, name, difficulty, group size, success
@@ -280,11 +504,16 @@ frame:SetScript("OnEvent", function(_, event, a1, _, a3, _, a5)
     local p = pending[a1]
     pending[a1] = nil
     if p and not p.counts then return end
+    local fight = p and p.at and time and (time() - p.at) or nil
     for _, m in ipairs(byEncounter[a1]) do
-        if DropsOn(m.difficulties, a3) then Attempts.Count(m.mount, "encounter:" .. a1) end
+        if DropsOn(m.difficulties, a3) then Attempts.Count(m.mount, "encounter:" .. a1, fight) end
     end
-    -- the statistic of the kill is the game's to update: read it a little later
-    if C_Timer and C_Timer.After then C_Timer.After(5, Attempts.ReadStats) end
+    -- the statistic of the kill is the game's to update: read it a little later; and this
+    -- character's lockouts, which the kill just changed (Lockouts.lua)
+    if C_Timer and C_Timer.After then
+        C_Timer.After(5, Attempts.ReadStats)
+        if ns.Lockouts then C_Timer.After(3, ns.Lockouts.Request) end
+    end
 end)
 
 Attempts.Index = Index            -- for the tests

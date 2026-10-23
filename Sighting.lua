@@ -909,19 +909,35 @@ end
 
 ---(21/10) Every mount a creature of the drop table gives, as a set -- the ones whose tries the
 ---addon counts on loot (Attempts.Looted). Kept until the index is rebuilt: the list asks per row.
-local counted, countedFor
+local counted, countedFor, npcsOf
 function Sighting.CountedMounts()
     if ns.NeedsRebuild and ns.NeedsRebuild() and ns.GetRanked then pcall(ns.GetRanked) end
     if not byNpc then Sighting.Rebuild() end
     if countedFor ~= byNpc then
-        counted, countedFor = {}, byNpc
-        for _, pontos in pairs(byNpc or {}) do
+        counted, countedFor, npcsOf = {}, byNpc, {}
+        for npc, pontos in pairs(byNpc or {}) do
             for _, p in ipairs(pontos) do
-                if p.entry and p.entry.mountID then counted[p.entry.mountID] = true end
+                local id = p.entry and p.entry.mountID
+                if id then
+                    counted[id] = true
+                    local l = npcsOf[id] or {}
+                    npcsOf[id] = l
+                    local ja = false
+                    for _, n in ipairs(l) do if n == npc then ja = true end end
+                    if not ja then l[#l + 1] = npc end
+                end
             end
         end
+        for _, l in pairs(npcsOf) do table.sort(l) end
     end
     return counted
+end
+
+---(22/10) The creatures of the drop table that give a mount still missing, by npc id: what the
+---lockout of a rare's mount is made of (Lockouts.lua).
+function Sighting.NpcsOfMount(mountID)
+    Sighting.CountedMounts()
+    return npcsOf and npcsOf[mountID] or {}
 end
 
 ---@return boolean locked, string|nil source ("dq:<quest>" or "loot"), number|nil secondsLeft

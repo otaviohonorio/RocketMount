@@ -53,6 +53,8 @@ Window.lua
 Sighting.lua
 Events.lua
 Attempts.lua
+Lockouts.lua
+AttemptsTab.lua
 Toast.lua
 MapPins.lua
 MinimapPins.lua

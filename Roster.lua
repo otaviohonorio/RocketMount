@@ -151,7 +151,7 @@ end
 --
 -- Everything the addon kept OF THAT CHARACTER goes with it: its reputations, the rares it
 -- looted, what the vendors told it.
-local PER_CHARACTER = { "chars", "looted", "lockoutWatch", "vendorSeen" }
+local PER_CHARACTER = { "chars", "looted", "lockoutWatch", "vendorSeen", "locks" }
 
 ---Which character of the ledger a name is: "Name" or "Name-Realm", as it is written or without
 ---minding the case. Two characters of the same name on two realms are told apart by the realm.

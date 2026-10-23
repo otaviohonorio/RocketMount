@@ -97,13 +97,14 @@ local PIN_X = EXP_X + EXP_W + COL_GAP
 -- contando desde o addon instalado"*. 60: "Tentativas" is 50 in the header's font (frizqt, 10).
 local ATT_W = 60
 local ATT_X = PIN_X + PIN_W + COL_GAP
+local ATT_DONE = 14   -- (22/10) the check mark of a source done in this lockout, inside the cell
 
 ns.Geometry = {
     windowW = WINDOW_W, windowH = WINDOW_H,
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
     detailW = DETAIL_W, rightMargin = RIGHT_MARGIN, listTopY = LIST_TOP,
     scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD, rowGap = ROW_GAP, iconInset = ICON_INSET,
-    rowIcon = ROW_ICON, iconFrame = ICON_FRAME,
+    rowIcon = ROW_ICON, iconFrame = ICON_FRAME, attDone = ATT_DONE,
     rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
@@ -645,13 +646,38 @@ end
 -- (13/10) the count of tries and, under it, how it was made: the game's statistics (from before
 -- the addon) or the addon since it was installed -- the user: *"podemos contar apartir do addon
 -- instalado e explicar"*
-local function AttemptsText(mountID)
+-- (22/10) and under that the same lines as the Attempts tab: how lucky the count is, the time
+-- spent, today and this week (Attempts.DetailLines, one source for both).
+local function AttemptsText(mountID, entry)
     local n = ns.Attempts.Text(mountID)
     if not n then return nil end
     local how = ns.Attempts.Source(mountID)
     local color = LIGHTGRAY_FONT_COLOR
-    return n .. string.char(10) .. (color and color:WrapTextInColorCode(how) or how)
+    local linhas = { n }
+    for _, l in ipairs(ns.Attempts.DetailLines(mountID, entry)) do linhas[#linhas + 1] = l end
+    linhas[#linhas + 1] = color and color:WrapTextInColorCode(how) or how
+    return table.concat(linhas, string.char(10))
 end
+
+-- (22/10) Is the source done in this lockout -- for this character and for the others of the
+-- ledger (Lockouts.lua): "Done this week — back in 3 d 4 h", then who did it and who can still go,
+-- then, quiet, who the ledger cannot name.
+local function LockoutText(mountID)
+    local Lk = ns.Lockouts
+    if not Lk then return nil end
+    local linhas = {}
+    local st = Lk.State(mountID)
+    if st then linhas[#linhas + 1] = Lk.Sentence(st) end
+    local quem, nota = Lk.CharactersText(mountID)
+    if quem then linhas[#linhas + 1] = quem end
+    if quem and nota then
+        local color = LIGHTGRAY_FONT_COLOR
+        linhas[#linhas + 1] = color and color:WrapTextInColorCode(nota) or nota
+    end
+    if #linhas == 0 then return nil end
+    return table.concat(linhas, string.char(10))
+end
+ns.LockoutText = LockoutText
 
 local function Difficulties(ids)
     if type(ids) ~= "table" or not GetDifficultyInfo then return nil end
@@ -758,7 +784,7 @@ function ns.DetailBlocks(entry)
             end
         end
         -- (13/10) the try it came on, when the addon counted them (Attempts.lua)
-        Add("attempts", L["Attempts"], ns.Attempts and AttemptsText(entry.mountID))
+        Add("attempts", L["Attempts"], ns.Attempts and AttemptsText(entry.mountID, entry))
         return blocks, wp
     end
 
@@ -785,7 +811,9 @@ function ns.DetailBlocks(entry)
         if janela then linhas[#linhas + 1] = janela end
         Add("chance", L["Chance"], table.concat(linhas, string.char(10)))
         -- (13/10) how many times this account tried, and each character's share (Attempts.lua)
-        Add("attempts", L["Attempts"], ns.Attempts and AttemptsText(entry.mountID))
+        Add("attempts", L["Attempts"], ns.Attempts and AttemptsText(entry.mountID, entry))
+        -- (22/10) done or open in this lockout, for each character (Lockouts.lua)
+        Add("lockout", L["Status"], LockoutText(entry.mountID))
     end
 
     -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
@@ -1242,6 +1270,13 @@ local function BuildRow(row)
     row.att:SetPoint("LEFT", ATT_X, 0)
     row.att.text = Text(row.att, "GameFontHighlight", "RIGHT")
     row.att.text:SetAllPoints()
+    -- (22/10) DONE IN THIS LOCKOUT, for this character: the game's check mark at the left of the
+    -- cell, no column of its own (the widest number, "12.345", is 43 of the 60: 14 + 2 + 43 fit).
+    row.att.done = row.att:CreateTexture(nil, "ARTWORK")
+    row.att.done:SetAtlas("common-icon-checkmark")
+    row.att.done:SetSize(ATT_DONE, ATT_DONE)
+    row.att.done:SetPoint("LEFT", row.att, "LEFT", 0, 0)
+    row.att.done:Hide()
     row.att:SetScript("OnClick", function(self)
         local r = self:GetParent()
         local click = r:GetScript("OnClick")
@@ -1254,7 +1289,18 @@ local function BuildRow(row)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip_SetTitle(GameTooltip, L["Attempts"])
         GameTooltip_AddHighlightLine(GameTooltip, ns.Attempts.Text(id) or L["None yet"], true)
+        for _, l in ipairs(ns.Attempts.DetailLines(id, e)) do GameTooltip_AddHighlightLine(GameTooltip, l, true) end
         GameTooltip_AddNormalLine(GameTooltip, ns.Attempts.Source(id), true)
+        -- (22/10) done or open in this lockout, this character and the others
+        local Lk = ns.Lockouts
+        if Lk then
+            local st = Lk.State(id)
+            local quem, nota = Lk.CharactersText(id)
+            if st or quem then GameTooltip_AddBlankLineToTooltip(GameTooltip) end
+            if st then GameTooltip_AddHighlightLine(GameTooltip, Lk.Sentence(st), true) end
+            if quem then GameTooltip_AddNormalLine(GameTooltip, quem, true) end
+            if quem and nota then GameTooltip_AddColoredLine(GameTooltip, nota, LIGHTGRAY_FONT_COLOR, true) end
+        end
         GameTooltip:Show()
     end)
     row.att:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1397,6 +1443,12 @@ local function FillRow(row, data)
     local tries = ns.Attempts and ns.Attempts.Number(e.mountID)
     row.att.text:SetText(tries and BreakUpLargeNumbers(tries) or "")
     row.att:SetShown(tries ~= nil)
+    local feito = false
+    if tries ~= nil and ns.Lockouts then
+        local ok, st = pcall(ns.Lockouts.State, e.mountID)
+        feito = ok and type(st) == "table" and st.status == "done"
+    end
+    row.att.done:SetShown(feito)
     row.selectedTexture:SetShown(Same(e, selected))
     local temLugar = ns.MountPlace(e) ~= nil
     row.pin:SetShown(temLugar)
@@ -1483,6 +1535,14 @@ function ns.UpdateCollectionBoxes()
 end
 
 local function Redraw()
+    -- The Attempts tab draws itself too (AttemptsTab.lua).
+    if activeTab == "attempts" and ns.AttemptsTab then
+        if loading then loading:Hide() end
+        ns.AttemptsTab.Refresh()
+        ns.UpdateCollectionBoxes()
+        if window.tips then window.tips:Update() end
+        return
+    end
     -- The Collection tab draws itself (Collection.lua); the counters at the top are of both.
     if activeTab == "collection" and ns.Collection then
         if loading then loading:Hide() end
@@ -1528,14 +1588,22 @@ local function Fresh(entry)
     end
     -- A mount put on the card from the Collection tab may not be in the list at all (it is
     -- collected, or the list's options leave it out): its entry is built again for it alone.
-    if (entry.collected or activeTab == "collection") and ns.EntryOf then return ns.EntryOf(entry.mountID) end
+    if (entry.collected or activeTab ~= "list") and ns.EntryOf then return ns.EntryOf(entry.mountID) end
     return nil
 end
 
----Which tab is on: "list" or "collection".
+local TAB_INDEX = { list = 1, collection = 2, attempts = 3 }
+
+---Which tab is on: "list", "collection" or "attempts".
 function ns.SetWindowTab(tab)
     if not window then return end
-    activeTab = tab == "collection" and ns.Collection and "collection" or "list"
+    if tab == "collection" and ns.Collection then
+        activeTab = "collection"
+    elseif tab == "attempts" and ns.AttemptsTab then
+        activeTab = "attempts"
+    else
+        activeTab = "list"
+    end
     local lista = activeTab == "list"
     for _, h in pairs(window.headers or {}) do h:SetShown(lista) end
     if window.pctHelp then window.pctHelp:SetShown(lista) end
@@ -1543,9 +1611,22 @@ function ns.SetWindowTab(tab)
     if window.listFilter then window.listFilter:SetShown(lista) end
     list:SetShown(lista)
     if not lista and loading then loading:Hide() end
-    if ns.Collection then ns.Collection.Show(not lista) end
-    if PanelTemplates_SetTab then PanelTemplates_SetTab(window, lista and 1 or 2) end
+    if ns.Collection then ns.Collection.Show(activeTab == "collection") end
+    if ns.AttemptsTab then ns.AttemptsTab.Show(activeTab == "attempts") end
+    if PanelTemplates_SetTab then PanelTemplates_SetTab(window, TAB_INDEX[activeTab]) end
     ns.RefreshWindow()
+end
+
+---The footer of the Attempts tab: whose it is and how many mounts it lists.
+function ns.AttemptsFooter(n)
+    if not window then return end
+    window.footer:SetText((UnitName("player") or "?") .. "  ·  " .. (n == 1 and L["1 mount with attempts"]
+        or L["%d mounts with attempts"]:format(n)))
+end
+
+---The lockouts changed (the game answered RequestRaidInfo): what shows them is drawn again.
+function ns.RefreshAttemptsViews()
+    if window and window:IsShown() then ns.RefreshWindow() end
 end
 
 function ns.WindowTab() return activeTab end
@@ -2039,10 +2120,16 @@ local function Build()
     -- (!) TWO TABS (02/10): "List" is what the window always was; "Collection" is every mount
     -- of the game by expansion and kind (Collection.lua). The tabs are the game's, under the
     -- frame as in its own windows. The search box, the counters and the card serve both.
+    -- (22/10) A THIRD TAB, "Attempts" (AttemptsTab.lua): every mount tried for, the luck of it, the
+    -- time it took, today and this week, and whether the source is open now. Its summary line sits
+    -- on the search row, where the list's filter button is (hidden on that tab).
+    if ns.AttemptsTab then ns.AttemptsTab.Build(host, SEARCH_H, 15 + 220 + 16) end
     if ns.Collection then
         ns.Collection.Build(host, SEARCH_H + 2, LIST_W - 6 - SCROLLBAR_W)
         window.tabs = {}
-        for i, tab in ipairs({ { "list", L["List"] }, { "collection", L["Collection"] } }) do
+        local abas = { { "list", L["List"] }, { "collection", L["Collection"] } }
+        if ns.AttemptsTab then abas[3] = { "attempts", L["Attempts"] } end
+        for i, tab in ipairs(abas) do
             local b = CreateFrame("Button", window:GetName() .. "Tab" .. i, window, "PanelTabButtonTemplate")
             b:SetID(i)
             b:SetText(tab[2])
