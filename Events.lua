@@ -17,6 +17,18 @@
 --      `rewardsClaimed`, for the events it lists;
 --   2. the event's fixed clock (period, duration and an anchor in server time, per region);
 --   3. a rare's clock (Data/RareTimers.lua, through Sighting.NextWindow).
+--
+-- (24/10) WHERE, A CLICK, A PANEL, AND NEVER IN THE MIDDLE OF SOMETHING. The user: *"seria bom dizer qual mapa, qual
+-- lugar especifico do mapa e clicar para setar a coordenada, e mais uma opção mostrar o evento como mostra quando acha
+-- raro uma popup e isso tudo configuravel, ou só no chat ou no chat e popup"*; then *"o aviso dos eventos não pode
+-- acontecer em combate, dentro de DGs, Raids, Imersões e conteúdos instanciados para não atrapalhar o jogador"*, and
+-- *"se for adiado pode avisar tarde, então precisa de inteligencia, se o evento passou, descarta ele"*.
+--   * the place: Events.Spot -- the game's own answer first, our table of the game's landmarks second;
+--   * the click: the chat line carries a pin link like the rare alert's; the panel is the rare's panel;
+--   * `ns.db.eventHow`: "popup" (the chat and the panel, the default) or "chat";
+--   * busy (combat, or any instance: dungeon, raid, delve, scenario, battleground, arena): the alert waits. When the
+--     player is free again it comes if the event has not started, or if it runs with MIN_LEFT still to go ("started
+--     3 min ago, ends in 12 min"); an event that is over or nearly over is dropped.
 local ADDON, ns = ...
 local L = ns.L
 
@@ -24,8 +36,11 @@ local Events = {}
 ns.Events = Events
 
 Events.LEAD = { MIN = 1, MAX = 15, STEP = 1, DEFAULT = 5 }    -- minutes before the start
+Events.HOW = { "popup", "chat" }                                -- ns.db.eventHow; the first is the default
+Events.MIN_LEFT = 5 * 60                                        -- a late alert still worth the trip
 local TICK = 15
 local alerted = {}                                              -- [key .. start] = true, this session
+local pending = {}                                              -- [key .. start] = true: its time came while busy
 
 local function Now()
     local ok, t = pcall(GetServerTime or error)
@@ -60,7 +75,7 @@ function Events.ClockWindow(e, now)
 end
 
 ---The game's schedule for the event: the next (or running) occurrence it lists.
----@return number|nil start, number|nil finish, boolean claimed
+---@return number|nil start, number|nil finish, boolean claimed, number|nil areaPoiID
 function Events.Scheduled(e, now)
     if not (e.pois and C_EventScheduler and C_EventScheduler.GetScheduledEvents) then return nil end
     local ok, list = pcall(C_EventScheduler.GetScheduledEvents)
@@ -76,7 +91,7 @@ function Events.Scheduled(e, now)
         end
     end
     if not best then return nil end
-    return best.startTime, best.endTime, best.rewardsClaimed == true
+    return best.startTime, best.endTime, best.rewardsClaimed == true, best.areaPoiID
 end
 
 ---The next START still ahead (the running one does not count: its alert time is gone), by the best
@@ -104,6 +119,83 @@ function Events.NextStart(e, now)
         end
     end
     return nil
+end
+
+---The occurrence running now, or the next one: seconds until it starts (negative: started that long ago) and until
+---it ends, by the best source there is.
+---@return number|nil toStart, number|nil toEnd, string|nil source, boolean claimed, number|nil areaPoiID
+function Events.Window(e, now)
+    now = now or Now()
+    local t = time()
+    local s, f, claimed, poi = Events.Scheduled(e, t)
+    if s then return s - t, f - t, "game", claimed, poi end
+    s, f = Events.ClockWindow(e, now)
+    if s then return s - now, f - now, "clock", false end
+    if e.npc and ns.Sighting and ns.Sighting.NextWindow then
+        local w = ns.Sighting.NextWindow(e.npc)
+        local r = w and type(ns.RareTimers) == "table" and ns.RareTimers[e.npc]
+        if w and r then
+            if w.open then return w.seconds - r.lasts, w.seconds, "clock", false end
+            return w.seconds, w.seconds + r.lasts, "clock", false
+        end
+    end
+    return nil
+end
+
+---Why the player cannot be bothered now, or nil: in combat, or inside any instance.
+function Events.Busy()
+    if InCombatLockdown and InCombatLockdown() then return "combat" end
+    if ns.Sighting and ns.Sighting.InOpenWorld and not ns.Sighting.InOpenWorld() then return "instance" end
+    return nil
+end
+
+---Where the event happens: `{ m, x, y, place }` with x and y in 0-100, or nil when there is no single place.
+---  1. the game: the map of the landmark (C_EventScheduler.GetEventUiMapID, what the game's Events tab opens) and its
+---     position (C_AreaPoiInfo.GetAreaPOIInfo) -- the moving cave of Abundance only has this; `place` is the
+---     landmark's name when it says more than the event's ("Abundance: Skinning Den" gives "Skinning Den");
+---  2. our table of the game's landmarks (`spot`, tools/coletar_eventos.py);
+---  3. a rare with ONE known place (Data/MobDrops). Beledar's Spawn has twenty: no single place, the map shows them.
+function Events.Spot(e, poi)
+    local ids = poi and { poi } or e.pois or {}
+    for _, id in ipairs(ids) do
+        local mapa = e.map
+        if C_EventScheduler and C_EventScheduler.GetEventUiMapID then
+            local ok, m = pcall(C_EventScheduler.GetEventUiMapID, id)
+            if ok and type(m) == "number" then mapa = m end
+        end
+        if mapa and C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo then
+            local ok, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, mapa, id)
+            local pos = ok and type(info) == "table" and info.position
+            local x = type(pos) == "table" and tonumber(pos.x)
+            local y = type(pos) == "table" and tonumber(pos.y)
+            if x and y and (x > 0 or y > 0) then
+                local place = type(info.name) == "string" and info.name ~= L[e.name] and info.name or nil
+                if place then place = place:match("^.-:%s*(.+)$") or place end
+                return { m = mapa, x = x * 100, y = y * 100, place = place }
+            end
+        end
+    end
+    if type(e.spot) == "table" and e.spot.m then return { m = e.spot.m, x = e.spot.x, y = e.spot.y } end
+    local rec = e.npc and type(ns.MobDrops) == "table" and ns.MobDrops[e.npc]
+    local pts = type(rec) == "table" and type(rec.where) == "table" and e.map and rec.where[e.map]
+    if type(pts) == "table" and #pts == 2 then return { m = e.map, x = pts[1], y = pts[2] } end
+    return nil
+end
+
+---A map's name, from the game.
+local function MapName(m)
+    if not (m and C_Map and C_Map.GetMapInfo) then return nil end
+    local ok, info = pcall(C_Map.GetMapInfo, m)
+    return ok and type(info) == "table" and info.name or nil
+end
+
+---"Skinning Den, Zul'Aman  45.1, 22.3" / "Voidstorm  27.3, 68.0" / "Hallowfall": where, as the chat says it.
+function Events.Where(e, spot)
+    local zona = MapName(spot and spot.m or e.map)
+    local texto = zona
+    if spot and spot.place then texto = zona and (spot.place .. ", " .. zona) or spot.place end
+    if spot and spot.x and spot.y then texto = string.format("%s  %.1f, %.1f", texto or "", spot.x, spot.y) end
+    return texto
 end
 
 ---The event's mounts this character lacks: `{ { id, name, icon } }`. A mount the game hides from
@@ -213,9 +305,9 @@ end
 
 local SHOWN = 3      -- mounts named on the line; the rest counted
 
----The chat line for an event `wait` seconds away: when, where, each mount it can give that the player lacks with
----what it takes, and how often.
-function Events.Line(e, wait)
+---The chat line for an event `wait` seconds away (negative: running, `left` seconds to go): when, where, each mount
+---it can give that the player lacks with what it takes, how often, and the pin link.
+function Events.Line(e, wait, left, spot)
     local faltam = Events.Missing(e)
     local partes = {}
     -- the same detail for every mount (one price, one renown): said once, after the names
@@ -234,34 +326,66 @@ function Events.Line(e, wait)
     local montarias = table.concat(partes, ", ")
     if iguais and #faltam > 1 and detalhes[1] then montarias = montarias .. " — " .. string.format(L["%s each"], detalhes[1]) end
     local tem = #(e.mounts or {}) - #faltam
-    local hora = select(2, pcall(date, "%H:%M", time() + wait))
-    local onde = Events.Zone(e)
-    local quando = type(hora) == "string" and (onde and string.format("%s, %s", hora, onde) or hora) or onde
-    local texto = string.format(L["|cffffff00%s|r starts in %s"], L[e.name], Minutos(wait))
+    local onde = Events.Where(e, spot)
+    local texto, quando
+    if wait > 0 then
+        local hora = select(2, pcall(date, "%H:%M", time() + wait))
+        quando = type(hora) == "string" and (onde and string.format("%s, %s", hora, onde) or hora) or onde
+        texto = string.format(L["|cffffff00%s|r starts in %s"], L[e.name], Minutos(wait))
+    else
+        quando = onde
+        texto = string.format(L["|cffffff00%s|r started %s ago, ends in %s"], L[e.name], Minutos(-wait), Minutos(left or 0))
+    end
     if quando then texto = texto .. " (" .. quando .. ")" end
     texto = texto .. "  ·  " .. string.format(L["can give: %s"], montarias)
     if tem > 0 then texto = texto .. " " .. string.format(L["(you have %d of %d)"], tem, #e.mounts) end
     local vez = Events.RewardText(e)
     if vez then texto = texto .. "  ·  " .. vez end
+    local link = ns.Sighting and ns.Sighting.EventLink and ns.Sighting.EventLink(e, spot)
+    if link then texto = texto .. "  " .. link end
     return texto
+end
+
+---"Starts in 4min · Voidstorm" / "Ends in 12min · Voidstorm": the panel's last line, short enough for it.
+function Events.PanelLine(e, wait, left, spot)
+    local quando = wait > 0 and string.format(L["Starts in %s"], Minutos(wait)) or string.format(L["Ends in %s"], Minutos(left or 0))
+    local zona = MapName(spot and spot.m or e.map)
+    return zona and (quando .. "  ·  " .. zona) or quando
+end
+
+---The alert: the chat line always; the panel too unless the player chose the chat only.
+function Events.Announce(e, wait, left, poi)
+    local spot = Events.Spot(e, poi)
+    ns.Print(Events.Line(e, wait, left, spot))
+    if (ns.db.eventHow or Events.HOW[1]) == "popup" and ns.Sighting and ns.Sighting.ShowEvent then
+        pcall(ns.Sighting.ShowEvent, e, Events.Missing(e), Events.PanelLine(e, wait, left, spot), spot)
+    elseif ns.db.sightingSound ~= false and ns.Sighting and ns.Sighting.PlaySound then
+        pcall(ns.Sighting.PlaySound, ns.db.sightingSoundKey, ns.db.sightingVolume)
+    end
 end
 
 function Events.Tick()
     if not ns.db or ns.db.eventAlerts == false then return end
     local lead = 60 * (tonumber(ns.db.eventLead) or Events.LEAD.DEFAULT)
     local now = Now()
+    local busy = Events.Busy()
     for _, e in ipairs(Events.List()) do
         if Events.Enabled(e) then
-            local wait, _, claimed = Events.NextStart(e, now)
-            if wait and wait <= lead then
+            local wait, left, _, claimed, poi = Events.Window(e, now)
+            if wait and left and left > 0 then
                 local chave = e.key .. ":" .. math.floor((now + wait) / 60)
-                if not alerted[chave] and not Events.Why(e, wait, claimed) then
-                    alerted[chave] = true
-                    ns.Print(Events.Line(e, wait))
-                    if ns.db.sightingSound ~= false and ns.Sighting and ns.Sighting.PlaySound then
-                        pcall(ns.Sighting.PlaySound, ns.db.sightingSoundKey, ns.db.sightingVolume)
+                -- its time: up to `lead` before the start; once it runs, only an alert put off while busy, and only
+                -- with MIN_LEFT to go (an event over or nearly over is dropped)
+                local due = (wait > 0 and wait <= lead) or (wait <= 0 and pending[chave] and left >= Events.MIN_LEFT)
+                if due and not alerted[chave] and not Events.Why(e, wait, claimed) then
+                    if busy then
+                        if not pending[chave] and ns.Log then pcall(ns.Log.Add, "event-wait", { key = e.key, why = busy }) end
+                        pending[chave] = true
+                    else
+                        alerted[chave], pending[chave] = true, nil
+                        Events.Announce(e, wait, left, poi)
+                        if ns.Log then pcall(ns.Log.Add, "event", { key = e.key, wait = wait }) end
                     end
-                    if ns.Log then pcall(ns.Log.Add, "event", { key = e.key, wait = wait }) end
                 end
             end
         end
@@ -293,7 +417,7 @@ function Events.Report()
     end
 end
 
-function Events.Reset() wipe(alerted) end
+function Events.Reset() wipe(alerted); wipe(pending) end
 
 function Events.Enable()
     if Events.__on then return end

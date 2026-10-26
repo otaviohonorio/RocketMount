@@ -317,6 +317,39 @@ local HOLD_AFTER_HOVER = 6
 local EPIC_BORDER = "loottoast-itemborder-purple"
 local EPIC_HEX = "|cffa335ee"
 
+-- (!) NO TEXT IS CUT (24/10, the rule of 22/10: *"não deixa mais isso acontecer"*). Measured with the game's font
+-- (frizqt__.ttf) against the 217 of the text box: the longest event mount in Portuguese, "Lontruk de Reconhecimento
+-- Amarelo", is 256 at the name's font, and "Começa em 15min · Floresta do Canto Eterno · e mais 6" is 282 at the last
+-- line's. So the panel measures what it writes: the name steps down the game's own font objects until it fits, and a
+-- line takes the richest of its versions that fits (what it leaves out is in the tooltip and the chat).
+local NAME_FONTS = { "GameFontNormalMed3", "GameFontNormal", "GameFontNormalSmall" }
+
+local function Width(fs)
+    local f = fs.GetUnboundedStringWidth or fs.GetStringWidth
+    local ok, w = pcall(f, fs)
+    return ok and type(w) == "number" and w or 0
+end
+
+---Writes `texto` in the first of NAME_FONTS it fits in (the smallest when none does).
+local function FitName(fs, texto)
+    for _, f in ipairs(NAME_FONTS) do
+        fs:SetFontObject(_G[f] or f)
+        fs:SetText(texto)
+        if Width(fs) <= TEXT_W then return f end
+    end
+    return NAME_FONTS[#NAME_FONTS]
+end
+
+---Writes the first of `versions` (richest first) that fits; the last one when none does.
+local function FitFirst(fs, versions)
+    for _, t in ipairs(versions) do
+        fs:SetText(t)
+        if Width(fs) <= TEXT_W then return t end
+    end
+    return versions[#versions]
+end
+Sighting.FitName, Sighting.FitFirst = FitName, FitFirst
+
 local function CancelHide()
     local t = rawget(frame, "__hide")
     if type(t) == "table" and t.Cancel then t:Cancel() end
@@ -393,7 +426,12 @@ local function Build()
     frame:SetScript("OnEnter", function(self)
         CancelHide()
         local d = rawget(self, "data")
-        if d and ns.MapPins and GameTooltip then
+        local tip = rawget(self, "tip")
+        if tip and GameTooltip then
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            tip(GameTooltip)
+            GameTooltip:Show()
+        elseif d and ns.MapPins and GameTooltip then
             GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
             ns.MapPins.Tooltip(GameTooltip, d)
             GameTooltip:Show()
@@ -408,7 +446,12 @@ local function Build()
             self:Hide()
             return
         end
-        Sighting.PointAt(rawget(self, "target"))
+        local e = rawget(self, "event")
+        if e then
+            Sighting.GoToEvent(e, rawget(self, "target"))
+        else
+            Sighting.PointAt(rawget(self, "target"))
+        end
     end)
     frame:SetScript("OnHide", function()
         if GameTooltip then GameTooltip:Hide() end
@@ -478,7 +521,7 @@ local function Show(nome, montarias, frequencia, npc, alvo)
 
     frame.Icon:SetTexture(primeira and primeira.entry.icon)
     frame.Label:SetText(nome)
-    frame.Name:SetText(primeira and (EPIC_HEX .. (primeira.entry.name or "?") .. "|r") or "")
+    FitName(frame.Name, primeira and (EPIC_HEX .. (primeira.entry.name or "?") .. "|r") or "")
 
     -- The numbers, in the order they matter: the chance of the one named, how many more this
     -- creature can drop, how often it can be looted. Each part only when there is one.
@@ -495,11 +538,62 @@ local function Show(nome, montarias, frequencia, npc, alvo)
     frame.Sub:SetText(table.concat(partes, "  ·  "))
 
     -- What the tooltip and the click need.
-    frame.target = alvo
+    frame.target, frame.event, frame.tip = alvo, nil, nil
     frame.data = {
         npc = npc, name = nome, mounts = lista,
         rec = (npc and type(ns.MobDrops) == "table" and ns.MobDrops[npc]) or { name = nome, c = 4 },
     }
+
+    frame:Show()
+    HideLater(HOLD)
+    Sighting.PlaySound()
+end
+
+-- (24/10) THE EVENT'S PANEL IS THE RARE'S PANEL (Events.lua). The user: *"mais uma opção mostrar o evento como mostra
+-- quando acha raro uma popup"*. The same frame, the same three lines:
+--   the gold line   the event, by the game's name
+--   the name        the first mount of it this character lacks, epic as the game shows mounts
+--   the last line   when ("Starts in 4min" / "Ends in 12min") and the zone, then how many more mounts
+-- The rest -- every mount with what it takes, the place with its coordinates, how often -- is in the tooltip; a click
+-- points the arrow at the place (and hands it to TomTom), or opens the map when the event has no single place.
+
+---@param e table the event (Data/MountEvents.lua)
+---@param faltam table `{ { id, name, icon } }`, the mounts of it this character lacks
+---@param linha string the last line (Events.PanelLine)
+---@param spot table|nil `{ m, x, y, place }` in 0-100 (Events.Spot)
+function Sighting.ShowEvent(e, faltam, linha, spot)
+    Build()
+    local primeira = faltam[1]
+    frame.Icon:SetTexture(primeira and primeira.icon)
+    frame.Label:SetText(L[e.name])
+    FitName(frame.Name, primeira and (EPIC_HEX .. (primeira.name or "?") .. "|r") or "")
+    -- the richest version of the last line that fits: when · zone · how many more, then without the count, then
+    -- only when (Events.PanelLine gives `quando`, `quando · zona`)
+    local quando, zona = linha:match("^(.-)  ·  (.+)$")
+    quando = quando or linha
+    local versoes = {}
+    if #faltam > 1 then versoes[#versoes + 1] = linha .. "  ·  " .. string.format(L["and %d more"], #faltam - 1) end
+    versoes[#versoes + 1] = linha
+    if zona then versoes[#versoes + 1] = quando end
+    FitFirst(frame.Sub, versoes)
+
+    frame.target, frame.event, frame.data = spot, e, nil
+    frame.tip = function(tip)
+        GameTooltip_SetTitle(tip, L[e.name])
+        local onde = ns.Events and ns.Events.Where(e, spot)
+        if onde then GameTooltip_AddHighlightLine(tip, onde) end
+        local vez = ns.Events and ns.Events.RewardText(e)
+        if vez then GameTooltip_AddNormalLine(tip, vez) end
+        GameTooltip_AddBlankLineToTooltip(tip)
+        GameTooltip_AddNormalLine(tip, L["Can give:"])
+        for _, m in ipairs(faltam) do
+            local d = ns.Events and ns.Events.MountDetail(e, m.id)
+            GameTooltip_AddHighlightLine(tip, d and string.format("%s (%s)", m.name, d) or m.name)
+        end
+        GameTooltip_AddBlankLineToTooltip(tip)
+        GameTooltip_AddInstructionLine(tip, spot and L["Click: point the arrow here"] or L["Click: open the map"])
+        GameTooltip_AddInstructionLine(tip, L["Right-click: close"])
+    end
 
     frame:Show()
     HideLater(HOLD)
@@ -593,13 +687,13 @@ local function ChatLink(ponto)
         math.floor(ponto.x * 100), math.floor(ponto.y * 100), L["point me at this rare"])
 end
 
-local function Apontar(mapID, x, y)
+local function Apontar(mapID, x, y, quem)
     if C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(mapID) then
         C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(mapID, x, y))
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
             C_SuperTrack.SetSuperTrackedUserWaypoint(true)
         end
-        ns.Print(string.format(L["arrow pointed at %s."], L["the rare"]))
+        ns.Print(string.format(L["arrow pointed at %s."], quem or L["the rare"]))
     else
         ns.Print(L["this map does not accept pins."])
     end
@@ -625,9 +719,59 @@ function Sighting.ToTomTom(ponto, nome)
     return ok and uid ~= nil
 end
 
+-- (24/10) THE EVENT'S LINK. The same funnel, with the event's key at the end: the click points the arrow at the
+-- event's place and hands it to TomTom (the player asked for it with the click). An event with no single place
+-- (Beledar's Spawn, twenty of them) gets a link that opens its map, where our markers show them all.
+local function EventByKey(key)
+    for _, e in ipairs(ns.Events and ns.Events.List() or {}) do
+        if e.key == key then return e end
+    end
+    return nil
+end
+
+---The chat link of an event: points the arrow at `spot`, or opens the event's map when it has no single place.
+---@param spot table|nil `{ m, x, y }` in 0-100
+function Sighting.EventLink(e, spot)
+    if spot and spot.m and spot.x and spot.y then
+        return string.format("|cff71d5ff|H%s:%d:%d:%d:%s|h[%s]|h|r", LINK_PREFIX, spot.m,
+            math.floor(spot.x * 100), math.floor(spot.y * 100), e.key, L["point the arrow here"])
+    end
+    if e.map then
+        return string.format("|cff71d5ff|H%s:map:%d:%s|h[%s]|h|r", LINK_PREFIX, e.map, e.key, L["open the map"])
+    end
+    return nil
+end
+
+---The click on an event's alert (the panel or the chat link): the arrow at its place and TomTom, or its map.
+---@param ponto table|nil `{ m, x, y }` in 0-100
+function Sighting.GoToEvent(e, ponto)
+    if ponto and ponto.m and ponto.x and ponto.y then
+        Apontar(ponto.m, ponto.x / 100, ponto.y / 100, L[e.name])
+        Sighting.ToTomTom(ponto, L[e.name])
+        return true
+    end
+    if e.map and OpenWorldMap then
+        pcall(OpenWorldMap, e.map)
+        return true
+    end
+    return false
+end
+
 function Sighting.HandleLink(link)
     if type(link) ~= "string" then return false end
-    local mapID, x, y = link:match("^" .. LINK_PREFIX .. ":(%d+):(%d+):(%d+)$")
+    local mapID, x, y, key = link:match("^" .. LINK_PREFIX .. ":(%d+):(%d+):(%d+):(%w+)$")
+    if mapID then
+        local e = EventByKey(key)
+        if not e then return false end
+        return Sighting.GoToEvent(e, { m = tonumber(mapID), x = tonumber(x) / 100, y = tonumber(y) / 100 })
+    end
+    local soMapa
+    soMapa, key = link:match("^" .. LINK_PREFIX .. ":map:(%d+):(%w+)$")
+    if soMapa then
+        local e = EventByKey(key)
+        return e and Sighting.GoToEvent(e, nil) or false
+    end
+    mapID, x, y = link:match("^" .. LINK_PREFIX .. ":(%d+):(%d+):(%d+)$")
     if not mapID then return false end
     Apontar(tonumber(mapID), tonumber(x) / 10000, tonumber(y) / 10000)
     return true

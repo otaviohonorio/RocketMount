@@ -1,9 +1,9 @@
 -- RocketMount | Locales/ptBR.lua
--- Sobrescreve o que o enUS.lua deixou. Uma chave ausente aqui NÃO é um buraco: ela cai no
--- rótulo do jogo (quando `FROM_GAME` cobre) ou na própria chave, que já é o texto em inglês.
+-- Overrides what enUS.lua left. A key absent here is NOT a hole: it falls to the
+-- game's label (when `FROM_GAME` covers it) or to the key itself, which is already the English text.
 --
--- Regra do projeto para este arquivo: português correto, sem gíria. Jargão do próprio jogo
--- fica (renome, exaltado, raro) porque é o vocabulário que o jogador já usa.
+-- The project's rule for this file: correct Portuguese, no slang. The game's own jargon
+-- stays (renome, exaltado, raro) because it is the vocabulary the player already uses.
 local ADDON, ns = ...
 
 if GetLocale() ~= "ptBR" then return end
@@ -13,26 +13,26 @@ local L = ns.L
 --------------------------------------------------------------------------------
 -- As faixas da lista
 --------------------------------------------------------------------------------
--- O nome da faixa cabe em ~36 letras (`TIER_TITLE_WIDTH` no `Window.lua` reserva 230px a
--- 12pt). Passou disso, atravessa a borda da lista -- e o harness conta LETRAS, não bytes,
--- justamente por causa do acento.
+-- The tier's name fits in ~36 letters (`TIER_TITLE_WIDTH` in `Window.lua` reserves 230px at
+-- 12pt). Past that, it crosses the list's border -- and the harness counts LETTERS, not bytes,
+-- precisely because of the accents.
 L["Guaranteed — just go get it"]  = "Garantidas — é só ir pegar"
 L["Guaranteed — nearly unlocked"] = "Garantidas — quase liberadas"
 L["Guaranteed — halfway there"]   = "Garantidas — a meio caminho"
-L["Down to luck — good odds"]     = "Na sorte — chance boa"
+L["Down to luck — good odds"]     = "Na sorte — boa chance"
 L["Long road"]                    = "Caminho longo"
 L["Not confirmed"] = "Sem confirmação"
 L["No estimate"]                  = "Sem estimativa"
-L["Cannot be obtained any more"]  = "Não dá mais para conseguir"
+L["Cannot be obtained any more"]  = "Não podem mais ser obtidas"
 
 L["requirement met and checked"]        = "requisito cumprido e conferido"
 L["a little left on the requirement"]   = "falta pouco do requisito"
-L["road already walked"]                = "caminho já andado"
+L["road already walked"]                = "caminho já percorrido"
 L["1% or better"]                       = "1% ou mais"
-L["bad odds, or a distant requirement"] = "chance ruim, ou requisito longe"
+L["bad odds, or a distant requirement"] = "chance baixa ou requisito distante"
 L["open the vendor to confirm"] = "abra o vendedor para confirmar"
 
--- A validação antes da lista (Core.lua, Window.lua).
+-- The validation before the list (Core.lua, Window.lua).
 L["Checking every mount for this character…"] = "Conferindo cada montaria para este personagem…"
 L["%d of %d items loaded"] = "%d de %d itens carregados"
 L["waiting for the collection data"] = "esperando os dados da coleção"
@@ -40,7 +40,7 @@ L["no data to estimate from"]           = "sem dado para estimar"
 L["left the game"]                      = "saiu do jogo"
 
 --------------------------------------------------------------------------------
--- O número da direita e a frase que explica a posição
+-- The number on the right and the phrase that explains the position
 --------------------------------------------------------------------------------
 L["ready to grab"] = "pode pegar"
 
@@ -75,7 +75,7 @@ L["Shop"]              = "Loja"
 L["Discovery"]         = "Descoberta"
 
 --------------------------------------------------------------------------------
--- Reputação, missão e conquista
+-- Reputation, quest and achievement
 --------------------------------------------------------------------------------
 L["account-wide reputation"]  = "reputação da conta"
 L["this character only (%s)"] = "só deste personagem (%s)"
@@ -83,8 +83,8 @@ L["%s: %s — this character does not have it"] = "%s: %s — este personagem n�
 L["%s: no reputation with this faction on this character"] =
     "%s: nenhuma reputação com esta facção neste personagem"
 
--- "renome 25 de 5" NÃO É FRASE: a forma "X de Y" só funciona enquanto X caminha para Y.
--- Cumprido se diz cumprido. (Pergunta do usuário: "eu tenho 25 e precisa de 5?")
+-- "renome 25 de 5" IS NOT A PHRASE: the "X de Y" form only works while X is walking towards Y.
+-- Done is said as done. (The user's question: "eu tenho 25 e precisa de 5?")
 L["%s: renown %d reached (you are at %d)"]   = "%s: renome %d alcançado (você está em %d)"
 L["%s: renown %d of %d"]                     = "%s: renome %d de %d"
 L["%s: %s of %s to the next cache"]          = "%s: %s de %s para o próximo baú"
@@ -103,14 +103,13 @@ L["item %d"]            = "item %d"
 L['Quest "%s": completed']                  = 'Missão "%s": concluída'
 L["  —  already done on another character"] = "  —  já feita em outro personagem"
 L['Quest "%s": not completed%s%s']          = 'Missão "%s": não concluída%s%s'
-L["%s: %d of %d"]                           = "%s: %d de %d"
 L['Achievement "%s": not completed']        = 'Conquista "%s": não concluída'
 
 L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] =
-    "Vendedor de guilda: exige guilda Exaltada e, na maioria, uma conquista DE GUILDA"
+    "Vendedor de guilda: exige Exaltado com a guilda e, quase sempre, uma conquista DA GUILDA"
 
 --------------------------------------------------------------------------------
--- Quem tem a reputação (o livro-caixa)
+-- Who has the reputation (the ledger)
 --------------------------------------------------------------------------------
 L["%s has it (%s)"]             = "%s tem (%s)"
 L["on %s"] = "em %s"
@@ -121,17 +120,15 @@ L["on this character, little is left for %d mount(s):"] = "com este personagem, 
 L["%s has it (%s) and %d more"] = "%s tem (%s) e mais %d"
 
 --------------------------------------------------------------------------------
--- A janela
+-- The window
 --------------------------------------------------------------------------------
--- "Todas" e não "Tudo": o rótulo vem do jogo (`ALL`), mas aqui ele concorda com "fontes", que
--- é feminino plural. Esta linha é exatamente a precedência que o enUS.lua descreve -- a nossa
--- escolha ganha da palavra do jogo.
-L["All"] = "Todas"
+-- "Todas" and not "Tudo": the label comes from the game (`ALL`), but here it agrees with "fontes", which
+-- is feminine plural. This line is exactly the precedence enUS.lua describes -- our
+-- choice beats the game's word.
 
 L["Rocket Mount — where to start"] = "Rocket Mount — por onde começar"
-L["Sources"] = "Fontes"
 
--- Diário de desenvolvimento (/rmt log). Só existe fora do pacote.
+-- The development log (/rmt log). It only exists outside the package.
 L["the log only exists in development builds."] = "o diário só existe na versão de desenvolvimento."
 L["log cleared."] = "diário apagado."
 L["log: every line is also printed in chat."] = "diário: cada linha também aparece no chat."
@@ -141,18 +138,18 @@ L["OFF"] = "DESLIGADO"
 L["on"] = "ligado"
 L["the development log"] = "o diário de desenvolvimento"
 
--- O veredito do próprio vendedor (Sources.lua).
+-- The vendor's own verdict (Sources.lua).
 L["the vendor sells it to you (seen %s)"] = "o vendedor vende para você (visto em %s)"
 L["inside %s"] = "dentro de %s"
 L["  ·  %s drops it nearly every time: getting to it is the task"] =
-    "  ·  %s a deixa cair quase sempre: a tarefa é chegar até a criatura"
+    "  ·  %s dá a montaria quase sempre: o difícil é chegar até lá"
 L["  ·  the price is the journal's: the vendor may charge more"] =
     "  ·  o preço é o do diário: o vendedor pode cobrar mais"
 L["the vendor does not sell it to you yet (seen %s)"] = "o vendedor ainda não vende para você (visto em %s)"
--- Formato curto de data para "visto em": dia/mês em português.
+-- A short date format for "visto em": day/month in Portuguese.
 L["%m/%d"] = "%d/%m"
 
--- O mapa-múndi (MapPins.lua).
+-- The world map (MapPins.lua).
 L["Rare"] = "Raro"
 L["Elite"] = "Elite"
 L["%dd"] = "%dd"
@@ -169,8 +166,8 @@ L["Already looted today"] = "Já saqueado hoje"
 L["Click: point the arrow here"] = "Clique: apontar a seta para cá"
 L["Alt+click: Wowhead link"] = "Alt+clique: link do Wowhead"
 L["Which mount, on Wowhead?"] = "Qual montaria, no Wowhead?"
-L["Can drop:"] = "Pode largar:"
--- O tipo de cada lugar no mapa (27/09). São os rótulos sob o marcador e a segunda linha do balão.
+L["Can drop:"] = "Pode cair:"
+-- The type of each place on the map (27/09). They are the labels under the marker and the tooltip's second line.
 L["Boss"] = "Chefe"
 L["Treasure"] = "Tesouro"
 L["Portal"] = "Portal"
@@ -197,11 +194,11 @@ L["Other"] = "Outra fonte"
 L["Sells:"] = "Vende:"
 L["Rewards:"] = "Recompensa:"
 L["Mounts here:"] = "Montarias daqui:"
--- A descrição da ficha e do balão (27/09).
+-- The description of the card and the tooltip (27/09).
 L["Achievement: %s"] = "Conquista: %s"
 
--- AS DICAS DE JOGADORES (27/09). Aqui ficam só os rótulos; o texto de cada dica em português
--- está em `Locales/ptBR_Tips.lua`, que é GERADO (tools/gerar_dicas.py) junto com o inglês.
+-- PLAYERS' TIPS (27/09). Only the labels live here; the text of each tip in Portuguese
+-- is in `Locales/ptBR_Tips.lua`, which is GENERATED (tools/gerar_dicas.py) along with the English.
 L["Players' tip"] = "Dica de jogadores"
 L["Reported by players in %d. The game may have changed since."] =
     "Relatado por jogadores em %d. O jogo pode ter mudado desde então."
@@ -219,7 +216,7 @@ L["%d route(s), drawn with %d dash(es)"] = "%d rota(s), desenhada(s) com %d tra�
 L["A rare that patrols gets one marker and a dashed line along where it was seen. The route is an estimate from players' sightings. Unchecked, only the marker is drawn."] =
     "O raro que patrulha ganha um marcador só e uma linha tracejada por onde ele foi visto. A rota é uma estimativa, feita dos avistamentos dos jogadores. Desmarcada, só o marcador é desenhado."
 L["Writes Rare, Vendor, Quest, Raid… under each marker. Unchecked, the small symbol on the marker still says it."] =
-    "Escreve Raro, Vendedor, Missão, Raide… sob cada marcador. Desmarcada, o símbolo pequeno no marcador continua dizendo."
+    "Escreve Raro, Vendedor, Missão, Raide… sob cada marcador. Desmarcada, o pequeno símbolo do marcador continua indicando o tipo."
 L["World map"] = "Mapa-múndi"
 L["Every source of a mount you do not have, on the world map: the mount's icon, what kind of source it is, and the chance or how much is left when you hover it. A looted rare goes dim."] =
     "Toda fonte de montaria que você não tem, no mapa-múndi: o ícone da montaria, o tipo da fonte e, ao passar o mouse, a chance ou o quanto falta. Raro já saqueado fica apagado."
@@ -228,7 +225,7 @@ L["map %s (%d): %d place(s) asked for, %d drawn, %d failed."] = "mapa %s (%d): %
 L["    first failure: %s"] = "    primeira falha: %s"
 L["what the world map drew, and what failed"] = "o que o mapa-múndi desenhou, e o que falhou"
 
--- As tags da lista (Score.lua). "Drop" fica: é o termo que o jogador usa.
+-- The list's tags (Score.lua). "Drop" stays: it is the term the player uses.
 L["Raid"] = "Raide"
 L["Dungeon"] = "Masmorra"
 L["Renown"] = "Renome"
@@ -243,7 +240,7 @@ L["From the Trading Post, when it is on offer"] = "Do Posto Comercial, quando es
 L["Mount"] = "Montaria"
 L["Type"] = "Tipo"
 L["Show"] = "Mostrar"
-L["Show all"] = "Mostrar todos"
+L["Show all"] = "Mostrar todas"
 L["Group by type, then %"] = "Agrupar por tipo, depois %"
 L["Group by expansion, then %"] = "Agrupar por expansão, depois %"
 L["What the percentage means"] = "O que o percentual quer dizer"
@@ -256,16 +253,15 @@ L['Achievement "%s": %d%% done'] = 'Conquista "%s": %d%% feita'
 L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."] =
     "\"?\" quer dizer que ainda não dá para medir: abra o vendedor, ou não há dado."
 L["Markers on the map"] = "Marcadores no mapa"
-L["Rares, elites and world bosses that drop a mount you do not have, with the mount and the chance when you hover them. Dimmed once looted today."] = "Raros, elites e chefes do mundo que largam montaria que você não tem, com a montaria e a chance ao passar o mouse. Ficam apagados depois de saqueados."
 L["errors are NOT being captured on this client."] = "os erros NÃO estão sendo capturados neste cliente."
 L["no error captured (capture: %s)."] = "nenhum erro capturado (captura: %s)."
 L["%d error(s) captured, %d occurrence(s):"] = "%d erro(s) capturado(s), %d ocorrência(s):"
 L["name, boss, zone, vendor"] = "nome, chefe, zona, vendedor"
 L["Set map pin"] = "Marcar no mapa"
 L["Pick a mount in the list to see how it is obtained."] =
-    "Escolha uma montaria na lista para ver como ela se pega."
+    "Escolha uma montaria na lista para ver como obtê-la."
 
-L["How to get it"] = "Como pega"
+L["How to get it"] = "Como obter"
 L["Chance"]        = "Chance"
 L["Expansion"]     = "Expansão"
 L["Faction"]       = "Facção"
@@ -278,7 +274,7 @@ L["Who has it, from what was recorded"] = "Quem tem, pelo que ficou anotado"
 
 L["Heads up"] = "Atenção"
 L["The requirement above only UNLOCKS the attempt. Once met, the mount still depends on luck."] =
-    "O requisito acima só LIBERA a tentativa. Cumprido ele, a montaria ainda depende da sorte."
+    "O requisito acima só LIBERA a tentativa. Depois de cumprido, a montaria ainda depende da sorte."
 
 L["Why check"] = "Por que conferir"
 L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read. The price shown in the requirements is only part of what it costs."] =
@@ -287,7 +283,7 @@ L["Guild vendor. These ask for reputation with your guild AND an achievement OF 
     .. "que ela custa."
 L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."] =
     "Do que eu consigo ler, só o preço aparece nesta montaria — e preço quase nunca é o que "
-    .. "trava. Pode haver conquista, nível de guilda ou classificação no caminho, e isso eu não "
+    .. "impede. Pode haver conquista, nível de guilda ou classificação no caminho, e isso eu não "
     .. "leio."
 L[" And where its vendor is, I do not know."] =
     " E onde fica o vendedor dela, eu não sei."
@@ -299,26 +295,24 @@ L["the mount"]            = "a montaria"
 
 L["%d mounts missing"]      = "%d montarias faltando"
 L["Next in line:"]          = "Próxima da fila:"
-L[" (filtered from %d)"]    = " (filtrado de %d)"
+L[" (filtered from %d)"]    = " (filtradas de %d)"
 L['nothing found for "%s"'] = 'nada encontrado para "%s"'
-L["this client has no new menu; use /rmt sources."] =
-    "este cliente não tem o menu novo; use /rmt fontes."
 
 --------------------------------------------------------------------------------
--- O aviso de bicho que larga montaria
+-- O aviso de raro
 --------------------------------------------------------------------------------
 L["and %d more"]                    = "e mais %d"
 L["this map does not accept pins."] = "este mapa não aceita marcação."
 
--- ⛑ "marcar onde vi" SAIU (22/09). O link marcava os pés do jogador, e não o raro — o relato
--- veio de Luaprata, com a seta cravada na capital para um raro de outra zona. Agora ele aponta
--- para a coordenada que o catálogo guarda, então o rótulo passou a dizer o que ele faz.
+-- ⛑ "marcar onde vi" LEFT (22/09). The link marked the player's feet, and not the rare -- the report
+-- came from Luaprata, with the arrow nailed in the capital for a rare of another zone. Now it points
+-- at the coordinate the catalogue keeps, so the label came to say what it does.
 L["point me at this rare"] = "apontar para o raro"
 L["the rare"]              = "o raro"
-L["|cffffff00%s|r can drop: %s%s"]      = "|cffffff00%s|r pode largar: %s%s"
+L["|cffffff00%s|r can drop: %s%s"]      = "|cffffff00%s|r pode dar: %s%s"
 
 --------------------------------------------------------------------------------
--- O painel de opções
+-- The options panel
 --------------------------------------------------------------------------------
 L["Only what I can get"] = "Só o que posso pegar"
 L["A mount from the other faction or another class leaves the list. Uncheck to see the whole collection."] =
@@ -339,21 +333,21 @@ L["Click: close"] = "Clique: fechar"
 L["shows the alert of a new mount, to see how it looks"] = "mostra o aviso de montaria nova, para ver como fica"
 L["no mount to show the alert with."] = "nenhuma montaria para mostrar o aviso."
 L["A rare, elite or world boss that drops a mount you do not have: the alert shows who it is, the mount and the chance. Open world only, and quiet once you looted it."] =
-    "Raro, elite ou chefe do mundo que larga montaria que você não tem: o aviso diz quem é, "
-    .. "a montaria e a chance. Só no mundo aberto, e em silêncio depois que você saqueou."
+    "Raro, elite ou chefe do mundo que pode dar uma montaria que você não tem: o aviso diz quem é, "
+    .. "a montaria e a chance. Só no mundo aberto, e fica em silêncio depois que você o saqueia."
 
 L["Removed mounts"] = "Montarias removidas"
 L["Also lists the mounts that left the game: closed promotions, trading card game mounts and retired achievements. They cannot be obtained any more, so they stay out of the list by default."] =
-    "Lista também as montarias que saíram do jogo: promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. Elas não podem mais ser conseguidas, então ficam fora da lista por padrão."
+    "Lista também as montarias que saíram do jogo: promoções encerradas, montarias de jogo de cartas e conquistas aposentadas. Elas não podem mais ser obtidas, então ficam fora da lista por padrão."
 
 --------------------------------------------------------------------------------
--- Os comandos
+-- The commands
 --------------------------------------------------------------------------------
-L["the options panel has not registered yet."] = "o painel de opções ainda não registrou."
+L["the options panel has not registered yet."] = "o painel de opções ainda não foi registrado."
 L["the list shows every missing mount — the row cap was removed in 0.10.0."] =
     "a lista mostra todas as montarias que faltam — o limite de linhas saiu na 0.10.0."
 L["minimap button hidden."] = "botão do minimapa escondido."
-L["minimap button shown."]  = "botão do minimapa à mostra."
+L["minimap button shown."]  = "botão do minimapa visível."
 
 L["expansion: all."] = "expansão: todas."
 L["expansion: %s"]   = "expansão: %s"
@@ -362,19 +356,19 @@ L["expansion not recognized. These exist:"] = "expansão não reconhecida. As qu
 L["search cleared."]     = "busca limpa."
 L['searching for "%s".'] = 'buscando por "%s".'
 
-L["mount sighting alert on."]  = "aviso de bicho que larga montaria ligado."
-L["mount sighting alert off."] = "aviso de bicho que larga montaria desligado."
+L["mount sighting alert on."]  = "aviso de raro ligado."
+L["mount sighting alert off."] = "aviso de raro desligado."
 
 L["also showing the ones that left the game."] = "mostrando também as que saíram do jogo."
 L["hiding the ones that left the game."]       = "escondendo as que saíram do jogo."
 
-L["only what this character can get"] = "só o que este personagem pode"
+L["only what this character can get"] = "só o que este personagem pode pegar"
 L["all"]         = "todas"
 L["faction: %s"] = "facção: %s"
 
 L["%d character(s) recorded. The ledger is written as each one logs in — log in with your alts once so they show up here."] =
-    "%d personagem(ns) anotado(s). O livro-caixa se escreve quando cada um entra no jogo — entre "
-    .. "com os alts uma vez para eles aparecerem aqui."
+    "%d personagem(ns) anotado(s). Cada um é anotado quando entra no jogo — entre "
+    .. "uma vez com cada um dos outros para que apareçam aqui."
 L["    %s%s  —  %d reputation(s) recorded, seen on %s"] = "    %s%s  —  %d reputações anotadas, visto em %s"
 L["%m/%d/%Y"] = "%d/%m/%Y"
 L["A character that no longer exists: /rmt forget Name"] = "Personagem que não existe mais: /rmt esquecer Nome"
@@ -418,7 +412,7 @@ L["opens and closes the list"]                  = "abre e fecha a lista"
 L["clears the source filter"]                   = "limpa o filtro de fonte"
 L["filters by faction"]                         = "filtra por facção"
 L["shows or hides the ones that left the game"] = "mostra ou esconde as que saíram do jogo"
-L["turns the mount sighting alert on or off"]   = "liga e desliga o aviso de bicho que larga montaria"
+L["turns the mount sighting alert on or off"]   = "liga e desliga o aviso de raro"
 L["searches by name, boss, zone or vendor"]     = "procura por nome, chefe, zona ou vendedor"
 L["filters by expansion"]                       = "filtra por expansão"
 L["the characters recorded and how many reputations each one has"] =
@@ -427,9 +421,9 @@ L["shows or hides the minimap button"]     = "mostra ou esconde o botão do mini
 L["options"]                               = "opções"
 L["checks the labels taken from the game"] = "confere os rótulos que vêm do jogo"
 L["what the addon managed to read"]        = "o que o addon conseguiu ler"
-L["everything it knows about one mount"]   = "tudo que ele sabe de uma montaria"
+L["everything it knows about one mount"]   = "tudo o que ele sabe sobre uma montaria"
 
--- Frequência do saque dos raros (Sighting.lua, 25/09)
+-- The rares' loot frequency (Sighting.lua, 25/09)
 L["Loot: once a day"] = "Saque: 1 vez por dia"
 L["Loot: once a week"] = "Saque: 1 vez por semana"
 L["Loot: every kill"] = "Saque: sem limite (a cada morte)"
@@ -438,13 +432,13 @@ L["Loot: once per character"] = "Saque: 1 vez por personagem"
 L["Loot: how often is not known yet"] = "Saque: frequência ainda não conhecida"
 L["Already looted this week"] = "Já saqueado nesta semana"
 
--- Contadores da coleção (Window.lua, 26/09)
+-- The collection counters (Window.lua, 26/09)
 L["Collected"] = "Coletadas"
 L["%d of %d mounts"] = "%d de %d montarias"
 L["Only mounts this character can use count toward it."] = "Só contam as montarias que este personagem pode usar."
 L["done"] = "concluída"
 
--- Doação (Donate.lua, 26/09)
+-- Donation (Donate.lua, 26/09)
 L["Link copied — paste it in your browser."] = "Link copiado — cole no navegador."
 L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Obrigado por apoiar o Rocket Mount! Aperte Ctrl+C para copiar o link e cole no navegador."
 L["Click: open the donation link, ready to copy"] = "Clique: abrir o link de doação, pronto para copiar"
@@ -453,18 +447,18 @@ L["Report a problem"] = "Relatar um problema"
 L["Report a problem on"] = "Relatar um problema em"
 L["Click: choose where to report a problem"] = "Clique: escolher onde relatar um problema"
 L["Rocket Mount %s — report a problem on %s.|n|nPress Ctrl+C to copy the link, then paste it in your browser. Say what you were doing and what happened."] =
-    "Rocket Mount %s — relatar um problema em %s.|n|nAperte Ctrl+C para copiar o endereço e cole no navegador. Conte o que você estava fazendo e o que aconteceu."
+    "Rocket Mount %s — relatar um problema em %s.|n|nAperte Ctrl+C para copiar o link e cole no navegador. Conte o que você estava fazendo e o que aconteceu."
 
 -- The alert's sound (01/10).
 L["Play a sound"] = "Tocar um som"
 L["Send to TomTom"] = "Enviar ao TomTom"
 L["With TomTom installed, the alert also puts the rare's place in it, with its arrow. Without TomTom nothing changes; the pin in the chat is there either way."] =
-    "Com o TomTom instalado, o aviso também põe nele o lugar do raro, com a seta dele. Sem o TomTom nada muda; o alfinete no chat continua lá do mesmo jeito."
+    "Com o TomTom instalado, o aviso também põe nele o lugar do raro, com a seta dele. Sem o TomTom nada muda; a marcação no chat continua lá do mesmo jeito."
 L["A short chime when the alert appears. It is the addon's own: no sound of the game is used."] = "Um toque curto quando o aviso aparece. É do próprio addon: nenhum som do jogo é usado."
 L["Sound"] = "Som"
-L["Which chime the alert plays. Picking one plays it."] = "Qual toque o aviso usa. Escolher um o toca."
+L["Which chime the alert plays. Picking one plays it."] = "Qual toque o aviso usa. Ao escolher um, ele toca."
 L["Volume"] = "Volume"
-L["How loud the alert's sound is, in five steps. The game's own sound effects volume still applies."] = "A altura do som do aviso, em cinco níveis. O volume de efeitos sonoros do próprio jogo continua valendo."
+L["How loud the alert's sound is, in five steps. The game's own sound effects volume still applies."] = "O volume do som do aviso, em cinco níveis. O volume de efeitos sonoros do próprio jogo também se aplica."
 L["Chime"] = "Sino"
 L["Ding"] = "Toque"
 L["Three notes"] = "Três notas"
@@ -487,7 +481,7 @@ L["Its mounts only enter the list after the game shows what is on offer."] =
     "As montarias dele só entram na lista depois que o jogo mostra o que está em oferta."
 L["Loot the rares you kill"] = "Saqueie os raros que você matar"
 L["The addon learns how often each rare can drop again, and stops calling you to one that has nothing for you today."] =
-    "O addon aprende de quanto em quanto tempo cada raro volta a largar saque, e para de chamar você para um que hoje não tem nada para você."
+    "O addon aprende de quanto em quanto tempo cada raro volta a ter saque, e deixa de indicar um raro que hoje não tem nada para você."
 L["A character that no longer exists"] = "Personagem que não existe mais"
 L["Deleted, renamed or moved to another realm: click this button and pick it in the list to take it out."] =
     "Apagado, renomeado ou transferido de reino: clique neste botão e escolha o personagem na lista para tirá-lo."
@@ -513,7 +507,7 @@ L["The list and the descriptions are still being improved: suggestions are welco
     "A lista e as descrições ainda estão em evolução: sugestões são bem-vindas."
 L["Suggestions are welcome"] = "Sugestões são bem-vindas"
 L["A mount in the wrong place of the list, a place that is missing, a description that is wrong or could say more: tell us, and the next version has it."] =
-    "Uma montaria no lugar errado da lista, um local que falta, uma descrição errada ou que poderia dizer mais: conte para nós, e a próxima versão já traz."
+    "Uma montaria no lugar errado da lista, um local que falta, uma descrição errada ou que poderia dizer mais: conte para nós, e isso entra na próxima versão."
 L["Click: where to send it"] = "Clique: para onde enviar"
 
 -- The achievement of a mount, from the list (02/10).
@@ -533,10 +527,10 @@ L["Kind of source"] = "Tipo de fonte"
 L["%d / %d (%d%%)"] = "%d / %d (%d%%)"
 L["%d of %d collected (%d%%)"] = "%d de %d coletadas (%d%%)"
 L["  ·  showing %d"] = "  ·  mostrando %d"
-L["No mount matches the filter."] = "Nenhuma montaria passa pelo filtro."
+L["No mount matches the filter."] = "Nenhuma montaria corresponde ao filtro."
 L["Click: see it on the card"] = "Clique: ver na ficha"
 L["%s on Wowhead.|n|nPress Ctrl+C to copy the link, then paste it in your browser."] =
-    "%s no Wowhead.|n|nAperte Ctrl+C para copiar o endereço e cole no navegador."
+    "%s no Wowhead.|n|nAperte Ctrl+C para copiar o link e cole no navegador."
 
 -- the minimap tooltip, the same in every Rocket addon (13/10)
 L["Click: open the list"] = "Clique: abrir a lista"
@@ -544,14 +538,14 @@ L["Right-click: open the options"] = "Clique direito: abrir as opções"
 
 -- the attempts at a mount that drops by chance (13/10)
 L["Attempts"] = "Tentativas"
-L["Got on attempt %d"] = "Conseguida na %dª tentativa"
+L["Got on attempt %d"] = "Obtida na %dª tentativa"
 L["1 attempt so far"] = "1 tentativa até agora"
 L["%d attempts so far"] = "%d tentativas até agora"
 L["By character: %s"] = "Por personagem: %s"
 -- (21/10) the list's Attempts column, over a mount counted and not tried yet
 L["None yet"] = "Nenhuma ainda"
 L["From the game's statistics of each character, so also from before the addon: %s. A character counts once it logs in with the addon."] =
-    "Das estatísticas do jogo de cada personagem, então também de antes do addon: %s. Cada personagem entra na conta quando faz login com o addon."
+    "Das estatísticas do jogo de cada personagem, então também de antes do addon: %s. Cada personagem passa a contar quando entra no jogo com o addon."
 L["Counted by the addon since it was installed: the game keeps no count of these tries."] =
     "Contadas pelo addon desde que foi instalado: o jogo não guarda a contagem destas tentativas."
 -- (16/10) the map button's menu: what the map shows
@@ -566,8 +560,8 @@ L["Click: choose what to show"] = "Clique: escolher o que mostrar"
 -- (AreaPOI.ptBR of the client, 12.1): "Grande Escavação" is the head of "Grande Escavação: Descanso do Traidor".
 L["Mount events"] = "Eventos de montaria"
 L["Event alert"] = "Aviso de evento"
-L["A line in the chat and the chime a few minutes before an event that leads to a mount you do not have starts. Quiet once the event's reward of the week is taken."] =
-    "Uma linha no chat e o sino alguns minutos antes de começar um evento que leva a uma montaria que você não tem. Fica quieto depois que a recompensa da semana do evento foi pega."
+L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event is over by then. Quiet once the event's reward of the week is taken."] =
+    "Alguns minutos antes de começar um evento que leva a uma montaria que você não tem: uma linha no chat com o lugar e um link que aponta a seta para lá, e o aviso na tela, se você escolher. Nunca em combate nem dentro de masmorra, raide, imersão ou outra instância: o aviso espera, e é descartado se o evento já tiver passado. Fica em silêncio depois que a recompensa da semana do evento foi obtida."
 L["Minutes before"] = "Minutos antes"
 L["How long before the start the alert comes."] = "Quanto tempo antes do início o aviso chega."
 L["The event's reward can bring it."] = "A recompensa do evento pode trazê-la."
@@ -591,7 +585,7 @@ L["%s each"] = "%s cada"
 L["event alerts %s, %d min before:"] = "avisos de evento %s, %d min antes:"
 L["turned off"] = "desligado"
 L["you have its mounts"] = "você já tem as montarias"
-L["reward taken this week"] = "recompensa da semana já pega"
+L["reward taken this week"] = "recompensa da semana já obtida"
 L["no known start"] = "sem horário conhecido"
 L["will alert"] = "vai avisar"
 L["in %s"] = "em %s"
@@ -604,6 +598,20 @@ L["Time Rift"] = "Fenda Temporal"
 L["The Big Dig"] = "Grande Escavação"
 L["Community Feast"] = "Banquete da Comunidade"
 L["Researchers Under Fire"] = "Pesquisadores sob fogo"
+-- (24/10) where, the click, the alert on the screen, and the late alert (Events.lua)
+L["|cffffff00%s|r started %s ago, ends in %s"] = "|cffffff00%s|r começou há %s, termina em %s"
+L["Starts in %s"] = "Começa em %s"
+L["Ends in %s"] = "Termina em %s"
+L["point the arrow here"] = "apontar a seta para lá"
+L["open the map"] = "abrir o mapa"
+L["Click: open the map"] = "Clique: abrir o mapa"
+L["Right-click: close"] = "Botão direito: fechar"
+L["Can give:"] = "Pode dar:"
+L["How to alert"] = "Como avisar"
+L["In the chat and on the screen"] = "No chat e na tela"
+L["In the chat only"] = "Só no chat"
+L["On the screen, the alert is the rare alert's: click it to point the arrow at the event, right-click to close it."] =
+    "Na tela, o aviso é o mesmo do aviso de raro: clique nele para apontar a seta para o evento; o botão direito fecha."
 
 -- (22/10) the Attempts tab, the luck of a count, the time spent, today and this week, and the
 -- lockouts of each character (AttemptsTab.lua, Attempts.lua, Lockouts.lua)
@@ -634,7 +642,7 @@ L["This week: %d at %d"] = "Nesta semana: %d em %d"
 L["1 mount with attempts"] = "1 montaria com tentativas"
 L["%d mounts with attempts"] = "%d montarias com tentativas"
 L["No attempts counted yet. Kill a boss or loot a rare that drops a mount you are missing, and it shows up here."] =
-    "Nenhuma tentativa contada ainda. Derrote um chefe ou saqueie um raro que deixa cair uma montaria que falta, e ela aparece aqui."
+    "Nenhuma tentativa contada ainda. Derrote um chefe ou saqueie um raro que pode dar uma montaria que falta, e ela aparece aqui."
 L["Done today"] = "Feito hoje"
 L["Done this week"] = "Feito nesta semana"
 L["Done"] = "Feito"
@@ -646,7 +654,7 @@ L["(the whole warband)"] = "(todo o Bando de Guerra)"
 L["%s: the whole warband"] = "%s: todo o Bando de Guerra"
 L["Done on %s"] = "Feito em: %s"
 L["Still open on %s"] = "Ainda disponível em: %s"
-L["Can still go: %s"] = "Ainda pode: %s"
+L["Can still go: %s"] = "Ainda disponível para: %s"
 L["Characters that never logged in with the addon are not listed."] =
     "Personagens que nunca entraram no jogo com o addon não aparecem."
 L["Characters below the maximum level are not offered."] =

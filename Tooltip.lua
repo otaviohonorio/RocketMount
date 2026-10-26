@@ -28,13 +28,13 @@ local _, ns = ...
 local Tooltip = {}
 ns.Tooltip = Tooltip
 
--- (!) OS TEXTOS VÊM DO CLIENTE, e não de uma lista minha em português.
+-- (!) THE TEXTS COME FROM THE CLIENT, and not from a list of mine in Portuguese.
 --
--- `ITEM_REQ_REPUTATION` é "Requires %s - %s" em inglês e "Requer %s - %s" em português, porque
--- quem traduz é a Blizzard. Escrever "Requer" aqui quebraria em todo cliente que não é ptBR --
--- e é o tipo de defeito que só aparece quando outra pessoa instala o addon.
+-- `ITEM_REQ_REPUTATION` is "Requires %s - %s" in English and "Requer %s - %s" in Portuguese, because
+-- Blizzard is who translates. Writing "Requer" here would break in every client that is not ptBR --
+-- and it is the kind of defect that only shows when someone else installs the addon.
 --
--- O padrão de Lua sai da própria global: `%s` vira `(.+)` e o resto é escapado.
+-- The Lua pattern comes from the global itself: `%s` becomes `(.+)` and the rest is escaped.
 local function ToPattern(global)
     if type(global) ~= "string" or global == "" then return nil end
     local escaped = global:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1")
@@ -43,8 +43,8 @@ local function ToPattern(global)
     return "^" .. escaped .. "$"
 end
 
--- As globais que descrevem requisito num tooltip de item. Cada uma pode não existir num
--- cliente; `ToPattern` devolve nil e ela simplesmente não entra.
+-- The globals that describe a requirement in an item tooltip. Each one may not exist in a
+-- client; `ToPattern` returns nil and it simply does not go in.
 local REQUIRE_GLOBALS = {
     "ITEM_REQ_REPUTATION",          -- "Requires %s - %s"
     "ITEM_REQ_SKILL",               -- "Requires %s"
@@ -65,15 +65,15 @@ local function Patterns()
     return patterns
 end
 
----É uma linha de requisito?
+--- Is it a requirement line?
 ---
----Duas evidências, e qualquer uma basta:
+--- Two pieces of evidence, and either is enough:
 ---
----  1. o TIPO da linha é `UsageRequirement` -- a própria Blizzard classificando;
----  2. o texto casa com uma das globais de "Requer ...".
+---  1. the line's TYPE is `UsageRequirement` -- Blizzard itself classifying it;
+---  2. the text matches one of the "Requires ..." globals.
 ---
----E uma terceira que decide se está CUMPRIDO: linha de requisito não cumprido vem **vermelha**
----(1, 0.125, 0.125). É assim que o jogo diz "você não pode" sem escrever isso.
+--- And a third that decides whether it is MET: an unmet requirement line comes **red**
+--- (1, 0.125, 0.125). That is how the game says "you cannot" without writing it.
 local function LineInfo(line)
     if type(line) ~= "table" then return nil end
     local texto = line.leftText
@@ -92,7 +92,7 @@ local function LineInfo(line)
     end
     if not ehRequisito then return nil end
 
-    -- Vermelho = não cumprido. O verde/branco do jogo significa cumprido.
+    -- Red = not met. The game's green/white means met.
     local vermelho = false
     if type(line.leftColor) == "table" and line.leftColor.r then
         vermelho = line.leftColor.r > 0.8 and line.leftColor.g < 0.3 and line.leftColor.b < 0.3
@@ -153,10 +153,10 @@ function Tooltip.Flavor(itemID)
     return nil
 end
 
----Os requisitos que o tooltip do item declara.
+--- The requirements the item's tooltip states.
 ---
----@return table|nil lista `{ { texto, cumprido }, ... }`, ou nil quando não há item ou o
----tooltip ainda não carregou (o cliente busca o item do servidor na primeira vez).
+--- @return table|nil list `{ { text, met }, ... }`, or nil when there is no item or the
+--- tooltip has not loaded yet (the client fetches the item from the server the first time).
 function Tooltip.Requirements(itemID)
     if type(itemID) ~= "number" or itemID <= 0 then return nil end
     if not (C_TooltipInfo and C_TooltipInfo.GetItemByID) then return nil end
@@ -175,11 +175,11 @@ function Tooltip.Requirements(itemID)
     return out
 end
 
----Resume os requisitos do tooltip num registro do mesmo formato dos outros.
+--- Sums up the tooltip's requirements in a record of the same shape as the others.
 ---
----`pct` é 1 quando todos estão cumpridos e 0 quando qualquer um não está -- e é 0 e não uma
----fração de propósito: "metade dos requisitos do tooltip" não significa nada, porque eles não
----são etapas de um caminho, são portas. Ou passa, ou não passa.
+--- `pct` is 1 when all are met and 0 when any is not -- and it is 0 and not a
+--- fraction on purpose: "half the tooltip's requirements" means nothing, because they are not
+--- stages of a road, they are doors. It either passes, or it does not.
 function Tooltip.Gate(itemID, ignorarRep)
     local reqs = Tooltip.Requirements(itemID)
     if not reqs or #reqs == 0 then return nil end
@@ -200,19 +200,19 @@ function Tooltip.Gate(itemID, ignorarRep)
         if not r.cumprido and not daRep then faltando[#faltando + 1] = r.texto end
     end
 
-    -- (!) O TOOLTIP SÓ SERVE COMO SINAL NEGATIVO. Ele diz o que BLOQUEIA, nunca o que libera.
+    -- (!) THE TOOLTIP ONLY SERVES AS A NEGATIVE SIGNAL. It says what BLOCKS, never what frees.
     --
-    -- Esta função já devolveu `pct = 1` quando nada no tooltip estava vermelho, e isso virou
-    -- defeito no mesmo dia: o Corcel de Guerra Prestigioso apareceu como "é só ir pegar". O
-    -- catálogo não sabe nada dele (`method = "SPECIAL"` e só), e o tooltip do item traz um
-    -- "Requer nível 10" que o jogador cumpre — então "requisito cumprido" virou acesso
-    -- liberado. Só que a montaria vem da conquista *Free For All, More For Me*, que o tooltip
-    -- do item não menciona.
+    -- This function once returned `pct = 1` when nothing in the tooltip was red, and that became a
+    -- defect the same day: the Prestigious War Steed showed as "just go get it". The
+    -- catalogue knows nothing about it (`method = "SPECIAL"` and that is all), and the item's tooltip brings a
+    -- "Requires level 10" the player meets -- so "requirement met" became access
+    -- granted. Only the mount comes from the achievement *Free For All, More For Me*, which the item's
+    -- tooltip does not mention.
     --
-    -- **Nada bloqueando no tooltip não é prova de que dá para pegar.** É a mesma lição das
-    -- outras cinco vezes, agora aplicada à fonte mais nova do addon: ausência de impedimento
-    -- lida como permissão. Devolver `nil` deixa a montaria cair onde ela pertence — em "sem
-    -- estimativa" — em vez de subir para o topo.
+    -- **Nothing blocking in the tooltip is no proof that it can be had.** It is the same lesson as the
+    -- other five times, now applied to the addon's newest source: the absence of a block
+    -- read as permission. Returning `nil` lets the mount fall where it belongs -- in "no
+    -- estimate" -- instead of going up to the top.
     if #faltando == 0 then return nil end
 
     return {

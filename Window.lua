@@ -726,15 +726,15 @@ function ns.ChanceByDifficulty(rows)
     return linhas
 end
 
--- (!) O CONTEÚDO DA FICHA SE MONTA FORA DO DESENHO.
+-- (!) THE CARD'S CONTENT IS BUILT OUTSIDE THE DRAWING.
 --
--- A regra morava dentro do código que pinta widget, e por isso o harness não tinha como
--- olhar para ela. Foi assim que a mesma informação chegou a aparecer três vezes na ficha
--- sem nenhum teste reclamar. Separada, esta é uma função pura: entra a montaria, sai a
--- lista de blocos, e o teste lê a lista.
----@return table blocos `{ { key, label, value }, ... }`, na ordem da ficha; o de `key = "flavor"`
----não tem rótulo
----@return table|nil wp o ponto do mapa, para o botão de seta
+-- The rule lived inside the code that paints widgets, and so the harness had no way to
+-- look at it. That is how the same information came to show three times on the card
+-- without any test complaining. Separated, this is a pure function: the mount goes in, the
+-- list of blocks comes out, and the test reads the list.
+--- @return table blocks `{ { key, label, value }, ... }`, in the card's order; the one with `key = "flavor"`
+--- has no label
+--- @return table|nil wp the map point, for the arrow button
 function ns.DetailBlocks(entry)
     local blocks = {}
     local function Add(key, label, value)
@@ -748,7 +748,7 @@ function ns.DetailBlocks(entry)
         Add("flavor", nil, '"' .. entry.description .. '"')
     end
 
-    -- O texto da própria Blizzard. É o melhor "como pega" que existe, e já vem traduzido.
+    -- Blizzard's own text. It is the best "how to get it" there is, and it comes already translated.
     Add("howto", L["How to get it"], entry.sourceText and entry.sourceText ~= "" and entry.sourceText
         or ns.SOURCE_NAMES[entry.sourceType])
 
@@ -816,25 +816,25 @@ function ns.DetailBlocks(entry)
         Add("lockout", L["Status"], LockoutText(entry.mountID))
     end
 
-    -- Requisito e aquisição são blocos separados de propósito: misturar os dois é o que
-    -- fazia a lista anunciar "100%" numa montaria que ainda depende de sorte.
-    -- A EXPANSÃO, no alto da ficha: é a primeira coisa que situa a montaria, e sem ela o
-    -- jogador lê "Vendedor em Valdrakken" sem saber de que época aquilo é.
+    -- Requirement and acquisition are separate blocks on purpose: mixing the two is what
+    -- made the list announce "100%" on a mount that still depends on luck.
+    -- THE EXPANSION, at the top of the card: it is the first thing that places the mount, and without it the
+    -- player reads "Vendor in Valdrakken" without knowing what era that is from.
     if entry.expansionName then
         Add("expansion", L["Expansion"], entry.expansionName)
     end
 
     if entry.factionOnly then
-        -- FACÇÃO É INFORMAÇÃO, e antes ela só servia para esconder a montaria. Quem planeja o
-        -- outro lado precisa saber que ela existe e de quem ela é.
+        -- FACTION IS INFORMATION, and before it only served to hide the mount. Whoever plans the
+        -- other side needs to know it exists and whose it is.
         Add("faction", L["Faction"], entry.factionOnly == "Horde" and L["Horde only"] or L["Alliance only"])
     end
 
-    -- (!) A FICHA LISTA TODOS OS REQUISITOS, um por linha, com o estado de cada um.
+    -- (!) THE CARD LISTS ALL THE REQUIREMENTS, one per line, with each one's state.
     --
-    -- Ela ja mostrou so o mais atrasado, e o usuario bateu de frente com o resultado disso:
-    -- *"falta cristal de ressonancia mas que tambem falta reputacao"*. Uma montaria com dois
-    -- requisitos que anuncia so um deles manda o jogador para a metade do caminho.
+    -- It once showed only the most behind, and the user ran straight into the result of that:
+    -- *"falta cristal de ressonancia mas que tambem falta reputacao"*. A mount with two
+    -- requirements that announces only one of them sends the player halfway down the road.
     local p = entry.requirementFrom and entry[entry.requirementFrom]
     local exigido
     if entry.requisitos and #entry.requisitos > 0 then
@@ -885,9 +885,9 @@ function ns.DetailBlocks(entry)
         end
     end
 
-    -- QUAL PERSONAGEM TEM. A API só fala do conectado; esta lista vem do livro-caixa, que é
-    -- escrito quando cada personagem entra. Por isso ela diz "pelo que ficou anotado" — uma
-    -- anotação velha se passando por leitura ao vivo seria pior que anotação nenhuma.
+    -- WHICH CHARACTER HAS IT. The API only speaks of the connected one; this list comes from the ledger, which is
+    -- written when each character logs in. That is why it says "from what was noted" -- an
+    -- old note passing for a live reading would be worse than no note at all.
     local anotados
     if p and p.unreadable and entry.rep and entry.rep.factionId ~= nil and ns.Roster then
         local quem = ns.Roster.WhoHas(entry.rep.factionId)
@@ -915,30 +915,30 @@ function ns.DetailBlocks(entry)
         exigido.chars = { nomeado }
     end
 
-    -- (!) O PREÇO NÃO TEM BLOCO PRÓPRIO, e isso é correção, não esquecimento.
+    -- (!) THE PRICE HAS NO BLOCK OF ITS OWN, and that is a fix, not an oversight.
     --
-    -- Ele tinha: "Requisitos" listava o preço, e logo abaixo vinham "Preço" e "Falta" dizendo a
-    -- mesma coisa outra vez. O usuário viu isso rodando: *"tem o Requisitos, tem o preço e o
-    -- Falta, às vezes tem as mesmas informações"*. Três linhas para um fato só.
+    -- It had one: "Requirements" listed the price, and right below came "Price" and "Missing" saying the
+    -- same thing again. The user saw it running: *"tem o Requisitos, tem o preço e o
+    -- Falta, às vezes tem as mesmas informações"*. Three lines for one fact.
     --
-    -- Preço É um requisito, e o lugar dele é a lista com os outros — com o mesmo sinal de
-    -- cumprido, e contado no "faltam N de M". A exigência antiga continua valendo dentro da
-    -- linha: o que ela custa primeiro, o que falta depois, nunca os dois números grudados
-    -- (`CostProgress` monta esse texto, e é lá que ele vive).
+    -- Price IS a requirement, and its place is the list with the others -- with the same
+    -- met sign, and counted in the "N of M missing". The old demand still holds inside the
+    -- line: what it costs first, what is missing after, never the two numbers stuck together
+    -- (`CostProgress` builds that text, and that is where it lives).
 
     if entry.gated and not entry.deterministic then
         Add("headsup", L["Heads up"],
             L["The requirement above only UNLOCKS the attempt. Once met, the mount still depends on luck."])
     end
 
-    -- ⛑ O AVISO QUE FALTAVA. O addon só enxerga reputação, renome, conquista, moeda e ouro.
-    -- Conquista de guilda, nível de guilda, classificação de PvP e perícia de profissão ele NÃO
-    -- lê — e foi por calar sobre isso que a Fênix Negra apareceu como "é só ir pegar".
+    -- ⛑ THE WARNING THAT WAS MISSING. The addon only sees reputation, renown, achievement, currency and gold.
+    -- Guild achievement, guild level, PvP rating and profession skill it does NOT
+    -- read -- and it was by keeping quiet about that that the Black Phoenix showed as "just go get it".
     if entry.tier == ns.TIER.CHECK then
         local texto
         if entry.vendorGuilda then
-            -- ESPECÍFICO quando dá para ser: toda montaria de vendedor de guilda exige
-            -- reputação com a guilda mais uma conquista de guilda.
+            -- SPECIFIC when it can be: every guild vendor mount demands
+            -- reputation with the guild plus a guild achievement.
             texto = L["Guild vendor. These ask for reputation with your guild AND an achievement OF THE GUILD — and the achievement is the part I cannot read. The price shown in the requirements is only part of what it costs."]
         else
             texto = L["Of what I can read, only the price shows up on this mount — and price is almost never what blocks. There may be an achievement, a guild level or a rating in the way, and those I do not read."]
@@ -1243,7 +1243,11 @@ local function BuildRow(row)
     row.why = Text(row, "GameFontDisableSmall")
     row.why:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -4)
     row.why:SetWidth(NAME_W)
-    row.why:SetWordWrap(false)
+    -- (25/10) TWO LINES, never a "...": the line ran up to 571 px in 280 and the game cut it (the user: *"esse '...'
+    -- no lugar do nome, não pode, é inaceitável"*). Two lines of 10 fit under the name in the row's 58; what does not
+    -- fit in two is left out from its end (FitWhy) and the whole sentence is in the row's tooltip
+    row.why:SetWordWrap(true)
+    row.why:SetMaxLines(2)
 
     -- The TAGS, in the column the header filters. Two lines at most: a mount rarely is more than
     -- "Raid · Drop" or "Reputation · Vendor", and a third tag is in the card.
@@ -1363,14 +1367,19 @@ local function BuildRow(row)
     end)
     row.ach:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- (25/10) the tooltip in the game's helpers (the visual identity's list): the name as the title, the WHOLE line
+    -- under the name (two lines on the row may leave its end out), then the game's own description
     row:SetScript("OnEnter", function(self)
         local e = self.entry
-        if e and e.description and e.description ~= "" then
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(e.name, 1, 0.82, 0)
-            GameTooltip:AddLine(e.description, 1, 1, 1, true)
-            GameTooltip:Show()
-        end
+        if not e then return end
+        local why = self.whyFull or ""
+        local desc = e.description or ""
+        if why == "" and desc == "" then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip_SetTitle(GameTooltip, e.name)
+        if why ~= "" then GameTooltip_AddHighlightLine(GameTooltip, why, true) end
+        if desc ~= "" then GameTooltip_AddNormalLine(GameTooltip, desc, true) end
+        GameTooltip:Show()
     end)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row:SetScript("OnClick", function(self)
@@ -1406,6 +1415,30 @@ function ns.AltMark(e)
         c[1] * 256, c[2] * 256, c[3] * 256, c[4] * 256)
 end
 
+---Writes the richest of `text`'s versions that fits in two lines of `fs` (its parts are " · "-joined: the last ones
+---go first) and returns what was left out ("" when nothing). Measured with the game's own width of the text.
+local WHY_LINES = 2
+local SEP = "  ·  "
+local function FitWhy(fs, text)
+    local parts = {}
+    for part in (text .. SEP):gmatch("(.-)" .. SEP:gsub("%p", "%%%0")) do parts[#parts + 1] = part end
+    local width = fs.GetUnboundedStringWidth or fs.GetStringWidth
+    -- a wrapped line loses the end of its last word to the next: 90% of two lines is what two lines hold
+    local room = NAME_W * WHY_LINES * 0.9
+    for n = #parts, 1, -1 do
+        local shown = table.concat(parts, SEP, 1, n)
+        fs:SetText(shown)
+        -- the game says itself whether it cut the text (FontString:IsTruncated); the width is the fallback
+        local okT, cut = pcall(function() return fs:IsTruncated() end)
+        local ok, w = pcall(width, fs)
+        local fits = (okT and cut == false) or ((not okT or cut == nil) and ok and type(w) == "number" and w <= room)
+        if n == 1 or fits then
+            return n < #parts and table.concat(parts, SEP, n + 1) or ""
+        end
+    end
+    return ""
+end
+
 ---The line under the name, led by the character when the reputation is another one's.
 function ns.RowWhy(e)
     local why = e.why or ""
@@ -1422,7 +1455,8 @@ local function FillRow(row, data)
     row.entry = e
     row.icon:SetTexture(e.icon)
     row.name:SetText(e.name)
-    row.why:SetText(ns.RowWhy(e))
+    row.whyFull = ns.RowWhy(e)
+    row.whyLeft = FitWhy(row.why, row.whyFull)
 
     local _, tags = ns.Tags(e)
     local nomes = {}

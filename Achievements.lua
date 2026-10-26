@@ -25,8 +25,8 @@ ns.Achievements = Achievements
 local byMount       -- nome dobrado da montaria -> { id, nome da conquista }
 local scanning = false
 
--- A varredura é fatiada: percorrer todas as categorias de uma vez trava o cliente por um
--- instante no login, que é justamente quando ele já está ocupado.
+-- The sweep is sliced: going through every category at once freezes the client for an
+-- instant at login, which is exactly when it is already busy.
 local SLICE = 40
 
 -- The reward line. `GetAchievementReward` where it exists; otherwise the 11th return of
@@ -44,8 +44,8 @@ local function Store(achID, texto, faltantes)
     if type(texto) ~= "string" or texto == "" then return end
     local dobrado = ns.Fold(texto)
     for chave, nome in pairs(faltantes) do
-        -- `find` simples: o texto da recompensa é "Montaria: <nome>" ou variações por idioma, e
-        -- procurar o nome dentro dele funciona em todas sem eu escrever o formato de nenhuma.
+        -- A plain `find`: the reward text is "Mount: <name>" or variations per language, and
+        -- looking for the name inside it works in all of them without my writing the format of any.
         if dobrado:find(chave, 1, true) then
             local _, achNome = GetAchievementInfo(achID)
             byMount[chave] = { id = achID, nome = achNome or nome }
@@ -53,7 +53,7 @@ local function Store(achID, texto, faltantes)
     end
 end
 
----Monta o índice. Roda uma vez por sessão, fatiado, e só depois de a lista existir.
+--- Builds the index. It runs once per session, sliced, and only after the list exists.
 function Achievements.Scan()
     if byMount or scanning then return end
     if not (GetCategoryList and GetAchievementInfo) then return end
@@ -61,8 +61,8 @@ function Achievements.Scan()
     scanning = true
     byMount = {}
 
-    -- Só o que falta: casar o texto de recompensa contra mil e cem nomes seria desperdício, e
-    -- montaria já coletada não precisa de requisito nenhum.
+    -- Only what is missing: matching the reward text against eleven hundred names would be waste, and
+    -- a mount already collected needs no requirement at all.
     local faltantes = {}
     local ok, lista = pcall(ns.GetRanked)
     if ok and type(lista) == "table" then
@@ -244,7 +244,7 @@ function Achievements.IsDone()
     return byMount ~= nil and not scanning
 end
 
----A conquista que dá esta montaria, se alguma (pela varredura das categorias, pelo nome).
+--- The achievement that gives this mount, if any (from the sweep of the categories, by name).
 function Achievements.For(mountName)
     if not byMount or not mountName then return nil end
     return byMount[ns.Fold(mountName)]
@@ -284,16 +284,16 @@ function Achievements.Candidates(mountName, mountID)
     return out
 end
 
----O requisito, no formato dos outros.
+--- The requirement, in the others' shape.
 ---
----(!) SINAL NEGATIVO, como todas as fontes deste addon: quando a conquista existe e não está
----feita, ele bloqueia; quando está feita, ele **não** devolve "liberado", porque conquista
----concluída não prova que a montaria ainda é obtenível -- foi exatamente assim que o tooltip
----promoveu o Corcel de Guerra Prestigioso para o topo.
+--- (!) A NEGATIVE SIGNAL, like every source of this addon: when the achievement exists and is not
+--- done, it blocks; when it is done, it does **not** return "free", because a completed
+--- achievement does not prove the mount can still be had -- that is exactly how the tooltip
+--- promoted the Prestigious War Steed to the top.
 ---
----More than one achievement can give the same mount (the legacy 10- and 25-player "Glory",
----and the one that replaced both). Any of them done: no gate. None done: the one closest to
----done is the road shown.
+--- More than one achievement can give the same mount (the legacy 10- and 25-player "Glory",
+--- and the one that replaced both). Any of them done: no gate. None done: the one closest to
+--- done is the road shown.
 function Achievements.Gate(mountName, mountID)
     local melhor
     for _, id in ipairs(Achievements.Candidates(mountName, mountID)) do

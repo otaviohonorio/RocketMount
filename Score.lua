@@ -27,10 +27,10 @@
 local ADDON, ns = ...
 local L = ns.L
 
--- (!) A ORDEM DAS FAIXAS É A PROMESSA DO ADDON, e ela estava errada: "requisito desconhecido"
--- ficava em SEGUNDO, logo abaixo de "é só ir pegar". Posição é recomendação — pôr "eu não sei"
--- perto do topo faz a lista recomendar justamente o que ela não consegue avaliar. Agora ela cai
--- para o fim, ao lado de "sem estimativa", que é onde a falta de informação pertence.
+-- (!) THE ORDER OF THE BANDS IS THE ADDON'S PROMISE, and it was wrong: "unknown requirement"
+-- sat SECOND, right below "just go get it". Position is a recommendation -- putting "I do not know"
+-- near the top makes the list recommend exactly what it cannot assess. Now it drops
+-- to the end, beside "no estimate", which is where the lack of information belongs.
 ns.TIER = {
     READY     = 1,
     CLOSE     = 2,
@@ -39,7 +39,7 @@ ns.TIER = {
     LONGFARM  = 5,
     CHECK     = 6,
     UNKNOWN   = 7,
-    -- Depois de tudo, e só quando o jogador pede para ver: não é difícil, é impossível.
+    -- After everything, and only when the player asks to see: it is not hard, it is impossible.
     GONE      = 8,
 }
 
@@ -93,9 +93,9 @@ ns.TIER_NAME = {
 -- The hint is short because it shares a line with the band name, which grew. Practical
 -- ceiling: ~36 characters. Past that it crosses the list border (see the width check in
 -- the harness, which counts LETTERS, not bytes).
--- A dica fala do que a MONTARIA exige, e não do que o addon sabe. A dica da faixa 6 chegou a
--- ser *"sei o preço; o resto não sei"* e foi reprovada na hora: o jogador não quer saber o que
--- o addon sabe, quer saber o que falta para ele pegar a montaria.
+-- The hint speaks of what the MOUNT demands, and not of what the addon knows. Band 6's hint once
+-- was *"sei o preço; o resto não sei"* and was rejected on the spot: the player does not want to know what
+-- the addon knows, he wants to know what is missing for him to get the mount.
 ---A 1-in-n chance as a percentage, the ONE formatter for the window, the card, the alert and chat.
 ---
 ---The user (23/09): *"esse 1/200 por exemplo, poderia ser tudo convertido em percentual, tanto
@@ -174,9 +174,9 @@ end
 --
 -- "Just go get it" demands a known AND met access requirement. Knowing only the price sends
 -- the mount to "check with the vendor", which promises exactly what can be proven.
--- `tooltipGate` entra como acesso: ele é o jogo dizendo "você não pode comprar isto ainda", e
--- isso é exatamente um requisito de acesso. Vem por último na lista porque é o mais genérico —
--- quando reputação e conquista já explicam, a frase do tooltip costuma repetir o que elas dizem.
+-- `tooltipGate` comes in as access: it is the game saying "you cannot buy this yet", and
+-- that is exactly an access requirement. It comes last in the list because it is the most generic --
+-- when reputation and achievement already explain it, the tooltip's phrase usually repeats what they say.
 -- `vendorCheck` is the vendor's own verdict (Sources.lua): the only source that can say "met"
 -- on its own, because it is the game answering, not the catalogue being silent.
 local ACCESS_KEYS = { "rep", "achievement", "achievementReward", "quest", "tooltipGate", "vendorCheck" }
@@ -248,8 +248,8 @@ end
 function ns.Rank(entry)
     local e = entry
 
-    -- SAIU DO JOGO: nenhuma das regras abaixo se aplica. Ranquear esforço de uma montaria que
-    -- ninguém mais consegue seria responder a pergunta errada com preciso.
+    -- LEFT THE GAME: none of the rules below applies. Ranking the effort of a mount
+    -- nobody can get any more would be answering the wrong question precisely.
     if e.unobtainable then
         e.tier = ns.TIER.GONE
         e.headline = "—"
@@ -272,15 +272,15 @@ function ns.Rank(entry)
         end
     end
 
-    -- (!) TODOS OS REQUISITOS, e não só o pior (defeito de 22/09).
+    -- (!) ALL THE REQUIREMENTS, and not only the worst (the defect of 22/09).
     --
-    -- Relato: *"falta cristal de ressonância mas que também falta reputação"*. A tela mostrava
-    -- um dos dois — o mais atrasado — e calava sobre o outro. Quem lê "faltam 2.000 cristais"
-    -- vai farmar cristal, chega no vendedor e descobre a reputação lá.
+    -- The report: *"falta cristal de ressonância mas que também falta reputação"*. The screen showed
+    -- one of the two -- the most behind -- and said nothing about the other. Whoever reads "2,000 crystals
+    -- missing" goes farming crystals, gets to the vendor and finds the reputation there.
     --
-    -- O `min` continua decidindo a FAIXA (o requisito mais atrasado é que diz o quanto falta),
-    -- mas a lista inteira vai junto para a linha e para a ficha. Esconder metade do preço é pior
-    -- que mostrar um número grande.
+    -- `min` still decides the BAND (the most behind requirement is what says how much is missing),
+    -- but the whole list goes along to the row and to the card. Hiding half the price is worse
+    -- than showing a big number.
     e.requisitos = {}
     for _, key in ipairs({ "rep", "achievement", "achievementReward", "quest",
                           "tooltipGate", "vendorCheck", "cost" }) do
@@ -293,7 +293,7 @@ function ns.Rank(entry)
     end
     table.sort(e.requisitos, function(x, y) return x.pct < y.pct end)
 
-    -- Quantos ainda faltam, que é o que a linha precisa dizer em uma palavra.
+    -- How many are still missing, which is what the row needs to say in one word.
     e.faltando = 0
     for _, r in ipairs(e.requisitos) do
         if not r.cumprido then e.faltando = e.faltando + 1 end
@@ -368,12 +368,12 @@ function ns.Rank(entry)
         -- comes, nobody told the addon (Sources.lua). Not knowing pushes down, never up.
         if e.chanceIndirect then e.tier = ns.TIER.LONGFARM end
     else
-        -- Aqui cai o método "à parte" (`SPECIAL`) sem chance: não é determinístico, não tem
-        -- requisito e não tem sorte medida — sobra "sem estimativa", que é a verdade.
+        -- Here falls the "apart" method (`SPECIAL`) with no chance: it is not deterministic, has no
+        -- requirement and no measured luck -- what is left is "no estimate", which is the truth.
         --
-        -- Houve aqui um `elseif` só para esse caso. Ele saiu: nenhuma sabotagem conseguia
-        -- derrubá-lo, porque este `else` já levava ao mesmo lugar. Regra que não muda nada é
-        -- código que alguém vai ter que entender à toa depois.
+        -- There was an `elseif` here just for that case. It went: no sabotage could
+        -- bring it down, because this `else` already led to the same place. A rule that changes nothing is
+        -- code someone will have to understand for nothing later.
         e.tier = ns.TIER.UNKNOWN
     end
 
@@ -384,9 +384,9 @@ function ns.Rank(entry)
         if e.tier == ns.TIER.READY then
             e.headline = L["ready to grab"]
         elseif e.tier == ns.TIER.CHECK then
-            -- (!) O NÚMERO É O PREÇO, e não um veredito. "preço ok" foi reprovado na hora —
-            -- ele parecia um "pode ir" com outro nome, que é exatamente o que esta faixa
-            -- existe para NÃO dizer. Preço é informação: quem lê decide.
+            -- (!) THE NUMBER IS THE PRICE, and not a verdict. "preço ok" was rejected on the spot --
+            -- it looked like a "go ahead" under another name, which is exactly what this band
+            -- exists NOT to say. A price is information: whoever reads decides.
             e.headline = (e.cost and e.cost.price) or "—"
         elseif req then
             e.headline = ns.PercentText(req)
@@ -412,11 +412,11 @@ function ns.Rank(entry)
             e.why = e.why .. string.format(L["  ·  then, a %s chance"], ns.FormatChance(e.chance))
         end
     elseif e.tier == ns.TIER.CHECK then
-        -- A FRASE COMEÇA PELO QUE O JOGO DIZ, e não pela minha ressalva. O `sourceText` da
-        -- Blizzard costuma nomear o vendedor e a condição ("Guild Vendor", "Requires ..."), e
-        -- isso vale mais que qualquer frase minha. A ressalva vem depois, curta.
-        -- `%s+` colapsa qualquer espaco em branco, inclusive a quebra de linha que a Blizzard
-        -- poe no meio do texto -- e faz isso sem escape nenhum no padrao.
+        -- THE PHRASE STARTS WITH WHAT THE GAME SAYS, and not with my caveat. Blizzard's
+        -- `sourceText` usually names the vendor and the condition ("Guild Vendor", "Requires ..."), and
+        -- that is worth more than any phrase of mine. The caveat comes after, short.
+        -- `%s+` collapses any white space, including the line break Blizzard
+        -- puts in the middle of the text -- and does it with no escape at all in the pattern.
         local doJogo = e.sourceText and e.sourceText ~= ""
             and (e.sourceText:gsub("%s+", " ")) or nil
         e.why = doJogo or ns.SOURCE_NAMES[e.sourceType]
@@ -432,8 +432,8 @@ function ns.Rank(entry)
         end
     elseif e.deterministic and reqLabel then
         e.why = reqLabel
-        -- E DIZ QUE HÁ MAIS, quando há. A linha não cabe os dois, mas cabe o aviso de que o
-        -- outro existe — e a ficha lista todos.
+        -- AND IT SAYS THERE IS MORE, when there is. The row cannot fit both, but it fits the warning that the
+        -- other exists -- and the card lists them all.
         if e.faltando > 1 then
             e.why = e.why .. string.format(L["  ·  and %d more requirement(s)"], e.faltando - 1)
         end
@@ -493,19 +493,19 @@ end
 local function Compare(a, b)
     if a.tier ~= b.tier then return ns.TIER_RANK[a.tier] < ns.TIER_RANK[b.tier] end
 
-    -- (!) ONDE A SORTE DECIDE, A CHANCE MANDA — e não o requisito (defeito de 22/09).
+    -- (!) WHERE LUCK DECIDES, THE CHANCE RULES -- and not the requirement (the defect of 22/09).
     --
-    -- Relato: *"Portador da Trilha-prado é 5%, tá acima de um que é 33%"*. Estava mesmo. Ele
-    -- pede renome 5 com os Centauros Maruuk (o jogador tem 25, então cumprido) e depois cai a
-    -- 1 em 20 do baú da Caçada Grandiosa. O outro cai a 1 em 3 e não tem requisito conhecido.
+    -- The report: *"Portador da Trilha-prado é 5%, tá acima de um que é 33%"*. It was. It
+    -- asks for renown 5 with the Maruuk Centaur (the player has 25, so met) and then drops at
+    -- 1 in 20 from the Grand Hunt's chest. The other drops at 1 in 3 and has no known requirement.
     --
-    -- A regra antiga ordenava por requisito primeiro, e como "cumprido" (1) ganha de
-    -- "desconhecido" (-1), a de 1 em 20 subia na frente da de 1 em 3. Mas **requisito cumprido
-    -- não é progresso rumo à montaria** — ele só abre a porta. Entre duas que dependem de sorte,
-    -- o que separa uma da outra é a chance, e nada mais.
+    -- The old rule sorted by requirement first, and since "met" (1) beats
+    -- "unknown" (-1), the 1-in-20 one went ahead of the 1-in-3 one. But **a met requirement
+    -- is not progress towards the mount** -- it only opens the door. Between two that depend on luck,
+    -- what separates one from the other is the chance, and nothing else.
     --
-    -- O requisito continua mandando onde ele DECIDE alguma coisa: nas faixas determinísticas,
-    -- onde ele é o próprio caminho, e na classificação de faixa (gated vai para o fim).
+    -- The requirement still rules where it DECIDES something: in the deterministic bands,
+    -- where it is the very road, and in the band classification (gated goes to the end).
     -- In "not confirmed", what is known and met goes first: it is the best bet for the trip.
     if a.tier == ns.TIER.CHECK then
         local ka, kb = (a.access or 0) >= 1, (b.access or 0) >= 1
@@ -688,10 +688,10 @@ end
 function ns.IsBuilding() return building ~= nil end
 
 -- The ranked list, after the source filter.
----Todos os termos da busca têm que aparecer, e não um deles.
+--- Every term of the search has to show up, and not one of them.
 ---
----"fyrakk aberrus" acha o que está nos dois; com "um deles" bastaria, a busca ficaria mais larga
----quanto mais se escreve, que é o contrário do que digitar mais significa.
+--- "fyrakk aberrus" finds what is in both; with "one of them" enough, the search would get wider
+--- the more one writes, which is the opposite of what typing more means.
 local function PassaBusca(e, termos)
     if not termos then return true end
     local alvo = e.busca or ""
@@ -701,29 +701,29 @@ local function PassaBusca(e, termos)
     return true
 end
 
----A facção do personagem conectado passa por aqui uma vez só, e não a cada montaria.
+--- The connected character's faction goes through here once only, and not at every mount.
 local function MyFaction()
     return UnitFactionGroup and UnitFactionGroup("player") or nil
 end
 
----A montaria passa no filtro de facção?
+--- Does the mount pass the faction filter?
 ---
----Quatro modos, e o padrão (`nil`) mostra tudo. `"mine"` é o útil no dia a dia — some o que este
----personagem não pode usar — e os dois nomes servem para quem está planejando o outro lado.
+--- Four modes, and the default (`nil`) shows everything. `"mine"` is the useful one day to day -- it hides what this
+--- character cannot use -- and the two names serve whoever is planning the other side.
 local function PassaFaccao(e, modo)
     if not modo then return true end
-    if not e.factionOnly then return true end       -- serve para os dois lados
+    if not e.factionOnly then return true end       -- serves both sides
     if modo == "mine" then return e.factionOnly == MyFaction() end
     return e.factionOnly == modo
 end
 
--- A lista já ranqueada, depois dos filtros.
+-- The list already ranked, after the filters.
 function ns.GetFiltered()
     -- the list the player looks at: fresh
     local all = ns.GetRanked(nil, true)
     local modo = ns.db.factionFilter
 
-    -- Os termos são quebrados UMA vez, e não dentro do laço.
+    -- The terms are split ONCE, and not inside the loop.
     local termos
     if ns.search and ns.search ~= "" then
         termos = {}

@@ -21,29 +21,29 @@ ns.defaults = {
     -- A mount the game marks as unavailable to this character (wrong faction, wrong
     -- class) only gets in the way of a list whose subject is "what can I go after".
     hideUnavailable = true,
-    -- (!) MONTARIA QUE SAIU DO JOGO FICA DE FORA POR PADRÃO (0.8.0).
+    -- (!) A MOUNT THAT LEFT THE GAME STAYS OUT BY DEFAULT (0.8.0).
     --
-    -- Promoções encerradas, montarias de card game e conquistas aposentadas: numa lista cujo
-    -- assunto é "por onde começar", montaria que ninguém mais consegue é a pior linha possível.
-    -- A marca sai de `ns.MountGone`, a nossa tabela das montarias que o próprio jogo dá como
-    -- fora do jogo.
+    -- Ended promotions, card game mounts and retired achievements: in a list whose
+    -- subject is "where to start", a mount nobody can get any more is the worst row possible.
+    -- The mark comes from `ns.MountGone`, our table of the mounts the game itself calls
+    -- out of the game.
     showUnobtainable = false,
-    -- A busca NÃO é salva entre sessões de propósito: abrir a janela e encontrar a lista já
-    -- filtrada por algo que se digitou semana passada é uma lista que parece quebrada.
-    -- (fica em `ns.search`, fora do banco)
+    -- The search is NOT saved between sessions on purpose: opening the window and finding the list already
+    -- filtered by something typed last week is a list that looks broken.
+    -- (it stays in `ns.search`, outside the database)
     -- Enabled sources. The key is the API `sourceType` (see ns.SOURCE_NAMES).
     sources = nil,   -- nil = all of them
     window = nil,    -- { point, x, y } of the last position
     minimap = { angle = 200, hide = false },
-    -- O livro-caixa de reputação por personagem (ver `Roster.lua`). Fica em SavedVariables de
-    -- CONTA de propósito: a pergunta que ele responde é sobre os outros personagens.
+    -- The reputation ledger per character (see `Roster.lua`). It sits in the ACCOUNT's SavedVariables
+    -- on purpose: the question it answers is about the other characters.
     chars = {},
-    -- Filtro de facção: nil = tudo, "mine" = só o que este personagem pode, "Horde", "Alliance".
+    -- The faction filter: nil = everything, "mine" = only what this character can, "Horde", "Alliance".
     factionFilter = nil,
-    -- Filtro de expansão: nil = todas, ou o índice de `ns.Expansion.RANGES`.
+    -- The expansion filter: nil = all, or the index into `ns.Expansion.RANGES`.
     expansionFilter = nil,
-    -- O aviso de bicho que larga montaria. Ligado por padrão, com caixa para desligar: o
-    -- usuário foi explícito que nem todo mundo quer receber.
+    -- The warning about a creature that drops a mount. On by default, with a box to turn it off: the
+    -- user was explicit that not everyone wants to get it.
     sightings = true,
     -- (21/10) the achievement-style alert when a mount is learned (Toast.lua)
     mountToast = true,
@@ -51,6 +51,7 @@ ns.defaults = {
     -- every event on; `eventOff[key] = true` turns one off
     eventAlerts = true,
     eventLead = 5,
+    eventHow = "popup",    -- "popup": the chat and the alert on the screen; "chat": the chat only
     -- The alert's sound (01/10): on, the chime, at the middle level of five ("leve").
     sightingSound = true,
     sightingSoundKey = "chime",
@@ -138,7 +139,7 @@ function handlers:PLAYER_LOGIN()
     if ns.MapButton then ns.MapButton.Enable() end
 
     local passos = {
-        -- O livro-caixa se escreve ao entrar, que é quando a API fala deste personagem.
+        -- The ledger is written on entering, which is when the API speaks of this character.
         function() if ns.Roster then ns.Roster.Record() end end,
         -- The calendar of events is asked of the server (no window opens): the vendors of an
         -- event count only while the calendar says the event is on (Sources.lua, `ns.EventOn`).
@@ -337,7 +338,7 @@ end
 
 function ns.MarkClean()
     dirty, urgent, builtAt = false, false, Clock()
-    -- O índice de bichos vive da lista: refaz junto, e não a cada raro que aparece.
+    -- The creature index lives off the list: it is rebuilt with it, and not at every rare that shows up.
     -- (!) ON THE NEXT FRAMES (14/10): this runs in the list's last slice, and the index and the map pins
     -- done in that same frame went over the game's time limit ("script ran too long", Sources.lua's Fold).
     -- The index takes the next frame and the pins the one after; until then the old index answers.

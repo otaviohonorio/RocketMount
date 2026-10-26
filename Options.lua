@@ -1,6 +1,6 @@
 -- RocketMount | Options.lua
--- Um lugar só para configurar: Opções > AddOns. A Settings API já traz a métrica de
--- formulário da Blizzard de graça — nenhum SetPoint aqui.
+-- One place only to configure: Options > AddOns. The Settings API already brings Blizzard's
+-- form metrics for free -- no SetPoint here.
 local ADDON, ns = ...
 local L = ns.L
 
@@ -174,7 +174,7 @@ function ns.SetupOptions()
             function() return ns.db.eventAlerts ~= false end,
             function(value) ns.db.eventAlerts = value end)
         local mestre = Settings.CreateCheckbox(category, mestreSetting,
-            L["A line in the chat and the chime a few minutes before an event that leads to a mount you do not have starts. Quiet once the event's reward of the week is taken."])
+            L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event is over by then. Quiet once the event's reward of the week is taken."])
         local filhas = {}
         do
             local P = ns.Events and ns.Events.LEAD or { MIN = 1, MAX = 15, STEP = 1, DEFAULT = 5 }
@@ -189,6 +189,23 @@ function ns.SetupOptions()
             end
             filhas[#filhas + 1] = Settings.CreateSlider(category, s, options,
                 L["How long before the start the alert comes."])
+        end
+        -- (24/10) the chat only, or the chat and the alert on the screen (the rare's panel). The user: *"isso tudo
+        -- configuravel, ou só no chat ou no chat e popup"*.
+        if Settings.CreateDropdown and Settings.CreateControlTextContainer then
+            local HOW = ns.Events and ns.Events.HOW or { "popup", "chat" }
+            local s = Settings.RegisterProxySetting(category, ADDON .. "EventHow",
+                Settings.VarType.String, L["How to alert"], HOW[1],
+                function() return ns.db.eventHow or HOW[1] end,
+                function(value) ns.db.eventHow = value end)
+            local function Lista()
+                local container = Settings.CreateControlTextContainer()
+                container:Add("popup", L["In the chat and on the screen"])
+                container:Add("chat", L["In the chat only"])
+                return container:GetData()
+            end
+            filhas[#filhas + 1] = Settings.CreateDropdown(category, s, Lista,
+                L["On the screen, the alert is the rare alert's: click it to point the arrow at the event, right-click to close it."])
         end
         local COMO = { drop = L["The event's reward can bring it."], currency = L["The event's currency buys it."],
                        renown = L["The event's reputation unlocks it."] }

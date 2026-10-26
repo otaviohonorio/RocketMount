@@ -9,8 +9,8 @@ local _, ns = ...
 local L = ns.L
 
 --------------------------------------------------------------------------------
--- Nome das fontes. O jogo já traduz essas strings; a tabela abaixo é só o plano B
--- para o caso de uma delas não existir neste cliente.
+-- The sources' names. The game already translates these strings; the table below is only plan B
+-- for the case of one of them not existing in this client.
 --------------------------------------------------------------------------------
 local SOURCE_FALLBACK = {
     [0] = L["Unknown"],
@@ -37,43 +37,43 @@ ns.SOURCE_NAMES = setmetatable({}, {
 })
 
 --------------------------------------------------------------------------------
--- Reputação
+-- Reputation
 --------------------------------------------------------------------------------
 
--- Nível de reputação escrito em inglês, como vem no dado → índice da API.
+-- A reputation level written in English, as it comes in the data -> the API's index.
 local STANDING_INDEX = {
     Hated = 1, Hostile = 2, Unfriendly = 3, Neutral = 4,
     Friendly = 5, Honored = 6, Revered = 7, Exalted = 8,
 }
 
--- Reputação acumulada, a partir do Neutro, para chegar a cada nível. São os valores
--- padrão do jogo desde sempre; valem para facção clássica (amizade e renome não usam).
+-- Reputation accumulated, from Neutral, to reach each level. They are the game's
+-- standard values since forever; they hold for a classic faction (friendship and renown do not use them).
 local STANDING_TOTAL = {
-    [5] = 3000,    -- Amigável
+    [5] = 3000,    -- Friendly
     [6] = 9000,    -- Honrado
     [7] = 21000,   -- Reverenciado
     [8] = 42000,   -- Exaltado
 }
 
----De QUEM é a reputação que estamos lendo.
+--- WHOSE reputation we are reading.
 ---
----⛑ Relato do usuário, 21/09: *"eu não sei qual char meu tem a reputação e se tem, por que tá
----escrito que posso pegar, mas qual char tem essa reputação?"*. Ele está certo e a pergunta não
----tinha resposta na tela: o addon lê a reputação do personagem **conectado**, e nunca dizia isso.
----Desde o War Within parte das facções virou reputação de **Brigada** (vale para a conta inteira)
----e parte continua por personagem — e a diferença muda completamente o que o jogador tem que
----fazer. `C_Reputation.IsAccountWideReputation` (11.0+) responde qual é qual.
+--- ⛑ The user's report, 21/09: *"eu não sei qual char meu tem a reputação e se tem, por que tá
+--- escrito que posso pegar, mas qual char tem essa reputação?"*. He is right and the question had
+--- no answer on screen: the addon reads the reputation of the **connected** character, and never said so.
+--- Since The War Within part of the factions became **Warband** reputation (it holds for the whole account)
+--- and part is still per character -- and the difference completely changes what the player has to
+--- do. `C_Reputation.IsAccountWideReputation` (11.0+) answers which is which.
 local function ReputationScope(factionId)
     if C_Reputation and C_Reputation.IsAccountWideReputation then
         local ok, conta = pcall(C_Reputation.IsAccountWideReputation, factionId)
         if ok and conta then return "conta" end
         if ok then return "personagem" end
     end
-    return nil    -- cliente sem a função: não afirmamos nada
+    return nil    -- a client without the function: we state nothing
 end
 
----A frase que diz de quem é aquele progresso. Sem ela "Exaltado" não informa nada: o jogador
----não sabe se é dele, deste personagem, ou de um alt que ele nem lembra.
+--- The phrase that says whose that progress is. Without it "Exalted" tells nothing: the player
+--- does not know whether it is his, this character's, or an alt he does not even remember.
 local function ScopeLabel(factionId)
     local escopo = ReputationScope(factionId)
     if escopo == "conta" then
@@ -104,10 +104,10 @@ local function ReputationProgressHere(rep)
     local nome = rep.factionName or "?"
     local alvo = STANDING_INDEX[rep.levelName or ""]
 
-    -- (!) ANTES DE DIZER "ninguém tem", PERGUNTA AO LIVRO-CAIXA. A API só fala do personagem
-    -- conectado, mas o `Roster` anotou o que cada um tinha ao entrar — e a pergunta do usuário
-    -- era exatamente essa: *"consegue mostrar qual personagem tem a reputação, caso seja
-    -- legada?"*. Reputação de Brigada não precisa disto; a legada, sim.
+    -- (!) BEFORE SAYING "nobody has it", IT ASKS THE LEDGER. The API only speaks of the connected
+    -- character, but `Roster` noted what each one had on entering -- and the user's question
+    -- was exactly that: *"consegue mostrar qual personagem tem a reputação, caso seja
+    -- legada?"*. Warband reputation does not need this; the legacy one does.
     local outro, quem
     if ns.Roster then outro, quem = ns.Roster.Line(rep.factionId, alvo) end
     local desconhecida = {
@@ -195,7 +195,7 @@ local function ReputationProgressHere(rep)
         }
     end
 
-    -- Renome (facção moderna): o progresso é o nível, e a API responde direto.
+    -- Renown (a modern faction): the progress is the level, and the API answers directly.
     if rep.renown and C_MajorFactions and C_MajorFactions.GetMajorFactionRenownInfo then
         -- The faction's name in the player's language: the table's is English.
         if C_MajorFactions.GetMajorFactionData then
@@ -209,9 +209,9 @@ local function ReputationProgressHere(rep)
         if ok and info and info.renownLevel then
             local need = rep.level or 1
             local have = info.renownLevel
-            -- (!) "renome 25 de 5" NÃO É FRASE. O usuário leu e perguntou: *"eu tenho 25 e precisa
-            -- de 5? isso que entendi?"*. A forma "X de Y" só faz sentido enquanto X caminha para
-            -- Y; passado o Y, ela vira charada. Cumprido se diz cumprido.
+            -- (!) "renome 25 de 5" IS NOT A PHRASE. The user read it and asked: *"eu tenho 25 e precisa
+            -- de 5? isso que entendi?"*. The form "X of Y" only makes sense while X walks towards
+            -- Y; past Y, it becomes a riddle. Met is said met.
             local texto
             if have >= need then
                 texto = string.format(L["%s: renown %d reached (you are at %d)"], nome, need, have)
@@ -236,7 +236,7 @@ local function ReputationProgressHere(rep)
 
     local name = data.name or nome
 
-    -- Paragon: a barra que continua depois do Exaltado, e que reinicia a cada baú.
+    -- Paragon: the bar that keeps going after Exalted, and restarts at each chest.
     if rep.levelName == "Paragon" then
         if C_Reputation.GetFactionParagonInfo then
             local okP, value, threshold = pcall(C_Reputation.GetFactionParagonInfo, rep.factionId)
@@ -255,8 +255,8 @@ local function ReputationProgressHere(rep)
 
     local targetIdx = STANDING_INDEX[rep.levelName or ""]
     if not targetIdx then
-        -- Nível que não é patamar de reputação (ex.: "Professional", que é perícia de
-        -- profissão). Não dá para medir, e por isso mesmo NÃO está cumprido.
+        -- A level that is not a reputation standing (e.g. "Professional", which is a profession's
+        -- skill). It cannot be measured, and for that very reason it is NOT met.
         return {
             kind = "rep", factionName = name, pct = 0, unreadable = true,
             label = string.format(L["%s: asks for %s, which I cannot measure"], name, rep.levelName or "?"),
@@ -1123,6 +1123,11 @@ local function VendorCost(mountID)
     return nil
 end
 
+-- The game's icon of a currency or an item, inline before its name ("" when it has none).
+local function Icone(tex)
+    return tex and string.format("|T%s:14:14:0:0|t ", tostring(tex)) or ""
+end
+
 ---What it costs, and whether you can pay -- as TWO separate facts.
 ---
 ---(!) They used to be one string, and the player called it out: *"a linha onde aparece valores
@@ -1147,8 +1152,8 @@ local function CostOf(list)
 
         if c.type == "gold" then
             have = GetMoney and GetMoney() or 0
-            -- `GetCoinTextureString` é compacto e já traz o ícone da moeda: "3000g". O
-            -- `GetMoneyString` escreve por extenso e ocupa a linha inteira.
+            -- `GetCoinTextureString` is compact and already brings the coin's icon: "3000g".
+            -- `GetMoneyString` writes it in full and takes the whole line.
             -- From `C_CurrencyInfo` (28/09): the global of the same name only exists while the
             -- game loads its deprecated shims (`Blizzard_DeprecatedCurrencyScript`).
             local moedas = C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString
@@ -1160,9 +1165,12 @@ local function CostOf(list)
             local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, c.id)
             if ok and info then
                 have = info.quantity or 0
-                preco = string.format("%s %s", BreakUpLargeNumbers(need), info.name or "?")
+                -- (25/10) the game's icon before the name, as the gold has its coin: the user, *"sempre que usar
+                -- (...) itens (...) coloque o icone também"*
+                local nome = Icone(info.iconFileID) .. (info.name or "?")
+                preco = string.format("%s %s", BreakUpLargeNumbers(need), nome)
                 if have < need then
-                    falta = string.format("%s %s", BreakUpLargeNumbers(need - have), info.name or "?")
+                    falta = string.format("%s %s", BreakUpLargeNumbers(need - have), nome)
                 end
                 parte = { type = "currency", id = c.id, name = info.name, icon = info.iconFileID,
                           about = info.description }
@@ -1173,11 +1181,12 @@ local function CostOf(list)
                 have = n or 0
                 local iname = (C_Item.GetItemNameByID and C_Item.GetItemNameByID(c.id))
                     or string.format(L["item %d"], c.id)
-                preco = string.format("%d x %s", need, iname)
+                local icon = C_Item.GetItemIconByID and C_Item.GetItemIconByID(c.id)
+                preco = string.format("%d x %s", need, Icone(icon) .. iname)
                 if have < need then
-                    falta = string.format("%d x %s", need - have, iname)
+                    falta = string.format("%d x %s", need - have, Icone(icon) .. iname)
                 end
-                parte = { type = "item", id = c.id, name = iname }
+                parte = { type = "item", id = c.id, name = iname, icon = icon }
             end
         end
         if parte then
@@ -1209,8 +1218,8 @@ local function CostOf(list)
         price = preco,
         gap = falta,
         parts = partes,
-        -- A frase completa, para a ficha: o preço primeiro, a falta depois, e nunca os dois
-        -- números grudados um no outro.
+        -- The whole phrase, for the card: the price first, what is missing after, and never the two
+        -- numbers stuck to each other.
         label = falta and string.format(L["%s  ·  %s missing"], preco, falta)
             or string.format(L["%s  ·  you have it"], preco),
     }
@@ -1251,22 +1260,22 @@ local function CostProgress(mountID, sourceText)
 end
 
 --------------------------------------------------------------------------------
--- Missão
+-- Quest
 --------------------------------------------------------------------------------
----A missão que entrega a montaria já foi feita?
+--- Is the quest that gives the mount already done?
 ---
----(!) A MISSÃO EXISTIA E A TELA NÃO DIZIA. `Data/MountPlaces.lua` guarda missão, id, quem entrega
----e onde, e o addon não usava nada disso. Pergunta do usuário:
----*"Grande Grifo, se falta missão, não dá para ir pegar, correto?"*. Correto, e até agora a tela
----não dizia nem que havia missão.
+--- (!) THE QUEST EXISTED AND THE SCREEN DID NOT SAY. `Data/MountPlaces.lua` keeps the quest, its id, who gives it
+--- and where, and the addon used none of it. The user's question:
+--- *"Grande Grifo, se falta missão, não dá para ir pegar, correto?"*. Correct, and until now the screen
+--- did not even say there was a quest.
 ---
----⚠️ O QUE ESTA FUNÇÃO **NÃO** RESPONDE, e o usuário perguntou direto: se a missão está
----**disponível**. O jogo não expõe o grafo de pré-requisito de missão para addon — dá para saber
----se você CONCLUIU uma missão (`IsQuestFlaggedCompleted`), nunca se você PODE pegá-la. Mostrar a
----cadeia de missão exigiria uma base própria.
+--- ⚠️ WHAT THIS FUNCTION DOES **NOT** ANSWER, and the user asked directly: whether the quest is
+--- **available**. The game does not expose the quest prerequisite graph to addons -- one can know
+--- whether you COMPLETED a quest (`IsQuestFlaggedCompleted`), never whether you CAN take it. Showing the
+--- quest chain would need a base of our own.
 ---
----Então aqui se diz o que dá para provar: feita, ou não feita. "Não feita" já responde a pergunta
----que importa — tem coisa no caminho — sem fingir saber quantos passos faltam.
+--- So here what can be proven is said: done, or not done. "Not done" already answers the question
+--- that matters -- there is something in the way -- without pretending to know how many steps are left.
 local function QuestProgress(nossas)
     -- The quests of `Data/MountPlaces.lua`. A mount with a quest for each faction has one left
     -- here (`ns.OwnPlaces` drops the other side's); with more than one, the one already done
@@ -1279,8 +1288,8 @@ local function QuestProgress(nossas)
     end
 
     local questID = q.questId
-    -- O nome vem do jogo quando ele já carregou a missão; senão fica o da tabela, que é o
-    -- nome em inglês. Pedir o carregamento aqui faz o próximo desenho já achar traduzido.
+    -- The name comes from the game when it has already loaded the quest; otherwise the table's stays, which is the
+    -- English name. Asking for the load here makes the next drawing already find it translated.
     local titulo = q.quest
     if questID and C_QuestLog then
         if C_QuestLog.RequestLoadQuestByID then pcall(C_QuestLog.RequestLoadQuestByID, questID) end
@@ -1318,7 +1327,7 @@ local function QuestProgress(nossas)
         }
     end
 
-    -- FEITA EM OUTRO PERSONAGEM é informação, e não requisito cumprido: a montaria é deste.
+    -- DONE ON ANOTHER CHARACTER is information, and not a met requirement: the mount is this one's.
     local extra = naConta and L["  —  already done on another character"] or ""
 
     -- (!) THE CHAIN (28/09). The user, with the Ochre Dreamtalon at 0%: *"Montaria de missão com 0
@@ -1367,16 +1376,16 @@ end
 --------------------------------------------------------------------------------
 -- Busca em texto livre
 --------------------------------------------------------------------------------
--- (!) A BUSCA NÃO PODE SER SÓ PELO NOME, e o exemplo do usuário prova: *"não achei a montaria
--- que dropa no Fyrakk"*. A montaria do Fyrakk se chama **Anu'relos, Flame's Guidance** — a
--- palavra "Fyrakk" não aparece no nome dela em lugar nenhum. Ela aparece no texto de origem do
--- jogo e no nome do chefe que o catálogo guarda.
+-- (!) THE SEARCH CANNOT BE BY NAME ALONE, and the user's example proves it: *"não achei a montaria
+-- que dropa no Fyrakk"*. Fyrakk's mount is called **Anu'relos, Flame's Guidance** -- the
+-- word "Fyrakk" appears nowhere in its name. It appears in the game's source text and
+-- in the boss's name the catalogue keeps.
 --
--- Então o que se pesquisa é tudo que o addon sabe sobre a montaria: nome, o texto da Blizzard,
--- o chefe, o vendedor, a zona e a facção. Quem procura "fyrakk", "aberrus" ou "vendedor" acha.
+-- So what is searched is everything the addon knows about the mount: name, Blizzard's text,
+-- the boss, the vendor, the zone and the faction. Whoever searches "fyrakk", "aberrus" or "vendedor" finds it.
 
--- Acentos fora, para "fenix" achar "Fênix". São os pares do português, em UTF-8: cada acentuado
--- ocupa dois bytes, então `gsub` byte a byte não serve e a substituição é por par.
+-- Accents out, so "fenix" finds "Fênix". They are Portuguese's pairs, in UTF-8: each accented letter
+-- takes two bytes, so a byte-by-byte `gsub` will not do and the substitution is by pair.
 local ACENTOS = {
     ["á"]="a", ["à"]="a", ["â"]="a", ["ã"]="a", ["ä"]="a",
     ["é"]="e", ["è"]="e", ["ê"]="e", ["ë"]="e",
@@ -1401,7 +1410,7 @@ function ns.Fold(texto)
     return feito
 end
 
----Tudo que dá para pesquisar numa montaria, junto e sem acento.
+--- Everything that can be searched in a mount, together and without accents.
 local function Haystack(e)
     -- (!) ONE MISSING PIECE USED TO END THE LIST (found on 28/09). The pieces were a table
     -- walked with `ipairs`, which stops at the first nil: a mount with no boss lost its
@@ -1417,11 +1426,11 @@ local function Haystack(e)
     Mais(e.name, e.sourceText, e.description, e.bossName, e.instanceName, e.dropName,
         e.rep and e.rep.factionName,
         ns.SOURCE_NAMES[e.sourceType],
-        -- A expansão entra na busca: quem digita "midnight" ou "legion" acha por ela.
+        -- The expansion goes into the search: whoever types "midnight" or "legion" finds by it.
         e.expansionName)
     for _, nome in ipairs(e.bossNames or {}) do Mais(nome) end
     for _, v in ipairs(e.vendors or {}) do Mais(v.npc) end
-    -- A zona de cada lugar também entra: quem lembra da zona e não do nome do vendedor acha.
+    -- Each place's zone goes in too: whoever remembers the zone and not the vendor's name finds it.
     local function Zona(m)
         if not (m and C_Map and C_Map.GetMapInfo) then return end
         local ok, info = pcall(C_Map.GetMapInfo, m)
@@ -1441,7 +1450,7 @@ ns.Haystack = Haystack
 -- Monta a lista
 --------------------------------------------------------------------------------
 
--- Só interessa o que o personagem pode de fato buscar.
+-- Only what the character can really seek matters.
 local function Playable(isFactionSpecific, faction, shouldHideOnChar)
     if shouldHideOnChar then return false end
     if isFactionSpecific and faction ~= nil then
@@ -1478,14 +1487,14 @@ function ns.BuildList(onlyID)
                     isFactionSpecific = isFactionSpecific,
                     faction = faction,
                     playable = playable,
-                    -- "Horde" / "Alliance" / nil. Vira rótulo e vira filtro: até aqui a facção
-                    -- só servia para ESCONDER a montaria, e esconder não é informar.
+                    -- "Horde" / "Alliance" / nil. It becomes a label and a filter: until now the faction
+                    -- only served to HIDE the mount, and hiding is not informing.
                     factionOnly = isFactionSpecific and faction ~= nil
                         and ((faction == 0) and "Horde" or "Alliance") or nil,
                 }
 
-                -- O texto que a Blizzard escreve explicando de onde a montaria vem,
-                -- já no idioma do cliente. É o melhor "como pega" que existe de graça.
+                -- The text Blizzard writes explaining where the mount comes from,
+                -- already in the client's language. It is the best free "how to get it" there is.
                 local _, description, source = C_MountJournal.GetMountInfoExtraByID(mountID)
                 e.description = description
                 e.sourceText = source
@@ -1565,11 +1574,11 @@ function ns.BuildList(onlyID)
 
                 e.cost = CostProgress(mountID, source)
 
-                -- (!) O QUE O PRÓPRIO JOGO DIZ QUE FALTA. É a fonte que fecha o buraco que a
-                -- Fênix Negra abriu: o catálogo não sabe da conquista de guilda, e o tooltip do
-                -- item sabe — em português, e certo depois do próximo patch também.
-                -- A conquista que o JOGO diz que dá esta montaria. Fecha o buraco das 126
-                -- marcadas "SPECIAL" no catálogo, que não tinham requisito nenhum.
+                -- (!) WHAT THE GAME ITSELF SAYS IS MISSING. It is the source that closes the hole the
+                -- Black Phoenix opened: the catalogue does not know of the guild achievement, and the item's
+                -- tooltip does -- in Portuguese, and right after the next patch too.
+                -- The achievement the GAME says gives this mount. It closes the hole of the 126
+                -- marked "SPECIAL" in the catalogue, which had no requirement at all.
                 if ns.Achievements then
                     e.achievementReward = ns.Achievements.Gate(e.name, mountID)
                 end
@@ -1672,7 +1681,7 @@ function ns.BuildList(onlyID)
                         e.vendorCheck = nil
                     end
                 end
-                -- Montado uma vez por varredura, e não a cada tecla digitada.
+                -- Built once per sweep, and not at every key typed.
                 e.expansion, e.expansionName = ns.Expansion and ns.Expansion.Of(mountID)
                 e.busca = Haystack(e)
 

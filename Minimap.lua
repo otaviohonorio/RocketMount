@@ -1,7 +1,7 @@
 -- RocketMount | Minimap.lua
--- Botão de minimapa próprio, sem biblioteca externa: são ~60 linhas e evita embutir dependência.
--- Guarda a posição como ângulo, então continua no lugar em qualquer tamanho de minimapa.
--- É o mesmo desenho dos outros addons Rocket, de propósito: o jogador aprende um e conhece os três.
+-- The addon's own minimap button, with no external library: it is ~60 lines and avoids bundling a dependency.
+-- It keeps the position as an angle, so it stays in place at any minimap size.
+-- It is the same design as the other Rocket addons, on purpose: the player learns one and knows all three.
 local ADDON, ns = ...
 local L = ns.L
 
@@ -64,8 +64,8 @@ function ns.CreateMinimapButton()
     icon:SetTexture(ns.LOGO_MINIMAP)
     button.icon, button.disc = icon, disc
     icon:SetTexCoord(0, 1, 0, 1)
-    -- Máscara redonda: é o que a UI moderna do jogo faz, e quadrado com borda preta
-    -- dentro da moldura redonda do minimapa parece recorte colado.
+    -- A round mask: it is what the game's modern UI does, and a square with a black border
+    -- inside the minimap's round frame looks like a cut-out glued on.
     icon:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")
 
     local border = button:CreateTexture(nil, "OVERLAY")
@@ -99,8 +99,8 @@ function ns.CreateMinimapButton()
         -- "Shift-click: ..."), the verb in the infinitive. No "drag to move".
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip_SetTitle(GameTooltip, ns.TITLE)
-        -- A dica responde a pergunta que o ícone levanta: quantas faltam, e qual é a
-        -- primeira da fila. Sem isso o ícone só ocupa espaço no minimapa.
+        -- The tooltip answers the question the icon raises: how many are missing, and which is the
+        -- first in line. Without it the icon only takes space on the minimap.
         local ok, list = pcall(ns.GetRanked)
         if ok and list and #list > 0 then
             GameTooltip_AddHighlightLine(GameTooltip, string.format(L["%d mounts missing"], #list))

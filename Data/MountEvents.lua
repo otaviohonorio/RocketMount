@@ -29,6 +29,9 @@
 --   how       "drop" | "currency" | "renown": what the tooltip says about the mount
 --   reward    "weekly" | "daily" | "repeat": how often the event gives what leads to the mount (the chest, the currency,
 --             the renown); a rare's comes from its loot table (Sighting.LootFrequency)
+--   spot      optional: where it happens, `{ m = uiMapID, x, y }` in 0-100, from the game's landmark table
+--             (AreaPOI + UiMapAssignment, `python tools/coletar_eventos.py --check`). The game is asked first at play
+--             time (Events.Spot); a moving event (Abundance) has no spot, and a rare's comes from Data/MobDrops.
 --
 -- The clocks: the hourly and half-hourly starts agree in two independent places -- the event's own
 -- pages (Wowhead, warcraft.wiki.gg) and the anchors other addons count from (read to learn, 22/10:
@@ -39,7 +42,8 @@ ns.MountEvents = {
     -- Midnight, Voidstorm: every 30 minutes, for 15. The weekly Victorious Stormarion Pinnacle Cache
     -- (item 260940) carries Contained Stormarion Defender, 441 in 11,661 (MountPlaces). Weekly quest 90962.
     { key = "stormarion", name = "Stormarion Assault", map = 2405, pois = { 8419, 8421, 8422 }, how = "drop",
-      mounts = { 2767 }, quest = 90962, reward = "weekly", clock = { period = 1800, lasts = 900, anchor = 1772728200 } },
+      mounts = { 2767 }, quest = 90962, reward = "weekly", clock = { period = 1800, lasts = 900, anchor = 1772728200 },
+      spot = { m = 2405, x = 27.3, y = 68.0 } },
     -- Midnight: Unalloyed Abundance (currency 3377) buys Amani Sunfeather and Blessed Amani Burrower,
     -- 6,400 each (MountPlaces). The cave moves: only the game's schedule says when.
     { key = "abundance", name = "Abundance", pois = { 8415, 8416, 8417, 8418 }, how = "currency",
@@ -49,23 +53,28 @@ ns.MountEvents = {
     -- The War Within, Hallowfall: every hour on the hour, 15 minutes. Flame's Radiance renown 9:
     -- Radiant Imperial Lynx (MountReputation).
     { key = "nightfall", name = "Nightfall", map = 2215, pois = { 8174, 8175, 8291 }, how = "renown",
-      mounts = { 2519 }, reward = "repeat", clock = { period = 3600, lasts = 900, anchor = 1757134800 } },
+      mounts = { 2519 }, reward = "repeat", clock = { period = 3600, lasts = 900, anchor = 1757134800 },
+      spot = { m = 2215, x = 26.6, y = 56.5 } },
     -- Dragonflight, Thaldraszus: every hour on the hour, 15 minutes. Paracausal Flakes (currency 2594)
     -- buy the seven mounts at 3,000 each (MountPlaces 1776-1783).
     { key = "timerift", name = "Time Rift", map = 2025, pois = { 7492 }, how = "currency",
       mounts = { 1776, 1777, 1778, 1779, 1781, 1782, 1783 }, reward = "repeat",
-      clock = { period = 3600, lasts = 900, anchor = { [1] = 1701831600, [3] = 1689274800 } } },
+      clock = { period = 3600, lasts = 900, anchor = { [1] = 1701831600, [3] = 1689274800 } },
+      spot = { m = 2025, x = 51.1, y = 57.1 } },
     -- Dragonflight, the Azure Span: every hour at half past, 10 minutes. Immaculate Tome (item 213177):
     -- Clayscale Hornstrider, 406 in 27,334 (MountPlaces).
     { key = "bigdig", name = "The Big Dig", map = 2024, pois = { 7657 }, how = "drop",
-      mounts = { 2038 }, reward = "repeat", clock = { period = 3600, lasts = 600, anchor = 1705595400 } },
+      mounts = { 2038 }, reward = "repeat", clock = { period = 3600, lasts = 600, anchor = 1705595400 },
+      spot = { m = 2024, x = 27.0, y = 46.0 } },
     -- Dragonflight, the Azure Span: every 90 minutes, 15; the Americas and Europe half an hour apart.
     -- Iskaara Tuskarr renown 25/30: the four Ottuks (MountReputation). Weekly quest 70893.
     { key = "feast", name = "Community Feast", map = 2024, pois = { 7218, 7219, 7220 }, how = "renown",
       mounts = { 1653, 1655, 1657, 1659 }, quest = 70893, reward = "weekly",
-      clock = { period = 5400, lasts = 900, anchor = { [1] = 1679751000, [3] = 1679749200 } } },
+      clock = { period = 5400, lasts = 900, anchor = { [1] = 1679751000, [3] = 1679749200 } },
+      spot = { m = 2024, x = 13.5, y = 48.6 } },
     -- Dragonflight, Zaralek Cavern: every hour at half past, 25 minutes. Loamm Niffen renown 18:
     -- Morsel Sniffer (MountReputation).
     { key = "researchers", name = "Researchers Under Fire", map = 2133, pois = { 7459, 7460, 7461, 7462 }, how = "renown",
-      mounts = { 1738 }, reward = "repeat", clock = { period = 3600, lasts = 1500, anchor = { [1] = 1670333400, [3] = 1683804600 } } },
+      mounts = { 1738 }, reward = "repeat", clock = { period = 3600, lasts = 1500, anchor = { [1] = 1670333400, [3] = 1683804600 } },
+      spot = { m = 2133, x = 47.4, y = 57.0 } },
 }

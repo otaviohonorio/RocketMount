@@ -60,8 +60,8 @@ function Expansion.Of(mountID)
     return nil
 end
 
----A lista para o menu, da mais nova para a mais velha: quem filtra por expansão quase sempre
----quer a de agora, e ela seria a última numa lista cronológica.
+--- The list for the menu, from the newest to the oldest: whoever filters by expansion almost always
+--- wants the current one, and it would be the last in a chronological list.
 function Expansion.Menu()
     local out = {}
     for i = #RANGES, 1, -1 do
