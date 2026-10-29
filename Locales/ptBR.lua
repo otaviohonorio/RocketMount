@@ -560,8 +560,11 @@ L["Click: choose what to show"] = "Clique: escolher o que mostrar"
 -- (AreaPOI.ptBR of the client, 12.1): "Grande Escavação" is the head of "Grande Escavação: Descanso do Traidor".
 L["Mount events"] = "Eventos de montaria"
 L["Event alert"] = "Aviso de evento"
-L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event is over by then. Quiet once the event's reward of the week is taken."] =
-    "Alguns minutos antes de começar um evento que leva a uma montaria que você não tem: uma linha no chat com o lugar e um link que aponta a seta para lá, e o aviso na tela, se você escolher. Nunca em combate nem dentro de masmorra, raide, imersão ou outra instância: o aviso espera, e é descartado se o evento já tiver passado. Fica em silêncio depois que a recompensa da semana do evento foi obtida."
+L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event starts in the meantime. Quiet once the event's reward of the week is taken."] =
+    "Alguns minutos antes de começar um evento que leva a uma montaria que você não tem: uma linha no chat com o lugar e um link que aponta a seta para lá, e o aviso na tela, se você escolher. Nunca em combate nem dentro de masmorra, raide, imersão ou outra instância: o aviso espera, e é descartado se o evento começar nesse meio-tempo. Fica em silêncio depois que a recompensa da semana do evento foi obtida."
+L["Event already started"] = "Evento já em andamento"
+L["When the alert was held back by combat or an instance and the event started in the meantime: the alert comes once you are free, if the event still has 5 minutes or more to go. Off: only the alert before the start, and one missed in combat or an instance is lost."] =
+    "Quando o aviso ficou retido por combate ou instância e o evento começou nesse meio-tempo: o aviso aparece quando você estiver livre, se o evento ainda tiver 5 minutos ou mais pela frente. Desligado: só o aviso antes do começo, e o que você perdeu em combate ou numa instância não volta."
 L["Minutes before"] = "Minutos antes"
 L["How long before the start the alert comes."] = "Quanto tempo antes do início o aviso chega."
 L["The event's reward can bring it."] = "A recompensa do evento pode trazê-la."

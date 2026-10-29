@@ -51,6 +51,7 @@ ns.defaults = {
     -- every event on; `eventOff[key] = true` turns one off
     eventAlerts = true,
     eventLead = 5,
+    eventLate = false,     -- (29/10) the alert held back by combat or an instance, once the event runs: off by default
     eventHow = "popup",    -- "popup": the chat and the alert on the screen; "chat": the chat only
     -- The alert's sound (01/10): on, the chime, at the middle level of five ("leve").
     sightingSound = true,

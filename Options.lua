@@ -174,7 +174,7 @@ function ns.SetupOptions()
             function() return ns.db.eventAlerts ~= false end,
             function(value) ns.db.eventAlerts = value end)
         local mestre = Settings.CreateCheckbox(category, mestreSetting,
-            L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event is over by then. Quiet once the event's reward of the week is taken."])
+            L["A few minutes before an event that leads to a mount you do not have starts: a line in the chat with where it is and a link that points the arrow there, and the alert on the screen if you choose it. Never in combat or inside a dungeon, raid, delve or other instance: it waits, and is dropped if the event starts in the meantime. Quiet once the event's reward of the week is taken."])
         local filhas = {}
         do
             local P = ns.Events and ns.Events.LEAD or { MIN = 1, MAX = 15, STEP = 1, DEFAULT = 5 }
@@ -206,6 +206,17 @@ function ns.SetupOptions()
             end
             filhas[#filhas + 1] = Settings.CreateDropdown(category, s, Lista,
                 L["On the screen, the alert is the rare alert's: click it to point the arrow at the event, right-click to close it."])
+        end
+        -- (29/10) the alert held back by combat or an instance, once the event has started: off by default. The user:
+        -- *"por padrão deixa desabilitado, o unico aviso é dos 5 min antes de começar e se o usuário não viu pq estava em
+        -- conteúdo ai perde o aviso"*
+        do
+            local s = Settings.RegisterProxySetting(category, ADDON .. "EventLate",
+                Settings.VarType.Boolean, L["Event already started"], false,
+                function() return ns.db.eventLate == true end,
+                function(value) ns.db.eventLate = value and true or false end)
+            filhas[#filhas + 1] = Settings.CreateCheckbox(category, s,
+                L["When the alert was held back by combat or an instance and the event started in the meantime: the alert comes once you are free, if the event still has 5 minutes or more to go. Off: only the alert before the start, and one missed in combat or an instance is lost."])
         end
         local COMO = { drop = L["The event's reward can bring it."], currency = L["The event's currency buys it."],
                        renown = L["The event's reputation unlocks it."] }

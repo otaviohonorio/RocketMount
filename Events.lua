@@ -29,6 +29,11 @@
 --   * busy (combat, or any instance: dungeon, raid, delve, scenario, battleground, arena): the alert waits. When the
 --     player is free again it comes if the event has not started, or if it runs with MIN_LEFT still to go ("started
 --     3 min ago, ends in 12 min"); an event that is over or nearly over is dropped.
+-- (29/10) THE LATE ALERT IS AN OPTION, OFF BY DEFAULT. The user: *"quero por para desabilitar de mostrar eventos em
+-- andamento quando ele não avisou o começo por conta de estar em combate ou em conteúdo instanciado (...) por padrão deixa
+-- desabilitado, o unico aviso é dos 5 min antes de começar e se o usuário não viu pq estava em conteúdo ai perde o aviso"*.
+-- `ns.db.eventLate` (false): an alert held back that the event's start caught is dropped; true: the late one as above.
+-- An alert held back that comes free BEFORE the start still comes ("starts in 2 min"): it is the alert before the start.
 local ADDON, ns = ...
 local L = ns.L
 
@@ -376,6 +381,12 @@ function Events.Tick()
                 local chave = e.key .. ":" .. math.floor((now + wait) / 60)
                 -- its time: up to `lead` before the start; once it runs, only an alert put off while busy, and only
                 -- with MIN_LEFT to go (an event over or nearly over is dropped)
+                -- (29/10) the late one only with `eventLate` (off by default): the user, *"o unico aviso é dos 5 min antes
+                -- de começar e se o usuário não viu pq estava em conteúdo ai perde o aviso"*
+                if wait <= 0 and pending[chave] and ns.db.eventLate ~= true then
+                    pending[chave] = nil
+                    if ns.Log then pcall(ns.Log.Add, "event-missed", { key = e.key }) end
+                end
                 local due = (wait > 0 and wait <= lead) or (wait <= 0 and pending[chave] and left >= Events.MIN_LEFT)
                 if due and not alerted[chave] and not Events.Why(e, wait, claimed) then
                     if busy then
