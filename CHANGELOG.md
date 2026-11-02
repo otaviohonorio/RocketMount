@@ -1,3 +1,3 @@
-# Rocket Mount 0.36.1
+# Rocket Mount 0.36.2
 
-- Alerts for an event that started while you were in combat or an instance are now optional, off by default. By default you only get the alert before the event starts; if you miss it in combat or an instance, it is dropped. Turn on "Event already started" in the options for the previous behavior.
+- Slash commands are now English only. The Portuguese aliases (`/rmt busca`, `/rmt quem`, `/rmt esquecer`, `/rmt facção`, `/rmt minimapa` and the others) were removed: use `/rmt search`, `/rmt who`, `/rmt forget`, `/rmt faction`, `/rmt minimap`. `/rmt faction` takes `mine`, `horde` or `alliance`. `/rmt help` lists every command.
