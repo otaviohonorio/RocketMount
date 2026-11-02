@@ -2,12 +2,9 @@
 local _, ns = ...
 local L = ns.L
 
--- (!) THE COMMAND NAMES ARE IN ENGLISH, and the Portuguese ones are aliases.
---
--- Same rule as RocketSwap: the addon ships worldwide, so `/rmt search` is the name and
--- `/rmt busca` still works -- somebody who played this in Portuguese for two weeks has the
--- word in their fingers, and refusing it over one language would be pedantry. The aliases
--- are declared at the bottom, in one place, so the table above reads as the real list.
+-- (!) THE COMMAND NAMES ARE IN ENGLISH, and only in English (the user's rule, 02/11/2026:
+-- "sempre use inglês na nomenclatura dos comandos", for every addon). The Portuguese aliases
+-- this addon shipped with are gone; an unknown word shows the help, which lists the real names.
 local commands = {}
 
 commands[""] = function()
@@ -87,9 +84,7 @@ end
 commands["faction"] = function(rest)
     local arg = (rest or ""):lower():gsub("%s", "")
     local mapa = {
-        minha = "mine", mine = "mine",
-        horda = "Horde", horde = "Horde",
-        alianca = "Alliance", ["aliança"] = "Alliance", alliance = "Alliance",
+        mine = "mine", horde = "Horde", alliance = "Alliance",
     }
     ns.db.factionFilter = mapa[arg]
     local nomes = { mine = L["only what this character can get"],
@@ -371,33 +366,14 @@ commands["help"] = function()
     end
 end
 
--- The Portuguese names this addon shipped with, kept working. One table, so adding a command
--- never means remembering to add an alias in a second place further down the file.
-local ALIASES = {
-    minimapa = "minimap",
-    expansao = "expansion", ["expansão"] = "expansion",
-    busca = "search",
-    aviso = "warn", alerta = "warn",
-    sumidas = "gone",
-    faccao = "faction", ["facção"] = "faction",
-    quem = "who",
-    esquecer = "forget",
-    fontes = "sources",
-    ajuda = "help",
-    marcadores = "pins",
-    conquista = "toast",
-    eventos = "events",
-}
-
 SLASH_ROCKETMOUNT1 = "/rmt"
 SLASH_ROCKETMOUNT2 = "/rocketmount"
 
 SlashCmdList["ROCKETMOUNT"] = function(msg)
     local cmd, rest = (msg or ""):match("^(%S*)%s*(.-)$")
     cmd = (cmd or ""):lower()
-    -- The sentinel key can never be a command, so an unknown word falls through to help
-    -- instead of quietly toggling the window (which is what `commands[""]` does).
-    local handler = commands[cmd] or commands[ALIASES[cmd] or "\0"]
+    -- An unknown word falls through to help; only the empty one toggles the window.
+    local handler = commands[cmd]
     if handler then
         handler(rest)
     else
