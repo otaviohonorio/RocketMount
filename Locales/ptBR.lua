@@ -126,7 +126,7 @@ L["%s has it (%s) and %d more"] = "%s tem (%s) e mais %d"
 -- is feminine plural. This line is exactly the precedence enUS.lua describes -- our
 -- choice beats the game's word.
 
-L["Rocket Mount — where to start"] = "Rocket Mount — por onde começar"
+L["where to start"] = "por onde começar"
 
 -- The development log (/rmt log). It only exists outside the package.
 L["the log only exists in development builds."] = "o diário só existe na versão de desenvolvimento."

@@ -1030,13 +1030,13 @@ local function ForgetButton(d, i)
         if GameTooltip_SetTitle then
             GameTooltip_SetTitle(GameTooltip, titulo)
         else
-            GameTooltip:SetText(titulo, 1, 1, 1)
+            GameTooltip_SetTitle(GameTooltip, titulo)
         end
         for _, linha in ipairs(linhas) do
             if GameTooltip_AddNormalLine then
                 GameTooltip_AddNormalLine(GameTooltip, linha, true)
             else
-                GameTooltip:AddLine(linha, 1, 0.82, 0, true)
+                GameTooltip_AddNormalLine(GameTooltip, linha, true)
             end
         end
         GameTooltip:Show()
@@ -1828,15 +1828,15 @@ local function PctHelp(host, pctHeader)
     ajuda.tex:SetTexture("Interface\\Common\\help-i")
     ajuda:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["What the percentage means"], 1, 0.82, 0)
-        GameTooltip:AddLine(L["It is what the mount depends on, and the list is ordered by it."], 0.9, 0.9, 0.9, true)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddDoubleLine(L["Drop"], L["the chance of each attempt"], 1, 1, 1, 0.8, 0.8, 0.8)
-        GameTooltip:AddDoubleLine(L["Achievement"], L["how much of it is done"], 1, 1, 1, 0.8, 0.8, 0.8)
-        GameTooltip:AddDoubleLine(L["Reputation"], L["how far to the standing asked for"], 1, 1, 1, 0.8, 0.8, 0.8)
-        GameTooltip:AddDoubleLine(L["Renown"], L["how far to the renown level asked for"], 1, 1, 1, 0.8, 0.8, 0.8)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."], 0.6, 0.6, 0.6, true)
+        GameTooltip_SetTitle(GameTooltip, L["What the percentage means"])
+        GameTooltip_AddNormalLine(GameTooltip, L["It is what the mount depends on, and the list is ordered by it."], true)
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddColoredDoubleLine(GameTooltip, L["Drop"], L["the chance of each attempt"], HIGHLIGHT_FONT_COLOR, NORMAL_FONT_COLOR)
+        GameTooltip_AddColoredDoubleLine(GameTooltip, L["Achievement"], L["how much of it is done"], HIGHLIGHT_FONT_COLOR, NORMAL_FONT_COLOR)
+        GameTooltip_AddColoredDoubleLine(GameTooltip, L["Reputation"], L["how far to the standing asked for"], HIGHLIGHT_FONT_COLOR, NORMAL_FONT_COLOR)
+        GameTooltip_AddColoredDoubleLine(GameTooltip, L["Renown"], L["how far to the renown level asked for"], HIGHLIGHT_FONT_COLOR, NORMAL_FONT_COLOR)
+        GameTooltip_AddBlankLineToTooltip(GameTooltip)
+        GameTooltip_AddNormalLine(GameTooltip, L["\"?\" means it cannot be measured yet: open the vendor, or there is no data."], true)
         GameTooltip:Show()
     end)
     ajuda:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1987,7 +1987,7 @@ local function Build()
         window:SetPoint("CENTER")
     end
 
-    if window.SetTitle then window:SetTitle(L["Rocket Mount — where to start"]) end
+    if window.SetTitle then window:SetTitle(ns.TITLE .. " — " .. L["where to start"]) end
     if window.SetPortraitToAsset then
         window:SetPortraitToAsset(ns.LOGO)
     end
@@ -2026,9 +2026,9 @@ local function Build()
         local a = self.data
         if not a then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText(a.name, 1, 0.82, 0)
-        GameTooltip:AddLine(string.format(L["%d of %d mounts"], a.qty or 0, a.req or 0), 1, 1, 1)
-        GameTooltip:AddLine(L["Only mounts this character can use count toward it."], 0.8, 0.8, 0.8, true)
+        GameTooltip_SetTitle(GameTooltip, a.name)
+        GameTooltip_AddHighlightLine(GameTooltip, string.format(L["%d of %d mounts"], a.qty or 0, a.req or 0))
+        GameTooltip_AddNormalLine(GameTooltip, L["Only mounts this character can use count toward it."], true)
         GameTooltip:Show()
     end)
     window.achievement:SetScript("OnLeave", function() GameTooltip:Hide() end)
