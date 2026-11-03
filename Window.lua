@@ -311,7 +311,7 @@ local function BuildDetail(parent)
     d.tier:SetWidth(DETAIL_W - 58)
 
     d.rule = d:CreateTexture(nil, "ARTWORK")
-    d.rule:SetColorTexture(1, 0.82, 0, 0.25)
+    ns.Style.Divider(d.rule)   -- (03/11) the design system's divider (Style.lua)
     d.rule:SetPoint("TOPLEFT", d.icon, "BOTTOMLEFT", 0, -10)
     d.rule:SetSize(DETAIL_W, 1)
 

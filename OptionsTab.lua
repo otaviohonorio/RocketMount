@@ -56,7 +56,7 @@ local function Section(col, y, title)
     rule:SetHeight(1)
     rule:SetPoint("TOPLEFT", col, "TOPLEFT", 0, -y - H_LABEL - 4)
     rule:SetPoint("TOPRIGHT", col, "TOPRIGHT", 0, -y - H_LABEL - 4)
-    rule:SetColorTexture(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 0.25)
+    ns.Style.Divider(rule)   -- (03/11) the design system's divider (Style.lua)
     return y + H_SECTION + 4
 end
 
