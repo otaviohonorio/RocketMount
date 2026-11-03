@@ -115,7 +115,7 @@ ns.Geometry = {
 
 local window, list, detail
 local selected           -- the entry on the card, matched by mountID across rebuilds
-local activeTab = "list" -- "list" or "collection" (see ns.SetWindowTab)
+local activeTab = "list" -- "list", "collection", "attempts" or "settings" (see ns.SetWindowTab)
 -- Which recycled frames were already built. A field on the frame (`row.built`) would do in the
 -- game, but the harness answers every unknown field with a function -- truthy -- and the row
 -- was never built there. A table of our own means the same thing in both.
@@ -1569,6 +1569,12 @@ function ns.UpdateCollectionBoxes()
 end
 
 local function Redraw()
+    -- The Settings tab only shows the saved values (OptionsTab.lua).
+    if activeTab == "settings" and ns.OptionsTab then
+        if loading then loading:Hide() end
+        ns.OptionsTab.Refresh()
+        return
+    end
     -- The Attempts tab draws itself too (AttemptsTab.lua).
     if activeTab == "attempts" and ns.AttemptsTab then
         if loading then loading:Hide() end
@@ -1626,7 +1632,7 @@ local function Fresh(entry)
     return nil
 end
 
-local TAB_INDEX = { list = 1, collection = 2, attempts = 3 }
+local TAB_INDEX = { list = 1, collection = 2, attempts = 3, settings = 4 }
 
 ---Which tab is on: "list", "collection" or "attempts".
 function ns.SetWindowTab(tab)
@@ -1635,6 +1641,8 @@ function ns.SetWindowTab(tab)
         activeTab = "collection"
     elseif tab == "attempts" and ns.AttemptsTab then
         activeTab = "attempts"
+    elseif tab == "settings" and ns.OptionsTab then
+        activeTab = "settings"
     else
         activeTab = "list"
     end
@@ -1647,6 +1655,9 @@ function ns.SetWindowTab(tab)
     if not lista and loading then loading:Hide() end
     if ns.Collection then ns.Collection.Show(activeTab == "collection") end
     if ns.AttemptsTab then ns.AttemptsTab.Show(activeTab == "attempts") end
+    -- (03/11) the settings live in the window: the search box has nothing to search there
+    if ns.OptionsTab then ns.OptionsTab.Show(activeTab == "settings") end
+    if window.search then window.search:SetShown(activeTab ~= "settings") end
     if PanelTemplates_SetTab then PanelTemplates_SetTab(window, TAB_INDEX[activeTab]) end
     ns.RefreshWindow()
 end
@@ -2162,7 +2173,12 @@ local function Build()
         ns.Collection.Build(host, SEARCH_H + 2, LIST_W - 6 - SCROLLBAR_W)
         window.tabs = {}
         local abas = { { "list", L["List"] }, { "collection", L["Collection"] } }
-        if ns.AttemptsTab then abas[3] = { "attempts", L["Attempts"] } end
+        if ns.AttemptsTab then abas[#abas + 1] = { "attempts", L["Attempts"] } end
+        -- (03/11) the settings, out of the game's Options > AddOns panel (OptionsTab.lua); the game's word
+        if ns.OptionsTab then
+            ns.OptionsTab.Build(host, LIST_W)
+            abas[#abas + 1] = { "settings", SETTINGS }
+        end
         for i, tab in ipairs(abas) do
             local b = CreateFrame("Button", window:GetName() .. "Tab" .. i, window, "PanelTabButtonTemplate")
             b:SetID(i)
@@ -2233,6 +2249,15 @@ local function Build()
     tinsert(UISpecialFrames, window:GetName())   -- Esc closes
     window:Hide()
     ns.window = window
+end
+
+---Opens the window on its Settings tab (minimap right-click, `/rmt config`, the game's Options > AddOns).
+function ns.OpenSettings()
+    if not (window and window:IsShown()) then ns.ToggleWindow() end
+    if window then
+        ns.SetWindowTab("settings")
+        window:Raise()
+    end
 end
 
 function ns.ToggleWindow()

@@ -85,7 +85,7 @@ function ns.CreateMinimapButton()
 
     button:SetScript("OnClick", function(_, mouseButton)
         if mouseButton == "RightButton" then
-            if ns.category then Settings.OpenToCategory(ns.category:GetID()) end
+            if ns.OpenSettings then ns.OpenSettings() end
         else
             ns.ToggleWindow()
         end

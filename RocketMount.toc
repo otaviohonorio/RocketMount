@@ -71,4 +71,6 @@ MapButton.lua
 MapPins.xml
 Minimap.lua
 Options.lua
+OptionsTab.lua
 Commands.lua
+OptionsEntry.lua

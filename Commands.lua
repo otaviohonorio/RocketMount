@@ -12,8 +12,8 @@ commands[""] = function()
 end
 
 commands["config"] = function()
-    if ns.category then
-        Settings.OpenToCategory(ns.category:GetID())
+    if ns.OpenSettings then
+        ns.OpenSettings()
     else
         ns.Print(L["the options panel has not registered yet."])
     end
