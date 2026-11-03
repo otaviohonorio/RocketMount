@@ -46,6 +46,7 @@ Data\RareTimers.lua
 Data\MountEvents.lua
 Core.lua
 Donate.lua
+Style.lua
 #@debug@
 Log.lua
 #@end-debug@

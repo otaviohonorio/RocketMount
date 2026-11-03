@@ -2196,6 +2196,8 @@ local function Build()
         if PanelTemplates_SetTab then PanelTemplates_SetTab(window, 1) end
     end
 
+    -- (03/11) the body of every Rocket window (Style.lua), in place of the template's stone
+    if ns.Style then ns.Style.Body(window, 1, window.Bg) end
     detail = BuildDetail(window)
     detail.Place(false)
     window.detail = detail
