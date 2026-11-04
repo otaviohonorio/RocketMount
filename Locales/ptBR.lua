@@ -103,7 +103,6 @@ L["item %d"]            = "item %d"
 L['Quest "%s": completed']                  = 'Missão "%s": concluída'
 L["  —  already done on another character"] = "  —  já feita em outro personagem"
 L['Quest "%s": not completed%s%s']          = 'Missão "%s": não concluída%s%s'
-L['Achievement "%s": not completed']        = 'Conquista "%s": não concluída'
 
 L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] =
     "Vendedor de guilda: exige Exaltado com a guilda e, quase sempre, uma conquista DA GUILDA"
@@ -440,9 +439,6 @@ L["done"] = "concluída"
 
 -- Donation (Donate.lua, 26/09)
 L["Link copied — paste it in your browser."] = "Link copiado — cole no navegador."
-L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Obrigado por apoiar o Rocket Mount! Aperte Ctrl+C para copiar o link e cole no navegador."
-L["Click: open the donation link, ready to copy"] = "Clique: abrir o link de doação, pronto para copiar"
-L["Support the project"] = "Apoiar o projeto"
 L["Report a problem"] = "Relatar um problema"
 L["Report a problem on"] = "Relatar um problema em"
 L["Click: choose where to report a problem"] = "Clique: escolher onde relatar um problema"
@@ -662,3 +658,6 @@ L["Characters that never logged in with the addon are not listed."] =
     "Personagens que nunca entraram no jogo com o addon não aparecem."
 L["Characters below the maximum level are not offered."] =
     "Personagens abaixo do nível máximo não são sugeridos."
+L["%s: %s"] = "%s: %s"
+L["Achievement Earned"] = "Conquista obtida"
+L["Not collected"] = "Não Coletada"

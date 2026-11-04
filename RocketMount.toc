@@ -3,7 +3,7 @@
 ## Notes: The mounts you are missing, easiest first.
 ## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
 ## Author: Otto Rocket (Otávio Honório)
-## Version: 0.36.2
+## Version: 0.37.0
 ## X-Curse-Project-ID: 1717377
 #@debug@
 ## SavedVariables: RocketMountDB, RocketMountLogDB
@@ -11,11 +11,9 @@
 #@non-debug@
 # ## SavedVariables: RocketMountDB
 #@end-non-debug@
-## Category: Collections
-## Category-ptBR: Coleções do Bando de Guerra
+## Category: Rocket Addons
 ## IconTexture: Interface\AddOns\RocketMount\Textures\Logo.png
 ## AddonCompartmentFunc: RocketMount_OnCompartmentClick
-## X-Donate: PayPal:https://www.paypal.com/donate/?business=HH4PHH48DPG9J&no_recurring=0&currency_code=USD
 
 Locales\enUS.lua
 Locales\ptBR.lua
@@ -49,6 +47,7 @@ Donate.lua
 Style.lua
 #@debug@
 Log.lua
+DevShots.lua
 #@end-debug@
 Skin.lua
 Expansion.lua
@@ -59,6 +58,7 @@ Tips.lua
 Sources.lua
 Score.lua
 Collection.lua
+Journey.lua
 Window.lua
 Sighting.lua
 Events.lua

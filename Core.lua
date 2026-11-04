@@ -415,10 +415,11 @@ function ns.StartValidation()
         ns.Log.Add("validate", { phase = "items", items = #ids })
         ns.Tooltip.Preload(ids, function()
             ns.validation.state = "done"
-            if ns.ClosestHereNotice then ns.ClosestHereNotice() end
             local feitos, total = ns.Tooltip.Progress()
             ns.Log.Add("validate", { phase = "done", loaded = feitos, requested = total })
             ns.Invalidate()
+            -- After the Invalidate: the notice waits for the list made with the items validated.
+            if ns.ClosestHereNotice then ns.ClosestHereNotice() end
             ns.OnValidationProgress()
             if ns.RefreshWindow then ns.RefreshWindow() end
         end)

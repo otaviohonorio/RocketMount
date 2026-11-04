@@ -70,7 +70,6 @@ L["item %d"] = "предмет %d"
 L["Quest \"%s\": completed"] = "Задание «%s»: выполнено"
 L["  —  already done on another character"] = "  —  уже выполнено другим персонажем"
 L["Quest \"%s\": not completed%s%s"] = "Задание «%s»: не выполнено%s%s"
-L["Achievement \"%s\": not completed"] = "Достижение «%s»: не получено"
 L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] = "Торговец гильдии: требует «Превознесение» с гильдией и, чаще всего, достижение ГИЛЬДИИ"
 L["%s has it (%s)"] = "есть у %s (%s)"
 L["on %s"] = "у %s"
@@ -292,9 +291,6 @@ L["%d of %d mounts"] = "транспорта: %d из %d"
 L["Only mounts this character can use count toward it."] = "Учитывается только транспорт, доступный этому персонажу."
 L["done"] = "выполнено"
 L["Link copied — paste it in your browser."] = "Ссылка скопирована — вставьте её в браузер."
-L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Спасибо за поддержку Rocket Mount! Нажмите Ctrl+C, чтобы скопировать ссылку, затем вставьте её в браузер."
-L["Click: open the donation link, ready to copy"] = "Нажмите: открыть ссылку для пожертвования, готовую к копированию"
-L["Support the project"] = "Поддержать проект"
 L["Report a problem"] = "Сообщить о проблеме"
 L["Report a problem on"] = "Сообщить о проблеме на"
 L["Click: choose where to report a problem"] = "Нажмите: выбрать, где сообщить о проблеме"
@@ -465,5 +461,6 @@ L["Characters below the maximum level are not offered."] = "Персонажи �
 
 -- (25/10) the game's own words (FROM_GAME), written here as the game gives them in this
 -- language (GlobalStrings.ruRU): the same as at runtime, and checked by tests/locales.lua
-L["Close"] = "Закрыть"  -- the game's CLOSE
 L["Not collected"] = "Не полученные"  -- the game's NOT_COLLECTED
+L["%s: %s"] = "%s: %s"
+L["Achievement Earned"] = "Новое достижение"

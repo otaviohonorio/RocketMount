@@ -244,11 +244,14 @@ end
 --     where to go, and the row already says so).
 local CLOSE = 0.75           -- the list's own "close" line (Score.lua, the CLOSE tier)
 local avisado = false
-function ns.ClosestHereNotice(force)
-    if avisado and not force then return end
-    avisado = true
+
+-- (!) IT WAITS FOR THE SLICED LIST (03/11). It asked for `GetRanked(true)`: all 618 mounts in one
+-- frame at login (the diary: `how=forced`, 114-127 ms every time), and the game cut it with
+-- "script ran too long" (the game's error report, 0.36.2). Nobody is looking at a window here, so it is a
+-- background build like the map's.
+local function Notice(list)
     local achados = {}
-    for _, e in ipairs(ns.GetRanked(true)) do
+    for _, e in ipairs(list or {}) do
         local r = e.rep
         local v = ns.RowPercent(e)
         if r and not r.char and r.scope == "personagem" and r.altPct ~= nil and r.pct > r.altPct
@@ -266,6 +269,12 @@ function ns.ClosestHereNotice(force)
         local e = achados[i].e
         print(string.format("    %s  —  %s", e.name or "?", ns.RowPercentText(e)))
     end
+end
+
+function ns.ClosestHereNotice(force)
+    if avisado and not force then return end
+    avisado = true
+    ns.WhenBuilt(Notice)
 end
 
 -- WHAT THE MAP DREW. For four days the map showed a part of its pins and nothing said so: the

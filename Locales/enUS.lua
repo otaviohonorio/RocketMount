@@ -37,8 +37,6 @@ ns.L = L
 -- Those two already came out translated in every language, and the tables next to them are
 -- only the plan B for a client where one of them is missing.
 local FROM_GAME = {
-    ["Close"] = "CLOSE",
-    ["All"]   = "ALL",
     -- The label of the window's counter. Evidence it exists: Blizzard's own mount journal uses
     -- it for its filter (`Blizzard_MountCollection.lua`, `CreateCheckbox(NOT_COLLECTED, ...)`),
     -- and the number next to it is exactly that: the mounts not collected.

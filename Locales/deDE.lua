@@ -294,9 +294,6 @@ L["%d of %d mounts"] = "%d von %d Reittieren"
 L["Only mounts this character can use count toward it."] = "Es zählen nur Reittiere, die dieser Charakter nutzen kann."
 L["done"] = "erledigt"
 L["Link copied — paste it in your browser."] = "Link kopiert – füge ihn in deinen Browser ein."
-L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Danke, dass du Rocket Mount unterstützt! Drücke Strg+C, um den Link zu kopieren, und füge ihn in deinen Browser ein."
-L["Click: open the donation link, ready to copy"] = "Klick: Spendenlink öffnen, bereit zum Kopieren"
-L["Support the project"] = "Projekt unterstützen"
 L["Report a problem"] = "Problem melden"
 L["Report a problem on"] = "Problem melden auf"
 L["Click: choose where to report a problem"] = "Klick: wählen, wo du ein Problem meldest"
@@ -467,5 +464,6 @@ L["Characters below the maximum level are not offered."] = "Charaktere unter der
 
 -- (25/10) the game's own words (FROM_GAME), written here as the game gives them in this
 -- language (GlobalStrings.deDE): the same as at runtime, and checked by tests/locales.lua
-L["Close"] = "Schließen"  -- the game's CLOSE
 L["Not collected"] = "Nicht gesammelt"  -- the game's NOT_COLLECTED
+L["%s: %s"] = "%s: %s"
+L["Achievement Earned"] = "Erfolg errungen"

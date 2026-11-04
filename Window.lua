@@ -19,7 +19,7 @@
 --              journal; `WowScrollBoxList` + `MinimalScrollBar` below them
 --   row        `MountListButtonTemplate`'s parts: 46 high, `PetList-ButtonBackground`, select
 --              and highlight atlases, 38 icon hanging in a 44 left padding, name in
---              `GameFontNormal`, the second line in `GameFontDisableSmall`
+--              `GameFontNormal`, the second line in `GameFontHighlightSmall` + LIGHTGRAY
 --   card       on the window background, not an inset -- RocketSwap's right column: the
 --              inset's marble is a LIST background
 local ADDON, ns = ...
@@ -60,7 +60,11 @@ local ROW_PAD = 44            -- the journal's left padding: room for the icon h
 local DETAIL_W = 360
 
 local COL_X = INSET_X + LIST_W + GUTTER
-local WINDOW_W = COL_X + DETAIL_W + RIGHT_MARGIN
+-- (04/11) THE RIGHT COLUMN LEFT THE WINDOW. The user: *"era para abrir a linha para por os dados de texto e reduzir a
+-- largura da janela"*. The mount's text opens under its row in the List tab (the drawer, below), and in the
+-- Collection and Attempts tabs it goes to the docked window under the 3D (the user's choice, 04/11). The window ends
+-- where the list's inset ends, plus the template's right border (the inset's right edge sits 6 in).
+local WINDOW_W = INSET_X + LIST_W + 6
 local WINDOW_H = 660 + DONATE_ROW   -- 580 -> 660 with the width; + the support line, same list
 
 -- The row and its columns. Every x is derived from the one before it, so a column that grows
@@ -73,10 +77,16 @@ local WINDOW_H = 660 + DONATE_ROW   -- 580 -> 660 with the width; + the support 
 -- columns did not move: only the name starts after the icon. Seen first in a preview made out
 -- of the game with the client's art (`.release/previa_lista.py`); the little progress bar of
 -- that preview was dropped at the user's word.
-local ROW_H = 58              -- 46 in the journal; 54 until 06/10
-local ROW_ICON = 40
+-- (!) THE CARD HAS A BEVEL (03/11). With the Journeys' card (Journey.lua) the row's art has an edge of EDGE (15) on
+-- each side and the stone inside it starts at INNER (11): everything of the row stays INSIDE that, or it spills over
+-- the bevel -- the user's screenshot of 03/11 marked the ring over the top, bottom and left edges, the second line of
+-- the description over the bottom edge and the number's bar on the right edge (*"coisa vazando pra fora, com
+-- espaçamento ruim, não ficando ajustado de lugar conforme o fundo"*). The harness checks every piece against the
+-- card's inner area (lesson L-054).
+local ROW_H = 70              -- 46 in the journal; 54 until 06/10; 58 until 03/11 (the bevel)
+local ROW_ICON = 36           -- 40 until 03/11: the ring (48) fits the card's inside (70 - 2 x 11)
 local ROW_GAP = 4             -- between one card and the next
-local ICON_INSET = 12         -- from the plate's left edge to the icon
+local ICON_INSET = 24         -- from the card's left edge to the icon: the ring clears the bevel (15) by 3
 local ICON_FRAME = math.floor(56 * ROW_ICON / 42 + 0.5)   -- the game's frame is 56 around an icon of 42
 local ROW_W = LIST_W - 3 - 3 - SCROLLBAR_W - ROW_PAD
 local COL_GAP = 10
@@ -86,7 +96,7 @@ local NAME_X = ICON_INSET + ROW_ICON + 14 - ROW_PAD
 local NAME_W = 302 - NAME_X             -- the type column stays where it was (312)
 local TAG_X, TAG_W = NAME_X + NAME_W + COL_GAP, 210   -- three tags
 local EXP_X, EXP_W = TAG_X + TAG_W + COL_GAP, 124
-local PCT_W, PCT_INSET = 64, 8
+local PCT_W, PCT_INSET = 56, 20   -- 64 x 8 until 03/11: the number and its bar inside the right bevel (15)
 local PCT_X = ROW_W - PCT_INSET - PCT_W
 -- The map pin of the row (02/10): its own column between the expansion and the number. The
 -- name gave 24 and the expansion 6 for it.
@@ -104,7 +114,8 @@ ns.Geometry = {
     insetX = INSET_X, listW = LIST_W, gutter = GUTTER, colX = COL_X,
     detailW = DETAIL_W, rightMargin = RIGHT_MARGIN, listTopY = LIST_TOP,
     scrollbarW = SCROLLBAR_W, rowPad = ROW_PAD, rowGap = ROW_GAP, iconInset = ICON_INSET,
-    rowIcon = ROW_ICON, iconFrame = ICON_FRAME, attDone = ATT_DONE,
+    rowIcon = ROW_ICON, iconFrame = ICON_FRAME, attDone = ATT_DONE, pctW = PCT_W, pctInset = PCT_INSET,
+    nameTop = 13, whyGap = 4, headlineUp = 6, barGap = 4, barH = 9,
     rowW = ROW_W, rowH = ROW_H, listTop = LIST_TOP, footer = FOOTER, donateRow = DONATE_ROW,
     cols = {
         { name = "name", x = NAME_X, w = NAME_W }, { name = "tag", x = TAG_X, w = TAG_W },
@@ -175,6 +186,74 @@ local MODEL_H = 210
 local MODEL_GAP = 10
 ns.Geometry.modelH, ns.Geometry.modelGap = MODEL_H, MODEL_GAP
 
+-- (!) THE 3D IN A WINDOW OF ITS OWN, DOCKED TO THE MAIN ONE (04/11). The user, with the game's Dressing Room beside
+-- the window: *"ela pode abrir mostrando as informações de texto dela, e um quadro adicional ao lado sem empurrar
+-- linhas e nem nada a imagem 3d da montaria"*, *"janela fixa sem deslocar nada (...) essa janela ao lado abrindo,
+-- podendo só ela ser fechada, mas colada na janela"*. Until then (03/11) the clicked row opened 230 taller with the
+-- scene in it: the rows moved, and the card's stone stretched with the row (*"parece uma gambiarra o fundo dentro do
+-- card com ele abrindo e fechando"*). Now the rows never change height; a click puts the mount on the card on the
+-- right (as before) and in this window, the game's `ButtonFrameTemplate` (portrait = the mount's icon, the title with
+-- the game's own word for the Dressing Room, `DRESSUP_FRAME`), the same height as the main window, its inset on the
+-- same lines. Its close button closes only it; the next click on a row opens it again. Out of the scrolling list,
+-- the scene takes the mouse wheel again (zoom), like the journal's.
+local PREVIEW_W = 400   -- with the main window (920) inside the 16:9 screen at scale 1 (1365), with room
+local PREVIEW_GAP = 0     -- docked: edge to edge
+local PREVIEW_SPLIT_H = 300   -- the 3D's height when the text is under it (Collection, Attempts)
+local PREVIEW_TEXT_PAD = 10
+ns.Geometry.previewW = PREVIEW_W
+-- (04/11) THE DRAWER: the mount's text opens under its card. The card never changes (the user: *"não muda a linha do
+-- card ao abrir, só abre o quadrado mesmo com as informações"*). On the user's own mark (two red lines on the preview:
+-- *"faz abrir quadrado ali nas linhas retas vermelhas"*) it is a frame only -- *"pode ficar sem fundo por enquanto
+-- para não espichar o fundo do card"* --: its sides go straight down from where the card's bottom chamfers end, its
+-- bottom is the card's with its chamfered corners, the inside is the list's own dark. Two pieces of the card's art
+-- (tools/arte_cartao_adaptar.py: Drawer = the side bands, DrawerBottom); preview mockup/PREVIA Rocket Mount - gaveta
+-- colada no cartao.png. The text column starts under the mount's name; the buttons make a column on the right. The
+-- scene stays in the docked window.
+local DRAWER_GAP = -3         -- the drawer climbs over the card's bottom shadow: its sides start at the card's line
+local DRAWER_X = 5.84         -- from the card box's left: where the card's bottom chamfer ends (minus the file's shadow)
+local DRAWER_W = 875.32       -- the drawer file's width (the card's straight bottom line plus the shadow on each side)
+local DRAWER_BOTTOM_H = 35    -- (until 04/11: the bottom piece; kept for the geometry table)
+-- (04/11) THE BUTTON CARD: the drawer is closed by a card like the clickable one (the user: "no fim da gaveta ter outro
+-- card igual do clicavel mas só com os botões wowhead e etc"), the same art (Card.png) at the row's size -- not
+-- stretched --, aligned with the card above; the buttons side by side on its right, centred on its height. The sides
+-- end into its top line (it climbs FOOT_OVER over them). Preview: mockup/PREVIA Rocket Mount - gaveta com cartao de
+-- botoes.png.
+local FOOT_H = ROW_H
+local FOOT_OVER = 3
+local FOOT_GAP = 8            -- between the buttons
+local FOOT_RIGHT = 34         -- from the card's right edge to the last button (the percentage's own margin)
+local DRAWER_SIDE = 5.5       -- each side band of the drawer (11 px of its file): the stone runs between them
+local DRAWER_PAD = 12         -- from the card's line to the text, and from the text to the bottom line
+local DRAWER_TEXT_X = ICON_INSET + ROW_ICON + 14 - DRAWER_X   -- under the name (NAME_X, from the card's left)
+local DRAWER_TEXT_W = 480
+local DRAWER_BTN_W = 160
+local DRAWER_BTN_X = ROW_W + ROW_PAD - DRAWER_X - 34 - DRAWER_BTN_W
+local DRAWER_TEXT_TOP = -DRAWER_GAP + DRAWER_PAD   -- the text starts this far from the drawer's top
+local DRAWER_FILE_W, DRAWER_BODY_FILE_H, DRAWER_PIECE_FILE_H = 2048, 1024, 128
+local DRAWER_ART_W = 1751     -- the pieces' width in their files (DRAWER_W at 2 per point)
+ns.Geometry.drawer = { gap = DRAWER_GAP, pad = DRAWER_PAD, x = DRAWER_X, w = DRAWER_W, textX = DRAWER_TEXT_X,
+    textW = DRAWER_TEXT_W, btnX = DRAWER_BTN_X, btnW = DRAWER_BTN_W, bottomH = DRAWER_BOTTOM_H, footH = FOOT_H,
+    footOver = FOOT_OVER, footGap = FOOT_GAP, footRight = FOOT_RIGHT, side = DRAWER_SIDE,
+    textTop = DRAWER_TEXT_TOP, artW = DRAWER_ART_W }
+local drawer, rowView, sideView   -- the drawer (one, moved to the open row), the two views of the text
+local expanded                    -- the mountID of the open row, or nil
+
+-- The journal's backdrop (`MountJournal-BG`, 512 x 512, the art is the left 402 x 512) CUT to the scene's shape,
+-- never stretched (the user, 03/11: *"tu pegou e esticou e ficou todo deformado"*): the whole width of the art and a
+-- band of the height in the same proportion as the scene, from the middle.
+local BG_W, BG_H, BG_FILE = 402, 512, 512
+function ns.ModelBackdropCoords(w, h)
+    if not (w and h and w > 0 and h > 0) then return 0, BG_W / BG_FILE, 0, 1 end
+    if w / h >= BG_W / BG_H then
+        local band = BG_W * h / w
+        local v0 = (BG_H - band) / 2 / BG_FILE
+        return 0, BG_W / BG_FILE, v0, v0 + band / BG_FILE
+    end
+    local band = BG_H * w / h
+    local u0 = (BG_W - band) / 2 / BG_FILE
+    return u0, u0 + band / BG_FILE, 0, BG_H / BG_FILE
+end
+
 -- (!) THE WHOLE MOUNT IN THE FRAME, AND A WAY TO MOVE IT (06/10, the user's screenshot of the
 -- first version: *"No 3d não consigo subir a montaria para ver melhor, por que ela não tá bem
 -- centralizada"* -- Anu'shalla with its feet cut off by the bottom of the frame).
@@ -197,11 +276,12 @@ end
 
 local function BuildModel(parent)
     local m = CreateFrame("Frame", nil, parent)
+    m.home = parent
     m:SetSize(DETAIL_W, MODEL_H)
     m.bg = m:CreateTexture(nil, "BACKGROUND")
     m.bg:SetAllPoints()
     m.bg:SetTexture("Interface\\PetBattles\\MountJournal-BG")
-    m.bg:SetTexCoord(0, 0.78515625, 0, 1)
+    m.bg:SetTexCoord(ns.ModelBackdropCoords(DETAIL_W, MODEL_H))
     m.shadow = CreateFrame("Frame", nil, m, "ShadowOverlayTemplate")
     m.shadow:SetAllPoints()
     m.scene = CreateFrame("ModelScene", nil, m, "PanningModelSceneMixinTemplate")
@@ -262,58 +342,53 @@ local function ShowModel(m, entry)
 end
 ns.__showModel = ShowModel
 
-local function BuildDetail(parent)
-    -- (!) THE CARD SCROLLS. It used to have six slots and drop the rest: "Where" was the ninth
-    -- block of a vendor mount behind a reputation and never reached the screen. The game's own
-    -- scroll box and bar (the list beside it uses the same pair).
-    local box = CreateFrame("Frame", nil, parent, "WowScrollBox")
-    box:SetSize(DETAIL_W, CARD_H)
-    local bar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
-    bar:SetPoint("TOPLEFT", box, "TOPRIGHT", CARD_BAR_GAP, 0)
-    bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", CARD_BAR_GAP, 0)
-
-    local d = CreateFrame("Frame", nil, box)
-    d.scrollable = true
-    d:SetSize(DETAIL_W, CARD_H)
-    d.box, d.bar = box, bar
-    d.model = BuildModel(parent)
-    d.model:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X, LIST_TOP - 6)
-    -- The text takes what the scene leaves: the whole column without it.
-    function d.Place(comModelo)
-        d.model:SetShown(comModelo)
-        box:ClearAllPoints()
-        if comModelo then
-            box:SetPoint("TOPLEFT", d.model, "BOTTOMLEFT", 0, -MODEL_GAP)
-            box:SetHeight(CARD_H - MODEL_H - MODEL_GAP)
-        else
-            box:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X, LIST_TOP - 6)
-            box:SetHeight(CARD_H)
+---(04/11) A view of the mount's text, `width` wide. Two of them: the drawer of the open row (no scroll: the list
+---scrolls) and the docked window's (scroll = true: the game's scroll box and bar). Both filled by `FillDetail`.
+local function BuildDetailView(parent, width, scroll)
+    local d
+    if scroll then
+        -- (!) THE CARD SCROLLS. It used to have six slots and drop the rest: "Where" was the ninth
+        -- block of a vendor mount behind a reputation and never reached the screen. The game's own
+        -- scroll box and bar (the list beside it uses the same pair).
+        local box = CreateFrame("Frame", nil, parent, "WowScrollBox")
+        box:SetSize(width, CARD_H)
+        local bar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
+        bar:SetPoint("TOPLEFT", box, "TOPRIGHT", CARD_BAR_GAP, 0)
+        bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", CARD_BAR_GAP, 0)
+        d = CreateFrame("Frame", nil, box)
+        d.scrollable = true
+        d.box, d.bar = box, bar
+        if ScrollUtil and ScrollUtil.InitScrollBoxWithScrollBar and CreateScrollBoxLinearView then
+            ScrollUtil.InitScrollBoxWithScrollBar(box, bar, CreateScrollBoxLinearView())
+            if ScrollUtil.AddManagedScrollBarVisibilityBehavior then
+                ScrollUtil.AddManagedScrollBarVisibilityBehavior(box, bar)
+            end
         end
+    else
+        d = CreateFrame("Frame", nil, parent)
     end
-    if ScrollUtil and ScrollUtil.InitScrollBoxWithScrollBar and CreateScrollBoxLinearView then
-        ScrollUtil.InitScrollBoxWithScrollBar(box, bar, CreateScrollBoxLinearView())
-        if ScrollUtil.AddManagedScrollBarVisibilityBehavior then
-            ScrollUtil.AddManagedScrollBarVisibilityBehavior(box, bar)
-        end
-    end
+    d.textW = width
+    d:SetSize(width, 1)
+    -- what each view has, said outright (false, never left unset): the drawer has no scroll box, and only the docked
+    -- window's view starts with the line of what the mount is; the caller sets the button column of the drawer
+    if not scroll then d.box, d.bar = false, false end
+    d.withTier, d.buttonsAt, d.footButtons = false, false, false
 
-    d.icon = d:CreateTexture(nil, "ARTWORK")
-    d.icon:SetSize(48, 48)
-    d.icon:SetPoint("TOPLEFT", 0, 0)
-
-    d.name = Text(d, "GameFontNormalLarge")
-    d.name:SetPoint("TOPLEFT", d.icon, "TOPRIGHT", 10, -4)
-    d.name:SetWidth(DETAIL_W - 58)
-    d.name:SetJustifyV("TOP")
+    -- (04/11) the name and the icon are where the view is (the row's card, the docked window's attic): the view
+    -- begins with the line of what the mount is (only in the docked window: the row's columns already say it)
+    d.top = d:CreateTexture(nil, "ARTWORK")
+    d.top:SetPoint("TOPLEFT", 0, 1)
+    d.top:SetSize(1, 1)
+    d.top:SetAlpha(0)
 
     d.tier = Text(d, "GameFontHighlightSmall2") -- 11, one point over the small one
-    d.tier:SetPoint("TOPLEFT", d.name, "BOTTOMLEFT", 0, -4)
-    d.tier:SetWidth(DETAIL_W - 58)
+    d.tier:SetPoint("TOPLEFT", 0, 0)
+    d.tier:SetWidth(width)
 
     d.rule = d:CreateTexture(nil, "ARTWORK")
     ns.Style.Divider(d.rule)   -- (03/11) the design system's divider (Style.lua)
-    d.rule:SetPoint("TOPLEFT", d.icon, "BOTTOMLEFT", 0, -10)
-    d.rule:SetSize(DETAIL_W, 1)
+    d.rule:SetPoint("TOPLEFT", d.tier, "BOTTOMLEFT", 0, -8)
+    d.rule:SetSize(width, 1)
 
     -- A stack of "label above, text below" blocks, made as they are needed. Stacking is right
     -- here: this is free text the full width of the column, not a form field.
@@ -335,15 +410,15 @@ local function BuildDetail(parent)
     d.achOpen:Hide()
     d.achTrack = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
     d.achTrack:SetSize(160, 22)
-    d.achTrack:SetPoint("LEFT", d.achOpen, "RIGHT", 8, 0)
     d.achTrack:Hide()
 
     -- The "no longer exists" buttons, made as they are needed (`ForgetButton`).
     d.forget = {}
 
-    d.empty = Text(d, "GameFontDisable")
+    d.empty = Text(d, "GameFontHighlight")
+    d.empty:SetTextColor(LIGHTGRAY_FONT_COLOR:GetRGB())
     d.empty:SetPoint("TOPLEFT", 0, -6)
-    d.empty:SetWidth(DETAIL_W)
+    d.empty:SetWidth(width)
     d.empty:SetText(L["Pick a mount in the list to see how it is obtained."])
 
     return d
@@ -358,11 +433,11 @@ local function Block(d, i)
     -- `GameFontNormal` is 12. The game has no white object at 13 (its next white one is 14),
     -- so the value takes the same object, painted with the game's highlight colour.
     b.label = Text(d, "GameFontNormalMed1")
-    b.label:SetWidth(DETAIL_W)
+    b.label:SetWidth(d.textW)
     b.label:SetJustifyV("TOP")
     b.value = Text(d, "GameFontNormalMed1")
     b.value:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-    b.value:SetWidth(DETAIL_W)
+    b.value:SetWidth(d.textW)
     b.value:SetJustifyV("TOP")
     b.value:SetSpacing(2)
     d.blocks[i] = b
@@ -1046,8 +1121,9 @@ local function ForgetButton(d, i)
     return b
 end
 
-local function FillDetail(entry)
-    local d = detail
+---Fills a view (`BuildDetailView`) with a mount's text; nil empties it.
+local function FillDetail(d, entry)
+    if not d then return end
     for _, b in ipairs(d.blocks) do
         b.label:Hide()
         b.value:Hide()
@@ -1061,21 +1137,18 @@ local function FillDetail(entry)
     d.achOpen:Hide()
     d.achTrack:Hide()
 
-    d.Place(ShowModel(d.model, entry))
-
+    d.entry = entry
     if not entry then
-        d.model.mountID = nil
-        d.icon:Hide(); d.name:Hide(); d.tier:Hide(); d.rule:Hide()
+        d.tier:Hide(); d.rule:Hide()
         d.empty:Show()
-        d:SetHeight(CARD_H)
-        if d.box.FullUpdate then d.box:FullUpdate(ScrollBoxConstants and ScrollBoxConstants.UpdateImmediately) end
+        d.contentHeight = 40
+        d:SetHeight(d.box and CARD_H or 40)
+        if d.box and d.box.FullUpdate then d.box:FullUpdate(ScrollBoxConstants and ScrollBoxConstants.UpdateImmediately) end
         return
     end
     d.empty:Hide()
-    d.icon:Show(); d.name:Show(); d.tier:Show(); d.rule:Show()
-
-    d.icon:SetTexture(entry.icon)
-    d.name:SetText(entry.name)
+    d.tier:SetShown(d.withTier == true)
+    d.rule:SetShown(d.withTier == true)
 
     -- What the mount is (the row's tags) and its expansion, instead of a band name the list no
     -- longer shows.
@@ -1097,8 +1170,15 @@ local function FillDetail(entry)
     -- Stacked: 2 inside (label -> its text), 10 outside. The 5x ratio Blizzard uses in its one
     -- stacked form (`CommunitiesSettings.xml`). The flavour line has no label: it is the one
     -- piece of the card that is not an answer to a question.
-    local anchor, y = d.rule, -10
-    local total = 48 + 10 + 1
+    -- (04/11) the docked window's view starts with the line of what the mount is; the row's drawer with the text
+    local anchor, y, total
+    if d.withTier then
+        anchor, y = d.rule, -10
+        total = Altura(d.tier, linha, 13) + 8 + 1
+    else
+        anchor, y = d.top, -1
+        total = 0
+    end
     local botoes = 0
     for i, bloco in ipairs(blocks) do
         local b = Block(d, i)
@@ -1139,11 +1219,16 @@ local function FillDetail(entry)
         end
     end
 
+    -- (04/11) in the row's drawer the buttons make a column of their own on the right (`d.buttonsAt`, a frame
+    -- where the column starts), level with the text's top; elsewhere they follow the text
+    local textTotal = total
+    if d.buttonsAt then anchor, total = d.buttonsAt, 0 end
+
     -- The place to go to: the mount's own, or the door of its instance (`ns.MountPlace`).
     wp = ns.MountPlace(entry)
     if wp then
         d.waypoint:ClearAllPoints()
-        d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
+        d.waypoint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, d.buttonsAt and 0 or -14)
         d.waypoint:SetScript("OnClick", function() ns.GoToPlace(wp, entry) end)
         d.waypoint:Show()
     end
@@ -1151,25 +1236,38 @@ local function FillDetail(entry)
     local endereco = ns.WowheadURL and ns.WowheadURL(entry)
     if endereco then
         d.wowhead:ClearAllPoints()
-        if wp then
+        if wp and not d.buttonsAt then
             d.wowhead:SetPoint("LEFT", d.waypoint, "RIGHT", 8, 0)
+        elseif wp then
+            d.wowhead:SetPoint("TOPLEFT", d.waypoint, "BOTTOMLEFT", 0, -6)
         else
-            d.wowhead:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -14)
+            d.wowhead:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, d.buttonsAt and 0 or -14)
         end
         d.wowhead:SetScript("OnClick", function() ns.ShowLink(entry.name, endereco) end)
         d.wowhead:Show()
     end
     if wp or endereco then
-        total = total + 14 + 22
-        anchor = wp and d.waypoint or d.wowhead
+        if d.buttonsAt then
+            total = total + ((wp and endereco) and (22 + 6 + 22) or 22)
+            anchor = endereco and d.wowhead or d.waypoint
+        else
+            total = total + 14 + 22
+            anchor = wp and d.waypoint or d.wowhead
+        end
     end
 
     -- The achievement the mount still asks for: open it, and track it (`ns.MountAchievement`).
     local conquista = not entry.collected and ns.MountAchievement(entry)
     if conquista then
-        local vao = (wp or endereco) and 6 or 14
+        local vao = (wp or endereco) and 6 or (d.buttonsAt and 0 or 14)
         d.achOpen:ClearAllPoints()
         d.achOpen:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -vao)
+        d.achTrack:ClearAllPoints()
+        if d.buttonsAt then
+            d.achTrack:SetPoint("TOPLEFT", d.achOpen, "BOTTOMLEFT", 0, -6)
+        else
+            d.achTrack:SetPoint("LEFT", d.achOpen, "RIGHT", 8, 0)
+        end
         d.achOpen:SetScript("OnClick", function() ns.OpenAchievement(conquista) end)
         d.achOpen:Show()
         local function Rotulo()
@@ -1181,13 +1279,19 @@ local function FillDetail(entry)
             Rotulo()
         end)
         d.achTrack:Show()
-        total = total + vao + 22
+        total = total + vao + 22 + (d.buttonsAt and (6 + 22) or 0)
     end
 
-    -- The card is as tall as what it says, and the scroll box is told: a short card has no bar.
-    d.contentHeight = total + 10
-    d:SetHeight(math.max(CARD_H, d.contentHeight))
-    if d.box.FullUpdate then
+    -- The view is as tall as what it says, and the scroll box is told: a short card has no bar. In the drawer the
+    -- text and the button column stand side by side: the taller one sets the height.
+    if d.footButtons then
+        total = textTotal                                   -- the buttons are on the button card (LayFoot)
+    elseif d.buttonsAt then
+        total = math.max(textTotal, total)
+    end
+    d.contentHeight = total + (d.box and 10 or 0)
+    d:SetHeight(d.box and math.max(d.box:GetHeight() or 0, d.contentHeight) or d.contentHeight)
+    if d.box and d.box.FullUpdate then
         d.box:FullUpdate(ScrollBoxConstants and ScrollBoxConstants.UpdateImmediately)
         if d.box.ScrollToBegin then d.box:ScrollToBegin() end
     end
@@ -1199,39 +1303,44 @@ end
 
 ---A mount row, built once. The scroll box recycles frames, so everything that depends on the
 ---mount goes in `FillRow`, never here.
+local cardSeed = 0
 local function BuildRow(row)
     if built[row] then return end
     built[row] = true
     row:SetSize(ROW_W, ROW_H)
+    -- (03/11) the row's own line: everything of the row hangs from this ROW_H strip at the top (since 04/11 the row
+    -- never grows: the 3D is in the docked window)
+    row.top = CreateFrame("Frame", nil, row)
+    row.top:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+    row.top:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
+    row.top:SetHeight(ROW_H)
 
     -- The plate, the selection and the highlight cover the icon's side too: the row's own frame
     -- starts ROW_PAD in (the columns are measured from there), the card starts at the list's edge.
     local function Plate(t)
         t:ClearAllPoints()
         t:SetPoint("TOPLEFT", row, "TOPLEFT", -ROW_PAD, 0)
-        t:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
+        t:SetPoint("BOTTOMRIGHT", row.top, "BOTTOMRIGHT", 0, 0)
     end
-    row.background = row:CreateTexture(nil, "BACKGROUND")
-    Plate(row.background)
-    row.background:SetAtlas("PetList-ButtonBackground")
+    -- (03/11) THE CARD (Journey.lua). (04/11) It hangs from the row's TOP STRIP, ROW_H tall: anchored to the row's
+    -- bottom, the open row stretched it over the drawer (the user's print: the name crossed by the frame, the art
+    -- deformed -- "virou um pesadelo"). The drawer is another piece, under it.
+    row.cardBox = CreateFrame("Frame", nil, row)
+    row.cardBox:SetPoint("TOPLEFT", row.top, "TOPLEFT", -ROW_PAD, 0)
+    row.cardBox:SetPoint("BOTTOMRIGHT", row.top, "BOTTOMRIGHT", 0, 0)
+    cardSeed = cardSeed + 1
+    row.card = ns.Journey.Card(row, row.cardBox, ROW_H, cardSeed)
 
     row.icon = row:CreateTexture(nil, "BORDER")
     row.icon:SetSize(ROW_ICON, ROW_ICON)
-    row.icon:SetPoint("LEFT", row, "LEFT", ICON_INSET - ROW_PAD, 0)
-    -- The frame of the game's collections around it (`collections-itemborder-collected`).
-    row.iconFrame = row:CreateTexture(nil, "ARTWORK")
-    row.iconFrame:SetSize(ICON_FRAME, ICON_FRAME)
-    row.iconFrame:SetPoint("CENTER", row.icon, "CENTER", 0, 0)
-    row.iconFrame:SetAtlas("collections-itemborder-collected")
+    row.icon:SetPoint("LEFT", row.top, "LEFT", ICON_INSET - ROW_PAD, 0)
+    -- (03/11) round, in the Journeys' renown ring (was the collections' square frame)
+    row.iconFrame = ns.Journey.Ring(row, row.icon, ICON_FRAME)
 
+    -- The selection is the card's "selected" state (gold edge); this texture only says which row it is.
     row.selectedTexture = row:CreateTexture(nil, "OVERLAY")
     Plate(row.selectedTexture)
-    row.selectedTexture:SetAtlas("PetList-ButtonSelect")
     row.selectedTexture:Hide()
-
-    row:SetHighlightAtlas("PetList-ButtonHighlight")
-    local brilho = row.GetHighlightTexture and row:GetHighlightTexture()
-    if type(brilho) == "table" and brilho.ClearAllPoints then Plate(brilho) end
     -- And a click on the icon is a click on the row.
     if row.SetHitRectInsets then row:SetHitRectInsets(-ROW_PAD, 0, 0, 0) end
 
@@ -1240,7 +1349,12 @@ local function BuildRow(row)
     row.name:SetWidth(NAME_W)
     row.name:SetWordWrap(false)
 
-    row.why = Text(row, "GameFontDisableSmall")
+    -- (03/11) secondary text in the visual identity's grey (0.6 on the white object), never the disabled 0.5
+    row.why = Text(row, "GameFontHighlightSmall")
+    -- (04/11) WHITE on the stone card (the user: "o texto cinza na coluna expansão e na descrição abaixo do nome da
+    -- montaria tá ruim, pode deixar de branco"): the identity's grey 0.6 is for the flat panels; over this art it read
+    -- poorly. HIGHLIGHT_FONT_COLOR, the object's own white.
+    row.why:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
     row.why:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -4)
     row.why:SetWidth(NAME_W)
     -- (25/10) TWO LINES, never a "...": the line ran up to 571 px in 280 and the game cut it (the user: *"esse '...'
@@ -1252,18 +1366,22 @@ local function BuildRow(row)
     -- The TAGS, in the column the header filters. Two lines at most: a mount rarely is more than
     -- "Raid · Drop" or "Reputation · Vendor", and a third tag is in the card.
     row.tags = Text(row, "GameFontHighlightSmall")
-    row.tags:SetPoint("LEFT", TAG_X, 0)
+    row.tags:SetPoint("LEFT", row.top, "LEFT", TAG_X, 0)
     row.tags:SetWidth(TAG_W)
     row.tags:SetJustifyV("MIDDLE")
 
-    row.exp = Text(row, "GameFontDisableSmall")
-    row.exp:SetPoint("LEFT", EXP_X, 0)
+    row.exp = Text(row, "GameFontHighlightSmall")
+    row.exp:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())   -- (04/11) white, as the line under the name
+    row.exp:SetPoint("LEFT", row.top, "LEFT", EXP_X, 0)
     row.exp:SetWidth(EXP_W)
     row.exp:SetWordWrap(false)
 
     row.headline = Text(row, "GameFontHighlight", "RIGHT")
-    row.headline:SetPoint("RIGHT", -PCT_INSET, 0)
+    row.headline:SetPoint("RIGHT", row.top, "RIGHT", -PCT_INSET, 6)   -- G.headlineUp
     row.headline:SetWidth(PCT_W)
+    -- (03/11) the number on the Journeys' renown bar, under it
+    row.bar = ns.Journey.Bar(row, PCT_W, 9)
+    row.bar:SetPoint("TOPRIGHT", row.headline, "BOTTOMRIGHT", 0, -4)
 
     -- THE ATTEMPTS (21/10): the account's tries so far, only for a mount the addon counts (the
     -- game's statistics or its own count since installed); blank for the rest. Over it, the same
@@ -1271,7 +1389,7 @@ local function BuildRow(row)
     -- click on the row.
     row.att = CreateFrame("Button", nil, row)
     row.att:SetSize(ATT_W, ROW_H - 16)
-    row.att:SetPoint("LEFT", ATT_X, 0)
+    row.att:SetPoint("LEFT", row.top, "LEFT", ATT_X, 0)
     row.att.text = Text(row.att, "GameFontHighlight", "RIGHT")
     row.att.text:SetAllPoints()
     -- (22/10) DONE IN THIS LOCKOUT, for this character: the game's check mark at the left of the
@@ -1313,7 +1431,7 @@ local function BuildRow(row)
     -- (the map is the player's to open: see `ns.GoToPlace`); a row with no known place has no pin.
     row.pin = CreateFrame("Button", nil, row)
     row.pin:SetSize(PIN_W, PIN_W)
-    row.pin:SetPoint("LEFT", PIN_X, 0)
+    row.pin:SetPoint("LEFT", row.top, "LEFT", PIN_X, 0)
     row.pin:SetNormalAtlas("Waypoint-MapPin-Untracked")
     row.pin:SetHighlightAtlas("Waypoint-MapPin-Highlight")
     row.pin:SetScript("OnClick", function(self)
@@ -1338,7 +1456,7 @@ local function BuildRow(row)
     -- it in the game's tracker (or takes it out).
     row.ach = CreateFrame("Button", nil, row)
     row.ach:SetSize(PIN_W, PIN_W)
-    row.ach:SetPoint("LEFT", PIN_X, 0)
+    row.ach:SetPoint("LEFT", row.top, "LEFT", PIN_X, 0)
     row.ach:SetNormalAtlas("ui-achievement-shield-nopoints")
     row.ach:SetHighlightAtlas("ui-achievement-shield-nopoints")
     row.ach:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -1372,6 +1490,7 @@ local function BuildRow(row)
     row:SetScript("OnEnter", function(self)
         local e = self.entry
         if not e then return end
+        if not Same(e, selected) then self.card:SetState("hover") end
         local why = self.whyFull or ""
         local desc = e.description or ""
         if why == "" and desc == "" then return end
@@ -1381,17 +1500,12 @@ local function BuildRow(row)
         if desc ~= "" then GameTooltip_AddNormalLine(GameTooltip, desc, true) end
         GameTooltip:Show()
     end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+        self.card:SetState(Same(self.entry, selected) and "selected" or "normal")
+    end)
     row:SetScript("OnClick", function(self)
-        selected = self.entry
-        FillDetail(selected)
-        if list and list.ForEachFrame then
-            list:ForEachFrame(function(f)
-                if type(f.selectedTexture) == "table" then
-                    f.selectedTexture:SetShown(Same(f.entry, selected))
-                end
-            end)
-        end
+        ns.ClickRow(self.entry)
     end)
 end
 
@@ -1449,6 +1563,76 @@ function ns.RowWhy(e)
     return why
 end
 
+---The drawer's whole height: from its top (over the card's shadow) to its bottom line, the text and its margins.
+function ns.DrawerHeight()
+    -- the text and its margins, then the button card (which climbs FOOT_OVER over the sides' end)
+    local h = DRAWER_TEXT_TOP + (rowView and rowView.contentHeight or 0) + DRAWER_PAD + FOOT_H - FOOT_OVER
+    return math.max(h, FOOT_H)
+end
+
+---Lays the drawer's three pieces for a height: the top, the body cut to what shows (never stretched), the bottom.
+local DRAWER_STONE = 1024       -- DrawerStone.png's size: one pixel per point
+
+local function LayDrawer(h)
+    local u1 = DRAWER_ART_W / DRAWER_FILE_W
+    -- the sides from the top down into the button card's top line; the stone between them, the same height
+    local bodyH = math.max(h - FOOT_H + FOOT_OVER, 0.01)
+    drawer.body:SetHeight(bodyH)
+    drawer.body:SetTexCoord(0, u1, 0, math.min(1, bodyH * 2 / DRAWER_BODY_FILE_H))
+    local stoneW = DRAWER_W - 2 * (DRAWER_SIDE - 1)
+    drawer.bg:SetHeight(bodyH)
+    drawer.bg:SetTexCoord(0, math.min(1, stoneW / DRAWER_STONE), 0, math.min(1, bodyH / DRAWER_STONE))
+end
+
+---The action buttons side by side on the button card, from its right, centred on its height (only the shown ones).
+local function LayFoot()
+    if not (drawer and drawer.foot) then return end
+    local x = -FOOT_RIGHT
+    local ordem = { rowView.achTrack, rowView.achOpen, rowView.wowhead, rowView.waypoint }   -- from the right
+    for _, b in ipairs(ordem) do
+        if b:IsShown() then
+            b:ClearAllPoints()
+            b:SetPoint("RIGHT", drawer.foot, "RIGHT", x, 0)
+            x = x - (b:GetWidth() or 0) - FOOT_GAP
+        end
+    end
+end
+ns.LayFoot = LayFoot
+
+---(04/11) The drawer in the open row, or out of a row that is no longer the open one. One drawer for the whole list:
+---the scroll box recycles rows, and `owner` says which row has it now.
+local function OpenRow(row, aberta)
+    if not drawer then return end
+    if aberta then
+        if drawer.owner ~= row then
+            drawer:SetParent(row)
+            drawer:ClearAllPoints()
+            drawer:SetPoint("TOPLEFT", row.top, "BOTTOMLEFT", -ROW_PAD + DRAWER_X, -DRAWER_GAP)
+            drawer.owner = row
+        end
+        local h = ns.DrawerHeight()
+        drawer:SetSize(DRAWER_W, h)
+        LayDrawer(h)
+        drawer:Show()
+        -- the text's height is known for sure only once the game has laid it out: measured again on the next frame,
+        -- and the row redrawn if it was off (the user's print: the last line ran over the box's bottom)
+        if C_Timer and C_Timer.After and not drawer.measuring then
+            drawer.measuring = true
+            C_Timer.After(0, function()
+                drawer.measuring = nil
+                local medido = ns.MeasureDrawer and ns.MeasureDrawer()
+                if medido and rowView.contentHeight and math.abs(medido - rowView.contentHeight) > 1 then
+                    rowView.contentHeight = medido
+                    if ns.RedrawRows then ns.RedrawRows() end
+                end
+            end)
+        end
+    elseif drawer.owner == row then
+        drawer:Hide()
+        drawer.owner = nil
+    end
+end
+
 local function FillRow(row, data)
     BuildRow(row)
     local e = data.entry
@@ -1484,10 +1668,183 @@ local function FillRow(row, data)
     end
     row.att.done:SetShown(feito)
     row.selectedTexture:SetShown(Same(e, selected))
+    row.card:SetState(Same(e, selected) and "selected" or "normal")
+    local v = ns.RowPercent(e)
+    row.bar:SetShown(v ~= nil)
+    row.bar:SetValue(v or 0)
     local temLugar = ns.MountPlace(e) ~= nil
     row.pin:SetShown(temLugar)
     -- One thing in the column: the place when there is one, else the achievement.
     row.ach:SetShown(not temLugar and ns.MountAchievement(e) ~= nil)
+    local aberta = expanded ~= nil and e.mountID == expanded
+    row:SetHeight(aberta and ns.RowExtent(nil, data) or ROW_H)
+    -- the card's size said at once (the anchors give the same; OnSizeChanged may come a frame later); the card is
+    -- always ROW_H: the drawer is under it, not inside it
+    row.cardBox:SetSize(ROW_W + ROW_PAD, ROW_H)
+    row.card:Layout()
+    OpenRow(row, aberta)
+end
+
+---How tall each element of the list is: the open row has its drawer under the card.
+function ns.RowExtent(_, data)
+    local e = type(data) == "table" and data.entry
+    if expanded ~= nil and e and e.mountID == expanded and rowView then
+        return ROW_H + DRAWER_GAP + ns.DrawerHeight()
+    end
+    return ROW_H
+end
+
+---The mount of the open row (nil when none), for the tests and the diary.
+function ns.ExpandedMount() return expanded end
+
+---(04/11) The view where the text is now: the open row's drawer in the List, the docked window's elsewhere.
+function ns.DetailView()
+    if activeTab == "list" then return rowView end
+    return detail and detail.side
+end
+
+local lastItems
+---Draws the rows again with the same elements, keeping the scroll: the heights changed, the list did not.
+local function RedrawRows()
+    if list and lastItems then
+        list:SetDataProvider(CreateDataProvider(lastItems), ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition)
+    end
+end
+ns.RedrawRows = RedrawRows
+
+---(04/11) The drawer's text measured where the game drew it: from the view's top to the lowest thing shown in it
+---(text, the "no longer exists" buttons, the button column). nil when the game has not placed it yet.
+function ns.MeasureDrawer()
+    local v = rowView
+    if not (v and v.GetTop) then return nil end
+    local top = v:GetTop()
+    if type(top) ~= "number" then return nil end
+    local low
+    local function Ver(r)
+        if r and r.IsShown and r:IsShown() and r.GetBottom then
+            local b = r:GetBottom()
+            if type(b) == "number" and (not low or b < low) then low = b end
+        end
+    end
+    for _, b in ipairs(v.blocks) do Ver(b.label); Ver(b.value) end
+    for _, b in ipairs(v.forget) do Ver(b) end
+    if not v.footButtons then Ver(v.waypoint); Ver(v.wowhead); Ver(v.achOpen); Ver(v.achTrack) end
+    if not low then return nil end
+    return top - low
+end
+
+---The docked window with the scene: built once, beside the main window (PREVIEW_W x WINDOW_H, edge to edge).
+local function BuildPreview()
+    local p = CreateFrame("Frame", ADDON .. "Preview", window, "ButtonFrameTemplate")
+    p:SetSize(PREVIEW_W, WINDOW_H)
+    p:SetPoint("TOPLEFT", window, "TOPRIGHT", PREVIEW_GAP, 0)
+    p:EnableMouse(true)
+    if p.SetTitle then p:SetTitle(ns.TITLE .. " — " .. (DRESSUP_FRAME or "")) end
+    -- (03/11) the same body as the main window
+    if ns.Style then ns.Style.Body(p, 1, p.Bg) end
+    if ns.Journey and p.__body then ns.Journey.Stone(p.__body, PREVIEW_W - 6, WINDOW_H - 6) end
+    -- the mount's name in the attic, where the main window has its counters (centre at y = ATTIC_Y - 10)
+    -- Large (16) when it fits on one line; the longest names do not (444 px at 16 in ptBR for 354: "Serpe de Guerra
+    -- Sedenta de Sangue do Senhor da Batalha", measured on Mount.ptBR with the game's font, 04/11), and those go to
+    -- the normal size, on up to two lines (334 px at 12: one line in ptBR and enUS). Never cut (SetName below).
+    p.name = Text(p, "GameFontHighlightLarge", "LEFT")
+    p.name:SetPoint("LEFT", p, "TOPLEFT", 70, ATTIC_Y - 8)
+    p.name:SetWidth(PREVIEW_W - 70 - 16)
+    function p.SetName(text)
+        p.name:SetFontObject("GameFontHighlightLarge")
+        p.name:SetMaxLines(1)
+        p.name:SetText(text)
+        if p.name:GetStringWidth() > p.name:GetWidth() then
+            p.name:SetFontObject("GameFontHighlight")
+            p.name:SetMaxLines(2)
+            p.name:SetText(text)
+        end
+    end
+    -- the inset on the main window's lines (top LIST_TOP, bottom FOOTER): the two read as one piece
+    if type(p.Inset) == "table" then
+        p.Inset:ClearAllPoints()
+        p.Inset:SetPoint("TOPLEFT", p, "TOPLEFT", INSET_X, LIST_TOP)
+        p.Inset:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -6, FOOTER)
+    end
+    local host = type(p.Inset) == "table" and p.Inset or p
+    local m = detail.model
+    m:SetParent(host)
+    m.home = p
+    local w = PREVIEW_W - INSET_X - 6 - 6
+    local h = WINDOW_H + LIST_TOP - FOOTER - 6
+    -- (04/11) the text of the Collection and Attempts tabs, under the scene (the user's choice): the same view as the
+    -- row's drawer, here in the game's scroll box
+    local textW = w - 2 * PREVIEW_TEXT_PAD - CARD_BAR_GAP - CARD_BAR_W
+    local v = BuildDetailView(host, textW, true)
+    v.withTier = true
+    v.box:SetPoint("TOPLEFT", m, "BOTTOMLEFT", PREVIEW_TEXT_PAD, -PREVIEW_TEXT_PAD)
+    p.view = v
+    ---"scene" (the 3D fills the window: the List tab), "split" (the 3D on top, the text under it) or "text" (a mount
+    ---with no scene in the game: the text alone).
+    function p.SetMode(mode)
+        p.mode = mode
+        m:ClearAllPoints()
+        m:SetPoint("TOPLEFT", host, "TOPLEFT", 3, -3)
+        m:SetPoint("TOPRIGHT", host, "TOPRIGHT", -3, -3)
+        local mh = mode == "scene" and h or (mode == "split" and PREVIEW_SPLIT_H or 0.001)
+        m:SetHeight(mh)
+        m:SetShown(mode ~= "text")
+        if mode ~= "text" then m.bg:SetTexCoord(ns.ModelBackdropCoords(w, mh)) end
+        p.sceneW, p.sceneH = w, mh
+        v.box:SetShown(mode ~= "scene")
+        v.bar:SetShown(mode ~= "scene")
+        v.box:SetHeight(h - (mode == "text" and 0 or mh) - 2 * PREVIEW_TEXT_PAD)
+    end
+    p.SetMode("scene")
+    p:Hide()
+    tinsert(UISpecialFrames, p:GetName())   -- Esc closes
+    return p
+end
+
+---Shows `entry` in the docked window, in the mode of the tab (List: the 3D alone; the others: 3D + text). A mount the
+---game has no scene for: closed in the List tab (its text is in the row), the text alone in the others.
+local function ShowInPreview(entry, withText)
+    local p = detail and detail.preview
+    if not (p and entry) then return false end
+    local tem = ShowModel(detail.model, entry)
+    if not tem and not withText then
+        p:Hide()
+        return false
+    end
+    if withText then FillDetail(p.view, entry) end
+    p.SetMode(withText and (tem and "split" or "text") or "scene")
+    p.SetName(entry.name)
+    if p.SetPortraitToAsset and entry.icon then p:SetPortraitToAsset(entry.icon) end
+    p:Show()
+    return tem
+end
+
+---The mount in the docked window (nil when it is closed), for the tests and the diary.
+function ns.PreviewMount()
+    local p = detail and detail.preview
+    return (p and p:IsShown() and detail.model.mountID) or nil
+end
+
+---(04/11) A click on a row of the List: the row OPENS with the mount's text in its drawer, and the docked window shows
+---it in 3D (opening again if the player closed it); a second click on the open row closes it; another row moves the
+---drawer there.
+function ns.ClickRow(entry)
+    if not entry then return end
+    local mesma = expanded ~= nil and expanded == entry.mountID
+    selected = entry
+    if mesma then
+        expanded = nil
+    else
+        expanded = entry.mountID
+        FillDetail(rowView, entry)
+        LayFoot()
+    end
+    local tem = ShowInPreview(entry, false)
+    ns.Log.Add("row", { mount = entry.mountID, open = expanded ~= nil, preview = tem })
+    ns.SelectEntry(entry)
+    RedrawRows()
+    -- (04/11) development only (DevShots.lua, out of the package): a print of the opened row for the assistant to check
+    if ns.DevShot and expanded then ns.DevShot("row") end
 end
 
 ---What the scroll box shows: one element per mount, in the window's order.
@@ -1596,7 +1953,8 @@ local function Redraw()
     local entries, total = ns.GetFiltered()
     ns.SortForWindow(entries, ns.db.sortBy or "pct")
     if ns.UpdateHeaders then ns.UpdateHeaders() end
-    local provider = CreateDataProvider(ns.ListElements(entries))
+    lastItems = ns.ListElements(entries)
+    local provider = CreateDataProvider(lastItems)
     local keep = ScrollBoxConstants and ScrollBoxConstants.RetainScrollPosition
     list:SetDataProvider(provider, keep)
 
@@ -1692,10 +2050,12 @@ end
 function ns.SelectEntry(entry)
     if not (window and entry) then return end
     selected = entry
-    FillDetail(selected)
+    -- (04/11) out of the List (Collection, Attempts), the text goes to the docked window under the 3D
+    if activeTab ~= "list" then ShowInPreview(entry, true) end
     if list and list.ForEachFrame then
         list:ForEachFrame(function(f)
             if type(f.selectedTexture) == "table" then f.selectedTexture:SetShown(Same(f.entry, selected)) end
+            if type(f.card) == "table" then f.card:SetState(Same(f.entry, selected) and "selected" or "normal") end
         end)
     end
 end
@@ -1709,8 +2069,28 @@ function ns.RefreshWindow()
             -- records, the row named the next one and the card went on naming the one that was
             -- gone.
             selected = Fresh(selected)
-            FillDetail(selected)
+            ns.RefreshViews()
         end
+    end
+end
+
+---(04/11) The text where it is shown: the open row's drawer (List) or the docked window (the other tabs). The row is
+---filled again and the rows drawn again (the drawer's height comes from the text).
+function ns.RefreshViews()
+    if activeTab == "list" then
+        if expanded and selected and selected.mountID == expanded then
+            FillDetail(rowView, selected)
+            LayFoot()
+        elseif expanded then
+            expanded = nil
+        end
+        local p = detail and detail.preview
+        if p and p:IsShown() and p.mode ~= "scene" then
+            if selected then ShowInPreview(selected, false) else p:Hide() end
+        end
+        RedrawRows()
+    elseif selected then
+        ShowInPreview(selected, true)
     end
 end
 
@@ -2150,7 +2530,7 @@ local function Build()
 
     local view = CreateScrollBoxListLinearView()
     view:SetPadding(0, 0, ROW_PAD, 0, ROW_GAP)
-    view:SetElementExtentCalculator(function() return ROW_H end)
+    view:SetElementExtentCalculator(ns.RowExtent)
     view:SetElementFactory(function(factory) factory("Button", FillRow) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(list, bar, view)
     ScrollUtil.AddManagedScrollBarVisibilityBehavior(list, bar,
@@ -2198,9 +2578,54 @@ local function Build()
 
     -- (03/11) the body of every Rocket window (Style.lua), in place of the template's stone
     if ns.Style then ns.Style.Body(window, 1, window.Bg) end
-    detail = BuildDetail(window)
-    detail.Place(false)
+    -- (03/11) the skin on trial: the Journeys' stone at its own scale, in place of the design system's body
+    if ns.Journey and window.__body then ns.Journey.Stone(window.__body, WINDOW_W - 6, WINDOW_H - 6) end
+    -- (04/11) the scene (one, in the docked window), the drawer of the open row and the docked window
+    detail = { model = BuildModel(window) }
+    drawer = CreateFrame("Frame", nil, list)
+    local function Peca(arquivo, sub)
+        local t = drawer:CreateTexture(nil, "BACKGROUND", nil, sub)
+        t:SetTexture("Interface\\AddOns\\" .. ADDON .. "\\Textures\\" .. arquivo)
+        return t
+    end
+    local u1 = DRAWER_ART_W / DRAWER_FILE_W
+    -- (04/11) THE BACKGROUND: a stone texture the user generated for it (Gemini, from our prompt: a material, flat,
+    -- even light, seamless), made seamless by tools/arte_textura_gaveta.py (DrawerStone.png, 1024 x 1024). It came after
+    -- the game's marble (the user: "aquele fundo cinza com textura que tinha antes"). One texture pixel per point, CUT
+    -- to the drawer's size (LayDrawer): the file is wider than the drawer and taller than any, so nothing is stretched
+    -- and no tiling is needed. Cut to the frame's inside by our mask (DrawerMask.png: straight sides, chamfered
+    -- bottom), which hangs from the drawer's bottom at its own size (2 px per point).
+    -- (04/11) between the two side bands, from the top down to the button card: a plain rectangle, so the mask of the
+    -- chamfered bottom (DrawerMask.png) is no longer needed
+    drawer.bg = drawer:CreateTexture(nil, "BACKGROUND", nil, -8)
+    drawer.bg:SetTexture("Interface\\AddOns\\" .. ADDON .. "\\Textures\\DrawerStone.png")
+    drawer.bg:SetPoint("TOPLEFT", drawer, "TOPLEFT", DRAWER_SIDE - 1, 0)
+    drawer.bg:SetPoint("TOPRIGHT", drawer, "TOPRIGHT", -(DRAWER_SIDE - 1), 0)
+    drawer.body = Peca("Drawer.png", -6)
+    drawer.body:SetPoint("TOPLEFT")
+    drawer.body:SetPoint("TOPRIGHT")
+    -- the button card: a frame (the buttons are children of the view; this only places them) with the card's art
+    drawer.foot = CreateFrame("Frame", nil, drawer)
+    drawer.foot:SetPoint("BOTTOMLEFT", drawer, "BOTTOMLEFT", -DRAWER_X, 0)
+    drawer.foot:SetSize(ROW_W + ROW_PAD, FOOT_H)
+    drawer.foot.art = drawer.foot:CreateTexture(nil, "BACKGROUND", nil, -5)
+    drawer.foot.art:SetAllPoints(drawer.foot)
+    drawer.foot.art:SetTexture(ns.Journey.CARD_FILE)
+    local A = ns.Journey.CARD_ART
+    drawer.foot.art:SetTexCoord(0, A[1] / A[3], 0, A[2] / A[4])
+    drawer:Hide()
+    rowView = BuildDetailView(drawer, DRAWER_TEXT_W, false)
+    rowView:SetPoint("TOPLEFT", drawer, "TOPLEFT", DRAWER_TEXT_X, -DRAWER_TEXT_TOP)
+    rowView.buttonsAt = drawer:CreateTexture(nil, "ARTWORK")
+    rowView.buttonsAt:SetPoint("TOPLEFT", drawer, "TOPLEFT", DRAWER_BTN_X, -DRAWER_TEXT_TOP + 1)
+    rowView.buttonsAt:SetSize(1, 1)
+    rowView.buttonsAt:SetAlpha(0)
+    rowView.footButtons = true      -- the buttons go on the button card (LayFoot), not in a column beside the text
+    detail.drawer, detail.row = drawer, rowView
+    detail.preview = BuildPreview()
+    detail.side = detail.preview.view
     window.detail = detail
+    window.preview = detail.preview
 
     -- The footer band the template reserves.
     -- "Support the project" (27/09): a line of its own at the very bottom (Donate.lua).
@@ -2218,13 +2643,14 @@ local function Build()
     local nota = CreateFrame("Button", nil, window)
     nota:SetHeight(14)
     nota:SetPoint("BOTTOM", window, "BOTTOM", 0, 6 + DONATE_ROW)
-    nota.text = Text(nota, "GameFontDisableSmall", "CENTER")
+    nota.text = Text(nota, "GameFontHighlightSmall", "CENTER")
+    nota.text:SetTextColor(LIGHTGRAY_FONT_COLOR:GetRGB())
     nota.text:SetPoint("CENTER")
     nota.text:SetText(L["The list and the descriptions are still being improved: suggestions are welcome."])
     nota:SetWidth((nota.text.GetStringWidth and tonumber(nota.text:GetStringWidth()) or 0) > 0
         and nota.text:GetStringWidth() or 420)
     nota:SetScript("OnEnter", function(self)
-        self.text:SetFontObject("GameFontHighlightSmall")
+        self.text:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip_SetTitle(GameTooltip, L["Suggestions are welcome"])
         GameTooltip_AddNormalLine(GameTooltip, L["A mount in the wrong place of the list, a place that is missing, a description that is wrong or could say more: tell us, and the next version has it."], true)
@@ -2233,7 +2659,7 @@ local function Build()
         GameTooltip:Show()
     end)
     nota:SetScript("OnLeave", function(self)
-        self.text:SetFontObject("GameFontDisableSmall")
+        self.text:SetTextColor(LIGHTGRAY_FONT_COLOR:GetRGB())
         GameTooltip:Hide()
     end)
     nota:SetScript("OnClick", function(self)
@@ -2270,5 +2696,5 @@ function ns.ToggleWindow()
     end
     window:Show()
     Redraw()
-    FillDetail(selected)
+    ns.RefreshViews()
 end

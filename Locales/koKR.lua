@@ -70,7 +70,6 @@ L["item %d"] = "아이템 %d"
 L["Quest \"%s\": completed"] = "퀘스트 '%s': 완료"
 L["  —  already done on another character"] = "  —  다른 캐릭터로 이미 완료"
 L["Quest \"%s\": not completed%s%s"] = "퀘스트 '%s': 미완료%s%s"
-L["Achievement \"%s\": not completed"] = "업적 '%s': 미달성"
 L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] = "길드 상인: 길드와 확고한 동맹, 그리고 대부분 길드 업적이 필요합니다"
 L["%s has it (%s)"] = "%s 보유 (%s)"
 L["on %s"] = "%s에게"
@@ -292,9 +291,6 @@ L["%d of %d mounts"] = "탈것 %d/%d"
 L["Only mounts this character can use count toward it."] = "이 캐릭터가 쓸 수 있는 탈것만 셉니다."
 L["done"] = "완료"
 L["Link copied — paste it in your browser."] = "링크를 복사했습니다 — 브라우저에 붙여 넣으세요."
-L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "Rocket Mount를 후원해 주셔서 감사합니다! Ctrl+C로 링크를 복사한 뒤 브라우저에 붙여 넣으세요."
-L["Click: open the donation link, ready to copy"] = "클릭: 후원 링크를 열어 복사할 수 있게 합니다"
-L["Support the project"] = "프로젝트 후원"
 L["Report a problem"] = "문제 신고"
 L["Report a problem on"] = "문제 신고:"
 L["Click: choose where to report a problem"] = "클릭: 문제를 신고할 곳을 고릅니다"
@@ -465,5 +461,6 @@ L["Characters below the maximum level are not offered."] = "최대 레벨 미만
 
 -- (25/10) the game's own words (FROM_GAME), written here as the game gives them in this
 -- language (GlobalStrings.koKR): the same as at runtime, and checked by tests/locales.lua
-L["Close"] = "닫기"  -- the game's CLOSE
 L["Not collected"] = "미수집"  -- the game's NOT_COLLECTED
+L["%s: %s"] = "%s: %s"
+L["Achievement Earned"] = "업적 획득"

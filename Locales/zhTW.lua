@@ -70,7 +70,6 @@ L["item %d"] = "物品%d"
 L["Quest \"%s\": completed"] = "任務「%s」：已完成"
 L["  —  already done on another character"] = "  ——已在其他角色上完成"
 L["Quest \"%s\": not completed%s%s"] = "任務「%s」：未完成%s%s"
-L["Achievement \"%s\": not completed"] = "成就「%s」：未完成"
 L["Guild vendor: asks for Exalted with the guild and, in most cases, an achievement OF THE GUILD"] = "公會商人：需要公會崇拜，大多還需要一個公會成就"
 L["%s has it (%s)"] = "%s已擁有（%s）"
 L["on %s"] = "在%s"
@@ -292,9 +291,6 @@ L["%d of %d mounts"] = "%d/%d個坐騎"
 L["Only mounts this character can use count toward it."] = "只計算此角色能使用的坐騎。"
 L["done"] = "完成"
 L["Link copied — paste it in your browser."] = "連結已複製——請貼到瀏覽器中。"
-L["Thank you for supporting Rocket Mount! Press Ctrl+C to copy the link, then paste it in your browser."] = "感謝支持Rocket Mount！按Ctrl+C複製連結，然後貼到瀏覽器中。"
-L["Click: open the donation link, ready to copy"] = "點擊：開啟贊助連結，以便複製"
-L["Support the project"] = "支持本專案"
 L["Report a problem"] = "回報問題"
 L["Report a problem on"] = "回報問題至"
 L["Click: choose where to report a problem"] = "點擊：選擇回報問題的位置"
@@ -465,5 +461,6 @@ L["Characters below the maximum level are not offered."] = "低於滿級的角�
 
 -- (25/10) the game's own words (FROM_GAME), written here as the game gives them in this
 -- language (GlobalStrings.zhTW): the same as at runtime, and checked by tests/locales.lua
-L["Close"] = "關閉"  -- the game's CLOSE
 L["Not collected"] = "未收集"  -- the game's NOT_COLLECTED
+L["%s: %s"] = "%s：%s"
+L["Achievement Earned"] = "獲得成就"
