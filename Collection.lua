@@ -89,7 +89,7 @@ function Collection.All()
                 if ns.Expansion and ns.Expansion.Of then exp, expName = ns.Expansion.Of(id) end
                 out[#out + 1] = {
                     mountID = id, name = name, icon = icon, spellID = spellID,
-                    type = sourceType or 0, expansion = exp or OTHER, expansionName = expName,
+                    type = (ns.MountSource and ns.MountSource[id]) or sourceType or 0, expansion = exp or OTHER, expansionName = expName,
                     collected = isCollected and true or false, entry = faltam[id],
                 }
             end

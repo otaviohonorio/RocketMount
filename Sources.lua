@@ -1483,7 +1483,9 @@ function ns.BuildList(onlyID)
                     spellID = spellID,
                     name = name,
                     icon = icon,
-                    sourceType = sourceType or 0,
+                    -- (04/11) the game's table is wrong for some (The Big G, a raid drop, as "Profession"): the
+                    -- game's own source text wins where it contradicts it (Data/MountSource.lua)
+                    sourceType = (ns.MountSource and ns.MountSource[mountID]) or sourceType or 0,
                     isFactionSpecific = isFactionSpecific,
                     faction = faction,
                     playable = playable,

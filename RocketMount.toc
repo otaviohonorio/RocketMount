@@ -3,7 +3,7 @@
 ## Notes: The mounts you are missing, easiest first.
 ## Notes-ptBR: As montarias que faltam, da mais fácil para a mais difícil.
 ## Author: Otto Rocket (Otávio Honório)
-## Version: 0.37.0
+## Version: 0.37.1
 ## X-Curse-Project-ID: 1717377
 #@debug@
 ## SavedVariables: RocketMountDB, RocketMountLogDB
@@ -40,6 +40,7 @@ Data\MountStats.lua
 Data\MountExpansion.lua
 Data\MountChances.lua
 Data\MountGone.lua
+Data\MountSource.lua
 Data\RareTimers.lua
 Data\MountEvents.lua
 Core.lua
