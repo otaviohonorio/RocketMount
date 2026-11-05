@@ -1280,7 +1280,12 @@ function RocketMountMapDataProviderMixin:SpreadPins()
                 apertado = info.mapType == T.Continent or info.mapType == T.World or info.mapType == T.Cosmic
             end
         end
-        movidos = MapPins.Spread(self.places, w, h, escala, outros, apertado)
+        -- (!) THE GAME'S ICONS NO LONGER PUSH OURS (05/11). In Eversong the Malfunctioning Construct sat under the
+        -- game's aqir invasion icon; ours stepped one marker south of it, the line and dot to the exact place hid under
+        -- the purple icon, and the world map disagreed with the minimap. The user, asked: *"Nunca afastar"* -- our
+        -- marker stays on its exact place, drawn above the game's icon (the pin's frame level). The icons are still
+        -- counted for the diary; only our own markers step apart from each other.
+        movidos = MapPins.Spread(self.places, w, h, escala, nil, apertado)
         if map.EnumeratePinsByTemplate then
             for pin in map:EnumeratePinsByTemplate(TEMPLATE) do
                 local d = pin.data
@@ -1473,7 +1478,10 @@ function MapPins.LastDraw() return ultimo end
 RocketMountMapPinMixin = CreateFromMixins(MapCanvasPinMixin)
 
 function RocketMountMapPinMixin:OnLoad()
-    self:UseFrameLevelType("PIN_FRAME_LEVEL_VIGNETTE")
+    -- (05/11) above the game's world quests and event icons (`PIN_FRAME_LEVEL_AREA_POI_EVENT`, the aqir invasion):
+    -- our marker no longer steps out of their way, so it is drawn over them (WM_Blizzard_WorldMap.lua, the order of
+    -- the levels: QUEST_PING comes right after AREA_POI_EVENT, below the tracked and active quests).
+    self:UseFrameLevelType("PIN_FRAME_LEVEL_QUEST_PING")
     self:SetScalingLimits(1, 1.0, 1.2)
     -- (!) OUT OF THE WAY OF THE ENTRANCE, THE WAY THE GAME DOES IT. The user, with a screenshot:
     -- *"montarias de raid e dungeons levemente deslocada para não ficar em cima do icone de raid e
