@@ -1410,6 +1410,7 @@ function RocketMountMapDataProviderMixin:RefreshAllData()
     self.routes = {}
     -- Where each one is drawn, before any is: the pin is put there as it is handed out.
     self.places = lista
+    ultimo.list = lista     -- (05/11) for the development snapshot of where each marker is drawn (Log.lua)
     ultimo.moved = self:SpreadPins()
     for _, data in ipairs(lista) do
         for _, r in ipairs(data.routes or {}) do self.routes[#self.routes + 1] = r end

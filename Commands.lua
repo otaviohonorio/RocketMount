@@ -322,7 +322,9 @@ commands["log"] = function(rest)
         return
     end
     rest = (rest or ""):lower()
-    if rest == "clear" then
+    if rest == "pins" and ns.Log.PinSnapshot then
+        ns.Log.PinSnapshot()    -- (05/11) development only: where each marker is, on the map and on the minimap
+    elseif rest == "clear" then
         ns.Log.Clear()
         ns.Print(L["log cleared."])
     elseif rest == "on" or rest == "off" then
