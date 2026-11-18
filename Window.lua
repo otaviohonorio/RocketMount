@@ -12,11 +12,12 @@
 -- search, a filter and a detail pane. Every number below that is not derived is from there or
 -- from RocketSwap's window, which follows the same template:
 --
---   frame      `ButtonFrameTemplate`: portrait, title, close button, Esc, footer band of 26
---   counter    `InsetFrameTemplate3`, 130x20 at (70, -35) -- the journal's "Total" box
---   list       the template's `Inset` from y -60; search (SearchBoxTemplate) and filter
---              (`WowStyle1FilterDropdownTemplate`, width 90) INSIDE its top 36 px, like the
---              journal; `WowScrollBoxList` + `MinimalScrollBar` below them
+--   frame      `ButtonFrameTemplate` (its Inset, Esc, footer band of 26) dressed by `Style.Window` since 18/11:
+--              our panel, the stone, the header with the seal and the close X (the template's own art hidden)
+--   counter    our field boxes in the header's right (were `InsetFrameTemplate3` in the attic)
+--   list       the template's `Inset` from y -60; the segmented tabs (`Style.Tabs`), the search
+--              (SearchBoxTemplate) and the filter (`WowStyle1FilterDropdownTemplate`), dressed by Style,
+--              INSIDE its top 36 px; `WowScrollBoxList` + `MinimalScrollBar` below them
 --   row        `MountListButtonTemplate`'s parts: 46 high, `PetList-ButtonBackground`, select
 --              and highlight atlases, 38 icon hanging in a 44 left padding, name in
 --              `GameFontNormal`, the second line in `GameFontHighlightSmall` + LIGHTGRAY
@@ -34,7 +35,14 @@ local LIST_TOP = -60          -- top of the inset: below the portrait (disc of 5
 -- `DONATE_ROW`, 27/09).
 local DONATE_ROW = ns.DONATE_ROW or 0
 local FOOTER = 26 + DONATE_ROW
-local ATTIC_Y = -35           -- the counter's line, between the title and the inset
+-- (18/11) THE MODERN ROCKET IDENTITY (Style.Window; mockup/PREVIA Identidade Rocket - Rocket Mount.png, approved by the
+-- user): the header (Style.HEAD) holds the seal, the name, "where to start" and, at its right, the three counters; the
+-- controls' row under it (the inset's top SEARCH_H) holds the segmented tabs, the search, the filter and the tips.
+local COUNTER_Y = -28         -- the counters' top, on the subtitle's line of the header
+local COUNTER_H, COUNTER_PAD, COUNTER_GAP = 22, 10, 8
+local CONTROLS_Y = -68        -- the tabs' row: 8 under the inset's top (LIST_TOP), inside its SEARCH_H
+local EDGE = 12               -- the header's and the controls' margin from the window's sides
+local SEARCH_W, SEARCH_MIN = 200, 120
 local GUTTER = 20             -- between the list and the card (MountJournal, RocketSwap)
 local RIGHT_MARGIN = 20       -- the card's art ends 20 from the right edge (RocketSwap)
 
@@ -52,6 +60,7 @@ local LIST_W = 910
 local SEARCH_H = 36
 local HEADER_H = 26
 local SEARCH_ROW = SEARCH_H + HEADER_H   -- where the scroll box starts inside the inset
+local ATT_SUMMARY_H = 20      -- (18/11) the Attempts tab's summary line, under the controls' row
 local SCROLLBAR_W = 17        -- what `AddManagedScrollBarVisibilityBehavior` gives up (RocketSwap)
 local ROW_PAD = 44            -- the journal's left padding: room for the icon hanging off the row
 
@@ -394,21 +403,22 @@ local function BuildDetailView(parent, width, scroll)
     -- here: this is free text the full width of the column, not a form field.
     d.blocks = {}
 
-    d.waypoint = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    -- (18/11) the game's buttons in our bronze (Style.SkinButton): the template keeps its behaviour and FitToText
+    d.waypoint = ns.Style.SkinButton(CreateFrame("Button", nil, d, "UIPanelButtonTemplate"))
     d.waypoint:SetSize(160, 22)
     d.waypoint:SetText(L["Set map pin"])
     d.waypoint:Hide()
     -- "Wowhead" (02/10), for every mount: the address in the game's copy box.
-    d.wowhead = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.wowhead = ns.Style.SkinButton(CreateFrame("Button", nil, d, "UIPanelButtonTemplate"))
     d.wowhead:SetSize(110, 22)
     d.wowhead:SetText("Wowhead")
     d.wowhead:Hide()
     -- And the two of the achievement (02/10), on a line of their own.
-    d.achOpen = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.achOpen = ns.Style.SkinButton(CreateFrame("Button", nil, d, "UIPanelButtonTemplate"))
     d.achOpen:SetSize(160, 22)
     d.achOpen:SetText(L["Open the achievement"])
     d.achOpen:Hide()
-    d.achTrack = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    d.achTrack = ns.Style.SkinButton(CreateFrame("Button", nil, d, "UIPanelButtonTemplate"))
     d.achTrack:SetSize(160, 22)
     d.achTrack:Hide()
 
@@ -1093,7 +1103,7 @@ end
 local function ForgetButton(d, i)
     local b = d.forget[i]
     if b then return b end
-    b = CreateFrame("Button", nil, d, "UIPanelButtonTemplate")
+    b = ns.Style.SkinButton(CreateFrame("Button", nil, d, "UIPanelButtonTemplate"))
     b:SetHeight(FORGET_H)
     b:SetScript("OnClick", function(self)
         if type(self.charKey) == "string" then ns.AskForget(self.charKey) end
@@ -1739,26 +1749,30 @@ local function BuildPreview()
     p:SetSize(PREVIEW_W, WINDOW_H)
     p:SetPoint("TOPLEFT", window, "TOPRIGHT", PREVIEW_GAP, 0)
     p:EnableMouse(true)
-    if p.SetTitle then p:SetTitle(ns.TITLE .. " — " .. (DRESSUP_FRAME or "")) end
-    -- (03/11) the same body as the main window
-    if ns.Style then ns.Style.Body(p, 1, p.Bg) end
-    if ns.Journey and p.__body then ns.Journey.Stone(p.__body, PREVIEW_W - 6, WINDOW_H - 6) end
-    -- the mount's name in the attic, where the main window has its counters (centre at y = ATTIC_Y - 10)
-    -- Large (16) when it fits on one line; the longest names do not (444 px at 16 in ptBR for 354: "Serpe de Guerra
-    -- Sedenta de Sangue do Senhor da Batalha", measured on Mount.ptBR with the game's font, 04/11), and those go to
-    -- the normal size, on up to two lines (334 px at 12: one line in ptBR and enUS). Never cut (SetName below).
-    p.name = Text(p, "GameFontHighlightLarge", "LEFT")
-    p.name:SetPoint("LEFT", p, "TOPLEFT", 70, ATTIC_Y - 8)
-    p.name:SetWidth(PREVIEW_W - 70 - 16)
+    -- (18/11) the modern identity (Style.Window): the header with the game's word for the Dressing Room as the title, the
+    -- mount's icon in the seal's ring (where the template's portrait showed it) and its name as the subtitle; the
+    -- close X closes only this window
+    p.head = ns.Style.Window(p, { title = ns.TITLE .. " — " .. (DRESSUP_FRAME or "") })
+    -- the subtitle goes nearer the right edge than Style's 40: the close X sits on the title's line, above it
+    p.head.subtitle:SetPoint("RIGHT", p.head, "RIGHT", -EDGE, 0)
+    local NAME_W = PREVIEW_W - 62 - EDGE
+    -- The name: gold 16 (the subtitle's) when it fits on one line; the longest names do not (444 px at 16 in ptBR:
+    -- "Serpe de Guerra Sedenta de Sangue do Senhor da Batalha", measured on Mount.ptBR with the game's font, 04/11),
+    -- and those step down the game's gold objects (12: 334 px, 10: ~278) until one fits. Never cut.
+    local NAME_FONTS = { "GameFontNormalLarge", "GameFontNormal", "GameFontNormalSmall" }
+    p.name = p.head.subtitle
     function p.SetName(text)
-        p.name:SetFontObject("GameFontHighlightLarge")
-        p.name:SetMaxLines(1)
-        p.name:SetText(text)
-        if p.name:GetStringWidth() > p.name:GetWidth() then
-            p.name:SetFontObject("GameFontHighlight")
-            p.name:SetMaxLines(2)
+        for _, f in ipairs(NAME_FONTS) do
+            p.name:SetFontObject(f)
             p.name:SetText(text)
+            if (tonumber(p.name:GetStringWidth()) or 0) <= NAME_W then return f end
         end
+        return NAME_FONTS[#NAME_FONTS]
+    end
+    ---The mount's icon in the seal (the family's logo when there is none).
+    function p.SetIcon(icon)
+        p.__icon = icon
+        if p.head.logo then p.head.logo:SetTexture(icon or ns.LOGO) end
     end
     -- the inset on the main window's lines (top LIST_TOP, bottom FOOTER): the two read as one piece
     if type(p.Inset) == "table" then
@@ -1814,7 +1828,7 @@ local function ShowInPreview(entry, withText)
     if withText then FillDetail(p.view, entry) end
     p.SetMode(withText and (tem and "split" or "text") or "scene")
     p.SetName(entry.name)
-    if p.SetPortraitToAsset and entry.icon then p:SetPortraitToAsset(entry.icon) end
+    if entry.icon then p.SetIcon(entry.icon) end
     p:Show()
     return tem
 end
@@ -1910,6 +1924,27 @@ function ns.UpdateLoading()
         or L["waiting for the collection data"])
 end
 
+---(18/11) The header's counters, right to left from the window's right margin, each the size of what it says (the
+---label and the value each held by one anchor: they grow, never cut).
+local function LayCounters()
+    local right
+    for _, c in ipairs({ window.achievement, window.collected, window.countBox }) do
+        -- the achievement's box only when there is an achievement (UpdateCollectionBoxes hides it otherwise)
+        if c and (c ~= window.achievement or rawget(c, "data") ~= nil) then
+            local lw = tonumber(c.label:GetStringWidth()) or 0
+            local vw = tonumber(c.value:GetStringWidth()) or 0
+            c:SetWidth(math.ceil(COUNTER_PAD + lw + 16 + vw + COUNTER_PAD))
+            c:ClearAllPoints()
+            if right then
+                c:SetPoint("TOPRIGHT", right, "TOPLEFT", -COUNTER_GAP, 0)
+            else
+                c:SetPoint("TOPRIGHT", window, "TOPRIGHT", -EDGE, COUNTER_Y)
+            end
+            right = c
+        end
+    end
+end
+
 ---The two collection boxes beside "Not collected".
 function ns.UpdateCollectionBoxes()
     if not window or not window.collected then return end
@@ -1923,6 +1958,7 @@ function ns.UpdateCollectionBoxes()
         window.achievement.value:SetText(a.done and string.format("%d/%d  |cff33ff99%s|r", a.req, a.req, L["done"])
             or string.format("%d/%d", a.qty or 0, a.req or 0))
     end
+    LayCounters()
 end
 
 local function Redraw()
@@ -2016,7 +2052,9 @@ function ns.SetWindowTab(tab)
     -- (03/11) the settings live in the window: the search box has nothing to search there
     if ns.OptionsTab then ns.OptionsTab.Show(activeTab == "settings") end
     if window.search then window.search:SetShown(activeTab ~= "settings") end
-    if PanelTemplates_SetTab then PanelTemplates_SetTab(window, TAB_INDEX[activeTab]) end
+    -- (18/11) the segmented tabs on top (Style.Tabs) in place of the game's tabs under the window
+    window.selectedTab = TAB_INDEX[activeTab]
+    if window.tabRow then window.tabRow:Select(window.selectedTab) end
     ns.RefreshWindow()
 end
 
@@ -2304,13 +2342,25 @@ local function TipsMenu(owner)
     end)
 end
 
+---(18/11) The controls' row: the search takes what the tabs, the filter and the tips leave (SEARCH_W at most).
+local function LayControls()
+    -- by rawget: the controls are made one after the other, and the tips' first Update runs before the rest exist
+    if not (window and rawget(window, "tabRow") and rawget(window, "search") and rawget(window, "tips")) then return end
+    local left = EDGE + (tonumber(window.tabRow:GetWidth()) or 0) + 14
+    local right = WINDOW_W - EDGE - (tonumber(window.tips:GetWidth()) or 0) - 14
+    local filtro = rawget(window, "listFilter")
+    local filterW = tonumber(filtro and filtro:GetWidth()) or 100
+    window.search:SetWidth(math.max(SEARCH_MIN, math.min(SEARCH_W, right - left - 8 - filterW)))
+end
+
 local function TipsButton(parent)
-    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    local b = ns.Style.SkinButton(CreateFrame("Button", nil, parent, "UIPanelButtonTemplate"))
     b:SetHeight(22)
     function b:Update()
         self:SetText(TipsLabel())
         local w = self.GetTextWidth and tonumber(self:GetTextWidth()) or 0
         self:SetWidth((w > 0 and w or 170) + 30)
+        LayControls()
     end
     b:SetScript("OnClick", function(self)
         GameTooltip:Hide()
@@ -2367,40 +2417,30 @@ local function Build()
         window:SetPoint("CENTER")
     end
 
-    if window.SetTitle then window:SetTitle(ns.TITLE .. " — " .. L["where to start"]) end
-    if window.SetPortraitToAsset then
-        window:SetPortraitToAsset(ns.LOGO)
-    end
+    -- (18/11) THE MODERN ROCKET IDENTITY: our panel, the body stone, the header (the seal, ns.TITLE, "where to start" on
+    -- the tracker's band) and the close X (Style.Window). The template stays for its Inset, Esc and behaviour.
+    window.head = ns.Style.Window(window, { subtitle = L["where to start"] })
 
-    -- The counter, in the attic between the title and the inset, right of the portrait (x >= 58).
-    local counter = CreateFrame("Frame", nil, window, "InsetFrameTemplate3")
-    counter:SetSize(130, 20)
-    counter:SetPoint("TOPLEFT", 70, ATTIC_Y)
-    window.count = Text(counter, "GameFontHighlightSmall", "RIGHT")
-    window.count:SetPoint("RIGHT", -10, 0)
-    local label = Text(counter, "GameFontNormalSmall")
-    label:SetPoint("LEFT", 10, 0)
-    label:SetPoint("RIGHT", window.count, "LEFT", -3, 0)
-    label:SetText(L["Not collected"])
-
-    -- COLLECTED, and the "Obtain N mounts" achievement (26/09): two more boxes in the same row,
-    -- the journal's own look. The achievement box explains, on hover, why its number is not the
-    -- collected one.
-    local function Caixa(largura, x, rotulo)
-        local c = CreateFrame("Frame", nil, window, "InsetFrameTemplate3")
-        c:SetSize(largura, 20)
-        c:SetPoint("TOPLEFT", x, ATTIC_Y)
+    -- THE COUNTERS, in the header's right (they were in the attic between the title and the inset, right of the
+    -- portrait, in the journal's InsetFrameTemplate3): our field box, the label in gold at the left, the value in
+    -- white at the right, each box the size of what it says (LayCounters).
+    -- COLLECTED, and the "Obtain N mounts" achievement (26/09): two more boxes in the same row. The achievement box
+    -- explains, on hover, why its number is not the collected one.
+    local function Caixa(rotulo)
+        local c = CreateFrame("Frame", nil, window.head)
+        c:SetSize(130, COUNTER_H)
+        c.bg = ns.Style.Slice(c, "RocketField.png", 8, 0, "BACKGROUND", -7)
         c.value = Text(c, "GameFontHighlightSmall", "RIGHT")
-        c.value:SetPoint("RIGHT", -10, 0)
+        c.value:SetPoint("RIGHT", -COUNTER_PAD, 0)
         c.label = Text(c, "GameFontNormalSmall")
-        c.label:SetPoint("LEFT", 10, 0)
-        c.label:SetPoint("RIGHT", c.value, "LEFT", -3, 0)
-        if c.label.SetWordWrap then c.label:SetWordWrap(false) end
+        c.label:SetPoint("LEFT", COUNTER_PAD, 0)
         if rotulo then c.label:SetText(rotulo) end
         return c
     end
-    window.collected = Caixa(130, 70 + 130 + 10, L["Collected"])
-    window.achievement = Caixa(290, 70 + 2 * (130 + 10))
+    window.countBox = Caixa(L["Not collected"])
+    window.count = window.countBox.value
+    window.collected = Caixa(L["Collected"])
+    window.achievement = Caixa()
     window.achievement:EnableMouse(true)
     window.achievement:SetScript("OnEnter", function(self)
         local a = self.data
@@ -2412,10 +2452,27 @@ local function Build()
         GameTooltip:Show()
     end)
     window.achievement:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    LayCounters()
 
-    -- The tips, at the right end of the same row (see "HOW TO FEED THE LIST").
+    -- THE TABS (18/11: the segmented row of Style on top, in place of the game's tabs under the window). "List" is
+    -- what the window always was; "Collection" (02/10) every mount of the game by expansion and kind (Collection.lua);
+    -- "Attempts" (22/10, AttemptsTab.lua); the settings (03/11, out of the game's Options > AddOns, OptionsTab.lua),
+    -- with the game's word.
+    local abas = { { "list", L["List"] } }
+    if ns.Collection then abas[#abas + 1] = { "collection", L["Collection"] } end
+    if ns.AttemptsTab then abas[#abas + 1] = { "attempts", L["Attempts"] } end
+    if ns.OptionsTab then abas[#abas + 1] = { "settings", SETTINGS } end
+    local rotulos = {}
+    for i, tab in ipairs(abas) do rotulos[i] = tab[2] end
+    window.tabRow = ns.Style.Tabs(window, EDGE, CONTROLS_Y, rotulos, function(i) ns.SetWindowTab(abas[i][1]) end)
+    window.tabs = window.tabRow.tabs
+    window.numTabs = #window.tabs
+    window.selectedTab = 1
+    window.tabRow:Select(1)
+
+    -- The tips, at the right end of the controls' row (see "HOW TO FEED THE LIST").
     window.tips = TipsButton(window)
-    window.tips:SetPoint("TOPRIGHT", window, "TOPRIGHT", -RIGHT_MARGIN, ATTIC_Y + 1)
+    window.tips:SetPoint("TOPRIGHT", window, "TOPRIGHT", -EDGE, CONTROLS_Y - 1)
 
     -- The inset covers the list column only; the card sits on the window background.
     local host = window
@@ -2426,11 +2483,13 @@ local function Build()
         host = window.Inset
     end
 
-    -- Search and filter inside the top of the inset, where the journal has them.
+    -- Search and filter inside the top of the inset, where the journal has them; since 18/11 on the tabs' row, after
+    -- them, in our field (the game's magnifier and clear button kept: Style.SkinField).
     local busca = CreateFrame("EditBox", nil, host, "SearchBoxTemplate")
-    busca:SetSize(220, 20)
-    busca:SetPoint("TOPLEFT", host, "TOPLEFT", 15, -9)
+    busca:SetSize(SEARCH_W, COUNTER_H)
+    busca:SetPoint("LEFT", window.tabRow, "RIGHT", 14, 0)
     busca:SetAutoFocus(false)
+    ns.Style.SkinField(busca)
     -- `if busca.Instructions then` IS NOT ENOUGH: in the harness any unknown field answers a
     -- function, which is truthy. Guarding by TYPE works on both sides.
     if type(busca.Instructions) == "table" and busca.Instructions.SetText then
@@ -2467,7 +2526,13 @@ local function Build()
     -- the one of the game's journals), with everything that filters this list in one menu.
     do
         local filtro = CreateFrame("DropdownButton", nil, host, "WowStyle1FilterDropdownTemplate")
-        filtro:SetPoint("LEFT", busca, "RIGHT", 10, 0)
+        filtro:SetPoint("LEFT", busca, "RIGHT", 8, 0)
+        ns.Style.SkinDropdown(filtro)
+        -- the value in white, like every dropdown of ours: the filter template puts its own font back on enable
+        -- (WowStyle1FilterDropdownMixin:OnEnable -> baseFontObject, captured gold at its OnLoad)
+        if rawget(filtro, "baseFontObject") ~= nil and rawget(_G, "GameFontHighlight") then
+            filtro.baseFontObject = GameFontHighlight
+        end
         if filtro.SetupMenu then
             filtro:SetupMenu(function(_, root)
                 root:CreateTitle(L["Type"])
@@ -2542,44 +2607,27 @@ local function Build()
     window.listBar = bar
     BuildLoading(host)
 
-    -- (!) TWO TABS (02/10): "List" is what the window always was; "Collection" is every mount
-    -- of the game by expansion and kind (Collection.lua). The tabs are the game's, under the
-    -- frame as in its own windows. The search box, the counters and the card serve both.
-    -- (22/10) A THIRD TAB, "Attempts" (AttemptsTab.lua): every mount tried for, the luck of it, the
-    -- time it took, today and this week, and whether the source is open now. Its summary line sits
-    -- on the search row, where the list's filter button is (hidden on that tab).
-    if ns.AttemptsTab then ns.AttemptsTab.Build(host, SEARCH_H, 15 + 220 + 16) end
+    -- The pages of the other tabs (the tabs themselves are on top, built with the header). The search box, the
+    -- counters and the docked window serve them all.
+    -- (22/10) "Attempts" (AttemptsTab.lua): every mount tried for, the luck of it, the time it took, today and this
+    -- week, and whether the source is open now. Its summary line was on the search row, where the list's filter
+    -- button is; since 18/11 the tabs and the tips share that row, and the summary has a line of its own under it.
+    if ns.AttemptsTab then
+        ns.AttemptsTab.Build(host, SEARCH_H + ATT_SUMMARY_H, 15, SEARCH_H + ATT_SUMMARY_H / 2 - 2)
+    end
     if ns.Collection then
         ns.Collection.Build(host, SEARCH_H + 2, LIST_W - 6 - SCROLLBAR_W)
-        window.tabs = {}
-        local abas = { { "list", L["List"] }, { "collection", L["Collection"] } }
-        if ns.AttemptsTab then abas[#abas + 1] = { "attempts", L["Attempts"] } end
-        -- (03/11) the settings, out of the game's Options > AddOns panel (OptionsTab.lua); the game's word
-        if ns.OptionsTab then
-            ns.OptionsTab.Build(host, LIST_W)
-            abas[#abas + 1] = { "settings", SETTINGS }
+        -- its "Filter" button where the list's is, after the search (it was at the row's right, now the tips')
+        local cp = ns.Collection.__page and ns.Collection.__page()
+        if cp and cp.filter then
+            cp.filter:ClearAllPoints()
+            cp.filter:SetPoint("LEFT", busca, "RIGHT", 8, 0)
         end
-        for i, tab in ipairs(abas) do
-            local b = CreateFrame("Button", window:GetName() .. "Tab" .. i, window, "PanelTabButtonTemplate")
-            b:SetID(i)
-            b:SetText(tab[2])
-            b:SetScript("OnClick", function() ns.SetWindowTab(tab[1]) end)
-            if i == 1 then
-                b:SetPoint("TOPLEFT", window, "BOTTOMLEFT", 11, 2)
-            else
-                b:SetPoint("TOPLEFT", window.tabs[i - 1], "TOPRIGHT", 3, 0)
-            end
-            if PanelTemplates_TabResize then PanelTemplates_TabResize(b, 0) end
-            window.tabs[i] = b
-        end
-        if PanelTemplates_SetNumTabs then PanelTemplates_SetNumTabs(window, #window.tabs) end
-        if PanelTemplates_SetTab then PanelTemplates_SetTab(window, 1) end
     end
+    -- (03/11) the settings, out of the game's Options > AddOns panel (OptionsTab.lua), under the controls' row
+    if ns.OptionsTab then ns.OptionsTab.Build(host, LIST_W, SEARCH_H + 6) end
+    LayControls()
 
-    -- (03/11) the body of every Rocket window (Style.lua), in place of the template's stone
-    if ns.Style then ns.Style.Body(window, 1, window.Bg) end
-    -- (03/11) the skin on trial: the Journeys' stone at its own scale, in place of the design system's body
-    if ns.Journey and window.__body then ns.Journey.Stone(window.__body, WINDOW_W - 6, WINDOW_H - 6) end
     -- (04/11) the scene (one, in the docked window), the drawer of the open row and the docked window
     detail = { model = BuildModel(window) }
     drawer = CreateFrame("Frame", nil, list)
@@ -2640,12 +2688,19 @@ local function Build()
     -- suggestion goes. It is quiet (the game's grey small font), lights up under the pointer,
     -- and a click opens that same menu: saying "we take suggestions" with no way to send one
     -- would be half a sentence.
+    -- (18/11) THE MODERN IDENTITY'S FOOT (the approved mockup): a bronze line closes the list; under it, on one line,
+    -- the character and the count at the left and this note at the right; "Report a problem" centred under them.
+    window.footRule = window:CreateTexture(nil, "ARTWORK")
+    ns.Style.Divider(window.footRule)
+    window.footRule:SetHeight(1)
+    window.footRule:SetPoint("BOTTOMLEFT", window, "BOTTOMLEFT", 10, FOOTER - 2)
+    window.footRule:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -10, FOOTER - 2)
     local nota = CreateFrame("Button", nil, window)
     nota:SetHeight(14)
-    nota:SetPoint("BOTTOM", window, "BOTTOM", 0, 6 + DONATE_ROW)
-    nota.text = Text(nota, "GameFontHighlightSmall", "CENTER")
+    nota:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -EDGE, 6 + DONATE_ROW)
+    nota.text = Text(nota, "GameFontHighlightSmall", "RIGHT")
     nota.text:SetTextColor(LIGHTGRAY_FONT_COLOR:GetRGB())
-    nota.text:SetPoint("CENTER")
+    nota.text:SetPoint("RIGHT")
     nota.text:SetText(L["The list and the descriptions are still being improved: suggestions are welcome."])
     nota:SetWidth((nota.text.GetStringWidth and tonumber(nota.text:GetStringWidth()) or 0) > 0
         and nota.text:GetStringWidth() or 420)
@@ -2669,7 +2724,7 @@ local function Build()
     window.evolving = nota
 
     window.footer = Text(window, "GameFontHighlightSmall")
-    window.footer:SetPoint("BOTTOMLEFT", 10, 8 + DONATE_ROW)
+    window.footer:SetPoint("BOTTOMLEFT", EDGE, 8 + DONATE_ROW)
     -- up to the note, and not under it
     window.footer:SetPoint("RIGHT", nota, "LEFT", -12, 0)
     window.footer:SetWordWrap(false)

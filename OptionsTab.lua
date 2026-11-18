@@ -1,10 +1,11 @@
 -- RocketMount | OptionsTab.lua
 -- The window's Settings tab: draws the definitions of Options.lua in three columns inside the list's inset.
 -- (03/11/2026) The settings left the game's Options > AddOns panel for the addon's own window, at the user's word.
--- The pieces are the game's (UICheckButtonTemplate, MinimalSliderWithSteppersTemplate, WowStyle1DropdownTemplate)
--- with the measures the game's own settings use: the box 28, a sub-option indented 15 (Blizzard_SettingControls),
--- a section marked by a gold title and a rule, not by air (wow-ui-design). A sub-option goes grey while the option
--- it hangs under is off, as SetParentInitializer did in the game's panel.
+-- The pieces are the game's (UICheckButtonTemplate, MinimalSliderWithSteppersTemplate, WowStyle1DropdownTemplate),
+-- dressed since 18/11 in the modern Rocket identity (Style.SkinCheck, SkinSlider, SkinDropdown; the sections on the
+-- quest tracker's band, Style.Section), with the measures the game's own settings use: the box 28, a sub-option
+-- indented 15 (Blizzard_SettingControls), a section marked by a gold title, not by air (wow-ui-design). A sub-option
+-- goes grey while the option it hangs under is off, as SetParentInitializer did in the game's panel.
 local ADDON, ns = ...
 local L = ns.L
 
@@ -20,7 +21,6 @@ local H_LABEL = 12            -- GameFontHighlightSmall
 local GAP_LABEL = 2
 local H_CONTROL = 26
 local H_FIELD = H_LABEL + GAP_LABEL + H_CONTROL + 10
-local H_SECTION = H_LABEL + 4 + 10
 local GAP_SECTION = 18
 
 local page, controls = nil, {}
@@ -48,22 +48,18 @@ function Tab.Refresh()
     end
 end
 
+---(18/11) A section of the modern identity (Style.Section: the gold title on the tracker's secondary band). Style
+---counts y down from 0 in negatives; this page counts it up in positives.
 local function Section(col, y, title)
-    local text = col:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    text:SetPoint("TOPLEFT", col, "TOPLEFT", 0, -y)
-    text:SetText(title)
-    local rule = col:CreateTexture(nil, "ARTWORK")
-    rule:SetHeight(1)
-    rule:SetPoint("TOPLEFT", col, "TOPLEFT", 0, -y - H_LABEL - 4)
-    rule:SetPoint("TOPRIGHT", col, "TOPRIGHT", 0, -y - H_LABEL - 4)
-    ns.Style.Divider(rule)   -- (03/11) the design system's divider (Style.lua)
-    return y + H_SECTION + 4
+    local nextY = ns.Style.Section(col, 0, -y + ns.Style.SECTION_GAP, col:GetWidth(), title)
+    return -nextY
 end
 
 local function Check(col, y, x, width, d)
     local check = CreateFrame("CheckButton", nil, col, "UICheckButtonTemplate")
     check:SetPoint("TOPLEFT", col, "TOPLEFT", x, -y)
     check:SetSize(CHECK, CHECK)
+    ns.Style.SkinCheck(check)
     if type(check.Text) == "table" and check.Text.SetText then
         check.Text:SetText(d.name)
         check.Text:SetFontObject("GameFontHighlightSmall")
@@ -109,6 +105,7 @@ local function Slider(col, y, x, width, d)
     slider:SetPoint("TOPLEFT", col, "TOPLEFT", x, -(y + H_LABEL + GAP_LABEL))
     slider:SetWidth(width - x)
     slider:SetHeight(H_CONTROL)
+    ns.Style.SkinSlider(slider)
     local function Write(on)
         local value = (d.format or "%d"):format(d.get())
         local c = on == false and DISABLED_FONT_COLOR or HIGHLIGHT_FONT_COLOR
@@ -141,6 +138,7 @@ local function Dropdown(col, y, x, width, d)
     dropdown:SetPoint("TOPLEFT", col, "TOPLEFT", x, -(y + H_LABEL + GAP_LABEL))
     dropdown:SetWidth(width - x)
     dropdown:SetHeight(H_CONTROL)
+    ns.Style.SkinDropdown(dropdown)
     if MenuUtil and MenuUtil.CreateRadioMenu then
         local list = {}
         for _, e in ipairs(d.entries()) do list[#list + 1] = { e.label, e.value } end
@@ -162,11 +160,12 @@ local function Dropdown(col, y, x, width, d)
     }
 end
 
----Builds the page inside the list's inset (hidden until the tab is chosen).
-function Tab.Build(host, hostWidth)
+---Builds the page inside the list's inset (hidden until the tab is chosen), `top` points under its top (TOP when not
+---given; the window passes the controls' row, 18/11).
+function Tab.Build(host, hostWidth, top)
     if page then return page end
     page = CreateFrame("Frame", nil, host)
-    page:SetPoint("TOPLEFT", host, "TOPLEFT", MARGIN, -TOP)
+    page:SetPoint("TOPLEFT", host, "TOPLEFT", MARGIN, -(top or TOP))
     page:SetPoint("BOTTOMRIGHT", host, "BOTTOMRIGHT", -MARGIN, 8)
     page:Hide()
     local width = math.floor((hostWidth - 2 * MARGIN - 2 * COL_GAP) / 3)

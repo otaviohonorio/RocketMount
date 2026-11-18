@@ -380,6 +380,11 @@ function Collection.Build(host, top, width)
     page.filter = CreateFrame("DropdownButton", nil, host, "WowStyle1FilterDropdownTemplate")
     page.filter:SetPoint("TOPRIGHT", host, "TOPRIGHT", -12, -10)
     page.filter:SetupMenu(FilterMenu)
+    ns.Style.SkinDropdown(page.filter)   -- (18/11) the modern identity's dropdown (Style.lua)
+    -- the value in white, as the list's filter (Window.lua): the template puts its gold back on enable
+    if rawget(page.filter, "baseFontObject") ~= nil and rawget(_G, "GameFontHighlight") then
+        page.filter.baseFontObject = GameFontHighlight
+    end
     page.filter:Hide()
 
     page.empty = Text(page, "GameFontDisable", "CENTER")

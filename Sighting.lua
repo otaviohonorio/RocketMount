@@ -283,9 +283,13 @@ local NATIVE_W, NATIVE_H, NATIVE_ART_H = 276, 96, 109
 local SCALE_W, SCALE_H = 1.2, 1.1
 local TOAST_W, TOAST_H = math.floor(NATIVE_W * SCALE_W + 0.5), math.floor(NATIVE_H * SCALE_H + 0.5)
 local ART_H = math.floor(NATIVE_ART_H * SCALE_H + 0.5)
-local ICON, ICON_X, ICON_Y = 52, math.floor(23 * SCALE_W + 0.5), -2
+-- (18/11) THE MODERN ROCKET IDENTITY (Style.Window, a notice: no seal): our panel and stone in place of the leather,
+-- the header with ns.TITLE and the close X on top (Style.Window's 34), the icon under it at the header's margin. The
+-- text keeps the width the 1.2 gave it (the leather's icon sat at 28; the text box, 217, did not change).
+local HEAD_H = 34
+local ICON, ICON_X, ICON_TOP = 52, 14, HEAD_H + 6
 local BORDER = 60
-local TEXT_W = 167 + (TOAST_W - NATIVE_W) - (ICON_X - 23)
+local TEXT_W = 167 + (TOAST_W - NATIVE_W) - (math.floor(23 * SCALE_W + 0.5) - 23)
 local LABEL_X, LABEL_Y, LABEL_H = 7, 5, 16       -- from the icon's TOPRIGHT
 local NAME_X, NAME_Y, NAME_H = 10, -16, 16
 -- Ours: Blizzard's name box is 33 tall, for a name that wraps to two lines. A mount's name is
@@ -294,7 +298,8 @@ local SUB_Y, SUB_H = -33, 14
 
 Sighting.Geometry = {
     NATIVE_W = NATIVE_W, NATIVE_H = NATIVE_H, ART_H = ART_H,
-    WIDTH = TOAST_W, HEIGHT = TOAST_H, ICON = ICON, ICON_X = ICON_X, BORDER = BORDER,
+    WIDTH = TOAST_W, HEIGHT = TOAST_H, ICON = ICON, ICON_X = ICON_X, ICON_TOP = ICON_TOP, HEAD = HEAD_H,
+    BORDER = BORDER,
     TEXT = TEXT_W, TEXT_X = NAME_X, TEXT_TOP = LABEL_Y, TEXT_BOTTOM = SUB_Y - SUB_H,
     -- Blizzard's own text box: the label starts 5 above the icon, the name box ends 49 below
     -- its top (16 + 33). Ours has to stay inside it.
@@ -390,15 +395,13 @@ local function Build()
         if ns.db then ns.db.sightingPos = { point = point, x = x, y = y } end
     end)
 
-    frame.Background = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
-    -- The game's art, stretched with the frame (it is 276 x 109 at its own size).
-    frame.Background:SetAtlas("MountToast-Background")
-    frame.Background:SetSize(TOAST_W, ART_H)
-    frame.Background:SetPoint("CENTER")
+    -- (18/11) the family's notice (Style.Window, no seal) in place of the game's leather (MountToast-Background, until
+    -- 18/11): the close X hides it, as the right button does
+    frame.head = ns.Style.Window(frame, { seal = false })
 
     frame.Icon = frame:CreateTexture(nil, "BORDER")
     frame.Icon:SetSize(ICON, ICON)
-    frame.Icon:SetPoint("LEFT", ICON_X, ICON_Y)
+    frame.Icon:SetPoint("TOPLEFT", ICON_X, -ICON_TOP)
 
     frame.IconBorder = frame:CreateTexture(nil, "ARTWORK")
     frame.IconBorder:SetAtlas(EPIC_BORDER)

@@ -400,8 +400,9 @@ local function UpdateHeaders()
 end
 
 ---Builds the page inside `host` (the window's inset), below `top` points from its top.
----@param summaryX number where the summary line starts, on the search box's row
-function Tab.Build(host, top, summaryX)
+---@param summaryX number where the summary line starts
+---@param summaryY number|nil its centre, in points under the host's top (19: the search box's row, until 18/11)
+function Tab.Build(host, top, summaryX, summaryY)
     if page then return page end
     page = CreateFrame("Frame", nil, host)
     page:SetPoint("TOPLEFT", host, "TOPLEFT", 3, -top)
@@ -427,7 +428,7 @@ function Tab.Build(host, top, summaryX)
 
     -- "Today: N attempts at M mounts · This week: N at M", on the search box's row
     page.summary = Text(host, "GameFontHighlight")
-    page.summary:SetPoint("LEFT", host, "TOPLEFT", summaryX or 250, -19)
+    page.summary:SetPoint("LEFT", host, "TOPLEFT", summaryX or 250, -(summaryY or 19))
     page.summary:SetWordWrap(false)
     page.summary:Hide()
 
