@@ -1067,24 +1067,18 @@ function ns.ForgetCharacter(key)
     return true
 end
 
----Asks, in the game's dialog, whether the character is to be taken out of the records.
+---Asks whether the character is to be taken out of the records. (18/11) In the family's question box (Style.Ask), never
+---the game's dialog (Style.lua has why).
 function ns.AskForget(key)
-    if not (key and StaticPopupDialogs and StaticPopup_Show) then return end
-    if not StaticPopupDialogs[FORGET_POPUP] then
-        StaticPopupDialogs[FORGET_POPUP] = {
-            text = L["Take %s out of the records of Rocket Mount?|n|nFor a character that was deleted, renamed or moved. One that still exists is recorded again the next time it logs in."],
-            button1 = YES,
-            button2 = NO,
-            -- (!) No `return`: the game keeps the dialog open when this answers true
-            -- (`StaticPopup.lua`, `hide = not OnAccept(...)`).
-            OnAccept = function(_, chave) ns.ForgetCharacter(chave) end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-            preferredIndex = 3,
-        }
-    end
-    StaticPopup_Show(FORGET_POPUP, key, nil, key)
+    if not key then return end
+    ns.Style.Ask(FORGET_POPUP, {
+        text = L["Take %s out of the records of Rocket Mount?|n|nFor a character that was deleted, renamed or moved. One that still exists is recorded again the next time it logs in."]:format(key),
+        data = key,
+        buttons = {
+            { text = YES, onClick = function(chave) ns.ForgetCharacter(chave) end },
+            { text = NO },
+        },
+    })
 end
 
 ---What the button's tooltip says: the character with its realm, the day it was last seen, and
