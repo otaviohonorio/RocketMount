@@ -1,3 +1,5 @@
-# Rocket Mount 0.37.2
+# Rocket Mount 0.38.0
 
-- On the world map, a rare's marker now sits on its exact spot even when a game icon (such as an invasion) is there too, matching the minimap. Before, it was pushed to one side.
+- New look: the window with a seal and title band, tabs on top (List, Collection, Attempts, Settings) and the Rocket family's buttons, dropdowns, checkboxes and sliders.
+- Questions (forget a character, the Wowhead link, report a problem) now open in the family's own window instead of the game's old dialog.
+- Fixed: an open dropdown no longer lets the controls under it show through, and a button's or tab's text no longer disappears under the mouse.
